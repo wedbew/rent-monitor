@@ -48,6 +48,7 @@ Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton (RM
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
 | [`docs/adr/`](docs/adr) | Architecture decision records (0001 greenfield … 0007 pins) |
 | [`docs/ENGINE-SPEC.md`](docs/ENGINE-SPEC.md) | Engine rules, approved with amendments (B-007 resolved) |
+| [`docs/RUNBOOK-GDPR.md`](docs/RUNBOOK-GDPR.md) | Retention, erasure, export, restore re-erasure |
 | [`docs/BLOCKERS.md`](docs/BLOCKERS.md) | Owner-only blockers agents stop on |
 | [`docs/BACKLOG.md`](docs/BACKLOG.md) | Blueprint → issue traceability |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Milestones, dependencies and launch gates |

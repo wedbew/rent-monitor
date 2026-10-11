@@ -44,6 +44,12 @@ class Settings(BaseSettings):
         "olxcdn.com,otodom.pl"  # comma-separated host suffixes photos may be fetched from
     )
 
+    # GDPR[retention]: PROPOSED periods, to be confirmed by counsel (docs/BLOCKERS.md B-012).
+    retention_session_days: int = Field(default=7, ge=0)  # days after `expires_at`
+    retention_login_token_days: int = Field(default=1, ge=0)  # days after expiry or use
+    retention_snapshot_days: int = Field(default=30, ge=1)  # raw listing payloads (may hold seller data)
+    retention_audit_event_days: int = Field(default=30, ge=1)  # progress events; the audit result is kept
+
     sentry_dsn: str = ""
     sentry_traces_sample_rate: Decimal = Field(
         default=Decimal("0.05"), ge=0, le=1
