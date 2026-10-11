@@ -3,7 +3,7 @@
 # Proves the dump/restore path works on a developer machine; it is NOT the WAL-G point-in-time drill (release gate 6).
 set -euo pipefail
 
-COMPOSE=(docker compose -f deploy/compose.dev.yml)
+COMPOSE=(docker compose -f deploy/compose.yml)
 DB="${POSTGRES_DB:-rentmonitor}"
 USER_="${POSTGRES_USER:-rentmonitor}"
 SCRATCH="${DB}_drill"
