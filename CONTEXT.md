@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-12 · by: RM-85 (engine N-02)
+**Last updated:** 2026-10-12 · by: RM-89 (engine N-06, invariants CI on)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -167,7 +167,7 @@ CI/security workflows, pre-commit, semgrep rules and commit-message checker exis
 settings + `LegalTag`, `rm-contracts` `ProblemCode`, `rm-api` `/api/health`, empty `rm-worker`), `Makefile`, `.env.example`,
 `README.md`, `CHANGELOG.md`, `docs/LIMITATIONS.md`. ADR 0001 made the build greenfield. A first attempt to copy POC packages was
 discarded. RM-11 added `packages/rm_core/db/` (all §3 models), `alembic.ini`, `migrations/` (baseline `0001`), Testcontainers fixtures and
-`test_invariant_asking_is_not_deed`. RM-23 added `rm_worker.images`, `rm_worker.clients.{openrouter,limiter}` (budget gate and in-flight cap are protocols; RM-24 supplies the gate). RM-22 added `rm_core.{listing_ref,deadline,throttle,snapshots}`, `rm_worker.clients.otodom*`, `rm_worker.snapshot_service` and migration `0002` (`host_throttle`). RM-85 added `deal_analyzer.{ownership,legal_class,text}` (N-02). RM-84 added `apps/deal_analyzer` (N-01: `extract_listing`, `Listing`, errors; fractional-ownership and VAT classifiers are N-02) and tests under `tests/engine/`. RM-30 added `rm_core.privacy` (retention sweeps, `delete_account`, `reapply_erasures`, `export_user_data`), `rm_worker.tasks.retention`, migration `0003` (`erasure_log`). Endpoints: RM-82. RM-69 added `deploy/Dockerfile`, `deploy/compose.yml` (api, worker, bootstrap, postgres) and `scripts/bootstrap.py`, replacing `compose.dev.yml`. RM-29 added Makefile dev targets, `rm_core.seed`, `scripts/seed.py` and `rm_worker.app`. RM-18 added `rm_core.logging`/`observability`, `rm_api.{app,problems,middleware,health,deps}` (problem codes, `/healthz`, `/readyz`, session dependency). Still missing: `apps/`, production deploy files (Caddy, WAL-G, backups: RM-15), the other named invariant tests (the CI `invariants` job stays off
+`test_invariant_asking_is_not_deed`. RM-23 added `rm_worker.images`, `rm_worker.clients.{openrouter,limiter}` (budget gate and in-flight cap are protocols; RM-24 supplies the gate). RM-22 added `rm_core.{listing_ref,deadline,throttle,snapshots}`, `rm_worker.clients.otodom*`, `rm_worker.snapshot_service` and migration `0002` (`host_throttle`). RM-89 added `deal_analyzer.{money,assumptions,costs,tax,cashflow}` (N-06). RM-85 added `deal_analyzer.{ownership,legal_class,text}` (N-02). RM-84 added `apps/deal_analyzer` (N-01: `extract_listing`, `Listing`, errors; fractional-ownership and VAT classifiers are N-02) and tests under `tests/engine/`. RM-30 added `rm_core.privacy` (retention sweeps, `delete_account`, `reapply_erasures`, `export_user_data`), `rm_worker.tasks.retention`, migration `0003` (`erasure_log`). Endpoints: RM-82. RM-69 added `deploy/Dockerfile`, `deploy/compose.yml` (api, worker, bootstrap, postgres) and `scripts/bootstrap.py`, replacing `compose.dev.yml`. RM-29 added Makefile dev targets, `rm_core.seed`, `scripts/seed.py` and `rm_worker.app`. RM-18 added `rm_core.logging`/`observability`, `rm_api.{app,problems,middleware,health,deps}` (problem codes, `/healthz`, `/readyz`, session dependency). Still missing: `apps/`, production deploy files (Caddy, WAL-G, backups: RM-15), the other named invariant tests (the CI `invariants` job stays off
 until they exist; do not stub them), Procrastinate worker bootstrap, `frontend/`. The `migrations` CI job can be switched on
 (`ENABLE_MIGRATIONS_JOB=true` plus the `staging` required check) — an owner action, see §9.
 Repo `wedbew/rent-monitor` is **public during development** (switch back to private before real keys or data: `docs/PRE-DEPLOYMENT.md` §0);
@@ -181,7 +181,7 @@ not permission to copy POC or GUS-PoC artifacts.
 From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on money, auth or anything irreversible.
 
 - [x] `migrations` CI job on and required (RM-68)
-- [ ] Turn on the `invariants` CI job (`ENABLE_INVARIANTS_JOB=true`) and require it, in the PR that lands the engine's three missing named tests (RENT, admin fee, deterministic math)
+- [x] `invariants` CI job on and required (RM-89): the four named tests exist (RENT, asking≠deed, admin fee, deterministic math); invariants 5 and 6 and the ±15% clamp are added by N-08/N-10
 - [x] Port the POC? **No** — greenfield (ADR 0001, RM-2)
 - [ ] Market-data bootstrap: how the 727-city sidecars are produced fresh (fetch via new importers; no corpus copy)
 - [x] Engine specification approved with amendments: `docs/ENGINE-SPEC.md` (RM-73); tax constants flagged for the accountant
