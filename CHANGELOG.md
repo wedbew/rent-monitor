@@ -5,6 +5,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- Engine package `apps/deal_analyzer` (folder = module): bounded, typed `extract_listing` producing an immutable `Listing` with `Decimal` money; RENT listings raise `RentNotADealError` before anything else (invariant 1); `characteristics.rent` is only ever `admin_fee_pln`; typed `ExtractionError` codes; first named invariant test `test_invariant_rent_is_not_a_deal` (RM-84)
 - GDPR: nightly retention sweep (sessions, login tokens, listing snapshots, audit events; proposed periods via `RETENTION_*`), account erasure with an `erasure_log` of hashes (new table, migration `0003`; **operator action:** `make migrate`), re-erasure after a restore, data-subject export, runbook `docs/RUNBOOK-GDPR.md` (RM-30)
 - The whole app runs in Docker: `deploy/Dockerfile` (non-root, uv lockfile build), `deploy/compose.yml` (postgres, one-shot bootstrap, api, worker), idempotent `scripts/bootstrap.py` (migrations, Procrastinate schema once, seed), `make up|down|logs|smoke`; **removed** `deploy/compose.dev.yml` (use `deploy/compose.yml`); `make procrastinate-schema` is now `make bootstrap` (RM-69)
 - CI: `migrations` job enabled and required on `staging` (squawk + pytest-alembic); migrations now run with `lock_timeout` 5 s and `statement_timeout` 5 min; `.env.example` rewritten with where-to-get comments and new names `RELEASE`, `POSTGRES_IMAGE`, `POSTGRES_PORT`, `ADMIN_EMAIL`, `STRIPE_PRICE_ID_PRO`, `OPENROUTER_CALL_ESTIMATE_USD`, `IMAGE_HOST_ALLOWLIST` (RM-68)

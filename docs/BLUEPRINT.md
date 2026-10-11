@@ -910,8 +910,8 @@ Hand this section to the agent as its specification. It is ordered so each step 
 
 ### 4.0 Agent operating rules
 
-1. The analytical engines in `apps/` are written from scratch (ADR 0001); the proof of concept is read-only reference and nothing is copied from it. Engine math lives only in `apps/deal-analyzer`, uses `Decimal`, and takes `ContextRepository` and `ProgressSink` as native seams.
-2. Never compute a financial number outside `apps/deal-analyzer`. The API copies values from `DealAnalysis` into typed columns; the UI renders them.
+1. The analytical engines in `apps/` are written from scratch (ADR 0001); the proof of concept is read-only reference and nothing is copied from it. Engine math lives only in `apps/deal_analyzer`, uses `Decimal`, and takes `ContextRepository` and `ProgressSink` as native seams.
+2. Never compute a financial number outside `apps/deal_analyzer`. The API copies values from `DealAnalysis` into typed columns; the UI renders them.
 3. The four invariants each get a named regression test (listed in 4.6). A PR that deletes or skips one is rejected.
 4. All money is `Decimal` in Python and `NUMERIC` in Postgres. No floats in persisted financial fields.
 5. Every external call (Otodom, OpenRouter, GUS BDL, Moniter, Stripe, Nominatim) goes through an injectable client so tests run offline.
@@ -1177,7 +1177,7 @@ uv run procrastinate --app=rm_worker.app.app schema --apply
 # 4. Seed plans, flags, and migrate existing filesystem data
 uv run python scripts/seed.py                       # plans free/pro, feature flags, admin user role
 uv run python scripts/import_agent_context.py apps/agent-context/reports   # sidecars -> market_sidecar
-uv run python scripts/import_legacy_reports.py apps/deal-analyzer/reports/final --owner admin@rentmonitor.pl
+uv run python scripts/import_legacy_reports.py apps/deal_analyzer/reports/final --owner admin@rentmonitor.pl
 
 # 5. Generate the typed frontend client
 uv run python scripts/gen_openapi.py > frontend/openapi.json
@@ -2120,7 +2120,7 @@ Record the drill's wall-clock time; if it exceeds 30 minutes, the 1-hour RTO is 
 
 ### 4.8 Implementation order for the agent
 
-1. **Engine foundation**: new `apps/deal-analyzer` with `ContextRepository` and `ProgressSink` as native interfaces, in-memory and filesystem implementations, and the four invariant tests written first.
+1. **Engine foundation**: new `apps/deal_analyzer` with `ContextRepository` and `ProgressSink` as native interfaces, in-memory and filesystem implementations, and the four invariant tests written first.
 2. **Data plane**: `rm-core` models, Alembic baseline, Procrastinate schema, importers for `agent-context` and `reports/final`. Invariant tests for asking ≠ deed.
 3. **Auth** (Python only): Google ID-token sign-in and One Tap first, then email magic link; sessions, `current_principal`, Origin check, signup grant. Tenant-isolation, Google-token and magic-link tests.
 4. **Audits**: submit route, worker task, SSE hub, reconciler. Quota race, release and SSE resume tests. Delete `frontend/server/*.ts`.

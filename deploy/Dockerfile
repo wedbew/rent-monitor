@@ -7,6 +7,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY packages packages
 COPY services services
+COPY apps apps
 RUN uv sync --frozen --no-dev --no-editable --all-packages
 
 FROM python:3.12-slim-bookworm

@@ -20,7 +20,7 @@ The two last checklist items map to rules: **Legal / GDPR** (`rules/legal-tags.m
 
 - Title: `type(RM-<issue>): subject`, ≤ 72 chars; the `pr-title` workflow enforces it.
 - Invariants: no `invariant` test deleted, skipped, `xfail`ed or weakened. If you believe one is wrong, stop and ask.
-- Money: `Decimal` / `NUMERIC`; all financial math stays in `apps/deal-analyzer`.
+- Money: `Decimal` / `NUMERIC`; all financial math stays in `apps/deal_analyzer`.
 - Tenancy: tenant-owned queries go through a `Principal`-scoped repository; foreign resources return 404.
 - Migrations: expand-only; the contract step is a later PR. `pytest tests/migrations` and `squawk` pass.
 - Golden `DealAnalysis` snapshots unchanged, or every diff explained under the section it affects.

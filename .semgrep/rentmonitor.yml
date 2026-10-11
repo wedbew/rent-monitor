@@ -25,7 +25,7 @@ rules:
     severity: ERROR
     languages: [python]
     paths:
-      include: ["services/api/"]
+      include: ["services/rm_api/"]
     patterns:
       - pattern-inside: |
           async def stripe_webhook(...):

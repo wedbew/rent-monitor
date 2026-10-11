@@ -6,14 +6,14 @@ requires-python = ">=3.12"
 dependencies = []
 
 [tool.uv.workspace]
-members = ["packages/*", "services/*"]
-# apps/* join the workspace when the POC engines are ported (CONTEXT.md §4.1)
+members = ["packages/*", "services/*", "apps/*"]
 
 [tool.uv.sources]
 rm-core = { workspace = true }
 rm-contracts = { workspace = true }
 rm-api = { workspace = true }
 rm-worker = { workspace = true }
+deal-analyzer = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -54,12 +54,12 @@ ignore = ["PLR0913", "PLR2004"]
 "loguru".msg = "structlog only (blueprint 4.2)."
 
 [tool.pyright]
-include = ["packages", "services", "scripts", "tests"]
+include = ["packages", "services", "apps", "scripts", "tests"]
 exclude = ["**/node_modules", "frontend", "apps/*/reports"]
 pythonVersion = "3.12"
-extraPaths = ["scripts", "packages", "services"]
+extraPaths = ["scripts", "packages", "services", "apps"]
 typeCheckingMode = "standard"
-strict = ["packages", "services"]
+strict = ["packages", "services", "apps"]
 reportUnnecessaryTypeIgnoreComment = "error"
 
 [tool.pytest.ini_options]
@@ -68,7 +68,7 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 timeout = 120
-testpaths = ["tests", "packages", "services"]
+testpaths = ["tests", "packages", "services", "apps"]
 pythonpath = ["scripts"]
 markers = [
   "invariant: business invariant from agents.md §1; may never be skipped",
@@ -80,7 +80,7 @@ filterwarnings = ["error::DeprecationWarning:rm_.*"]
 
 [tool.coverage.run]
 branch = true
-source = ["rm_core", "rm_api", "rm_worker", "rm_contracts"]
+source = ["rm_core", "rm_api", "rm_worker", "rm_contracts", "deal_analyzer"]
 
 [tool.coverage.report]
 fail_under = 85

@@ -1,0 +1,21 @@
+[project]
+name = "deal-analyzer"
+version = "0.0.0"
+description = "Deterministic deal engine: listing extraction, costs, cash flow, Max Bid, grade (pure Python, no I/O)"
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.12"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+# The folder IS the package: wheel files are prefixed with the module name, and the editable
+# install puts the parent folder on sys.path so `import deal_analyzer` resolves to this folder.
+dev-mode-dirs = [".."]
+
+[tool.hatch.build.targets.wheel]
+include = ["**/*.py"]
+
+[tool.hatch.build.targets.wheel.sources]
+"" = "deal_analyzer"

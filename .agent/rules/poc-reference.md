@@ -20,7 +20,7 @@ learn **what the product must do and where it breaks**. It is read-only input. I
    if it is a standing constraint, `docs/LIMITATIONS.md`. Do not write "same as POC" as a justification.
 4. **Behavioural parity is judged by requirements and the blueprint's named tests (§4.6), not by diffing against the POC.**
    Where the POC and the blueprint disagree, the blueprint wins; where both are silent, ask.
-5. Paths named in the blueprint (`apps/deal-analyzer`, `apps/price-intel`, …) stay as the **locations** of the new,
+5. Paths named in the blueprint (`apps/deal_analyzer`, `apps/price-intel`, …) stay as the **locations** of the new,
    from-scratch packages; their contents are new code with their own `pyproject.toml`, tests and types.
 6. Never read the POC's `.env`, never copy its `AGENTS.md` / `.cursor` rules, never depend on its absolute path in code, tests or CI.
 
