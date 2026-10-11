@@ -31,6 +31,11 @@ class DealInputs(BaseModel):
     admin_fee_monthly_pln: Decimal | None = Field(default=None, ge=0)  # OPEX (invariant 3)
     monthly_rent_pln: Decimal = Field(ge=0)  # market rent excluding any admin fee, supplied by the rent model
     capex_pln: Decimal = Field(default=Decimal(0), ge=0)
+    # Exit anchor. None = the purchase price (as approved in ENGINE-SPEC row 8). A market-value
+    # estimate makes the sale
+    # value independent of what the buyer pays, which is what a bargain hunter actually realises (open
+    # question, B-014).
+    market_value_pln: Decimal | None = Field(default=None, gt=0)
     assumptions: Assumptions = Assumptions()
 
 
@@ -114,6 +119,21 @@ def _collected_months(year: int, a: Assumptions) -> Decimal:
 
 
 def compute_cash_flows(inp: DealInputs) -> CashFlowResult:
+    return _compute(inp)[0]
+
+
+def compute_with_exact_irr(inp: DealInputs) -> tuple[CashFlowResult, Decimal | None]:
+    """The result plus the unrounded IRR (the result carries it rounded)."""
+    result, solved, _ = _compute(inp)
+    return result, solved
+
+
+def compute_flows(inp: DealInputs) -> list[Decimal]:
+    """The unrounded-to-IRR cash-flow vector (year 0 outflow, yearly nets, exit in the last year)."""
+    return _compute(inp)[2]
+
+
+def _compute(inp: DealInputs) -> tuple[CashFlowResult, Decimal | None, list[Decimal]]:
     a = inp.assumptions
     warnings: list[str] = []
     with engine_math() as ctx:
@@ -148,7 +168,8 @@ def compute_cash_flows(inp: DealInputs) -> CashFlowResult:
             if year == min(2, a.horizon_years):
                 stabilised_noi = rent - cost_total
 
-        exit_value = price * (ONE + a.appreciation_rate) ** a.horizon_years
+        exit_anchor = inp.market_value_pln if inp.market_value_pln is not None else price
+        exit_value = exit_anchor * (ONE + a.appreciation_rate) ** a.horizon_years
         selling = exit_value * a.selling_cost_rate
         basis = invested  # price + purchase costs + CAPEX
         tax_on_sale = sale_tax(exit_value - selling, basis, a.horizon_years, a)
@@ -177,7 +198,7 @@ def compute_cash_flows(inp: DealInputs) -> CashFlowResult:
             moic=rate(moic),
             cagr=rate(cagr) if cagr is not None else None,
         )
-        return CashFlowResult(
+        result = CashFlowResult(
             purchase=costs_out,
             capex_pln=pln(inp.capex_pln),
             total_invested_pln=invested_out,
@@ -186,3 +207,4 @@ def compute_cash_flows(inp: DealInputs) -> CashFlowResult:
             returns=returns,
             warnings=tuple(warnings),
         )
+        return result, solved, flows
