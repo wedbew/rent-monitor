@@ -50,6 +50,7 @@ blueprint §6; risks are blueprint §5; limits are `docs/LIMITATIONS.md`.
 ## 5. Billing and product
 - [ ] Stripe: BLIK and BLIK recurring capabilities **active**; Smart Retries on, cancel after all retries fail; Stripe's own receipts/invoices disabled.
 - [ ] Live-mode prices created (monthly, 30-day pass); `PRO_MONTHLY_AUDIT_ALLOWANCE` set from measured COGS (L-003), not the placeholder 40.
+- [ ] CAPEX catalog uses sourced prices, not placeholders (L-007, B-015); `prices_are_placeholders` is false in every result.
 - [ ] OpenRouter monthly budget cap and kill-switch tested; tokens and USD logged per audit.
 - [ ] Free-tier scope decided and implemented (3 audits, radar top 20).
 - [ ] Datacenter-IP test from the production VPS: Otodom reachable, or proxy plan active (L-002).
