@@ -13,7 +13,8 @@ blueprint §6; risks are blueprint §5; limits are `docs/LIMITATIONS.md`.
 
 ## 1. Code and tests (CI on `main` green)
 - [x] `migrations` job enabled and required (RM-68, 2026-10-11).
-- [ ] **`invariants` job enabled** (repo variables `ENABLE_INVARIANTS_JOB`, `ENABLE_MIGRATIONS_JOB` = `true`) and **required again** on `staging` (`.github/rulesets/staging.json` and the live ruleset).
+- [x] `invariants` job enabled and required (RM-89, 2026-10-12).
+- [ ] ~~**`invariants` job enabled**~~ (done above) (repo variables `ENABLE_INVARIANTS_JOB`, `ENABLE_MIGRATIONS_JOB` = `true`) and **required again** on `staging` (`.github/rulesets/staging.json` and the live ruleset).
 - [ ] All blueprint §4.6 named tests exist and pass, none skipped (`uv run pytest -m invariant`); `e2e` Stripe tests pass in test mode.
 - [ ] Coverage floor met; pyright strict clean for `packages/` and `services/`; ruff, semgrep, gitleaks, zizmor, actionlint clean.
 - [ ] `tests/migrations` (pytest-alembic) and `squawk` pass; migrations are expand→contract; rollback/restore path documented.
