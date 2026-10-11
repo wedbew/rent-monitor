@@ -59,6 +59,9 @@
           },
           {
             "context": "pr-title"
+          },
+          {
+            "context": "migrations"
           }
         ]
       }

@@ -1,0 +1,4 @@
+# squawk (migration linter) config. Both excluded rules fire on plain CREATE TABLE statements in the baseline, where no
+# lock risk exists: the blueprint's models use sized String columns and 32-bit counters on purpose (ids are bigint).
+# Every other rule, including the ALTER-time lock rules, stays on. Review again before the first contract-step migration.
+excluded_rules = ["prefer-text-field", "prefer-bigint-over-int"]

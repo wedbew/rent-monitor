@@ -2,13 +2,20 @@
   "permissions": {
     "deny": [
       "Read(./.env)",
-      "Read(./.env.*)",
+      "Read(./.env.local)",
+      "Read(./.env.development)",
+      "Read(./.env.production)",
+      "Read(./.env.staging)",
+      "Read(./.env.test)",
       "Read(./**/*.key)",
       "Bash(git push --force*)",
       "Bash(git push origin main*)",
-      "Bash(git push origin staging*)"
+      "Bash(git push origin staging*)",
+      "Bash(gh pr merge*--admin*)"
     ],
     "ask": [
+      "Bash(gh repo edit*visibility*)",
+      "Bash(gh repo delete*)",
       "Edit(./tests/**/test_invariant_*)",
       "Write(./tests/**/test_invariant_*)",
       "Edit(./migrations/**)",

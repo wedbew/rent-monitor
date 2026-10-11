@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-11 · by: RM-63 (truly flat layout)
+**Last updated:** 2026-10-11 · by: RM-67 (migrations CI on)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -180,7 +180,8 @@ not permission to copy POC or GUS-PoC artifacts.
 
 From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on money, auth or anything irreversible.
 
-- [ ] Turn on the `invariants` / `migrations` CI jobs (they are skipped by default: set repo variables `ENABLE_INVARIANTS_JOB` / `ENABLE_MIGRATIONS_JOB` to `true`) and re-add both to the `staging` required checks, in the PR that makes them pass
+- [x] `migrations` CI job on and required (RM-67)
+- [ ] Turn on the `invariants` CI job (`ENABLE_INVARIANTS_JOB=true`) and require it, in the PR that lands the engine's three missing named tests (RENT, admin fee, deterministic math)
 - [x] Port the POC? **No** — greenfield (ADR 0001, RM-2)
 - [ ] Market-data bootstrap: how the 727-city sidecars are produced fresh (fetch via new importers; no corpus copy)
 - [ ] Engine specification: formulas, thresholds and grade cut-offs the maintainer wants (agents ask; do not transcribe from POC code)
