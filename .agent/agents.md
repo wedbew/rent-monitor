@@ -5,6 +5,7 @@
 > long how-tos live in `.claude/skills/*/SKILL.md`.
 
 ## 0. Status of this document
+- **POC is reference only; build from scratch to production quality** — read `rules/poc-reference.md` before any engine work.
 - Orientation: `CONTEXT.md` at the repo root (summary, POC porting map, open decisions — living file, see §10). Toolchain: `docs/TOOLCHAIN.md`.
 - Spec of record: `docs/blueprint.md` (RentMonitor SaaS — Architecture & Implementation Blueprint, 11 Oct 2026).
 - Current phase: **Phase 1 — backend only.** Do not create or modify anything under `frontend/` except deleting
@@ -24,8 +25,9 @@
 You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does is rejected by review.
 
 ## 2. Architecture boundaries
-- `apps/*` are the analytical engines and the source of truth. Wrap, don't rewrite. Changes inside
-  `apps/deal-analyzer` are limited to the `ContextRepository` and `ProgressSink` seams, with existing tests green.
+- `apps/*` are the analytical engines, **written from scratch** (ADR 0001): the POC `otodom-rent-report` is reference only —
+  never copy, move or import it (`rules/poc-reference.md`). Code targets production quality under real traffic.
+  `ContextRepository` and `ProgressSink` are native seams of the new engine.
 - Never compute a financial number outside `apps/deal-analyzer`. API/worker copy values from `DealAnalysis`
   into typed columns; they never derive them.
 - Layout (blueprint 4.1): `packages/rm-core` (settings, models, repositories, ledger, entitlements, flags),
@@ -101,6 +103,7 @@ Read the matching file when your change touches the area; update the doc in the 
 - `rules/changelog.md` — `CHANGELOG.md` (Keep a Changelog), bullets end with `(RM-<issue>)`.
 - `rules/readme.md` — `README.md`: How to run, Stack, Project docs, Status.
 - `rules/legal-tags.md` — `LEGAL[...]` / `GDPR[...]` tags (see §11).
+- `rules/poc-reference.md` — POC is read-only reference; greenfield rewrite; production-ready bar (ADR 0001).
 - `rules/pull-requests.md` — PR template (`.github/pull_request_template.md`) and checklist semantics; required for every PR.
 - `rules/context.md` — keep root `CONTEXT.md` current: update it in the same PR as any change that makes it stale; bump its "Last updated" line.
 Cursor mirrors these in `.cursor/rules/*.mdc` as pointers only; edit the `.agent/rules/` file, never the pointer.
@@ -112,8 +115,7 @@ Cursor mirrors these in `.cursor/rules/*.mdc` as pointers only; edit the `.agent
   columns state retention and erasure path.
 - Tags are also bound at runtime (`rm_core.legal.LegalTag` → structlog `legal_tags`, `audit_event.payload`); tagged features get
   a default-on flag or setting so counsel can switch one off without a deploy.
-- **During migration / refactor / re-engineering** (moving code out of `apps/*`, importers, seams, `requests`→`curl_cffi`,
-  deleting `frontend/server/*.ts`): grep existing tags first, carry them into the new code, and tag every untagged
-  matching site you pass. Never drop a tag; never remove a feature just because it is tagged.
+- **While re-engineering from the POC's behaviour** (new fetchers, importers, engine, deleting `frontend/server/*.ts`): use
+  `CONTEXT.md` §6 hot-spots plus a grep of existing tags, carry tags into the new code, and tag every matching site you write or pass. Never drop a tag; never remove a feature just because it is tagged.
 - Tags mean "needs legal attention", not a legal verdict. Do not write "legal"/"illegal" conclusions; log unknowns in
   `docs/LIMITATIONS.md`. PR body gets a **Legal / GDPR** line (tags added/changed/removed).

@@ -19,6 +19,10 @@ when your change touches a system boundary.
 | New top-level directory or package, or a `services/*` ↔ `packages/*` dependency | Blueprint §4.1 layout; `packages/*` must never import `services/*` |
 | New named test that guards an invariant or release gate | Blueprint §4.6 table / §6 *Release gates* |
 
+## Engines are greenfield
+
+`apps/*` contain **new** code (ADR 0001, `poc-reference.md`). Do not "wrap" or copy POC modules; design from the blueprint's contracts.
+
 ## Procedure
 
 1. Implement against the blueprint as written. If the right design differs from it, **stop and ask** in the issue —

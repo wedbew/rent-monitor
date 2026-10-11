@@ -5,11 +5,15 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-11 · by: RM-2
+**Last updated:** 2026-10-11 · by: RM-2 (ADR 0001: greenfield)
+
+> **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
+> imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
+> requirements and defects to avoid, not code to port.
 
 **Sources:** `docs/BLUEPRINT.md` (architecture, 11 Oct 2026) · `docs/TOOLCHAIN.md` (quality, CI, governance, agents) ·
 the POC repo `~/Projects/otodom-rent-report` (branch HEAD `b7dd5a9`, 11 Oct 2026; remote
-`git@github.com:mm-dream-team/otodom-report.git`; **working tree was dirty** — pin the exact commit before porting).
+`git@github.com:mm-dream-team/otodom-report.git`; reading commit `00ab3f9`, tree clean; earlier notes were taken at `b7dd5a9`).
 
 **Confirmed vs inferred.** Everything under *Confirmed* was read in those three sources on 11 Oct 2026 (file listings,
 `analyze.py`, `legal.py`, `config.py`, `pyproject.toml`, the POC `.md` docs). I did **not** read all ~34k lines of POC
@@ -58,39 +62,38 @@ Not launch-ready until the seven release gates in blueprint §6 pass.
 listing text → `residential | vat_sale | non_residential`). It has nothing to do with our legal *tags* or `rm_core.legal`
 (`LegalTag`). Keep the POC module's name and behaviour; never import one as the other.
 
-## 3. The five invariants and where the POC already enforces them
+## 3. The five invariants (and how the POC showed them — reference only)
 
 Each needs a named `@pytest.mark.invariant` test (blueprint §4.6). Never delete, skip or weaken one.
 
-| # | Invariant | POC mechanism (confirmed) | New-repo work |
+| # | Invariant | POC mechanism (confirmed) | What to build (from scratch) |
 |---|---|---|---|
 | 1 | RENT is not a deal | `analyze_listing` raises `RentNotADeal(ad_id)` when `core.kind == "RENT"` (`analyze.py`) | Worker maps it to `rejected / RENT_NOT_DEAL`, releases the credit, **no vision call** |
 | 2 | Asking ≠ deed | Separate sidecar stems (`bdl-sales-*`, `moniter-sales-*`, `otodom-sales-*`); Cenogram "never bootstrapped" (`ensure.py` raises) | `market_sidecar.price_basis` + `asking_is_not_deed` CHECK; `ContextRepository` returns distinct types |
-| 3 | Admin fee is OPEX | `extract.py` parses czynsz; `operating.py` uses `admin_fee_monthly_pln` as an owner cost | Port the fixture-based test (`characteristics.rent = 600` → 600 OPEX, 0 income) |
+| 3 | Admin fee is OPEX | `extract.py` parses czynsz; `operating.py` uses `admin_fee_monthly_pln` as an owner cost | Write a hand-built fixture test (`characteristics.rent = 600` → 600 OPEX, 0 income) |
 | 4 | Deterministic math; LLM clamped ±15% | `cashflow.py`, `operating.py`, `synthesize.py`, `verdict.py` are Python; LLM only in `images/`, `analyst.py`, `fitout/agent.py`, `redesign.py` | Byte-identical `returns` block across two runs; clamp test |
 | 5 | Fractional ownership rejected | `ownership.py` (`classify_ownership`, title patterns) in the analyzer; a *provisional* title-only guard in the screener | Keep both; test with `udział` fixtures |
 
-## 4. Porting map: POC → this repo
+## 4. POC as requirements: what to rebuild and what to avoid
 
-Rule (blueprint §4.0): **wrap, don't rewrite.** `apps/*` are copied in, not redesigned; changes inside
-`apps/deal-analyzer` are limited to the `ContextRepository` and `ProgressSink` seams, with the POC's tests staying green.
+Rule (ADR 0001): **write from scratch, production-ready; the POC is read-only reference.** Blueprint paths under `apps/` are where
+the new packages live; they start empty and are built test-first from the blueprint contracts.
 
-### 4.1 Packages (confirmed from the POC tree)
+### 4.1 POC packages → what each tells us (confirmed from the POC tree; treatment = rebuild, never copy)
 
 | POC path | Size (approx.) | CLI | Goes to | Treatment |
 |---|---|---|---|---|
-| `apps/deal-analyzer` | 141 `.py`, ~23.8k LOC non-test, ~62 test files | `deal-analyzer` | `apps/deal-analyzer` | **Copy; add the two seams only.** The valuation, DCF, tax, verdict engine |
-| `apps/otodom-city-report` | 25 `.py`, ~2.8k LOC | `otodom-report` | `apps/otodom-city-report` | Copy. Search scraper → `CityReport` and rental sidecars; `client.py` is the `_next/data` fetcher. Called from `worker-batch` |
-| `apps/price-intel` | 24 `.py`, ~4.3k LOC | `price-intel` | `apps/price-intel` | Copy. GUS BDL, Moniter, Cenogram, demography. Drop `prototypes/` |
-| `apps/otodom-investment-screener` | 35 `.py`, ~3.8k LOC | `investment-screener` | `apps/otodom-investment-screener` | Copy. CLI/interactive (`questionary`, `rich`); becomes `screener` tasks behind the flag; **human approval gate stays** |
-| `apps/agent-context` | corpus only, **~65 MB** | none | `apps/agent-context` (export target) | Not read at runtime after the seam; imported by `scripts/import_agent_context.py` |
+| `apps/deal-analyzer` | 141 `.py`, ~23.8k LOC non-test, ~62 test files | `deal-analyzer` | `apps/deal-analyzer` | **Rebuild.** Valuation, DCF, tax, verdict engine: specify formulas in issues first; `Decimal` money; seams native |
+| `apps/otodom-city-report` | 25 `.py`, ~2.8k LOC | `otodom-report` | `apps/otodom-city-report` | Rebuild. Search scraper → `CityReport` and rental sidecars; `client.py` is the `_next/data` fetcher. Called from `worker-batch` |
+| `apps/price-intel` | 24 `.py`, ~4.3k LOC | `price-intel` | `apps/price-intel` | Rebuild. GUS BDL, Moniter, Cenogram, demography. Drop `prototypes/` |
+| `apps/otodom-investment-screener` | 35 `.py`, ~3.8k LOC | `investment-screener` | `apps/otodom-investment-screener` | Rebuild. CLI/interactive (`questionary`, `rich`); becomes `screener` tasks behind the flag; **human approval gate stays** |
+| `apps/agent-context` | corpus only, **~65 MB** | none | `apps/agent-context` (export target) | Do not copy the corpus. Data enters via fresh, fetched-and-validated importers; small anonymised fixtures are hand-built for tests |
 | `scripts/compare_rent_to_sale.py` | 1 script | — | `apps/` or `scripts/` *(decide)* | The 727-city yield radar comparator (README); that it produces the `yield_ranking` sidecars is *(inferred)* |
 | `frontend/` | Vite + React deal desk | — | `frontend/` in **Phase 2** | Phase 1: do not copy. Later, delete `server/*.ts`, `lib/cashflow.ts`, `lib/appreciation.ts` |
 | `docs/` (design prompts, audit) | — | — | not copied | `APP_AUDIT_AND_ROADMAP.md` is the audit the blueprint cites ("audit 3.1-2", "P0.3"); keep reachable by link |
 
-Workspace: POC `pyproject.toml` is a uv workspace with `members = ["apps/*"]`, `exclude = ["apps/agent-context"]`,
-Python ≥ 3.12. The new root workspace adds `packages/*`, `services/api`, `services/worker` (blueprint §4.1).
-Keep the app-level `pyproject.toml` files; do not merge dependency sets.
+The new root workspace is `packages/*`, `services/api`, `services/worker`, and `apps/*` as each engine is built (blueprint §4.1);
+exclude `apps/agent-context` from the workspace. Each app gets its own `pyproject.toml`.
 
 ### 4.2 What the new platform replaces
 
@@ -104,37 +107,37 @@ Keep the app-level `pyproject.toml` files; do not merge dependency sets.
 | Frontend `server/plugin.ts` shells out to `uv run` per request, no queue | Unbounded processes, orphaned children, token burn | Procrastinate `audit` queue, concurrency 1, a child process with a 900 s `Deadline` and memory cap |
 | Frontend `cashflow.ts` / `appreciation.ts` re-derive finance in TypeScript | Dual-engine drift; violates invariant 4 | API returns every number; a null renders as "not computed" |
 
-### 4.3 Things the POC has that the blueprint does not mention — decide before porting
+### 4.3 Things the POC has that the blueprint does not mention — decide before building
 
 1. **Interior redesign playground** (`redesign.py`, OpenRouter image-to-image, BOM totals, `frontend/server/redesign.ts`). The
    blueprint only reserves a `redesign` feature flag. Treat as Phase 2+; it sends listing photos to a third party →
    `LEGAL[images]`, `GDPR[processor]`.
 2. **AI seller-questions** (`seller_questions.py`) and the **analyst** text-LLM audit (`analyst.py`, `AuditCreate.analyst`, Pro-only).
 3. **Backtest / release-eval / model-artifact / corpus / outcomes** modules: offline evaluation tooling, not request-path.
-   Port with the engine (the tests exist) but do not wire into the API.
+   Build only if the maintainer schedules them; never wire into the request path.
 4. **`apps/agent-context/AGENTS.md`**: TOOLCHAIN §7 requires renaming it to `INDEX.md` — tools load any file named
    `AGENTS.md` as instructions. Do this during the copy, and update the references in `apps/agent-context/README.md`.
 5. **The 65 MB corpus.** Pre-commit blocks files over 1 MB, and `.gitignore` only ignores the *root-level* `/agent-context/`.
    Decide: commit a small fixture set only and import the full corpus from the POC out-of-band, or use Git LFS. *(open)*
 
-## 5. Porting gotchas and conflicts found while reading
+## 5. POC defects and lessons found while reading (design them out)
 
 | # | Finding | Why it matters | Suggested handling |
 |---|---|---|---|
-| G1 | POC `output.py` models money as `float` (64 `float`, 0 `Decimal` mentions) | `agents.md` §3 bans float in **persisted or returned** money fields | Do not rewrite engine math. Convert at the API/worker boundary: `Decimal(str(x)).quantize(...)` into `NUMERIC` columns; keep JSONB as the engine wrote it. Register as a limitation. Semgrep `no-float-money` applies to `packages/` and `services/` only |
-| G2 | POC `operating.py` computes with `* 12.0` floats | Same | Same; ruff `S`/`PL` rules should not run strict on `apps/` (TOOLCHAIN §2: pyright basic on `apps/`) |
-| G3 | `analyze_listing` is synchronous and calls `asyncio.run(...)` internally to fetch | Cannot run on the API event loop | Runs only inside the worker's child process (blueprint §4.5) |
+| G1 | POC `output.py` models money as `float` (64 `float`, 0 `Decimal` mentions) | `agents.md` §3 bans float in **persisted or returned** money fields | `Decimal` everywhere including the engine; state the rounding rule; property tests. Semgrep `no-float-money` covers `packages/`, `services/`; extend it to `apps/` |
+| G2 | POC `operating.py` computes with `* 12.0` floats | Same | Same; new `apps/` code is held to the same lint/type bar as `packages/` |
+| G3 | `analyze_listing` is synchronous and calls `asyncio.run(...)` internally to fetch | Cannot run on the API event loop | New engine is async-clean or CPU-only and runs in the worker's killable child process (blueprint §4.5) |
 | G4 | Blueprint's `auth/google.py` sample imports `requests`; TOOLCHAIN ruff bans `requests` in `services/` (TID251) | The sample would fail lint | Use `httpx`-based transport for `google-auth` or a scoped `per-file-ignores` entry with a comment |
 | G5 | TOOLCHAIN was written without seeing the repo (says so) | Existing POC settings, tests and CI were unknown to it | Treat its numbers (e.g. "29 named tests") as proposals; verify against `pytest --collect-only` once ported |
 | G6 | TOOLCHAIN asks to pin SQLAlchemy 2.1 / blueprint text says 2.0; Stripe SDK major unconfirmed | Pinned-API drift | Resolve the TOOLCHAIN §8 decisions 3–4 in an ADR; use `context7` before writing code |
-| G7 | POC `DealAnalysis.schema_version` has 11 historic values (`1.0`…`1.10`); old `reports/final/*.json` must still load | `audit.schema_version` is a column; importers read legacy reports | Keep the reader shims; `import_legacy_reports.py` must tolerate every version |
-| G8 | POC has its own `AGENTS.md` and `.cursor/rules` (frontend sync, limitations, roadmap) | Conflicts with our rules | Do **not** copy them. Port their *content* only where listed: limitations (`L-xx` → `docs/LIMITATIONS.md`, keep original ids and mark origin), changelog entries |
+| G7 | POC `DealAnalysis.schema_version` has 11 historic values (`1.0`…`1.10`); old `reports/final/*.json` must still load | `audit.schema_version` is a column; importers read legacy reports | New schema versions from `1`; no legacy-report importer unless the maintainer asks |
+| G8 | POC has its own `AGENTS.md` and `.cursor/rules` (frontend sync, limitations, roadmap) | Conflicts with our rules | Do **not** copy them. Read their limitation lists as input; register only what still applies in `docs/LIMITATIONS.md` |
 | G9 | POC engine hits third parties directly: Otodom, OpenRouter, GUS BDL, Moniter, Nominatim, Overpass | Tests must be offline | Each goes behind an injectable client with timeouts; fakes in `tests/` |
 | G10 | POC `.env` exists in the POC repo | Must never be read or copied | Use names from the POC `config.py` (`OTODOM_BASE_URL`, `OTODOM_HTTP_BACKEND`, `GEO_*`, `NOMINATIM_*`, `OVERPASS_URL`, `VALUATION_EVIDENCE_DIR`, `MODEL_ARTIFACT_PATH`, `SNAPSHOT_CUTOFF`, `DEAL_ANALYZER_MC_DRAWS`) only to build `.env.example` |
 
-## 6. Legal and GDPR hot-spots in the POC (tag during the copy)
+## 6. Legal and GDPR hot-spots (where the POC did it; tag the new code that does the same)
 
-Per `rules/legal-tags.md`, tag these as they move; features stay.
+Per `rules/legal-tags.md`, tag the new implementations of these; features stay.
 
 | Where in the POC | Tag |
 |---|---|
@@ -159,20 +162,19 @@ Do not start step N+1 with step N red. TOOLCHAIN §8 adds **Step 0** (pre-setup 
 rulesets, Claude and Gemini apps, rename `agent-context/AGENTS.md`, commit the blueprint and ADRs).
 
 **State of this repo (11 Oct 2026):** blueprint, toolchain, agent rules (`.agent/`, `.cursor/rules/`, `CLAUDE.md`, `AGENTS.md`),
-CI/security workflows, pre-commit, semgrep rules and commit-message checker exist. RM-2 added the empty workspace:
-root `pyproject.toml` (uv workspace, tooling tables merged), `packages/rm-core` (settings, `LegalTag`), `packages/rm-contracts`
-(`ProblemCode`), `services/api` (`/api/health`), `services/worker` (empty), `Makefile`, `.env.example`, `README.md`,
-`CHANGELOG.md`, `docs/LIMITATIONS.md` (L-001…L-004). `ruff`, `pyright` and `pytest -m "not e2e"` pass locally.
-Still missing: `apps/`, `migrations/`, `deploy/`, the four named invariant tests (CI `invariants` job fails until step 1–2
-land them — do not stub them), Alembic, Procrastinate, `frontend/`. Root commit `6bfe49f` is on `origin/main`; the docs
-branch and `staging` are not pushed yet.
+CI/security workflows, pre-commit, semgrep rules and commit-message checker exist. RM-2 added the empty workspace (`rm-core`
+settings + `LegalTag`, `rm-contracts` `ProblemCode`, `rm-api` `/api/health`, empty `rm-worker`), `Makefile`, `.env.example`,
+`README.md`, `CHANGELOG.md`, `docs/LIMITATIONS.md`. ADR 0001 made the build greenfield. A first attempt to copy POC packages was
+discarded. Still missing: `apps/`, `migrations/`, `deploy/`, the four named invariant tests (CI `invariants` and `migrations` jobs
+fail until the data plane and engine exist; do not stub them), Alembic, Procrastinate, `frontend/`.
 
 ## 9. Open decisions (owner: you)
 
 From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on money, auth or anything irreversible.
 
-- [ ] Port from which POC commit (it has uncommitted changes) — and keep POC git history or start clean?
-- [ ] Corpus handling: fixtures only, LFS, or out-of-band import (§4.3 item 5)
+- [x] Port the POC? **No** — greenfield (ADR 0001, RM-2)
+- [ ] Market-data bootstrap: how the 727-city sidecars are produced fresh (fetch via new importers; no corpus copy)
+- [ ] Engine specification: formulas, thresholds and grade cut-offs the maintainer wants (agents ask; do not transcribe from POC code)
 - [ ] Which POC extras ship in Phase 1: redesign, seller-questions, analyst (§4.3)
 - [ ] VAT presentation of 100 zł; Pro allowance (40 is a placeholder until COGS is measured); free-tier scope
 - [ ] SQLAlchemy 2.0 vs 2.1; Stripe SDK major; Gemini and Claude auth in Actions; GitHub plan for private-repo rulesets
@@ -182,6 +184,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 
 | Need | Open |
 |---|---|
+| POC-is-reference and production bar | `.agent/rules/poc-reference.md`, `docs/adr/0001-greenfield-rewrite.md` |
 | Rules, invariants, git flow, PR template | `.agent/agents.md`, `.agent/rules/*.md`, `.github/pull_request_template.md` |
 | Architecture, schema, Stripe, auth, tests | `docs/BLUEPRINT.md` §2–§4 |
 | CI, hooks, rulesets, MCP, skills | `docs/TOOLCHAIN.md` |

@@ -23,8 +23,7 @@ Procrastinate, Stripe (card + BLIK), Caddy, Postgres 17.
 
 ## Status
 
-Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton in place (RM-2); next is step 1, engine
-seams, which needs the POC port decisions in [`CONTEXT.md`](CONTEXT.md) §9.
+Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton in place (RM-2); next is step 1, the engine foundation (greenfield, ADR 0001; open decisions in [`CONTEXT.md`](CONTEXT.md) §9).
 
 ## Project docs
 

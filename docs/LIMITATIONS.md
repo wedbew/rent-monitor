@@ -32,12 +32,12 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Target:** Set allowance after two weeks of measured COGS
 
 ### L-004 — POC engine models money as float
-- **Status:** active
+- **Status:** resolved by design (ADR 0001): the engine is rewritten with `Decimal`; kept as a lesson, not a defect to carry
 - **Discovered:** 2026-10-11
 - **Affects:** `apps/deal-analyzer` (`output.py`, `operating.py`), API/worker boundary
 - **Evidence:** confirmed in POC read (CONTEXT.md §5 G1–G2)
 - **Description:** Engine uses float; `agents.md` §3 requires Decimal in persisted/returned money fields.
-- **Workaround:** Convert at the boundary with `Decimal(str(x)).quantize(...)`; do not rewrite engine math.
+- **Workaround:** None needed; do not reproduce float money in new code.
 - **Target:** Data-plane step (blueprint 4.8 step 2)
 
 ## Resolved

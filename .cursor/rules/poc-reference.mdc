@@ -1,0 +1,10 @@
+---
+description: POC is reference only; write the product from scratch to production quality; never copy POC code
+alwaysApply: true
+---
+
+Canonical rule (shared by Cursor, Claude Code, Codex and Gemini) lives in `.agent/rules/poc-reference.md`. Follow it:
+
+@.agent/rules/poc-reference.md
+
+Project-wide rules: @.agent/agents.md

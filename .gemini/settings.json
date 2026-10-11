@@ -9,6 +9,7 @@
       ".agent/rules/readme.md",
       ".agent/rules/legal-tags.md",
       ".agent/rules/context.md",
+      ".agent/rules/poc-reference.md",
       ".agent/rules/pull-requests.md",
       "CONTEXT.md"
     ]
