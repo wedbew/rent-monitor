@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-11 · by: RM-71 (engine spec draft)
+**Last updated:** 2026-10-11 · by: RM-73 (engine spec approved)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -184,7 +184,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 - [ ] Turn on the `invariants` CI job (`ENABLE_INVARIANTS_JOB=true`) and require it, in the PR that lands the engine's three missing named tests (RENT, admin fee, deterministic math)
 - [x] Port the POC? **No** — greenfield (ADR 0001, RM-2)
 - [ ] Market-data bootstrap: how the 727-city sidecars are produced fresh (fetch via new importers; no corpus copy)
-- [ ] Engine specification: draft with recommended defaults in `docs/ENGINE-SPEC.md`; owner approves or edits (B-007)
+- [x] Engine specification approved with amendments: `docs/ENGINE-SPEC.md` (RM-73); tax constants flagged for the accountant
 - [ ] Which POC extras ship in Phase 1: redesign, seller-questions, analyst (§4.3)
 - [ ] VAT presentation of 100 zł; Pro allowance (40 is a placeholder until COGS is measured); free-tier scope
 - [ ] SQLAlchemy 2.0 vs 2.1; Stripe SDK major (ADR 0007 *proposes* 2.0 and an exact SDK pin at #14; owner confirms); Gemini and Claude auth in Actions; GitHub plan for private-repo rulesets
