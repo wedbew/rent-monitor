@@ -43,6 +43,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # Machine-user token: PRs opened with the default GITHUB_TOKEN do not trigger CI, so required checks would never run.
           github_token: ${{ secrets.AGENT_BOT_TOKEN }}
+          label_trigger: agent
           claude_args: |
             --max-turns 40
             --allowedTools "Bash(uv:*),Bash(make:*),Bash(git:*),Bash(gh pr:*),Bash(gh issue:*),Bash(gh run:*),Edit,Write,Read,Glob,Grep"
