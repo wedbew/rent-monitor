@@ -1,0 +1,279 @@
+{
+  "assumptions_version": "2026-10-12.2",
+  "capex": {
+    "base_pln": "29100.00",
+    "catalog_version": "placeholder-2026-10-12",
+    "condition_assumed": false,
+    "condition_used": "refresh",
+    "confidence": "medium",
+    "high_pln": "36375.00",
+    "low_pln": "21825.00",
+    "multiplier": "1.00",
+    "pln_per_m2": "600.00",
+    "prices_are_placeholders": true,
+    "tier": "other"
+  },
+  "capex_used_pln": "30555.00",
+  "cash_flow": {
+    "assumptions_version": "2026-10-12.2",
+    "capex_pln": "30555.00",
+    "exit": {
+      "exit_value_pln": "548547.49",
+      "net_proceeds_pln": "537576.54",
+      "sale_tax_pln": "0.00",
+      "selling_costs_pln": "10970.95"
+    },
+    "purchase": {
+      "broker_pln": "0.00",
+      "court_fee_pln": "200.00",
+      "deed_copies_pln": "150.00",
+      "notary_pln": "3161.10",
+      "pcc_pln": "9000.00",
+      "price_pln": "450000.00",
+      "total_acquisition_pln": "462511.10",
+      "total_costs_pln": "12511.10"
+    },
+    "returns": {
+      "cagr": "0.0376",
+      "gross_yield": "0.0686",
+      "irr": "0.0424",
+      "moic": "1.4460",
+      "net_yield": "0.0378"
+    },
+    "total_invested_pln": "493066.10",
+    "warnings": [],
+    "years": [
+      {
+        "costs": {
+          "admin_fee_pln": "7200.00",
+          "insurance_pln": "675.00",
+          "maintenance_pln": "2250.00",
+          "management_pln": "0.00",
+          "property_tax_pln": "57.72",
+          "total_pln": "10182.72"
+        },
+        "income_tax_pln": "1967.92",
+        "net_cash_flow_pln": "11001.32",
+        "rent_collected_pln": "23151.96",
+        "year": 1
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "7416.00",
+          "insurance_pln": "695.25",
+          "maintenance_pln": "2317.50",
+          "management_pln": "0.00",
+          "property_tax_pln": "59.45",
+          "total_pln": "10488.20"
+        },
+        "income_tax_pln": "2477.39",
+        "net_cash_flow_pln": "16180.16",
+        "rent_collected_pln": "29145.75",
+        "year": 2
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "7638.48",
+          "insurance_pln": "716.11",
+          "maintenance_pln": "2387.03",
+          "management_pln": "0.00",
+          "property_tax_pln": "61.23",
+          "total_pln": "10802.84"
+        },
+        "income_tax_pln": "2551.71",
+        "net_cash_flow_pln": "16665.57",
+        "rent_collected_pln": "30020.12",
+        "year": 3
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "7867.63",
+          "insurance_pln": "737.59",
+          "maintenance_pln": "2458.64",
+          "management_pln": "0.00",
+          "property_tax_pln": "63.07",
+          "total_pln": "11126.93"
+        },
+        "income_tax_pln": "2628.26",
+        "net_cash_flow_pln": "17165.53",
+        "rent_collected_pln": "30920.72",
+        "year": 4
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "8103.66",
+          "insurance_pln": "759.72",
+          "maintenance_pln": "2532.39",
+          "management_pln": "0.00",
+          "property_tax_pln": "64.96",
+          "total_pln": "11460.74"
+        },
+        "income_tax_pln": "2707.11",
+        "net_cash_flow_pln": "17680.49",
+        "rent_collected_pln": "31848.34",
+        "year": 5
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "8346.77",
+          "insurance_pln": "782.51",
+          "maintenance_pln": "2608.37",
+          "management_pln": "0.00",
+          "property_tax_pln": "66.91",
+          "total_pln": "11804.56"
+        },
+        "income_tax_pln": "2788.32",
+        "net_cash_flow_pln": "18210.91",
+        "rent_collected_pln": "32803.79",
+        "year": 6
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "8597.18",
+          "insurance_pln": "805.99",
+          "maintenance_pln": "2686.62",
+          "management_pln": "0.00",
+          "property_tax_pln": "68.91",
+          "total_pln": "12158.69"
+        },
+        "income_tax_pln": "2871.97",
+        "net_cash_flow_pln": "18757.25",
+        "rent_collected_pln": "33787.91",
+        "year": 7
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "8855.09",
+          "insurance_pln": "830.16",
+          "maintenance_pln": "2767.22",
+          "management_pln": "0.00",
+          "property_tax_pln": "70.98",
+          "total_pln": "12523.46"
+        },
+        "income_tax_pln": "2958.13",
+        "net_cash_flow_pln": "19319.95",
+        "rent_collected_pln": "34801.54",
+        "year": 8
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "9120.74",
+          "insurance_pln": "855.07",
+          "maintenance_pln": "2850.23",
+          "management_pln": "0.00",
+          "property_tax_pln": "73.11",
+          "total_pln": "12899.16"
+        },
+        "income_tax_pln": "3046.88",
+        "net_cash_flow_pln": "19899.55",
+        "rent_collected_pln": "35845.59",
+        "year": 9
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "9394.37",
+          "insurance_pln": "880.72",
+          "maintenance_pln": "2935.74",
+          "management_pln": "0.00",
+          "property_tax_pln": "75.30",
+          "total_pln": "13286.13"
+        },
+        "income_tax_pln": "3138.28",
+        "net_cash_flow_pln": "20496.55",
+        "rent_collected_pln": "36920.96",
+        "year": 10
+      }
+    ]
+  },
+  "confidence": "medium",
+  "engine_version": "0.1.0",
+  "legal": {
+    "confidence": "medium",
+    "evidence": [],
+    "legal_class": "residential",
+    "price_basis": "unknown"
+  },
+  "listing": {
+    "admin_fee_pln": "600",
+    "area_m2": "48.5",
+    "build_year": 1998,
+    "building_floors": 5,
+    "building_ownership": null,
+    "building_type": "block",
+    "city": "Testowo",
+    "created_at": "2026-09-01T10:00:00Z",
+    "deposit_pln": "5000",
+    "description": "Pełna własność, księga wieczysta urządzona. Jasne mieszkanie po remoncie kuchni.",
+    "floor": "2",
+    "heating": "urban",
+    "kind": "SALE",
+    "latitude": "52.2297",
+    "longitude": "21.0122",
+    "modified_at": "2026-10-01T08:30:00Z",
+    "otodom_id": "90000001",
+    "price_pln": "450000",
+    "rooms": 2,
+    "street": "Przykładowa",
+    "title": "Mieszkanie 2 pokoje, Testowo",
+    "url": "https://www.otodom.pl/pl/oferta/mieszkanie-2-pokoje-testowo-IDtest01",
+    "warnings": [],
+    "windows": "plastic"
+  },
+  "ownership": {
+    "confidence": "medium",
+    "evidence": [
+      "title form from text: full_ownership"
+    ],
+    "interest": "whole",
+    "share_denominator": null,
+    "share_numerator": null,
+    "structured_value": null,
+    "title_form": "full_ownership"
+  },
+  "rent": {
+    "basis": "asking",
+    "comparables": 34,
+    "confidence": "high",
+    "haircut": "0.03",
+    "input_monthly_pln": "2600.00",
+    "monthly_after_haircut_pln": "2522.00",
+    "monthly_used_pln": "2572.44"
+  },
+  "schema_version": 1,
+  "valuation": {
+    "asking_price_pln": "450000.00",
+    "discount_to_asking": "-0.5164",
+    "grade": "E",
+    "hurdle": "0.0750",
+    "irr_at_asking": "0.0424",
+    "max_bid_bounded": true,
+    "max_bid_if_appreciation_minus_1pp_pln": "196104.50",
+    "max_bid_if_appreciation_plus_1pp_pln": "247262.80",
+    "max_bid_pln": "217625.20",
+    "verdict": "pass"
+  },
+  "vision": {
+    "capex": {
+      "applied": "0.05",
+      "base": "29100.00",
+      "clamped": false,
+      "proposed": "0.05",
+      "value": "30555.0000"
+    },
+    "condition": "refresh",
+    "model": "vendor/vision-1",
+    "photos_excluded": 1,
+    "photos_total": 3,
+    "prompt_version": "golden-1",
+    "rent": {
+      "applied": "0.02",
+      "base": "2522.00",
+      "clamped": false,
+      "proposed": "0.02",
+      "value": "2572.4400"
+    }
+  },
+  "warnings": [
+    "capex_prices_are_placeholders"
+  ]
+}
