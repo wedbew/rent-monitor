@@ -13,12 +13,18 @@ make lint        # ruff check + format check
 make types       # pyright
 make check       # lint + types + test (run before pushing)
 cp .env.example .env   # names only; fill values locally, never commit .env
+make dev         # local Postgres 17 (Docker) + migrate + Procrastinate schema + seed; needs DATABASE_URL and PROCRASTINATE_DSN in .env
 make migrate     # alembic upgrade head against $DATABASE_URL (postgresql+psycopg://…)
+make seed        # plans, feature flags, admin role (set ADMIN_EMAIL); idempotent
+make backup-drill  # dump and restore the dev database into a scratch DB and compare row counts
+make db-down     # stop the dev database
 ```
 
 Integration and migration tests start a throwaway Postgres 17 with Testcontainers (Docker required); set
 `TEST_DATABASE_URL` to use an existing disposable database instead. Procrastinate's tables are applied separately by its
-schema manager (the worker bootstrap, RM-29), not by Alembic. The Compose stack and seeds are not wired yet (see Status).
+own CLI (`make procrastinate-schema`), not by Alembic. The dev stack is `deploy/compose.dev.yml` (Postgres 17 on 127.0.0.1;
+set `POSTGRES_PORT` if 5432 is taken). `scripts/stripe_clock_customer.py` creates a Stripe test clock and customer
+(test-mode key only). The production-shaped Compose stack arrives with RM-15.
 
 ## Stack
 

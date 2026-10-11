@@ -75,7 +75,11 @@ async def test_session_dependency_commits_on_success(app: FastAPI, engine: Async
     async with _client(app) as c:
         r = await c.post(f"/t/user/{email}")
     assert r.status_code == 200
-    assert await _exists(engine, email)
+    try:
+        assert await _exists(engine, email)
+    finally:
+        async with engine.begin() as conn:
+            await conn.execute(text("DELETE FROM app.app_user WHERE email = :e"), {"e": email})
 
 
 async def test_session_dependency_rolls_back_on_problem_and_on_crash(

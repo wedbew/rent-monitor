@@ -5,6 +5,7 @@ import os
 from alembic import context
 from rm_core.db import models  # noqa: F401  (registers every table on Base.metadata)
 from rm_core.db.base import SCHEMA, Base
+from rm_core.settings import get_settings
 from sqlalchemy import create_engine, pool
 from sqlalchemy.schema import CreateSchema
 
@@ -13,7 +14,11 @@ target_metadata = Base.metadata
 
 
 def _url() -> str:
-    url = config.get_main_option("sqlalchemy.url") or os.environ.get("DATABASE_URL", "")
+    url = (
+        config.get_main_option("sqlalchemy.url")
+        or os.environ.get("DATABASE_URL")
+        or get_settings().database_url
+    )
     if not url:
         msg = "DATABASE_URL is not set"
         raise RuntimeError(msg)
