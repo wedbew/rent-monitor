@@ -985,6 +985,8 @@ PAST_DUE_GRACE_DAYS=7
 # --- AI / external data ---
 OPEN_ROUTER_API_KEY=sk-or-v1-xxx
 OPENROUTER_MONTHLY_BUDGET_USD=50                    # hard stop: workers refuse vision when exceeded
+OPENROUTER_CALL_ESTIMATE_USD=0.02                   # reserved per call until settled with the real cost (placeholder, L-003)
+IMAGE_HOST_ALLOWLIST=olxcdn.com,otodom.pl           # photo hosts we may fetch from (https only); see L-006
 BDL_API_KEY=
 OTODOM_HTTP_BACKEND=curl_cffi
 OTODOM_MAX_RPS=1
