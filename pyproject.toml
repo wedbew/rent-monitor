@@ -47,7 +47,7 @@ ignore = ["PLR0913", "PLR2004"]
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101", "S105", "S106", "PLR2004"]
 "tests/**" = ["S101", "S105", "S106", "PLR2004"]
-"packages/rm-contracts/src/rm_contracts/problems.py" = ["S105"]  # error-code names, not passwords
+"packages/rm-contracts/rm_contracts/problems.py" = ["S105"]  # error-code names, not passwords
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "requests".msg = "Use the injectable httpx/curl_cffi client (agents.md §3)."
@@ -57,7 +57,7 @@ ignore = ["PLR0913", "PLR2004"]
 include = ["packages", "services", "scripts", "tests"]
 exclude = ["**/node_modules", "frontend", "apps/*/reports"]
 pythonVersion = "3.12"
-extraPaths = ["scripts", "packages/rm-core/src", "packages/rm-contracts/src", "services/api/src", "services/worker/src"]
+extraPaths = ["scripts", "packages/rm-core", "packages/rm-contracts", "services/api", "services/worker"]
 typeCheckingMode = "standard"
 strict = ["packages", "services"]
 reportUnnecessaryTypeIgnoreComment = "error"

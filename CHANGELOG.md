@@ -13,4 +13,5 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 - Workspace skeleton: `rm-core` (settings, `LegalTag` registry), `rm-contracts` (problem codes), `rm-api` (`GET /api/health`), `rm-worker` (empty), `.env.example` (RM-2)
 
 ### Changed
+- Flat package layout: modules moved from `…/src/rm_*/` to `…/rm_*/` (ADR 0008); no import or API change (RM-61)
 - Engines are written from scratch; the POC is reference only (ADR 0001) (RM-2)

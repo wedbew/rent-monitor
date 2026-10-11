@@ -1,0 +1,8 @@
+---
+description: Keep the repository shallow; no single-child directories; flat Python package layout
+alwaysApply: true
+---
+
+Canonical rule lives in `.agent/rules/repo-layout.md`. Follow it:
+
+@.agent/rules/repo-layout.md
