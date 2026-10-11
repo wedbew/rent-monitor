@@ -36,7 +36,7 @@ GUARDS = ("SET lock_timeout = '5s'", "SET statement_timeout = '5min'")
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=_url(),
+        url="postgresql+psycopg://",  # offline SQL generation needs the dialect only, never a connection
         target_metadata=target_metadata,
         literal_binds=True,
         include_schemas=True,
