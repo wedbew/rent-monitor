@@ -246,6 +246,10 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `UPSTREAM_SCHEMA_DRIFT` | `_next/data` payload fails Pydantic | `failed_upstream` + Sentry alert | none (needs a code fix) | released |
 | `VISION_UNAVAILABLE` | OpenRouter 5xx or timeout after retries | `succeeded_degraded`: CAPEX marked unknown, confidence lowered | 3 attempts | captured |
 | `INTERNAL` | anything else | `failed_internal` + Sentry | Procrastinate retry once | released |
+| `VALIDATION_ERROR` | request body, query or path fails Pydantic (`extra="forbid"`) | 422, field errors without echoing input | none | never reserved |
+| `NOT_FOUND` | unknown route, or a resource of another tenant (never 403) | 404 | none | never reserved |
+| `HTTP_ERROR` | other transport errors (405, 413, …) | as raised | none | never reserved |
+| `NOT_READY` | `/readyz` database or queue check fails | 503 with `checks` | orchestrator retries | n/a |
 
 Scraping hygiene the workers enforce:
 

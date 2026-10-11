@@ -15,6 +15,11 @@ class ProblemCode(StrEnum):
     UPSTREAM_SCHEMA_DRIFT = "UPSTREAM_SCHEMA_DRIFT"
     VISION_UNAVAILABLE = "VISION_UNAVAILABLE"
     INTERNAL = "INTERNAL"
+    # Generic transport-level codes (RM-18); documented in the blueprint §2 error table
+    VALIDATION_ERROR = "VALIDATION_ERROR"
+    NOT_FOUND = "NOT_FOUND"
+    HTTP_ERROR = "HTTP_ERROR"
+    NOT_READY = "NOT_READY"
     # Used by blueprint §2/§4.5 snippets (auth, entitlement, billing); not yet in the §2 table
     INVALID_GOOGLE_TOKEN = "INVALID_GOOGLE_TOKEN"
     GOOGLE_EMAIL_UNVERIFIED = "GOOGLE_EMAIL_UNVERIFIED"

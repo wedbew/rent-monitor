@@ -50,3 +50,17 @@ async def session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
         async with sm() as s:
             yield s
         await trans.rollback()
+
+
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def procrastinate_schema(migrated_url: str) -> None:
+    """Apply Procrastinate's own schema once per session (it is not idempotent), beside schema `app`."""
+    from procrastinate import PsycopgConnector  # noqa: PLC0415
+    from procrastinate.schema import SchemaManager  # noqa: PLC0415
+
+    connector = PsycopgConnector(conninfo=migrated_url.replace("postgresql+psycopg://", "postgresql://"))
+    await connector.open_async()
+    try:
+        await SchemaManager(connector).apply_schema_async()
+    finally:
+        await connector.close_async()

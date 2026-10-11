@@ -1,24 +1,14 @@
 """Procrastinate's tables are applied by its own schema manager, outside Alembic and outside schema `app`."""
 
 import pytest
-from procrastinate import PsycopgConnector
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytestmark = [pytest.mark.integration]
 
 
-async def test_procrastinate_schema_applies_beside_app_schema(engine: AsyncEngine, migrated_url: str) -> None:
-    dsn = migrated_url.replace("postgresql+psycopg://", "postgresql://")
-    connector = PsycopgConnector(conninfo=dsn)
-    await connector.open_async()
-    try:
-        from procrastinate.schema import SchemaManager  # noqa: PLC0415
-
-        await SchemaManager(connector).apply_schema_async()
-    finally:
-        await connector.close_async()
-
+@pytest.mark.usefixtures("procrastinate_schema")
+async def test_procrastinate_schema_applies_beside_app_schema(engine: AsyncEngine) -> None:
     async with engine.connect() as conn:
         found = await conn.scalar(
             text(
