@@ -8,7 +8,6 @@ matter for production or a domain are *Deferred*, not blocking.
 
 | ID | What | Owner action | Waits on it |
 |---|---|---|---|
-| B-012 | Legal review and retention periods (#41) | Counsel confirms Otodom scraping/image use and the proposed retention defaults (sessions 7 d, login tokens 1 d, snapshots 30 d, audit events 30 d) | paid launch only; not needed to build |
 | B-004 | Google OAuth client id, Resend key | Create a Google OAuth Web client and a Resend key; put `GOOGLE_CLIENT_ID`, `RESEND_API_KEY` in `.env`. Needed only for live sign-in tests: until then auth is built and tested with fakes, and the magic link is logged in dev | live testing of #12 |
 
 ## Deferred (not blocking local work)
@@ -19,6 +18,7 @@ matter for production or a domain are *Deferred*, not blocking.
 | B-002 | Umami analytics | Frontend only, and no domain yet | Phase 2 frontend |
 | B-003 | Stripe sandbox keys, webhook, BLIK activation (#39) | Implemented after the API endpoints work, together with Google auth | billing step (#14); request BLIK activation early, it has lead time |
 | B-005 | Domain and DNS | Not needed locally | deployment preparation |
+| B-012 | Legal review (#41): counsel confirms Otodom scraping and image use, privacy docs, processor list | Features are tagged and each has a default-on kill switch, so building is not blocked; scope list = the tag inventory in `.agent/rules/legal-tags.md` | before paid launch (PRE-DEPLOYMENT §4); start the accountant (VAT, KSeF penalties from 2027-01-01) early |
 | B-006 | VPS purchase and Otodom datacenter-IP test (#42) | Buy after the app works locally | deployment preparation |
 
 ## Resolved
@@ -31,4 +31,5 @@ matter for production or a domain are *Deferred*, not blocking.
 | B-009 | semgrep `no-float-money` flagged every `x: float = ...` annotation (#55) | Owner approved the rule fix; every pattern now binds the name, rule tests run in CI (RM-55) | 2026-10-12 |
 | B-010 | Agents could not read `.env.example` | Deny rule narrowed to real env files; agents read and edit `.env.example` (`rules/env-example.md`) | 2026-10-11 |
 | B-011 | `.claude/settings.json` safety entries | Added deny `gh pr merge*--admin*`, ask on `gh repo edit*visibility*` and `gh repo delete*`. Agents merge into `staging` themselves; the human approval is on `staging` → `main` only, at launch, enforced by the ruleset | 2026-10-11 |
+| B-012a | Retention defaults | Owner decided: sessions 30 d, login tokens valid 30 min and deleted 1 d after expiry, snapshots kept 30 d with seller data stripped at parse, audit events 30 d, log IP/UA 30 d, backups 14 d / 56 d; invoices per tax law (accountant). Details on #30; jobs built in RM-30; counsel may change the values (B-012) | 2026-10-12 |
 | B-013 | Testcontainers reaper could not mount the Docker socket (macOS) | `tests/conftest.py` sets `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`; suite passes with the reaper on | 2026-10-11 |
