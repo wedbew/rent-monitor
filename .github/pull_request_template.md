@@ -10,7 +10,7 @@ Closes #
 - [ ] Title is `type(RM-<issue>): subject`
 - [ ] New behaviour has named tests; bug fixes start with a failing test
 - [ ] No `invariant` test deleted, skipped or weakened
-- [ ] Money stays `Decimal` / `NUMERIC`; no financial math outside `apps/deal-analyzer`
+- [ ] Money stays `Decimal` / `NUMERIC`; no financial math outside `apps/deal_analyzer`
 - [ ] Tenant-owned queries go through a `Principal`-scoped repository
 - [ ] Migration is expand-only (contract comes in a later PR), pytest-alembic and squawk pass
 - [ ] Golden DealAnalysis snapshots unchanged, or each diff explained below

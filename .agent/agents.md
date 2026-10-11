@@ -18,7 +18,7 @@
    substitute one for the other. Enforced by the `asking_is_not_deed` CHECK constraint and by distinct types.
 3. **Admin fee (`characteristics.rent`, czynsz) is OPEX, never income.**
 4. **Deterministic math.** All cash flows, IRR, MOIC, CAGR, tax, Max Bid are computed by Python in
-   `apps/deal-analyzer`. LLMs only classify images, transcribe OCR and propose adjustments clamped to ±15%.
+   `apps/deal_analyzer`. LLMs only classify images, transcribe OCR and propose adjustments clamped to ±15%.
 5. **Fractional ownership** (`udział`, `1/2 udziału`, `udział w spadku`) is rejected from yield ranking and audits.
 6. **JSON is canonical; Markdown is a view.**
 
@@ -28,7 +28,7 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
 - `apps/*` are the analytical engines, **written from scratch** (ADR 0001): the POC `otodom-rent-report` is reference only —
   never copy, move or import it (`rules/poc-reference.md`). Code targets production quality under real traffic.
   `ContextRepository` and `ProgressSink` are native seams of the new engine.
-- Never compute a financial number outside `apps/deal-analyzer`. API/worker copy values from `DealAnalysis`
+- Never compute a financial number outside `apps/deal_analyzer`. API/worker copy values from `DealAnalysis`
   into typed columns; they never derive them.
 - Layout (blueprint 4.1): `packages/rm_core` (settings, models, repositories, ledger, entitlements, flags),
   `packages/rm_contracts` (Pydantic API schemas + problem codes), `services/rm_api` (FastAPI), `services/rm_worker`

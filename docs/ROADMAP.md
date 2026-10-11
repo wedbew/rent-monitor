@@ -72,7 +72,7 @@ Ticket-level order and priority: §9.1.
   engaged, Fakturownia trial opened (#41); Stripe Agent keys (#40) by 2026-10-31; VPS order date fixed (#42).
 - **CI:** none. **Risk:** an unanswered D-01 stalls Lane A and, under D-10's strict reading, Lane B.
 
-### M1 — Engine (`apps/deal-analyzer`), lane A
+### M1 — Engine (`apps/deal_analyzer`), lane A
 - **Issues:** #17 (umbrella) → N-01…N-11. **First agent:** N-01 after D-01. Serial: N-01 → (N-02, N-03, N-04, N-05 parallel) →
   N-06 → N-07; N-08, N-09 after N-01; N-10 last; N-11 needs owner-labelled listings.
 - **Gates:** owner validates each formula PR against the written spec (no POC transcription).
@@ -153,7 +153,7 @@ issues (#17, #44) never get the label; their children do. Each child names its f
 
 | Path | Owner ticket(s) | Rule |
 |---|---|---|
-| `apps/deal-analyzer/**` | N-01…N-11 | One submodule per ticket; `model.py` (types) owned by N-01, then append-only |
+| `apps/deal_analyzer/**` | N-01…N-11 | One submodule per ticket; `model.py` (types) owned by N-01, then append-only |
 | `packages/rm-core/.../db/models.py`, `migrations/` | #11, then serial | Single Alembic head; one open migration PR |
 | `packages/rm-core/.../ledger.py`, `entitlements.py`, `flags.py` | #19 (N-20 extends flags) | Serial |
 | `packages/rm-contracts/.../problems.py` | any | Append-only; rebase on conflict |

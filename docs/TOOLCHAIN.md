@@ -147,7 +147,7 @@ Gemini reviews, Claude implements, and neither can merge. Splitting the roles ac
 | Implementer and Q&A | Claude GitHub App + `anthropics/claude-code-action` v1.0.248 | `@claude` in issue or PR comment, by users with write access | `CLAUDE_CODE_OAUTH_TOKEN` from your subscription, or an API key | `contents: write`, `pull-requests: write`, `issues: write`, `id-token: write`, `actions: read` |
 | Mobile and web | Claude Code on the web and the Claude mobile app, through the same GitHub App | you, from your phone | your Claude account | sessions push to branches, never to `main` |
 
-Gemini review prompt, kept in `.github/commands/gemini-review.toml` (in the repo, versioned) and pointed at `.agent/agents.md`: flag any float in money paths, financial math outside `apps/deal-analyzer`, missing `Principal` scoping on tenant queries, webhook handling before signature verification, broadened workflow permissions, and any deleted or skipped `invariant` test. Severity labels map to `blocking`, `should-fix`, `nit`.
+Gemini review prompt, kept in `.github/commands/gemini-review.toml` (in the repo, versioned) and pointed at `.agent/agents.md`: flag any float in money paths, financial math outside `apps/deal_analyzer`, missing `Principal` scoping on tenant queries, webhook handling before signature verification, broadened workflow permissions, and any deleted or skipped `invariant` test. Severity labels map to `blocking`, `should-fix`, `nit`.
 
 Guardrails, because both bots read untrusted text from PRs and issues:
 
