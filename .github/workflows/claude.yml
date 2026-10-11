@@ -5,7 +5,7 @@ on:
   pull_request_review_comment:
     types: [created]
   issues:
-    types: [opened, assigned]
+    types: [opened, assigned, labeled]
 
 permissions: {}
 
@@ -15,10 +15,15 @@ concurrency:
 
 jobs:
   claude:
+    # Public repo: only trusted authors may trigger the agent (comment) or apply the `agent` label (needs triage/write).
     if: >-
-      contains(github.event.comment.body, '@claude') ||
-      contains(github.event.issue.body, '@claude') ||
-      contains(github.event.issue.title, '@claude')
+      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'agent') ||
+      (github.event_name != 'issues' &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+        contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'issues' && github.event.action != 'labeled' &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association) &&
+        (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -36,6 +41,9 @@ jobs:
       - uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Machine-user token: PRs opened with the default GITHUB_TOKEN do not trigger CI, so required checks would never run.
+          github_token: ${{ secrets.AGENT_BOT_TOKEN }}
           claude_args: |
-            --max-turns 30
+            --max-turns 40
+            --allowedTools "Bash(uv:*),Bash(make:*),Bash(git:*),Bash(gh pr:*),Bash(gh issue:*),Bash(gh run:*),Edit,Write,Read,Glob,Grep"
             --append-system-prompt "Follow .agent/agents.md. Branch from staging, open PRs against staging, title type(RM-<issue>): subject."
