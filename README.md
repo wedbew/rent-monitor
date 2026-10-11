@@ -11,6 +11,7 @@ make sync        # uv sync --all-packages --group dev
 make test        # uv run pytest -m "not e2e" -q
 make lint        # ruff check + format check
 make types       # pyright
+make check       # lint + types + test (run before pushing)
 cp .env.example .env   # names only; fill values locally, never commit .env
 ```
 

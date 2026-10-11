@@ -1,4 +1,4 @@
-.PHONY: sync test test-all invariants lint fmt types migrate
+.PHONY: sync test test-all invariants lint fmt types check migrate
 
 sync:
 	uv sync --all-packages --group dev
@@ -20,6 +20,8 @@ fmt:
 
 types:
 	uv run pyright
+
+check: lint types test
 
 # Wired in the data-plane step (blueprint 4.8 step 2); needs alembic.ini + migrations/env.py.
 migrate:

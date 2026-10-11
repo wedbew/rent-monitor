@@ -73,6 +73,9 @@ jobs:
       - run: uv run pytest -m "not e2e" --cov --cov-report=term-missing -q
 
   invariants:
+    # Off until the engine and its four invariant tests exist: set repo variable ENABLE_INVARIANTS_JOB=true
+    # (and re-add `invariants` to the staging required checks) in the PR that lands them. See docs/PRE-DEPLOYMENT.md §1.
+    if: vars.ENABLE_INVARIANTS_JOB == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -98,6 +101,9 @@ jobs:
           PY
 
   migrations:
+    # Off until Alembic and tests/migrations exist: set repo variable ENABLE_MIGRATIONS_JOB=true
+    # (and re-add `migrations` to the staging required checks) in the data-plane PR.
+    if: vars.ENABLE_MIGRATIONS_JOB == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
