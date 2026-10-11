@@ -934,7 +934,7 @@ rentmonitor/
 ├── tests/                        # cross-service integration tests + fixtures/
 └── deploy/
     ├── compose.yml               # production
-    ├── compose.dev.yml           # overrides: bind mounts, reload, exposed ports
+    ├── compose.dev.yml           # (RM-69: local development uses compose.yml alone; a production overlay arrives with RM-15)
     ├── docker/python.Dockerfile  # one image, three commands (api, worker-audit, worker-batch)
     ├── caddy/{Caddyfile, Dockerfile}   # multi-stage: builds frontend, copies dist
     ├── postgres/postgresql.conf

@@ -1,0 +1,66 @@
+# The whole app in Docker, for local development: Postgres 17, a one-shot bootstrap (migrations, queue schema, seed),
+# the API and a worker. Production hardening (Caddy, memory limits, WAL-G, backups) is added by RM-15.
+# Start: `make up`. Values come from ../.env (optional); database URLs are set here to point at the postgres service.
+name: rentmonitor
+
+x-app: &app
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+  image: rentmonitor-py:local
+  env_file:
+    - path: ../.env
+      required: false
+  environment: &app-env
+    DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rentmonitor}:${POSTGRES_PASSWORD:-dev-only-change-me}@postgres:5432/${POSTGRES_DB:-rentmonitor}
+    PROCRASTINATE_DSN: postgresql://${POSTGRES_USER:-rentmonitor}:${POSTGRES_PASSWORD:-dev-only-change-me}@postgres:5432/${POSTGRES_DB:-rentmonitor}
+  restart: unless-stopped
+  logging: { driver: json-file, options: { max-size: "20m", max-file: "5" } }
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:17}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rentmonitor}
+      POSTGRES_USER: ${POSTGRES_USER:-rentmonitor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev-only-change-me}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    command: ["postgres", "-c", "max_connections=100", "-c", "shared_buffers=256MB", "-c", "log_min_duration_statement=500"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  bootstrap:
+    <<: *app
+    command: ["python", "scripts/bootstrap.py"]
+    restart: "no"
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    <<: *app
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    depends_on:
+      bootstrap: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  worker:
+    <<: *app
+    command: ["procrastinate", "--app=rm_worker.app.app", "worker", "--queues=audit,batch,ops", "--concurrency=1"]
+    stop_grace_period: 60s
+    depends_on:
+      bootstrap: { condition: service_completed_successfully }
+
+volumes:
+  pgdata: {}

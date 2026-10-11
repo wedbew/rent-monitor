@@ -1,0 +1,14 @@
+.git
+.venv
+**/__pycache__
+**/.pytest_cache
+.ruff_cache
+.hypothesis
+node_modules
+frontend
+docs
+tests
+.env
+.env.*
+!.env.example
+*.md

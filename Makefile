@@ -1,4 +1,4 @@
-.PHONY: sync test test-all invariants lint fmt types check migrate db-up db-down dev seed procrastinate-schema backup-drill
+.PHONY: sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
 
 sync:
 	uv sync --all-packages --group dev
@@ -27,23 +27,36 @@ check: lint types test
 migrate:
 	uv run alembic upgrade head
 
-COMPOSE_DEV = docker compose -f deploy/compose.dev.yml
+COMPOSE = docker compose -f deploy/compose.yml
 
 db-up:
-	$(COMPOSE_DEV) up -d --wait postgres
+	$(COMPOSE) up -d --wait postgres
 
 db-down:
-	$(COMPOSE_DEV) down
+	$(COMPOSE) down
 
-# Procrastinate's own tables (public schema), applied by its CLI, not Alembic.
-procrastinate-schema:
-	uv run procrastinate --app=rm_worker.app.app schema --apply
+# Migrations + Procrastinate schema (once) + seed, idempotent; run on the host against $DATABASE_URL.
+bootstrap:
+	uv run python scripts/bootstrap.py
 
 seed:
 	uv run python scripts/seed.py
 
 # Fresh local environment: Postgres 17, app schema, queue schema, seed data. Needs DATABASE_URL and PROCRASTINATE_DSN in .env.
-dev: db-up migrate procrastinate-schema seed
+dev: db-up bootstrap
 
 backup-drill:
 	./scripts/backup_drill.sh
+
+# The whole app in containers (Postgres, bootstrap, API, worker).
+up:
+	$(COMPOSE) up -d --build --wait api worker
+
+down:
+	$(COMPOSE) down
+
+logs:
+	$(COMPOSE) logs -f --tail=100
+
+smoke:
+	./scripts/smoke_docker.sh
