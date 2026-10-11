@@ -10,6 +10,7 @@
 @.agent/rules/poc-reference.md
 @.agent/rules/pull-requests.md
 @.agent/rules/blockers.md
+@.agent/rules/repo-layout.md
 @docs/BLOCKERS.md
 @CONTEXT.md
 
