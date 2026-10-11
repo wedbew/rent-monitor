@@ -34,6 +34,7 @@ Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton in 
 | [`CONTEXT.md`](CONTEXT.md) | Orientation and POC porting map |
 | [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) | Known limits register |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
+| [`docs/AUTONOMY.md`](docs/AUTONOMY.md) | Running agents in GitHub Actions, secrets, limits |
 | [`docs/AGENT-BOT.md`](docs/AGENT-BOT.md) | Limited machine user for autonomous agents |
 | [`docs/PRE-DEPLOYMENT.md`](docs/PRE-DEPLOYMENT.md) | Launch checklist (gates, security, legal, ops) |
 
