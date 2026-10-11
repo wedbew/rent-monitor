@@ -1,0 +1,264 @@
+{
+  "assumptions_version": "2026-10-12.2",
+  "capex": {
+    "base_pln": "24000.00",
+    "catalog_version": "placeholder-2026-10-12",
+    "condition_assumed": true,
+    "condition_used": "refresh",
+    "confidence": "low",
+    "high_pln": "30000.00",
+    "low_pln": "18000.00",
+    "multiplier": "1.25",
+    "pln_per_m2": "750.00",
+    "prices_are_placeholders": true,
+    "tier": "metro"
+  },
+  "capex_used_pln": "24000.00",
+  "cash_flow": {
+    "assumptions_version": "2026-10-12.2",
+    "capex_pln": "24000.00",
+    "exit": {
+      "exit_value_pln": "950815.65",
+      "net_proceeds_pln": "931799.33",
+      "sale_tax_pln": "0.00",
+      "selling_costs_pln": "19016.31"
+    },
+    "purchase": {
+      "broker_pln": "0.00",
+      "court_fee_pln": "200.00",
+      "deed_copies_pln": "150.00",
+      "notary_pln": "4784.70",
+      "pcc_pln": "15600.00",
+      "price_pln": "780000.00",
+      "total_acquisition_pln": "800734.70",
+      "total_costs_pln": "20734.70"
+    },
+    "returns": {
+      "cagr": "0.0370",
+      "gross_yield": "0.0582",
+      "irr": "0.0411",
+      "moic": "1.4379",
+      "net_yield": "0.0329"
+    },
+    "total_invested_pln": "824734.70",
+    "warnings": [],
+    "years": [
+      {
+        "costs": {
+          "admin_fee_pln": "10200.00",
+          "insurance_pln": "1170.00",
+          "maintenance_pln": "3900.00",
+          "management_pln": "0.00",
+          "property_tax_pln": "38.08",
+          "total_pln": "15308.08"
+        },
+        "income_tax_pln": "2894.00",
+        "net_cash_flow_pln": "15844.92",
+        "rent_collected_pln": "34047.00",
+        "year": 1
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "10506.00",
+          "insurance_pln": "1205.10",
+          "maintenance_pln": "4017.00",
+          "management_pln": "0.00",
+          "property_tax_pln": "39.22",
+          "total_pln": "15767.32"
+        },
+        "income_tax_pln": "3643.22",
+        "net_cash_flow_pln": "23450.85",
+        "rent_collected_pln": "42861.39",
+        "year": 2
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "10821.18",
+          "insurance_pln": "1241.25",
+          "maintenance_pln": "4137.51",
+          "management_pln": "0.00",
+          "property_tax_pln": "40.40",
+          "total_pln": "16240.34"
+        },
+        "income_tax_pln": "3752.51",
+        "net_cash_flow_pln": "24154.38",
+        "rent_collected_pln": "44147.23",
+        "year": 3
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "11145.82",
+          "insurance_pln": "1278.49",
+          "maintenance_pln": "4261.64",
+          "management_pln": "0.00",
+          "property_tax_pln": "41.61",
+          "total_pln": "16727.55"
+        },
+        "income_tax_pln": "3865.09",
+        "net_cash_flow_pln": "24879.01",
+        "rent_collected_pln": "45471.65",
+        "year": 4
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "11480.19",
+          "insurance_pln": "1316.85",
+          "maintenance_pln": "4389.48",
+          "management_pln": "0.00",
+          "property_tax_pln": "42.86",
+          "total_pln": "17229.38"
+        },
+        "income_tax_pln": "3981.04",
+        "net_cash_flow_pln": "25625.38",
+        "rent_collected_pln": "46835.80",
+        "year": 5
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "11824.60",
+          "insurance_pln": "1356.35",
+          "maintenance_pln": "4521.17",
+          "management_pln": "0.00",
+          "property_tax_pln": "44.15",
+          "total_pln": "17746.26"
+        },
+        "income_tax_pln": "4100.47",
+        "net_cash_flow_pln": "26394.14",
+        "rent_collected_pln": "48240.87",
+        "year": 6
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "12179.33",
+          "insurance_pln": "1397.04",
+          "maintenance_pln": "4656.80",
+          "management_pln": "0.00",
+          "property_tax_pln": "45.47",
+          "total_pln": "18278.65"
+        },
+        "income_tax_pln": "4223.49",
+        "net_cash_flow_pln": "27185.96",
+        "rent_collected_pln": "49688.10",
+        "year": 7
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "12544.71",
+          "insurance_pln": "1438.95",
+          "maintenance_pln": "4796.51",
+          "management_pln": "0.00",
+          "property_tax_pln": "46.83",
+          "total_pln": "18827.01"
+        },
+        "income_tax_pln": "4350.19",
+        "net_cash_flow_pln": "28001.54",
+        "rent_collected_pln": "51178.74",
+        "year": 8
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "12921.05",
+          "insurance_pln": "1482.12",
+          "maintenance_pln": "4940.40",
+          "management_pln": "0.00",
+          "property_tax_pln": "48.24",
+          "total_pln": "19391.82"
+        },
+        "income_tax_pln": "4480.70",
+        "net_cash_flow_pln": "28841.58",
+        "rent_collected_pln": "52714.10",
+        "year": 9
+      },
+      {
+        "costs": {
+          "admin_fee_pln": "13308.69",
+          "insurance_pln": "1526.58",
+          "maintenance_pln": "5088.62",
+          "management_pln": "0.00",
+          "property_tax_pln": "49.69",
+          "total_pln": "19973.57"
+        },
+        "income_tax_pln": "4615.12",
+        "net_cash_flow_pln": "29706.84",
+        "rent_collected_pln": "54295.53",
+        "year": 10
+      }
+    ]
+  },
+  "confidence": "low",
+  "engine_version": "0.1.0",
+  "legal": {
+    "confidence": "medium",
+    "evidence": [],
+    "legal_class": "residential",
+    "price_basis": "unknown"
+  },
+  "listing": {
+    "admin_fee_pln": "850",
+    "area_m2": "32",
+    "build_year": 1935,
+    "building_floors": 5,
+    "building_ownership": null,
+    "building_type": "block",
+    "city": "Warszawa",
+    "created_at": "2026-09-01T10:00:00Z",
+    "deposit_pln": "5000",
+    "description": "Odrębna własność. Kamienica, wysoki standard.",
+    "floor": "2",
+    "heating": "urban",
+    "kind": "SALE",
+    "latitude": "52.2297",
+    "longitude": "21.0122",
+    "modified_at": "2026-10-01T08:30:00Z",
+    "otodom_id": "90000002",
+    "price_pln": "780000",
+    "rooms": 1,
+    "street": null,
+    "title": "Kawalerka w centrum",
+    "url": "https://www.otodom.pl/pl/oferta/mieszkanie-2-pokoje-testowo-IDtest01",
+    "warnings": [
+      "street_missing"
+    ],
+    "windows": "plastic"
+  },
+  "ownership": {
+    "confidence": "medium",
+    "evidence": [
+      "title form from text: full_ownership"
+    ],
+    "interest": "whole",
+    "share_denominator": null,
+    "share_numerator": null,
+    "structured_value": null,
+    "title_form": "full_ownership"
+  },
+  "rent": {
+    "basis": "asking",
+    "comparables": 6,
+    "confidence": "medium",
+    "haircut": "0.03",
+    "input_monthly_pln": "3900.00",
+    "monthly_after_haircut_pln": "3783.00",
+    "monthly_used_pln": "3783.00"
+  },
+  "schema_version": 1,
+  "valuation": {
+    "asking_price_pln": "780000.00",
+    "discount_to_asking": "-0.5253",
+    "grade": "E",
+    "hurdle": "0.0750",
+    "irr_at_asking": "0.0411",
+    "max_bid_bounded": true,
+    "max_bid_if_appreciation_minus_1pp_pln": "333680.63",
+    "max_bid_if_appreciation_plus_1pp_pln": "420729.21",
+    "max_bid_pln": "370299.29",
+    "verdict": "pass"
+  },
+  "vision": null,
+  "warnings": [
+    "street_missing",
+    "rent_thin_market",
+    "capex_prices_are_placeholders",
+    "vision_unavailable"
+  ]
+}

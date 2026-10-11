@@ -92,7 +92,10 @@ jobs:
           python3 - <<'PY'
           import xml.etree.ElementTree as ET
           required = {"test_invariant_rent_is_not_a_deal", "test_invariant_asking_is_not_deed",
-                      "test_invariant_admin_fee_is_opex", "test_invariant_deterministic_math"}
+                      "test_invariant_admin_fee_is_opex", "test_invariant_deterministic_math",
+                      "test_invariant_fractional_ownership_rejected",
+                      "test_invariant_json_is_canonical_markdown_is_a_view",
+                      "test_invariant_llm_adjustment_is_clamped"}
           cases = ET.parse("invariants.xml").getroot().iter("testcase")
           passed = {c.get("name").split("[")[0] for c in cases if not list(c)}
           missing = required - passed
