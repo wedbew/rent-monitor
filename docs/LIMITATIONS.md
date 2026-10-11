@@ -58,6 +58,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** Set `IMAGE_HOST_ALLOWLIST` and `OPENROUTER_CALL_ESTIMATE_USD` from the first live run; skipped images are logged (`image_skipped`) without URLs.
 - **Target:** Verify with the contract test (RM-28) and measured COGS (L-003, RM-24)
 
+### L-007 — CAPEX catalog prices are placeholders
+- **Status:** active
+- **Discovered:** 2026-10-12
+- **Affects:** `deal_analyzer.capex` (`CATALOG_PLN_PER_M2`, `TIER_MULTIPLIER`), CAPEX, Max Bid, grades; release readiness
+- **Evidence:** estimate (invented round numbers; no market source)
+- **Description:** The PLN/m² renovation prices and the regional multipliers only make the estimator work. Every `CapexEstimate` carries `prices_are_placeholders=True` and a `placeholder-…` catalog version. Valuations built on them must not be shown as real.
+- **Workaround:** None until the owner supplies a sourced price list (per condition and city tier, ideally per item: bathroom, kitchen, floors, windows, wiring) or approves a source to import.
+- **Target:** blocker B-015; PRE-DEPLOYMENT §5
+
 ## Resolved
 
 _None yet._
