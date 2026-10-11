@@ -1,5 +1,6 @@
 """Sentry initialisation. Off without a DSN; sends no personal data (scrubbed)."""
 
+from decimal import Decimal
 from typing import Any, cast
 
 import sentry_sdk
@@ -31,6 +32,11 @@ def scrub_event(event: dict[str, Any], _hint: Any = None) -> dict[str, Any]:
     return event
 
 
+def _probability(value: Decimal) -> float:
+    """A sampling probability, not money: the Sentry SDK API requires a float."""
+    return float(value)
+
+
 def _before_send(event: Event, _hint: Hint) -> Event | None:
     return cast("Event", scrub_event(cast("dict[str, Any]", event)))
 
@@ -42,7 +48,7 @@ def init_sentry(settings: Settings) -> bool:
         dsn=settings.sentry_dsn,
         environment=settings.app_env,
         release=settings.release or None,
-        traces_sample_rate=settings.sentry_traces_sample_rate,
+        traces_sample_rate=_probability(settings.sentry_traces_sample_rate),
         send_default_pii=False,
         before_send=_before_send,
     )
