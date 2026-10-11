@@ -9,7 +9,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-ASSUMPTIONS_VERSION = "2026-10-12.1"
+ASSUMPTIONS_VERSION = "2026-10-12.2"
 
 # Maximum notary fee for a sale deed (taksa notarialna): (upper bound, base fee, rate, bound the rate
 # starts from).
@@ -50,6 +50,9 @@ class Assumptions(BaseModel):
     maintenance_rate: Decimal = Decimal("0.005")  # of price per year
     cost_inflation: Decimal = Decimal("0.03")  # applied to costs from year 2
     rent_growth: Decimal = Decimal("0.03")
+    rent_haircut: Decimal = Decimal(
+        "0.03"
+    )  # comparables are asking rents; achieved rents come in lower (row 5)
     # Tax (row 6): ryczałt on private rental. ACCOUNTANT
     ryczalt_low_rate: Decimal = Decimal("0.085")
     ryczalt_high_rate: Decimal = Decimal("0.125")
