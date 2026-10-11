@@ -5,7 +5,8 @@ import os
 from alembic import context
 from rm_core.db import models  # noqa: F401  (registers every table on Base.metadata)
 from rm_core.db.base import SCHEMA, Base
-from sqlalchemy import create_engine, pool, text
+from sqlalchemy import create_engine, pool
+from sqlalchemy.schema import CreateSchema
 
 config = context.config
 target_metadata = Base.metadata
@@ -35,14 +36,14 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
     )
     with context.begin_transaction():
-        context.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}")
+        context.execute(CreateSchema(SCHEMA, if_not_exists=True))
         context.run_migrations()
 
 
 def run_migrations_online() -> None:
     engine = create_engine(_url(), poolclass=pool.NullPool)
     with engine.connect() as connection:
-        connection.execute(text(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"))
+        connection.execute(CreateSchema(SCHEMA, if_not_exists=True))
         connection.commit()
         context.configure(
             connection=connection,
