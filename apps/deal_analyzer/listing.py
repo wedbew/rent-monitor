@@ -25,6 +25,7 @@ class Listing(BaseModel):
     building_type: str | None = Field(default=None, max_length=64)
     heating: str | None = Field(default=None, max_length=64)
     windows: str | None = Field(default=None, max_length=64)
+    building_ownership: str | None = Field(default=None, max_length=64)  # portal's structured ownership value
     city: str | None = Field(default=None, max_length=120)
     street: str | None = Field(default=None, max_length=160)
     latitude: Decimal | None = None

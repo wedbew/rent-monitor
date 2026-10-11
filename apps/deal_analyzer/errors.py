@@ -25,3 +25,12 @@ class RentNotADealError(Exception):
     def __init__(self, otodom_id: str) -> None:
         super().__init__(f"listing {otodom_id} is a rental, not a sale")
         self.otodom_id = otodom_id
+
+
+class FractionalOwnershipError(Exception):
+    """Invariant 5: only a share of the flat is for sale (`rejected / FRACTIONAL_OWNERSHIP`)."""
+
+    def __init__(self, otodom_id: str, evidence: tuple[str, ...] = ()) -> None:
+        super().__init__(f"listing {otodom_id} offers a fractional share, not the whole flat")
+        self.otodom_id = otodom_id
+        self.evidence = evidence

@@ -189,6 +189,7 @@ def _structured_fields(root: dict[str, Any], warnings: list[str]) -> dict[str, A
         "building_type": optional_text("building_type", "building_type", 64),
         "heating": optional_text("heating", "heating", 64),
         "windows": optional_text("windows_type", "windows", 64),
+        "building_ownership": _clip(pick("building_ownership"), 64),
     }
 
 
