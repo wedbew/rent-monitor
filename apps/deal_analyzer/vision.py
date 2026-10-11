@@ -1,0 +1,175 @@
+"""Typed vision/OCR outputs and the +/-15 % clamp on LLM adjustments (docs/ENGINE-SPEC.md row 12,
+invariant 4).
+
+The model output is untrusted text. It is parsed into a bounded, typed `VisionOutput` (anything else is
+rejected),
+it can only *propose* percentage adjustments, and every proposal is clamped to +/-15 % of a
+deterministic base before it
+touches a number. The record of what was proposed and what was applied (plus model and prompt version)
+makes every audit
+reproducible without calling the model again.
+LEGAL[images]: this module only consumes the already-produced assessment; fetching and sending images
+is in the worker.
+"""
+
+import json
+import re
+from decimal import Decimal
+from enum import StrEnum
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+
+from deal_analyzer.money import ONE, ZERO, engine_math
+
+MAX_ADJUSTMENT = Decimal("0.15")  # the clamp: +/- 15 % of the deterministic base, never more
+MAX_PHOTOS = 25
+_FENCE = re.compile(r"^\s*```(?:json)?\s*(.*?)\s*```\s*$", re.DOTALL)
+_CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+
+
+class VisionOutputError(ValueError):
+    """The model answer is not a usable `VisionOutput`; the audit continues as `succeeded_degraded`."""
+
+
+class PhotoKind(StrEnum):
+    INTERIOR = "interior"
+    EXTERIOR = "exterior"
+    FLOOR_PLAN = "floor_plan"
+    RENDER = "render"  # computer-generated: never evidence of condition
+    STAGING = "staging"  # virtual staging: never evidence of condition
+    OTHER = "other"
+
+
+class Condition(StrEnum):
+    GOOD = "good"
+    REFRESH = "refresh"
+    RENOVATION = "renovation"
+    SHELL = "shell"
+    UNKNOWN = "unknown"
+
+
+EXCLUDED_KINDS = frozenset({PhotoKind.RENDER, PhotoKind.STAGING})
+
+
+class PhotoAssessment(BaseModel):
+    model_config = ConfigDict(extra="ignore", frozen=True)
+
+    kind: PhotoKind
+
+
+class VisionOutput(BaseModel):
+    """What the vision model may tell us. Unknown keys are ignored, but nothing outside these fields
+    is ever used."""
+
+    model_config = ConfigDict(extra="ignore", frozen=True)
+
+    condition: Condition = Condition.UNKNOWN
+    photos: tuple[PhotoAssessment, ...] = Field(default=(), max_length=MAX_PHOTOS)
+    capex_adjustment: Decimal = Field(
+        default=ZERO, ge=Decimal(-10), le=Decimal(10)
+    )  # proposed fraction of the base
+    rent_adjustment: Decimal = Field(default=ZERO, ge=Decimal(-10), le=Decimal(10))
+    floor_plan_text: str | None = Field(default=None, max_length=4_000)
+    notes: str | None = Field(default=None, max_length=1_000)
+
+    @field_validator("floor_plan_text", "notes")
+    @classmethod
+    def _printable(cls, value: str | None) -> str | None:
+        return _CONTROL.sub("", value) if value else value
+
+
+def _reject_constant(name: str) -> Any:
+    raise VisionOutputError(f"JSON constant {name} is not allowed")
+
+
+def parse_vision_output(raw: str | dict[str, Any]) -> VisionOutput:
+    """Parse the model's JSON answer (optionally fenced). Raises `VisionOutputError` for anything unusable."""
+    try:
+        if isinstance(raw, str):
+            if len(raw) > 100_000:
+                raise VisionOutputError("answer is too long")
+            match = _FENCE.match(raw)
+            data: Any = json.loads(
+                match.group(1) if match else raw, parse_float=Decimal, parse_constant=_reject_constant
+            )
+        else:
+            data = raw
+        if not isinstance(data, dict):
+            raise VisionOutputError("answer is not a JSON object")
+        return VisionOutput.model_validate(data)
+    except (ValueError, ValidationError) as exc:
+        if isinstance(exc, VisionOutputError):
+            raise
+        raise VisionOutputError("answer does not match the expected shape") from exc
+
+
+class Applied(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    base: Decimal
+    proposed: Decimal  # as proposed by the model (a fraction: 0.20 = +20 %)
+    applied: Decimal  # after the clamp
+    clamped: bool
+    value: Decimal  # base * (1 + applied)
+
+
+def clamp_adjustment(base: Decimal, proposed: Decimal) -> Applied:
+    """Apply a proposed percentage to a deterministic base, limited to +/- 15 % (invariant 4)."""
+    with engine_math():
+        applied = max(-MAX_ADJUSTMENT, min(MAX_ADJUSTMENT, proposed))
+        return Applied(
+            base=base,
+            proposed=proposed,
+            applied=applied,
+            clamped=applied != proposed,
+            value=base * (ONE + applied),
+        )
+
+
+class VisionRecord(BaseModel):
+    """Everything needed to reproduce an audit without the model: provenance plus proposed and applied
+    adjustments."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    model: str = Field(max_length=120)
+    prompt_version: str = Field(max_length=40)
+    condition: Condition
+    photos_total: int
+    photos_excluded: int
+    capex: Applied | None
+    rent: Applied | None
+
+
+def usable_photo_count(output: VisionOutput) -> tuple[int, int]:
+    """(usable, excluded): renders and virtual staging never count as evidence of the flat's condition."""
+    excluded = sum(1 for p in output.photos if p.kind in EXCLUDED_KINDS)
+    return len(output.photos) - excluded, excluded
+
+
+def progress_message(output: VisionOutput) -> str:
+    usable, excluded = usable_photo_count(output)
+    return f"{usable + excluded} photos, {excluded} renders excluded"
+
+
+def apply_vision(
+    output: VisionOutput,
+    *,
+    model: str,
+    prompt_version: str,
+    capex_base: Decimal | None,
+    rent_base: Decimal | None,
+) -> VisionRecord:
+    """Clamp the model's proposals against the deterministic bases. A missing base means no adjustment
+    is applied."""
+    usable, excluded = usable_photo_count(output)
+    return VisionRecord(
+        model=model,
+        prompt_version=prompt_version,
+        condition=output.condition,
+        photos_total=usable + excluded,
+        photos_excluded=excluded,
+        capex=clamp_adjustment(capex_base, output.capex_adjustment) if capex_base is not None else None,
+        rent=clamp_adjustment(rent_base, output.rent_adjustment) if rent_base is not None else None,
+    )
