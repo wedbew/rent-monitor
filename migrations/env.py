@@ -30,9 +30,13 @@ def _include_object(obj, name, type_, reflected, compare_to):
     return not (type_ == "table" and getattr(obj, "schema", None) != SCHEMA)
 
 
+# Every migration runs with bounded waits: a blocked DDL fails fast instead of queueing behind traffic.
+GUARDS = ("SET lock_timeout = '5s'", "SET statement_timeout = '5min'")
+
+
 def run_migrations_offline() -> None:
     context.configure(
-        url=_url(),
+        url="postgresql+psycopg://",  # offline SQL generation needs the dialect only, never a connection
         target_metadata=target_metadata,
         literal_binds=True,
         include_schemas=True,
@@ -41,6 +45,8 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
     )
     with context.begin_transaction():
+        for guard in GUARDS:
+            context.execute(guard)
         context.execute(CreateSchema(SCHEMA, if_not_exists=True))
         context.run_migrations()
 
@@ -59,6 +65,8 @@ def run_migrations_online() -> None:
             compare_type=True,
         )
         with context.begin_transaction():
+            for guard in GUARDS:
+                context.execute(guard)
             context.run_migrations()
 
 

@@ -52,7 +52,7 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
 - Async routes never block: CPU or blocking I/O goes to `asyncio.to_thread` or the worker.
 
 ## 4. Security boundaries
-- Never read, print, commit or paste real values from `.env`. Use `.env.example` names only.
+- Never read, print, commit or paste real values from `.env`. `.env.example` is readable and kept current by agents.
 - Never run anything against production (VPS, live Stripe, production DB). Database tools point at the local
   Compose Postgres or Testcontainers. Stripe tools use the sandbox only.
 - Tenant isolation: every tenant-owned query goes through a repository that takes a `Principal`. Foreign
@@ -106,6 +106,7 @@ Read the matching file when your change touches the area; update the doc in the 
 - `rules/poc-reference.md` — POC is read-only reference; greenfield rewrite; production-ready bar (ADR 0001).
 - `docs/PRE-DEPLOYMENT.md` — launch checklist; tick items only with evidence; read before any deploy or visibility change.
 - `rules/pull-requests.md` — PR template (`.github/pull_request_template.md`) and checklist semantics; required for every PR.
+- `rules/env-example.md` — keep `.env.example` in sync (names, defaults, where to get each value; no secrets); agents may edit it.
 - `rules/repo-layout.md` — shallow repo: no single-child dirs, flat package layout (no `src/`).
 - `rules/blockers.md` — stop and record owner-only blockers in `docs/BLOCKERS.md`; work only in this checkout; pull `staging` after every merge.
 - `rules/context.md` — keep root `CONTEXT.md` current: update it in the same PR as any change that makes it stale; bump its "Last updated" line.

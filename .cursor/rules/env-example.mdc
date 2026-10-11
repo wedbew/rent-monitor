@@ -1,0 +1,8 @@
+---
+description: Keep .env.example in sync with settings; names, local defaults and where-to-get-it comments only
+alwaysApply: true
+---
+
+Canonical rule lives in `.agent/rules/env-example.md`. Follow it:
+
+@.agent/rules/env-example.md

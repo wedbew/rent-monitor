@@ -11,6 +11,7 @@
 @.agent/rules/pull-requests.md
 @.agent/rules/blockers.md
 @.agent/rules/repo-layout.md
+@.agent/rules/env-example.md
 @docs/BLOCKERS.md
 @CONTEXT.md
 
