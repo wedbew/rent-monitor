@@ -13,11 +13,24 @@ from deal_analyzer.ownership import (
     classify_ownership,
     require_whole_ownership,
 )
+from deal_analyzer.vision import (
+    Applied,
+    Condition,
+    PhotoKind,
+    VisionOutput,
+    VisionOutputError,
+    VisionRecord,
+    apply_vision,
+    clamp_adjustment,
+    parse_vision_output,
+)
 
 __all__ = [
     "ASSUMPTIONS_VERSION",
+    "Applied",
     "Assumptions",
     "CashFlowResult",
+    "Condition",
     "Confidence",
     "DealInputs",
     "ExtractionCode",
@@ -28,8 +41,14 @@ __all__ = [
     "Listing",
     "MaxBidResult",
     "OwnershipAssessment",
+    "PhotoKind",
     "RentNotADealError",
+    "VisionOutput",
+    "VisionOutputError",
+    "VisionRecord",
     "analyse_deal",
+    "apply_vision",
+    "clamp_adjustment",
     "classify_legal",
     "classify_ownership",
     "compute_cash_flows",
@@ -38,6 +57,7 @@ __all__ = [
     "hurdle_rate",
     "irr",
     "npv",
+    "parse_vision_output",
     "require_whole_ownership",
     "solve_max_bid",
 ]
