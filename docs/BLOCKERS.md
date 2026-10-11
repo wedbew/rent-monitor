@@ -8,7 +8,7 @@ matter for production or a domain are *Deferred*, not blocking.
 
 | ID | What | Owner action | Waits on it |
 |---|---|---|---|
-| B-007 | **Engine specification** | See "What B-007 is" below. Approve or edit the draft `docs/ENGINE-SPEC.md` (agent writes it next) | #17 and the whole valuation engine, so audits cannot produce a real result |
+| B-007 | **Engine specification** | See "What B-007 is" below. Approve or edit the draft `docs/ENGINE-SPEC.md` (written, RM-71): edit its *Decision* column or reply "approve all" in #43 | #17 and the whole valuation engine, so audits cannot produce a real result |
 | B-009 | semgrep `no-float-money` flags every `x: float = ...` annotation (#55) | Approve a rule fix | any float setting or probability |
 | B-012 | Legal review and retention periods (#41) | Counsel confirms Otodom scraping/image use and the proposed retention defaults (sessions 7 d, login tokens 1 d, snapshots 30 d, audit events 30 d) | paid launch only; not needed to build |
 | B-004 | Google OAuth client id, Resend key | Create a Google OAuth Web client and a Resend key; put `GOOGLE_CLIENT_ID`, `RESEND_API_KEY` in `.env`. Needed only for live sign-in tests: until then auth is built and tested with fakes, and the magic link is logged in dev | live testing of #12 |
