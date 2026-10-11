@@ -6,6 +6,7 @@ from deal_analyzer.errors import ExtractionCode, ExtractionError, FractionalOwne
 from deal_analyzer.extract import extract_listing
 from deal_analyzer.legal_class import LegalAssessment, LegalClass, classify_legal
 from deal_analyzer.listing import Listing
+from deal_analyzer.maxbid import MaxBidResult, analyse_deal, grade_for, hurdle_rate, solve_max_bid
 from deal_analyzer.ownership import (
     Confidence,
     OwnershipAssessment,
@@ -25,13 +26,18 @@ __all__ = [
     "LegalAssessment",
     "LegalClass",
     "Listing",
+    "MaxBidResult",
     "OwnershipAssessment",
     "RentNotADealError",
+    "analyse_deal",
     "classify_legal",
     "classify_ownership",
     "compute_cash_flows",
     "extract_listing",
+    "grade_for",
+    "hurdle_rate",
     "irr",
     "npv",
     "require_whole_ownership",
+    "solve_max_bid",
 ]

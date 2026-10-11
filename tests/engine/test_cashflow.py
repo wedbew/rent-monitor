@@ -173,6 +173,14 @@ def test_exit_applies_appreciation_selling_costs_and_the_sale_tax_window() -> No
     assert ten_years.exit.sale_tax_pln == 0
 
 
+def test_a_market_value_anchor_replaces_the_purchase_price_in_the_exit() -> None:
+    a = CLEAN.model_copy(update={"appreciation_rate": D("0.02")})
+    by_price = compute_cash_flows(deal(assumptions=a)).exit.exit_value_pln
+    anchored = compute_cash_flows(deal(assumptions=a, market_value_pln=D(150_000))).exit.exit_value_pln
+    assert by_price == (D(100_000) * D("1.02") ** 10).quantize(D("0.01"))
+    assert anchored == (D(150_000) * D("1.02") ** 10).quantize(D("0.01"))
+
+
 def test_irr_is_none_when_it_cannot_exist_and_the_result_says_so() -> None:
     assert irr([D(-100), D(-5)]) is None
     assert irr([D(100), D(5)]) is None
