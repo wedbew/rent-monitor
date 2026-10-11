@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-11 · by: initial draft (no ticket yet)
+**Last updated:** 2026-10-11 · by: RM-2
 
 **Sources:** `docs/BLUEPRINT.md` (architecture, 11 Oct 2026) · `docs/TOOLCHAIN.md` (quality, CI, governance, agents) ·
 the POC repo `~/Projects/otodom-rent-report` (branch HEAD `b7dd5a9`, 11 Oct 2026; remote
@@ -159,9 +159,13 @@ Do not start step N+1 with step N red. TOOLCHAIN §8 adds **Step 0** (pre-setup 
 rulesets, Claude and Gemini apps, rename `agent-context/AGENTS.md`, commit the blueprint and ADRs).
 
 **State of this repo (11 Oct 2026):** blueprint, toolchain, agent rules (`.agent/`, `.cursor/rules/`, `CLAUDE.md`, `AGENTS.md`),
-CI/security workflows, pre-commit, semgrep rules and commit-message checker exist. `apps/`, `packages/`, `services/`,
-`migrations/`, `deploy/`, `uv.lock`, `Makefile` and `.env.example` **do not exist yet**. Root commit is local
-(`6bfe49f`); push is pending the `workflow` token scope.
+CI/security workflows, pre-commit, semgrep rules and commit-message checker exist. RM-2 added the empty workspace:
+root `pyproject.toml` (uv workspace, tooling tables merged), `packages/rm-core` (settings, `LegalTag`), `packages/rm-contracts`
+(`ProblemCode`), `services/api` (`/api/health`), `services/worker` (empty), `Makefile`, `.env.example`, `README.md`,
+`CHANGELOG.md`, `docs/LIMITATIONS.md` (L-001…L-004). `ruff`, `pyright` and `pytest -m "not e2e"` pass locally.
+Still missing: `apps/`, `migrations/`, `deploy/`, the four named invariant tests (CI `invariants` job fails until step 1–2
+land them — do not stub them), Alembic, Procrastinate, `frontend/`. Root commit `6bfe49f` is on `origin/main`; the docs
+branch and `staging` are not pushed yet.
 
 ## 9. Open decisions (owner: you)
 
@@ -178,7 +182,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 
 | Need | Open |
 |---|---|
-| Rules, invariants, git flow | `.agent/agents.md`, `.agent/rules/*.md` |
+| Rules, invariants, git flow, PR template | `.agent/agents.md`, `.agent/rules/*.md`, `.github/pull_request_template.md` |
 | Architecture, schema, Stripe, auth, tests | `docs/BLUEPRINT.md` §2–§4 |
 | CI, hooks, rulesets, MCP, skills | `docs/TOOLCHAIN.md` |
 | Risk register and release gates | `docs/BLUEPRINT.md` §5–§6 |

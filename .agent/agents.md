@@ -100,6 +100,7 @@ Read the matching file when your change touches the area; update the doc in the 
 - `rules/changelog.md` — `CHANGELOG.md` (Keep a Changelog), bullets end with `(RM-<issue>)`.
 - `rules/readme.md` — `README.md`: How to run, Stack, Project docs, Status.
 - `rules/legal-tags.md` — `LEGAL[...]` / `GDPR[...]` tags (see §11).
+- `rules/pull-requests.md` — PR template (`.github/pull_request_template.md`) and checklist semantics; required for every PR.
 - `rules/context.md` — keep root `CONTEXT.md` current: update it in the same PR as any change that makes it stale; bump its "Last updated" line.
 Cursor mirrors these in `.cursor/rules/*.mdc` as pointers only; edit the `.agent/rules/` file, never the pointer.
 

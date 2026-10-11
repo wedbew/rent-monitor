@@ -7,6 +7,7 @@
 @.agent/rules/readme.md
 @.agent/rules/legal-tags.md
 @.agent/rules/context.md
+@.agent/rules/pull-requests.md
 @CONTEXT.md
 
 ## Claude-specific notes

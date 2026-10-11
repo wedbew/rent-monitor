@@ -1,0 +1,10 @@
+---
+description: Pull request template and checklist; use when opening or reviewing a PR
+alwaysApply: true
+---
+
+Canonical rule (shared by Cursor, Claude Code, Codex and Gemini) lives in `.agent/rules/pull-requests.md`. Follow it:
+
+@.agent/rules/pull-requests.md
+
+Project-wide rules: @.agent/agents.md
