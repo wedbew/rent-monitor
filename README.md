@@ -13,18 +13,20 @@ make lint        # ruff check + format check
 make types       # pyright
 make check       # lint + types + test (run before pushing)
 cp .env.example .env   # names only; fill values locally, never commit .env
+make migrate     # alembic upgrade head against $DATABASE_URL (postgresql+psycopg://…)
 ```
 
-Compose stack, migrations and seeds are not wired yet (see Status).
+Integration and migration tests start a throwaway Postgres 17 with Testcontainers (Docker required); set
+`TEST_DATABASE_URL` to use an existing disposable database instead. Procrastinate's tables are applied separately by its
+schema manager (the worker bootstrap, RM-29), not by Alembic. The Compose stack and seeds are not wired yet (see Status).
 
 ## Stack
 
-Python ≥ 3.12 (uv workspace), FastAPI, Pydantic v2, structlog. Planned per blueprint: SQLAlchemy 2 async + Alembic,
-Procrastinate, Stripe (card + BLIK), Caddy, Postgres 17.
+Python ≥ 3.12 (uv workspace), FastAPI, Pydantic v2, structlog. SQLAlchemy 2.0 async + psycopg 3 + Alembic (ADR 0007), Procrastinate 3.x. Planned per blueprint: Stripe (card + BLIK), Caddy, Postgres 17.
 
 ## Status
 
-Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton in place (RM-2); next is step 1, the engine foundation (greenfield, ADR 0001; open decisions in [`CONTEXT.md`](CONTEXT.md) §9).
+Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton (RM-2) and the data-plane baseline (models, Alembic, Postgres tests; RM-11) are in place; next is step 1, the engine foundation (greenfield, ADR 0001; open decisions in [`CONTEXT.md`](CONTEXT.md) §9).
 
 ## Project docs
 

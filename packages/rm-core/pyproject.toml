@@ -4,8 +4,11 @@ version = "0.0.0"
 description = "Settings, legal tags, (later) models, repositories, ledger, entitlements, flags"
 requires-python = ">=3.12"
 dependencies = [
+  "alembic>=1.20,<2",
+  "psycopg[binary,pool]>=3.3,<4",
   "pydantic>=2.12",
   "pydantic-settings>=2.11",
+  "sqlalchemy[asyncio]>=2.0,<2.1",
   "structlog>=25.4",
 ]
 
