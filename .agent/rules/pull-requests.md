@@ -33,6 +33,26 @@ The two last checklist items map to rules: **Legal / GDPR** (`rules/legal-tags.m
 3. End agent-authored PR bodies with the attribution line the tool requires.
 4. Never merge your own PR.
 
+## After opening: watch CI and fix it (agents do this, not the human)
+
+Opening the PR is not the end of the task. Do not report "done" until the checks are green or you have stopped for a reason below.
+
+1. Run a monitor on the PR in the background: `gh pr checks <n> --watch --fail-fast` (Claude Code: a background Bash or the Monitor tool;
+   other agents: any equivalent poll, 60 s interval). Also read review comments from the Claude/Gemini review workflows.
+2. A check fails → read its log (`gh run view <run-id> --log-failed`), reproduce locally with the same command
+   (`make lint types test`, `uv run pytest -m invariant`, `pytest tests/migrations`), fix the **cause**, and push a new commit
+   `fix(RM-<n>): ...` to the same branch. Then watch again.
+3. Report to the user: final check status, what failed, what you changed. Paste the check names, not a paraphrase.
+
+**Stop and ask instead of fixing when:**
+- the fix would delete, skip, `xfail` or weaken an `invariant` test, loosen a lint/type/semgrep rule, lower `fail_under`, or edit a workflow or ruleset to make CI pass;
+- the failure is a known gap, not a bug (record it in `docs/LIMITATIONS.md` and tell the user);
+- the failure needs a secret, a token scope, a repo setting or a paid plan;
+- the same check still fails after 3 fix attempts, or a failure looks flaky (re-run once, then report it).
+
+Never: `--no-verify`, force-push, merge the PR, push to `staging`/`main`, or mark a check "expected to fail" in the PR body to avoid fixing it.
+Known intentional red: the `invariants` job fails until the four named invariant tests exist (blueprint 4.6); report it, do not stub them.
+
 ## Do not
 
 - Remove or reword template sections to make a PR look complete.

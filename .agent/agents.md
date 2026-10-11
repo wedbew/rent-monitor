@@ -76,6 +76,7 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
   Breaking change: `type(RM-n)!: ...`. Only the repository's root commit may omit the ticket.
 - PR body contains `Closes #<issue>`, what changed, how it was tested, any blueprint deviation, a **Legal / GDPR** line
   (§11) and a **Context** line (`CONTEXT.md` updated: §n, or not affected and why).
+- After opening a PR, monitor its checks and fix failures yourself (`rules/pull-requests.md`); stop and ask before weakening any test, rule or workflow.
 - Never push to `main` or `staging` directly. Never force-push shared branches. Never merge your own PR.
 
 ## 7. Implementation order (blueprint 4.8) — do not start step N+1 with step N red
