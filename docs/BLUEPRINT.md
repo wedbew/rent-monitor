@@ -740,6 +740,15 @@ class MarketSidecar(Base):
     )
 
 
+# ---------- Erasure accountability (added by RM-30) ----------
+class ErasureLog(Base):
+    """sha256(user_id) of erased accounts, so a restore from an older backup can re-erase them."""
+    __tablename__ = "erasure_log"; __table_args__ = APP
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    user_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    erased_at: Mapped[datetime] = mapped_column(server_default=func.now(), index=True)
+
+
 # ---------- Scraping hygiene (added by RM-22) ----------
 class HostThrottle(Base):
     """Next free request slot per outbound host and its circuit-breaker window."""

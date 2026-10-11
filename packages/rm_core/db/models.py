@@ -424,6 +424,22 @@ class MarketSidecar(Base):
     generated_at: Mapped[datetime]
 
 
+# ---------- Erasure accountability ----------
+class ErasureLog(Base):
+    """Pseudonymous record that an account was erased, kept so a restore from an older backup can re-erase it.
+
+    GDPR[erasure]: holds only sha256(user_id) of a random uuid, never an email or name. Retention: the
+    length of the longest backup (56 days) plus the restore window, then purged (RM-30 runbook).
+    """
+
+    __tablename__ = "erasure_log"
+    __table_args__ = (CheckConstraint("char_length(user_hash) = 64", name="hash_length"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    user_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    erased_at: Mapped[datetime] = mapped_column(server_default=func.now(), index=True)
+
+
 # ---------- Scraping hygiene ----------
 class HostThrottle(Base):
     """One row per outbound host: its next free request slot and circuit-breaker window (blueprint §2, §6).
