@@ -887,7 +887,7 @@ Hand this section to the agent as its specification. It is ordered so each step 
 
 ### 4.0 Agent operating rules
 
-1. The analytical engines in `apps/` are the source of truth. Wrap them; do not rewrite their math. Any change inside `apps/deal-analyzer` is limited to the `ContextRepository` and `ProgressSink` seams and must keep existing tests green.
+1. The analytical engines in `apps/` are written from scratch (ADR 0001); the proof of concept is read-only reference and nothing is copied from it. Engine math lives only in `apps/deal-analyzer`, uses `Decimal`, and takes `ContextRepository` and `ProgressSink` as native seams.
 2. Never compute a financial number outside `apps/deal-analyzer`. The API copies values from `DealAnalysis` into typed columns; the UI renders them.
 3. The four invariants each get a named regression test (listed in 4.6). A PR that deletes or skips one is rejected.
 4. All money is `Decimal` in Python and `NUMERIC` in Postgres. No floats in persisted financial fields.
@@ -901,7 +901,7 @@ rentmonitor/
 ├── uv.lock
 ├── Makefile                      # dev, test, migrate, seed, deploy, backup-drill
 ├── .env.example
-├── apps/                         # UNCHANGED engines (seams only)
+├── apps/                         # engines, written from scratch (ADR 0001)
 │   ├── deal-analyzer/
 │   ├── otodom-city-report/
 │   ├── price-intel/
@@ -2096,7 +2096,7 @@ Record the drill's wall-clock time; if it exceeds 30 minutes, the 1-hour RTO is 
 
 ### 4.8 Implementation order for the agent
 
-1. **Engine seams**: `ContextRepository` and `ProgressSink` in `deal-analyzer`; filesystem implementations keep the CLI working. Existing tests green.
+1. **Engine foundation**: new `apps/deal-analyzer` with `ContextRepository` and `ProgressSink` as native interfaces, in-memory and filesystem implementations, and the four invariant tests written first.
 2. **Data plane**: `rm-core` models, Alembic baseline, Procrastinate schema, importers for `agent-context` and `reports/final`. Invariant tests for asking ≠ deed.
 3. **Auth** (Python only): Google ID-token sign-in and One Tap first, then email magic link; sessions, `current_principal`, Origin check, signup grant. Tenant-isolation, Google-token and magic-link tests.
 4. **Audits**: submit route, worker task, SSE hub, reconciler. Quota race, release and SSE resume tests. Delete `frontend/server/*.ts`.

@@ -1,0 +1,12 @@
+---
+description: Keep root CONTEXT.md current; update it in the same PR as any change to structure, porting status, decisions, gotchas or phase state
+alwaysApply: true
+---
+
+Canonical rule (shared by Cursor, Claude Code, Codex and Gemini) lives in `.agent/rules/context.md`. Follow it:
+
+@.agent/rules/context.md
+
+Current project context: @CONTEXT.md
+
+Project-wide rules: @.agent/agents.md

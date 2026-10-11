@@ -1,0 +1,104 @@
+[project]
+name = "rentmonitor"
+version = "0.0.0"
+description = "RentMonitor SaaS workspace root (see docs/BLUEPRINT.md §4.1)"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv.workspace]
+members = ["packages/*", "services/api", "services/worker"]
+# apps/* join the workspace when the POC engines are ported (CONTEXT.md §4.1)
+
+[tool.uv.sources]
+rm-core = { workspace = true }
+rm-contracts = { workspace = true }
+rm-api = { workspace = true }
+rm-worker = { workspace = true }
+
+[dependency-groups]
+dev = [
+  "pytest>=9.1,<10",
+  "pytest-asyncio>=1.4,<2",
+  "pytest-cov>=7",
+  "pytest-timeout>=2.4",
+  "testcontainers[postgres]>=4.15,<5",
+  "asgi-lifespan>=2.1",
+  "httpx>=0.28",
+  "hypothesis>=6.169",
+  "schemathesis>=4.30,<5",
+  "pytest-alembic>=0.13",
+  "time-machine>=3.5",
+  "polyfactory>=3.3",
+  "ruff==0.17.0",
+  "pyright==1.1.414",
+  "commitizen>=4.19,<5",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 110
+# tests/tooling and check_commit_msg.py are the shipped tooling pack, kept byte-for-byte
+extend-exclude = ["frontend", "migrations/versions", "docs", "tests/tooling", "scripts/check_commit_msg.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "ASYNC", "DTZ", "PT", "TID", "RUF", "PL", "SIM", "C4"]
+ignore = ["PLR0913", "PLR2004"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "S105", "S106", "PLR2004"]
+"tests/**" = ["S101", "S105", "S106", "PLR2004"]
+"packages/rm-contracts/src/rm_contracts/problems.py" = ["S105"]  # error-code names, not passwords
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"requests".msg = "Use the injectable httpx/curl_cffi client (agents.md §3)."
+"loguru".msg = "structlog only (blueprint 4.2)."
+
+[tool.pyright]
+include = ["packages", "services", "scripts", "tests"]
+exclude = ["**/node_modules", "frontend", "apps/*/reports"]
+pythonVersion = "3.12"
+extraPaths = ["scripts"]
+typeCheckingMode = "standard"
+strict = ["packages", "services"]
+reportUnnecessaryTypeIgnoreComment = "error"
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers --strict-config"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+timeout = 120
+testpaths = ["tests", "packages", "services"]
+markers = [
+  "invariant: business invariant from agents.md §1; may never be skipped",
+  "money: ledger, quota, billing and webhook behaviour",
+  "integration: needs Docker (Testcontainers Postgres 17)",
+  "e2e: talks to Stripe test mode; never in PR CI",
+]
+filterwarnings = ["error::DeprecationWarning:rm_.*"]
+
+[tool.coverage.run]
+branch = true
+source = ["rm_core", "rm_api", "rm_worker", "rm_contracts"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+
+[tool.commitizen]
+name = "cz_customize"
+[tool.commitizen.customize]
+schema = "type(RM-<issue>): subject"
+schema_pattern = '^(feat|fix|perf|refactor|test|docs|build|ci|chore|revert)\(RM-[1-9][0-9]*\)!?: \S.{0,71}$'
+example = "feat(RM-12): add credit ledger reserve/settle"
+message_template = "{{change_type}}(RM-{{issue}}){% if breaking %}!{% endif %}: {{subject}}"
+questions = [
+  { type = "list", name = "change_type", message = "Type", choices = [
+    { value = "feat", name = "feat" }, { value = "fix", name = "fix" }, { value = "perf", name = "perf" },
+    { value = "refactor", name = "refactor" }, { value = "test", name = "test" }, { value = "docs", name = "docs" },
+    { value = "build", name = "build" }, { value = "ci", name = "ci" }, { value = "chore", name = "chore" },
+    { value = "revert", name = "revert" } ] },
+  { type = "input", name = "issue", message = "GitHub issue number (RM-n)" },
+  { type = "confirm", name = "breaking", message = "Breaking change?", default = false },
+  { type = "input", name = "subject", message = "Subject (imperative, ≤72 chars)" },
+]

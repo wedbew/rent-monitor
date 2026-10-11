@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/*.key)",
+      "Bash(git push --force*)",
+      "Bash(git push origin main*)",
+      "Bash(git push origin staging*)"
+    ],
+    "ask": [
+      "Edit(./tests/**/test_invariant_*)",
+      "Write(./tests/**/test_invariant_*)",
+      "Edit(./migrations/**)",
+      "Write(./migrations/**)",
+      "Edit(./.github/workflows/**)",
+      "Edit(./.agent/agents.md)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | grep -E '\\.py$' | xargs -r uv run --quiet ruff format --quiet"
+          }
+        ]
+      }
+    ]
+  }
+}

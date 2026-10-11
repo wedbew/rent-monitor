@@ -27,7 +27,8 @@ jobs:
           !startsWith(github.head_ref, 'release-please--')
         env:
           BODY: ${{ github.event.pull_request.body }}
-        run: printf '%s' "$BODY" | grep -Eiq '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+'
+        run: |
+          printf '%s' "$BODY" | grep -Eiq '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+'
       - name: every commit in the PR is ticket-tagged
         env:
           BASE: ${{ github.event.pull_request.base.sha }}

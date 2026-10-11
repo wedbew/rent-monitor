@@ -50,8 +50,8 @@ can later drive a flag:
 
 ## During migration, refactor and re-engineering
 
-Moving code out of `apps/*`, wrapping engines behind `ContextRepository` / `ProgressSink`, replacing `requests` with
-`curl_cffi`, writing the importers, or deleting `frontend/server/*.ts`:
+Re-implementing POC behaviour (fetchers on `curl_cffi`, engine, importers) or deleting `frontend/server/*.ts`. The POC carries no
+tags, so use `CONTEXT.md` §6 as the hot-spot list:
 
 1. Before you touch a file, `grep -rnE "LEGAL\[|GDPR\[" <path>` to see existing tags. Tags move with the code; never
    drop one in a refactor.
