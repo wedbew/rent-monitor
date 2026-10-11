@@ -740,6 +740,16 @@ class MarketSidecar(Base):
     )
 
 
+# ---------- Scraping hygiene (added by RM-22) ----------
+class HostThrottle(Base):
+    """Next free request slot per outbound host and its circuit-breaker window."""
+    __tablename__ = "host_throttle"; __table_args__ = APP
+    host: Mapped[str] = mapped_column(String(64), primary_key=True)        # 'otodom.pl'
+    next_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    breaker_open_until: Mapped[datetime | None]
+    breaker_reason: Mapped[str | None] = mapped_column(String(40))
+
+
 # ---------- Feature flags ----------
 class FeatureFlag(Base):
     __tablename__ = "feature_flag"; __table_args__ = APP
