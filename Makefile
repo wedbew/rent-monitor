@@ -23,6 +23,6 @@ types:
 
 check: lint types test
 
-# Wired in the data-plane step (blueprint 4.8 step 2); needs alembic.ini + migrations/env.py.
+# Applies Alembic migrations to $DATABASE_URL (postgresql+psycopg://...). Procrastinate's tables: see README.
 migrate:
-	@echo "migrate: not available yet (data-plane step)" && exit 1
+	uv run alembic upgrade head
