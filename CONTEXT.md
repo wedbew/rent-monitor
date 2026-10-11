@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-11 · by: RM-29 (dev environment)
+**Last updated:** 2026-10-11 · by: RM-22 (Otodom fetch client)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -133,6 +133,7 @@ exclude `apps/agent-context` from the workspace. Each app gets its own `pyprojec
 | G7 | POC `DealAnalysis.schema_version` has 11 historic values (`1.0`…`1.10`); old `reports/final/*.json` must still load | `audit.schema_version` is a column; importers read legacy reports | New schema versions from `1`; no legacy-report importer unless the maintainer asks |
 | G8 | POC has its own `AGENTS.md` and `.cursor/rules` (frontend sync, limitations, roadmap) | Conflicts with our rules | Do **not** copy them. Read their limitation lists as input; register only what still applies in `docs/LIMITATIONS.md` |
 | G9 | POC engine hits third parties directly: Otodom, OpenRouter, GUS BDL, Moniter, Nominatim, Overpass | Tests must be offline | Each goes behind an injectable client with timeouts; fakes in `tests/` |
+| G11 | `curl_cffi` in stream mode applies only a *low-speed* timeout, and closing a stream waits for the server to finish | A slow-drip server escaped every timeout and held the worker for the whole body | Hard `asyncio.timeout` around the request and cancel the stream task before `aclose()` (RM-22; tests in `test_otodom_transport.py`) |
 | G10 | POC `.env` exists in the POC repo | Must never be read or copied | Use names from the POC `config.py` (`OTODOM_BASE_URL`, `OTODOM_HTTP_BACKEND`, `GEO_*`, `NOMINATIM_*`, `OVERPASS_URL`, `VALUATION_EVIDENCE_DIR`, `MODEL_ARTIFACT_PATH`, `SNAPSHOT_CUTOFF`, `DEAL_ANALYZER_MC_DRAWS`) only to build `.env.example` |
 
 ## 6. Legal and GDPR hot-spots (where the POC did it; tag the new code that does the same)
@@ -166,7 +167,7 @@ CI/security workflows, pre-commit, semgrep rules and commit-message checker exis
 settings + `LegalTag`, `rm-contracts` `ProblemCode`, `rm-api` `/api/health`, empty `rm-worker`), `Makefile`, `.env.example`,
 `README.md`, `CHANGELOG.md`, `docs/LIMITATIONS.md`. ADR 0001 made the build greenfield. A first attempt to copy POC packages was
 discarded. RM-11 added `packages/rm-core/.../db/` (all §3 models), `alembic.ini`, `migrations/` (baseline `0001`), Testcontainers fixtures and
-`test_invariant_asking_is_not_deed`. RM-29 added `deploy/compose.dev.yml`, Makefile dev targets, `rm_core.seed`, `scripts/seed.py` and `rm_worker.app`. RM-18 added `rm_core.logging`/`observability`, `rm_api.{app,problems,middleware,health,deps}` (problem codes, `/healthz`, `/readyz`, session dependency). Still missing: `apps/`, `deploy/`, the other named invariant tests (the CI `invariants` job stays off
+`test_invariant_asking_is_not_deed`. RM-22 added `rm_core.{listing_ref,deadline,throttle,snapshots}`, `rm_worker.clients.otodom*`, `rm_worker.snapshot_service` and migration `0002` (`host_throttle`). RM-29 added `deploy/compose.dev.yml`, Makefile dev targets, `rm_core.seed`, `scripts/seed.py` and `rm_worker.app`. RM-18 added `rm_core.logging`/`observability`, `rm_api.{app,problems,middleware,health,deps}` (problem codes, `/healthz`, `/readyz`, session dependency). Still missing: `apps/`, `deploy/`, the other named invariant tests (the CI `invariants` job stays off
 until they exist; do not stub them), Procrastinate worker bootstrap, `frontend/`. The `migrations` CI job can be switched on
 (`ENABLE_MIGRATIONS_JOB=true` plus the `staging` required check) — an owner action, see §9.
 Repo `wedbew/rent-monitor` is **public during development** (switch back to private before real keys or data: `docs/PRE-DEPLOYMENT.md` §0);

@@ -7,6 +7,7 @@ dependencies = [
     "rm-core",
     "rm-contracts",
     "procrastinate>=3.10,<4",
+    "curl-cffi>=0.16,<0.17",
 ]
 # procrastinate, sqlalchemy, psycopg join in the data-plane step (blueprint 4.8 step 2); check context7 first.
 

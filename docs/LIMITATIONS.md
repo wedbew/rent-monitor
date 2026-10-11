@@ -40,6 +40,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** None needed; do not reproduce float money in new code.
 - **Target:** Data-plane step (blueprint 4.8 step 2)
 
+### L-005 — Otodom listing payload shape is not verified against a live page
+- **Status:** active
+- **Discovered:** 2026-10-11
+- **Affects:** `rm_worker.clients.otodom.classify`, `UPSTREAM_SCHEMA_DRIFT`, RM-28 contract test
+- **Evidence:** inferred (path `props.pageProps.ad` with a truthy `id` was confirmed only from reading the POC; never fetched live from this repo)
+- **Description:** The client accepts a page whose `__NEXT_DATA__` holds `props.pageProps.ad.id`, the minimum the engine needs. Offline tests use hand-built pages. Page markup, challenge pages and the real ad shape can differ.
+- **Workaround:** Anything unexpected becomes `UPSTREAM_BLOCKED` or `UPSTREAM_SCHEMA_DRIFT` and releases the credit; nothing is guessed.
+- **Target:** RM-28 (nightly contract test against one live listing); L-002 test from the VPS
+
 ## Resolved
 
 _None yet._

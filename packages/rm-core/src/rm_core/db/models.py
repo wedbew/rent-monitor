@@ -424,6 +424,21 @@ class MarketSidecar(Base):
     generated_at: Mapped[datetime]
 
 
+# ---------- Scraping hygiene ----------
+class HostThrottle(Base):
+    """One row per outbound host: its next free request slot and circuit-breaker window (blueprint §2, §6).
+
+    LEGAL[scraping]: caps requests to third-party hosts (1 req/s for Otodom) and pauses them when blocked.
+    """
+
+    __tablename__ = "host_throttle"
+
+    host: Mapped[str] = mapped_column(String(64), primary_key=True)
+    next_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    breaker_open_until: Mapped[datetime | None]
+    breaker_reason: Mapped[str | None] = mapped_column(String(40))
+
+
 # ---------- Feature flags ----------
 class FeatureFlag(Base):
     __tablename__ = "feature_flag"
