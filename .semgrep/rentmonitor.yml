@@ -1,16 +1,24 @@
 rules:
   - id: no-float-money
-    message: Money must be Decimal (agents.md §3). Do not convert money fields with float().
+    message: Money must be Decimal (agents.md §3). Do not annotate or convert money with float.
     severity: ERROR
     languages: [python]
     paths:
-      include: ["packages/", "services/"]
-    pattern-either:
-      - pattern: float($X.$F)
-      - pattern: "$NAME: float = ..."
-    metavariable-regex:
-      metavariable: $F
-      regex: (?i).*(pln|price|amount|bid|capex|balance|cost|rent|fee).*
+      include: ["packages/", "services/", "apps/"]
+    # Every pattern binds $F, so the name regex applies to all of them (RM-55). Tests: .semgrep/rentmonitor.py
+    patterns:
+      - pattern-either:
+          - pattern: float($X.$F)
+          - pattern: float($F)
+          - pattern: "$F: float"
+          - pattern: "$F: float = $V"
+          - pattern: "$F: float | None = $V"
+          - pattern: "$F: Mapped[float] = $V"
+          - pattern: "def $FN(..., $F: float, ...): ..."
+          - pattern: "def $FN(..., $F: float = $D, ...): ..."
+      - metavariable-regex:
+          metavariable: $F
+          regex: (?i).*(pln|zl|price|amount|bid|capex|opex|balance|cost|rent|fee|czynsz|tax|vat|income|revenue|payment|invoice).*
 
   - id: stripe-body-parsed-before-signature
     message: Verify the Stripe signature on the raw body before parsing it (blueprint 4.5 c).
