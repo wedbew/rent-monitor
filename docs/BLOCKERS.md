@@ -40,7 +40,7 @@ Until then the engine stays blocked (#17) while everything else proceeds.
 | ID | What | Resolution | Date |
 |---|---|---|---|
 | B-005a | R2 bucket and keys | Owner states the R2 values are in `.env` (not verified by agents, which cannot read it) | 2026-10-11 |
-| B-008 | `migrations` CI job and required check | Enabled: `ENABLE_MIGRATIONS_JOB=true`, `migrations` required on `staging`, squawk clean (RM-67). `invariants` stays off: it needs the engine's three missing named tests, see #17 | 2026-10-11 |
+| B-008 | `migrations` CI job and required check | Enabled: `ENABLE_MIGRATIONS_JOB=true`, `migrations` required on `staging`, squawk clean (RM-68). `invariants` stays off: it needs the engine's three missing named tests, see #17 | 2026-10-11 |
 | B-010 | Agents could not read `.env.example` | Deny rule narrowed to real env files; agents read and edit `.env.example` (`rules/env-example.md`) | 2026-10-11 |
 | B-011 | `.claude/settings.json` safety entries | Added deny `gh pr merge*--admin*`, ask on `gh repo edit*visibility*` and `gh repo delete*`. Agents merge into `staging` themselves; the human approval is on `staging` → `main` only, at launch, enforced by the ruleset | 2026-10-11 |
 | B-013 | Testcontainers reaper could not mount the Docker socket (macOS) | `tests/conftest.py` sets `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`; suite passes with the reaper on | 2026-10-11 |
