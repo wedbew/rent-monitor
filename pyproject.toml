@@ -69,6 +69,7 @@ asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 timeout = 120
 testpaths = ["tests", "packages", "services"]
+pythonpath = ["scripts"]
 markers = [
   "invariant: business invariant from agents.md §1; may never be skipped",
   "money: ledger, quota, billing and webhook behaviour",
