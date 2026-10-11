@@ -7,7 +7,7 @@ moves to *Resolved* with a date. Rows are never deleted.
 
 | ID | Blocked | Owner action | Waits on it | Since |
 |---|---|---|---|---|
-| B-001 | Sentry in production (no DSN) | Create a Sentry project; set `SENTRY_DSN`, `SENTRY_TRACES_SAMPLE_RATE`, cron check-in URL (#40) | #18 live check, #15, gate list | 2026-10-11 |
+| B-001 | Sentry in production (no DSN). Org slug: `mb-web-dev` | In Sentry org `mb-web-dev`: (1) create project **rentmonitor-api**, platform Python/FastAPI; (2) copy its DSN into the host/dev `.env` as `SENTRY_DSN` and set `SENTRY_TRACES_SAMPLE_RATE=0.05`; (3) add a **Cron monitor** `nightly-backup` and put its check-in URL in `SENTRY_CRON_CHECKIN_URL`; (4) add an **Uptime monitor** on `https://<domain>/api/health` (needs the domain, B-005); (5) verify with `SENTRY_DSN=... uv run python -c "import sentry_sdk;from rm_core.observability import init_sentry;from rm_core.settings import get_settings;init_sentry(get_settings());sentry_sdk.capture_message('rentmonitor test');sentry_sdk.flush()"` and look for the event. The "run code" the owner mentioned is unidentified: say what it is for. | #18 live check, #15 monitors, gate list | 2026-10-11 |
 | B-002 | Umami analytics (no website id/script) | Create Umami Cloud site; give the website id (#40, #41 cookie notice) | SPA, privacy notice | 2026-10-11 |
 | B-003 | Stripe: test keys for agents, webhook secret, BLIK recurring activation | Create sandbox keys (Agent-tagged by 2026-10-31), request BLIK recurring (#39, #40) | #14, #26, #27, gates 2-3 | 2026-10-11 |
 | B-004 | Google OAuth client id, Resend key and sending domain | Create in Google Cloud / Resend; set `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, DNS (#40) | #12, #25 | 2026-10-11 |
