@@ -106,6 +106,7 @@ Read the matching file when your change touches the area; update the doc in the 
 - `rules/poc-reference.md` — POC is read-only reference; greenfield rewrite; production-ready bar (ADR 0001).
 - `docs/PRE-DEPLOYMENT.md` — launch checklist; tick items only with evidence; read before any deploy or visibility change.
 - `rules/pull-requests.md` — PR template (`.github/pull_request_template.md`) and checklist semantics; required for every PR.
+- `rules/blockers.md` — stop and record owner-only blockers in `docs/BLOCKERS.md`; work only in this checkout; pull `staging` after every merge.
 - `rules/context.md` — keep root `CONTEXT.md` current: update it in the same PR as any change that makes it stale; bump its "Last updated" line.
 Cursor mirrors these in `.cursor/rules/*.mdc` as pointers only; edit the `.agent/rules/` file, never the pointer.
 

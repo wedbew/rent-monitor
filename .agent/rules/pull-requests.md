@@ -64,6 +64,7 @@ git switch staging && git pull --ff-only && git branch -D <branch> # tidy local;
 - **Ask a human first (comment on the PR, wait for approval)** if the PR touches: money/ledger/quota/billing/webhooks, auth/sessions/tenant
   isolation, a migration's contract step, `.github/` workflows or rulesets, `.claude/settings.json`, an `invariant` test, or owner items in `docs/PRE-DEPLOYMENT.md`.
 - **Promotion `staging` → `main`** is a human decision: the agent may open the promotion PR but never merges it (the ruleset requires one approval).
+- After merging, **pull**: `git switch staging && git pull --ff-only`, delete the local branch, report the commit.
 - After merging, update `CONTEXT.md` §8 if state changed and tick `docs/PRE-DEPLOYMENT.md` items the PR gave evidence for.
 
 **Stop and ask instead of fixing when:**

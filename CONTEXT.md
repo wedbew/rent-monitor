@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-11 · by: RM-23 (vision client)
+**Last updated:** 2026-10-11 · by: RM-59 (blockers)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -202,6 +202,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Headless agent (Actions), secrets | `docs/AUTONOMY.md` |
 | Backlog (blueprint → issues) | `docs/BACKLOG.md` |
 | Milestones, dependencies and launch gates | `docs/ROADMAP.md` |
+| Owner-only blockers | `docs/BLOCKERS.md`, `.agent/rules/blockers.md` |
 | Agent bot setup | `docs/AGENT-BOT.md`, `scripts/setup_agent_bot.sh` |
 | Launch checklist (incl. back to private) | `docs/PRE-DEPLOYMENT.md` |
 | POC architecture map and data flow | `~/Projects/otodom-rent-report/apps/ARCHITECTURE.md` |

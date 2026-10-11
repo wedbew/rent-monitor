@@ -1,0 +1,10 @@
+---
+description: Stop and record owner-only blockers (missing tools, env, accounts, decisions) in docs/BLOCKERS.md
+alwaysApply: true
+---
+
+Canonical rule lives in `.agent/rules/blockers.md`. Follow it:
+
+@.agent/rules/blockers.md
+
+Current blockers: @docs/BLOCKERS.md
