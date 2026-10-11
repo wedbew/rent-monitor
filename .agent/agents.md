@@ -5,6 +5,7 @@
 > long how-tos live in `.claude/skills/*/SKILL.md`.
 
 ## 0. Status of this document
+- Orientation: `CONTEXT.md` at the repo root (summary, POC porting map, open decisions — living file, see §10). Toolchain: `docs/TOOLCHAIN.md`.
 - Spec of record: `docs/blueprint.md` (RentMonitor SaaS — Architecture & Implementation Blueprint, 11 Oct 2026).
 - Current phase: **Phase 1 — backend only.** Do not create or modify anything under `frontend/` except deleting
   `frontend/server/*.ts`, `frontend/src/lib/cashflow.ts`, `frontend/src/lib/appreciation.ts` when the ticket says so.
@@ -73,7 +74,8 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
 - Work from an issue. Branch `rm-<issue>-<slug>` from `staging`.
 - Commit / PR title: `type(RM-<issue>): subject` — types: feat fix perf refactor test docs build ci chore revert.
   Breaking change: `type(RM-n)!: ...`. Only the repository's root commit may omit the ticket.
-- PR body contains `Closes #<issue>`, what changed, how it was tested, and any blueprint deviation.
+- PR body contains `Closes #<issue>`, what changed, how it was tested, any blueprint deviation, a **Legal / GDPR** line
+  (§11) and a **Context** line (`CONTEXT.md` updated: §n, or not affected and why).
 - Never push to `main` or `staging` directly. Never force-push shared branches. Never merge your own PR.
 
 ## 7. Implementation order (blueprint 4.8) — do not start step N+1 with step N red
@@ -98,6 +100,7 @@ Read the matching file when your change touches the area; update the doc in the 
 - `rules/changelog.md` — `CHANGELOG.md` (Keep a Changelog), bullets end with `(RM-<issue>)`.
 - `rules/readme.md` — `README.md`: How to run, Stack, Project docs, Status.
 - `rules/legal-tags.md` — `LEGAL[...]` / `GDPR[...]` tags (see §11).
+- `rules/context.md` — keep root `CONTEXT.md` current: update it in the same PR as any change that makes it stale; bump its "Last updated" line.
 Cursor mirrors these in `.cursor/rules/*.mdc` as pointers only; edit the `.agent/rules/` file, never the pointer.
 
 ## 11. Legal and GDPR tagging (rule: `.agent/rules/legal-tags.md`)

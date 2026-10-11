@@ -6,6 +6,8 @@
 @.agent/rules/changelog.md
 @.agent/rules/readme.md
 @.agent/rules/legal-tags.md
+@.agent/rules/context.md
+@CONTEXT.md
 
 ## Claude-specific notes
 - Before writing code that touches Procrastinate, Stripe, SQLAlchemy async or sse-starlette, look the API up with
