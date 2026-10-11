@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-11 · by: RM-45 (backlog traceability)
+**Last updated:** 2026-10-11 · by: RM-47 (roadmap)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -169,6 +169,9 @@ discarded. Still missing: `apps/`, `migrations/`, `deploy/`, the four named inva
 fail until the data plane and engine exist; do not stub them), Alembic, Procrastinate, `frontend/`.
 Repo `wedbew/rent-monitor` is **public during development** (switch back to private before real keys or data: `docs/PRE-DEPLOYMENT.md` §0);
 rulesets for `main` and `staging` are active; `staging` exists (PR #3 merged by admin bypass with `invariants` and `migrations` red).
+Roadmap milestones, issue dependencies, gates and owner deadlines are in `docs/ROADMAP.md` (RM-47). New market-data planning gaps:
+#48 requires metric provenance/completeness gates; #49 requires city coverage/deduplication policy. Both are fresh-import design,
+not permission to copy POC or GUS-PoC artifacts.
 
 ## 9. Open decisions (owner: you)
 
@@ -194,9 +197,11 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Risk register and release gates | `docs/BLUEPRINT.md` §5–§6 |
 | Headless agent (Actions), secrets | `docs/AUTONOMY.md` |
 | Backlog (blueprint → issues) | `docs/BACKLOG.md` |
+| Milestones, dependencies and launch gates | `docs/ROADMAP.md` |
 | Agent bot setup | `docs/AGENT-BOT.md`, `scripts/setup_agent_bot.sh` |
 | Launch checklist (incl. back to private) | `docs/PRE-DEPLOYMENT.md` |
 | POC architecture map and data flow | `~/Projects/otodom-rent-report/apps/ARCHITECTURE.md` |
 | POC pipeline call order, config files | `…/apps/deal-analyzer/PIPELINE.md`, `config/*.yaml` |
 | POC audit (origin of "audit 3.x" references) | `…/docs/APP_AUDIT_AND_ROADMAP.md` |
 | POC limitations register | `…/apps/LIMITATIONS.md`, `…/apps/deal-analyzer/docs/LIMITATIONS.md` |
+| GUS reference lessons (read-only; no artifact import) | `~/Projects/gus-stats-poc/README.md`, `docs/REIS_V3_IMPLEMENTATION_VERIFICATION.md` |

@@ -43,6 +43,8 @@ add an issue and a row here (same PR). Labels: `phase-1`, `launch`, `owner`, `ph
 | §4.8 step 6 | Frontend | #44 (Phase 2) |
 | §4.8 step 7 | Ops | #15 |
 | §4.8 step 8 | Market and screener tasks | #16 |
+| §4.8 step 8, §5 | BDL metric contract, provenance, completeness/publication gates | #48 |
+| §4.8 step 8, §5 | Otodom city coverage, partitioning and deduplication policy | #49 |
 | §5 risk register | Legal review, accountant, IP test, cost | #41, #42, #24, L-001..L-003 |
 | §5 open decisions | VAT display, allowance, free tier | #43 |
 | §6 worker layout, memory admission | `worker-ops`, child memory cap, connection budget | #25, #13, #15 |
