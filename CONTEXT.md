@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-11 · by: RM-11 (data plane)
+**Last updated:** 2026-10-11 · by: RM-18 (platform foundations)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -166,7 +166,7 @@ CI/security workflows, pre-commit, semgrep rules and commit-message checker exis
 settings + `LegalTag`, `rm-contracts` `ProblemCode`, `rm-api` `/api/health`, empty `rm-worker`), `Makefile`, `.env.example`,
 `README.md`, `CHANGELOG.md`, `docs/LIMITATIONS.md`. ADR 0001 made the build greenfield. A first attempt to copy POC packages was
 discarded. RM-11 added `packages/rm-core/.../db/` (all §3 models), `alembic.ini`, `migrations/` (baseline `0001`), Testcontainers fixtures and
-`test_invariant_asking_is_not_deed`. Still missing: `apps/`, `deploy/`, the other named invariant tests (the CI `invariants` job stays off
+`test_invariant_asking_is_not_deed`. RM-18 added `rm_core.logging`/`observability`, `rm_api.{app,problems,middleware,health,deps}` (problem codes, `/healthz`, `/readyz`, session dependency). Still missing: `apps/`, `deploy/`, the other named invariant tests (the CI `invariants` job stays off
 until they exist; do not stub them), Procrastinate worker bootstrap, `frontend/`. The `migrations` CI job can be switched on
 (`ENABLE_MIGRATIONS_JOB=true` plus the `staging` required check) — an owner action, see §9.
 Repo `wedbew/rent-monitor` is **public during development** (switch back to private before real keys or data: `docs/PRE-DEPLOYMENT.md` §0);

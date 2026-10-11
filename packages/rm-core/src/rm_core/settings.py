@@ -1,5 +1,6 @@
 """Typed settings. Names mirror `.env.example`; real values come from the environment only."""
 
+from decimal import Decimal
 from functools import lru_cache
 from typing import Literal
 
@@ -30,6 +31,12 @@ class Settings(BaseSettings):
     worker_audit_concurrency: int = Field(default=1, ge=1)
     worker_batch_concurrency: int = Field(default=1, ge=1)
     audit_job_timeout_s: int = Field(default=900, ge=1)
+
+    sentry_dsn: str = ""
+    sentry_traces_sample_rate: Decimal = Field(
+        default=Decimal("0.05"), ge=0, le=1
+    )  # a probability; Decimal keeps floats out of settings
+    release: str = ""  # image tag / git sha, set by the deploy
 
 
 @lru_cache
