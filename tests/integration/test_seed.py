@@ -58,4 +58,9 @@ async def test_admin_is_created_verified_then_promoted_without_duplicates(sessio
     await seed_all(session, pro_allowance=40, admin_email="member@example.test")
     await session.refresh(other)
     assert other.role == "admin"
-    assert await _count(session, User) == 2
+    mine = await session.scalar(
+        select(func.count())
+        .select_from(User)
+        .where(User.email.in_(["admin@example.test", "member@example.test"]))
+    )
+    assert mine == 2  # other committed test rows may exist; count only ours
