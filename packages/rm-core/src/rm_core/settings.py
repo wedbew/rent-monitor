@@ -4,7 +4,7 @@ from decimal import Decimal
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,11 +32,27 @@ class Settings(BaseSettings):
     worker_batch_concurrency: int = Field(default=1, ge=1)
     audit_job_timeout_s: int = Field(default=900, ge=1)
 
+    openrouter_api_key: SecretStr = Field(  # blueprint §4.2 spells it OPEN_ROUTER_API_KEY
+        default=SecretStr(""), validation_alias=AliasChoices("OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY")
+    )
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_monthly_budget_usd: Decimal = Field(default=Decimal("50"), ge=0)
+    openrouter_call_estimate_usd: Decimal = Field(
+        default=Decimal("0.02"), ge=0
+    )  # placeholder until L-003 is measured
+    image_host_allowlist: str = (
+        "olxcdn.com,otodom.pl"  # comma-separated host suffixes photos may be fetched from
+    )
+
     sentry_dsn: str = ""
     sentry_traces_sample_rate: Decimal = Field(
         default=Decimal("0.05"), ge=0, le=1
     )  # a probability; Decimal keeps floats out of settings
     release: str = ""  # image tag / git sha, set by the deploy
+
+    @property
+    def image_hosts(self) -> tuple[str, ...]:
+        return tuple(h.strip().lower() for h in self.image_host_allowlist.split(",") if h.strip())
 
 
 @lru_cache
