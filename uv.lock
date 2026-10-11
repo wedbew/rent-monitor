@@ -1731,7 +1731,7 @@ wheels = [
 [[package]]
 name = "rm-api"
 version = "0.0.0"
-source = { editable = "services/api" }
+source = { editable = "services/rm_api" }
 dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
@@ -1744,15 +1744,15 @@ dependencies = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.120" },
     { name = "httpx", specifier = ">=0.28" },
-    { name = "rm-contracts", editable = "packages/rm-contracts" },
-    { name = "rm-core", editable = "packages/rm-core" },
+    { name = "rm-contracts", editable = "packages/rm_contracts" },
+    { name = "rm-core", editable = "packages/rm_core" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.38" },
 ]
 
 [[package]]
 name = "rm-contracts"
 version = "0.0.0"
-source = { editable = "packages/rm-contracts" }
+source = { editable = "packages/rm_contracts" }
 dependencies = [
     { name = "pydantic" },
 ]
@@ -1763,7 +1763,7 @@ requires-dist = [{ name = "pydantic", specifier = ">=2.12" }]
 [[package]]
 name = "rm-core"
 version = "0.0.0"
-source = { editable = "packages/rm-core" }
+source = { editable = "packages/rm_core" }
 dependencies = [
     { name = "alembic" },
     { name = "psycopg", extra = ["binary", "pool"] },
@@ -1788,7 +1788,7 @@ requires-dist = [
 [[package]]
 name = "rm-worker"
 version = "0.0.0"
-source = { editable = "services/worker" }
+source = { editable = "services/rm_worker" }
 dependencies = [
     { name = "curl-cffi" },
     { name = "httpx" },
@@ -1804,8 +1804,8 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28" },
     { name = "pillow", specifier = ">=11,<13" },
     { name = "procrastinate", specifier = ">=3.10,<4" },
-    { name = "rm-contracts", editable = "packages/rm-contracts" },
-    { name = "rm-core", editable = "packages/rm-core" },
+    { name = "rm-contracts", editable = "packages/rm_contracts" },
+    { name = "rm-core", editable = "packages/rm_core" },
 ]
 
 [[package]]

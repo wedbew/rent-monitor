@@ -39,7 +39,7 @@ New area? Add a row here and to `rm_core.legal` in the same PR; do not invent ta
 Each tagged *action* (not every helper) also carries its tags at runtime, so they appear in logs, audit history and
 can later drive a flag:
 
-- A single registry `packages/rm-core/rm_core/legal.py` defines `LegalTag` (`StrEnum`) with the values above
+- A single registry `packages/rm_core/legal.py` defines `LegalTag` (`StrEnum`) with the values above
   (`scraping`, `images`, …) — the code comments and the enum must use the same names.
 - Tagged pipeline stages bind `legal_tags=[...]` in structlog and include it in the `audit_event.payload` for the
   stage (fetch → `scraping`, vision → `images`, ocr → `images`, etc.).

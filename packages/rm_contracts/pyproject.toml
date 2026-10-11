@@ -1,0 +1,21 @@
+[project]
+name = "rm-contracts"
+version = "0.0.0"
+description = "Pydantic API schemas and stable problem codes shared by api and worker"
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.12"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+# The folder IS the package: wheel files are prefixed with the module name, and the editable
+# install puts the parent folder on sys.path so `import rm_contracts` resolves to this folder.
+dev-mode-dirs = [".."]
+
+[tool.hatch.build.targets.wheel]
+include = ["**/*.py"]
+
+[tool.hatch.build.targets.wheel.sources]
+"" = "rm_contracts"
