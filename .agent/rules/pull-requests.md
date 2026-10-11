@@ -51,13 +51,14 @@ threads, and the PR body is complete, the agent that opened the PR merges it:
 
 ```bash
 gh pr view <n> --json statusCheckRollup,reviewDecision,mergeable   # confirm all green first
-gh pr merge <n> --squash                                           # branch is deleted automatically (repo setting)
+gh pr merge <n> --squash --auto                                    # GitHub merges when required checks pass; branch auto-deleted
 gh issue close <issue> --reason completed --comment "Merged in #<n> (<short-sha>) into staging."
 git switch staging && git pull --ff-only && git branch -D <branch> # tidy local; history keeps everything
 ```
 
-- **Issues are closed, never deleted.** `Closes #n` only auto-closes on merge into `main`, so closing after the `staging` merge is
-  the agent's job. Every issue linked in the PR gets closed with the comment above. Reopen if a regression is found.
+- **Issues are closed, never deleted.** `Closes #n` only auto-closes on merge into `main`; the `close-issues` workflow closes linked
+  issues after a merge into `staging`. Verify with `gh issue view <n> --json state`; if still open, close it with the command above. Reopen on regression.
+- Agents authenticate as the limited bot user (`docs/AGENT-BOT.md`), not the owner's admin token, when one is configured.
 - Branches are deleted on merge; they stay restorable from the PR ("Restore branch") and from history.
 - Squash title = PR title (`type(RM-n): subject`). Never `--admin`, never `--auto` to bypass checks, never merge with a red or pending required check.
 - **Ask a human first (comment on the PR, wait for approval)** if the PR touches: money/ledger/quota/billing/webhooks, auth/sessions/tenant

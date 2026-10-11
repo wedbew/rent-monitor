@@ -12,6 +12,7 @@ blueprint §6; risks are blueprint §5; limits are `docs/LIMITATIONS.md`.
 - [ ] Any secret ever pasted into an issue, PR, log or chat has been rotated.
 
 ## 1. Code and tests (CI on `main` green)
+- [ ] **`invariants` and `migrations` are required checks again** on `staging` (temporarily removed; re-add in `.github/rulesets/staging.json` and the live ruleset in the PR that makes them pass).
 - [ ] All blueprint §4.6 named tests exist and pass, none skipped (`uv run pytest -m invariant`); `e2e` Stripe tests pass in test mode.
 - [ ] Coverage floor met; pyright strict clean for `packages/` and `services/`; ruff, semgrep, gitleaks, zizmor, actionlint clean.
 - [ ] `tests/migrations` (pytest-alembic) and `squawk` pass; migrations are expand→contract; rollback/restore path documented.
