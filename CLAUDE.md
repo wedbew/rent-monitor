@@ -9,6 +9,8 @@
 @.agent/rules/context.md
 @.agent/rules/poc-reference.md
 @.agent/rules/pull-requests.md
+@.agent/rules/blockers.md
+@docs/BLOCKERS.md
 @CONTEXT.md
 
 ## Claude-specific notes
