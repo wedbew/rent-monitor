@@ -6,9 +6,11 @@ or merge into `main` (ruleset: one human approval, no bypass), so GitHub enforce
 
 ## Set up (two manual steps, then one script)
 1. Create a GitHub account for the bot, e.g. `rentmonitor-agent` (https://github.com/signup; GitHub does not allow creating accounts by API/CLI).
-2. As that account create a **fine-grained personal access token**: resource owner = the bot, repository = **only `wedbew/rent-monitor`**,
-   permissions Contents RW, Pull requests RW, Issues RW, Actions R, Metadata R. Nothing else (no Administration, no Workflows).
-   Tokens cannot be created by API either. Set a 90-day expiry and calendar the rotation.
+2. As that account create a **classic personal access token** (Settings → Developer settings → Personal access tokens → Tokens (classic)),
+   scope **`repo` only** (no `workflow`, no `admin:*`, no `delete_repo`), expiry 90 days, and calendar the rotation. Tokens cannot be created by API.
+   Why classic: fine-grained tokens can only target repositories owned by the token's own account or an organization, not another user's
+   repo where the account is a collaborator. The blast radius is still this one repo, because the bot is a collaborator on nothing else.
+   If you later move the repo into a free GitHub organization, switch to a fine-grained token or a GitHub App scoped to that repo.
 3. As the repo owner run:
    ```bash
    BOT_USER=rentmonitor-agent BOT_TOKEN=github_pat_xxx ./scripts/setup_agent_bot.sh

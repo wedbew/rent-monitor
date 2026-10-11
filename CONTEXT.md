@@ -174,6 +174,7 @@ rulesets for `main` and `staging` are active; `staging` exists (PR #3 merged by 
 
 From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on money, auth or anything irreversible.
 
+- [ ] Re-add `invariants` and `migrations` to the `staging` required checks (removed 2026-10-11 so PRs can merge before the data plane/engine exist): do it in the PR that makes them green
 - [x] Port the POC? **No** — greenfield (ADR 0001, RM-2)
 - [ ] Market-data bootstrap: how the 727-city sidecars are produced fresh (fetch via new importers; no corpus copy)
 - [ ] Engine specification: formulas, thresholds and grade cut-offs the maintainer wants (agents ask; do not transcribe from POC code)

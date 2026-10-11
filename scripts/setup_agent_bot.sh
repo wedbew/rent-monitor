@@ -2,8 +2,8 @@
 # Grants a separate GitHub *machine user* write access to this repo only, and verifies it cannot bypass the rulesets.
 # GitHub does not let scripts create accounts or personal access tokens, so two steps stay manual (see docs/AGENT-BOT.md):
 #   1. create the account (e.g. rentmonitor-agent) at https://github.com/signup
-#   2. as that account, create a fine-grained token (Settings > Developer settings): repository = this repo only,
-#      permissions: Contents RW, Pull requests RW, Issues RW, Actions R, Metadata R. No admin, no workflows write.
+#   2. as that account, create a CLASSIC token (Settings > Developer settings > Tokens (classic)), scope `repo` only.
+#      (Fine-grained tokens cannot target another user's repository.) The bot is a collaborator on this repo only.
 # Usage:   BOT_USER=rentmonitor-agent BOT_TOKEN=github_pat_xxx ./scripts/setup_agent_bot.sh
 # Run as the repo OWNER (gh logged in as the admin). The token is only used to accept the invite and to test, never stored.
 set -euo pipefail
