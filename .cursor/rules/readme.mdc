@@ -1,0 +1,10 @@
+---
+description: Keep README.md current when stack, run instructions, docs or status change
+alwaysApply: true
+---
+
+Canonical rule (shared by Cursor, Claude Code, Codex and Gemini) lives in `.agent/rules/readme.md`. Follow it:
+
+@.agent/rules/readme.md
+
+Project-wide rules: @.agent/agents.md

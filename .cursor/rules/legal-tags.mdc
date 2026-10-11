@@ -1,0 +1,10 @@
+---
+description: Tag legally sensitive features (scraping, URL/image analysis) and GDPR-relevant code with LEGAL[...] / GDPR[...]; applies during all migration and refactor work
+alwaysApply: true
+---
+
+Canonical rule (shared by Cursor, Claude Code, Codex and Gemini) lives in `.agent/rules/legal-tags.md`. Follow it:
+
+@.agent/rules/legal-tags.md
+
+Project-wide rules: @.agent/agents.md

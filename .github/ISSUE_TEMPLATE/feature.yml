@@ -1,0 +1,38 @@
+name: Feature / task
+description: "A unit of work that becomes one squash commit on staging, titled type(RM-<this issue>): subject"
+labels: ["type:feature"]
+body:
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      options: ["P1-backend", "P2-frontend", "ops"]
+    validations: { required: true }
+  - type: input
+    id: blueprint
+    attributes:
+      label: Blueprint section
+      placeholder: "e.g. 4.5 (a) ledger.reserve / settle"
+    validations: { required: true }
+  - type: textarea
+    id: goal
+    attributes:
+      label: Outcome
+      description: What is true when this is done?
+    validations: { required: true }
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance tests
+      description: Named tests that must exist and pass (blueprint 4.6 table where applicable).
+      placeholder: "- test_quota_race\n- test_failed_audit_releases"
+    validations: { required: true }
+  - type: checkboxes
+    id: guards
+    attributes:
+      label: Guardrails touched
+      options:
+        - label: Money / ledger / billing
+        - label: Auth / sessions / tenant isolation
+        - label: Business invariant (agents.md §1)
+        - label: Migration (expand-contract)

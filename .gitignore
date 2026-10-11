@@ -1,0 +1,70 @@
+# --- Secrets: only .env.example (names, no values) is tracked ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+credentials*.json
+service-account*.json
+
+# --- OS / editors ---
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# --- Agent tooling: personal/local state only (shared rules in .agent/, .cursor/rules/, .claude/skills/ stay tracked) ---
+.claude/settings.local.json
+.claude/worktrees/
+.cursor/*
+!.cursor/rules/
+.gemini/*
+!.gemini/settings.json
+GEMINI.local.md
+CLAUDE.local.md
+
+# --- Python / uv ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.python-version.local
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.pyright/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+dist/
+build/
+
+# --- Frontend (Vite SPA; Phase 2) ---
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+npm-debug.log*
+
+# --- Local runtime data (never commit: personal data, listing snapshots, dumps) ---
+/data/
+/reports/
+/agent-context/
+*.sql.gz
+*.dump
+*.sqlite
+*.sqlite3
+/backups/
+/pgdata/
+compose.override.yml
+docker-compose.override.yml
+
+# --- Tool caches / logs ---
+.semgrep/.cache/
+.pre-commit-cache/
+*.log
+tmp/
+.tmp/

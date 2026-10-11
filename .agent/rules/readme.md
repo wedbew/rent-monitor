@@ -1,0 +1,27 @@
+# Rule: keep README.md current
+
+`README.md` at the repo root is the human entry point (create it when the first runnable piece lands). It stays short
+and links to `docs/BLUEPRINT.md` for architecture instead of copying it.
+
+## When to update
+
+| Change | README section |
+|---|---|
+| New run, test, migrate or seed command; new env var or bootstrap step | **How to run** (names from `.env.example` only — never values) |
+| Stack or dependency change (FastAPI, Procrastinate, SQLAlchemy, Stripe, Caddy, Postgres version) | **Stack** |
+| New top-level doc, ADR or runbook | **Project docs** table — no broken links |
+| Implementation-order step (blueprint §4.8) completed, or phase change | **Status** |
+| Convention agents or contributors must follow | **Development conventions** → link to `.agent/agents.md` |
+
+## Required content once the app runs
+
+1. One-line architecture summary: single VPS, Docker Compose, Caddy + FastAPI + Procrastinate workers + Postgres 17, Python-only server.
+2. **How to run** that actually works: `make dev`, `make test` (`uv run pytest -m "not e2e"`), `make migrate`, local Compose stack.
+3. **Status**: which of the eight §4.8 steps are done; current phase (Phase 1 is backend only).
+4. Links: blueprint, `.agent/agents.md`, `docs/LIMITATIONS.md`, `CHANGELOG.md`.
+
+## Do not
+
+- Paste architecture diagrams or the cost table; link to the blueprint section.
+- Leave placeholder text in **How to run** once a command exists.
+- Add a mandatory env var or service dependency without updating README and `.env.example` together.

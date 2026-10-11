@@ -1,0 +1,35 @@
+name: pr-title
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions: {}
+
+jobs:
+  pr-title:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: "title follows type(RM-n): subject"
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: python3 scripts/check_commit_msg.py --text "$TITLE"
+      - name: body closes an issue (promotion, Dependabot and release PRs exempt)
+        if: >-
+          github.head_ref != 'staging' &&
+          github.event.pull_request.user.login != 'dependabot[bot]' &&
+          !startsWith(github.head_ref, 'release-please--')
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$BODY" | grep -Eiq '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+'
+      - name: every commit in the PR is ticket-tagged
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: python3 scripts/check_commit_msg.py --range "$BASE..$HEAD"

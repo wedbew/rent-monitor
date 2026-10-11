@@ -1,0 +1,13 @@
+{
+  "context": {
+    "fileName": [
+      ".agent/agents.md",
+      "GEMINI.md",
+      ".agent/rules/architecture.md",
+      ".agent/rules/limitations.md",
+      ".agent/rules/changelog.md",
+      ".agent/rules/readme.md",
+      ".agent/rules/legal-tags.md"
+    ]
+  }
+}

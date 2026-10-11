@@ -1,0 +1,10 @@
+---
+description: Keep docs/BLUEPRINT.md and code in agreement when system boundaries, routes, schema, billing or deployment change
+alwaysApply: true
+---
+
+Canonical rule (shared by Cursor, Claude Code, Codex and Gemini) lives in `.agent/rules/architecture.md`. Follow it:
+
+@.agent/rules/architecture.md
+
+Project-wide rules: @.agent/agents.md

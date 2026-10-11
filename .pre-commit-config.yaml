@@ -1,0 +1,66 @@
+# Run with prek (drop-in, faster): `uv tool install prek && prek install --hook-type pre-commit --hook-type commit-msg`
+# Plain `pre-commit` also works with this file.
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: [--branch, main, --branch, staging]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.0
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.30.1
+    hooks:
+      - id: zizmor
+
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.15.1
+    hooks:
+      - id: hadolint-docker
+
+  - repo: local
+    hooks:
+      - id: uv-lock-check
+        name: uv.lock is in sync
+        entry: uv lock --check
+        language: system
+        files: ^(pyproject\.toml|uv\.lock|.*/pyproject\.toml)$
+        pass_filenames: false
+      - id: commit-msg-ticket
+        name: "commit message is type(RM-n): subject"
+        entry: python scripts/check_commit_msg.py
+        language: system
+        stages: [commit-msg]
+      - id: no-frontend-finance
+        name: no financial math in frontend
+        entry: frontend cashflow/appreciation code is banned (blueprint P0.3)
+        language: fail
+        files: ^frontend/src/lib/(cashflow|appreciation)\.ts$

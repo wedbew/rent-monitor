@@ -1,0 +1,115 @@
+name: ci
+on:
+  pull_request:
+    branches: [staging, main]
+  push:
+    branches: [staging, main]
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_LOCKED: "1"
+  APP_ENV: test
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - run: uv sync --all-packages --group dev
+      - run: uv run ruff check --output-format=github .
+      - run: uv run ruff format --check .
+      - name: frontend finance code must not exist (blueprint P0.3)
+        run: test ! -e frontend/src/lib/cashflow.ts && test ! -e frontend/src/lib/appreciation.ts
+
+  types:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - run: uv sync --all-packages --group dev
+      - run: uv run pyright
+
+  types-ty-trial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - run: uv sync --all-packages --group dev
+      - run: uvx ty check packages services
+
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - run: uv sync --all-packages --group dev
+      - run: uv run pytest -m "not e2e" --cov --cov-report=term-missing -q
+
+  invariants:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - run: uv sync --all-packages --group dev
+      - name: invariant tests (must exist, must not be skipped)
+        run: |
+          uv run pytest -m invariant -q -rs --junitxml=invariants.xml
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          required = {"test_invariant_rent_is_not_a_deal", "test_invariant_asking_is_not_deed",
+                      "test_invariant_admin_fee_is_opex", "test_invariant_deterministic_math"}
+          cases = ET.parse("invariants.xml").getroot().iter("testcase")
+          passed = {c.get("name").split("[")[0] for c in cases if not list(c)}
+          missing = required - passed
+          if missing:
+              raise SystemExit(f"invariant tests missing or not passing: {sorted(missing)}")
+          PY
+
+  migrations:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - run: uv sync --all-packages --group dev
+      - run: uv run pytest tests/migrations -q
+      - name: squawk on migration SQL
+        run: |
+          uv run alembic upgrade head --sql > /tmp/migrations.sql
+          npx --yes squawk-cli@2.68.0 /tmp/migrations.sql

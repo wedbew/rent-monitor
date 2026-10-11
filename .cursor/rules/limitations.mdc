@@ -1,0 +1,10 @@
+---
+description: Maintain docs/LIMITATIONS.md when discovering, deferring or resolving constraints and unverified assumptions
+alwaysApply: true
+---
+
+Canonical rule (shared by Cursor, Claude Code, Codex and Gemini) lives in `.agent/rules/limitations.md`. Follow it:
+
+@.agent/rules/limitations.md
+
+Project-wide rules: @.agent/agents.md

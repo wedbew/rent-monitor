@@ -1,0 +1,10 @@
+---
+description: Update CHANGELOG.md for user-visible or operator-visible changes, tagged with the RM ticket
+alwaysApply: true
+---
+
+Canonical rule (shared by Cursor, Claude Code, Codex and Gemini) lives in `.agent/rules/changelog.md`. Follow it:
+
+@.agent/rules/changelog.md
+
+Project-wide rules: @.agent/agents.md

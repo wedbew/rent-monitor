@@ -1,0 +1,51 @@
+name: security
+on:
+  pull_request:
+    branches: [staging, main]
+  push:
+    branches: [staging, main]
+  schedule:
+    - cron: "17 3 * * *"
+
+permissions: {}
+
+jobs:
+  security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+
+      - name: gitleaks (full history, binary pinned by version + checksum)
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+        run: |
+          curl -sSfL -o gl.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -o sums.txt "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          grep "linux_x64.tar.gz" sums.txt | sed 's/ .*/  gl.tgz/' | sha256sum -c -
+          tar -xzf gl.tgz gitleaks
+          ./gitleaks git --redact --exit-code 1 .
+
+      - name: pip-audit (blocking)
+        run: |
+          uv export --all-packages --no-hashes --no-emit-workspace -o /tmp/req.txt
+          uvx pip-audit==2.10.1 -r /tmp/req.txt --strict
+
+      - name: uv audit (advisory, preview)
+        continue-on-error: true
+        run: uv audit --preview-features audit-command
+
+      - name: semgrep CE
+        run: uvx semgrep==1.180.0 scan --error --config p/python --config p/secrets --config .semgrep/ --metrics=off
+
+      - name: actionlint + zizmor
+        run: |
+          uvx zizmor==1.30.1 --min-severity medium .github/workflows
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color
