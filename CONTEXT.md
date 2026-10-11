@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-11 · by: RM-73 (engine spec approved)
+**Last updated:** 2026-10-12 · by: RM-55 (semgrep no-float-money fix)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -124,7 +124,7 @@ exclude `apps/agent-context` from the workspace. Each app gets its own `pyprojec
 
 | # | Finding | Why it matters | Suggested handling |
 |---|---|---|---|
-| G1 | POC `output.py` models money as `float` (64 `float`, 0 `Decimal` mentions) | `agents.md` §3 bans float in **persisted or returned** money fields | `Decimal` everywhere including the engine; state the rounding rule; property tests. Semgrep `no-float-money` covers `packages/`, `services/`; extend it to `apps/` |
+| G1 | POC `output.py` models money as `float` (64 `float`, 0 `Decimal` mentions) | `agents.md` §3 bans float in **persisted or returned** money fields | `Decimal` everywhere including the engine; state the rounding rule; property tests. Semgrep `no-float-money` covers `packages/`, `services/`, `apps/`, with rule tests in `.semgrep/rentmonitor.py` (RM-55) |
 | G2 | POC `operating.py` computes with `* 12.0` floats | Same | Same; new `apps/` code is held to the same lint/type bar as `packages/` |
 | G3 | `analyze_listing` is synchronous and calls `asyncio.run(...)` internally to fetch | Cannot run on the API event loop | New engine is async-clean or CPU-only and runs in the worker's killable child process (blueprint §4.5) |
 | G4 | Blueprint's `auth/google.py` sample imports `requests`; TOOLCHAIN ruff bans `requests` in `services/` (TID251) | The sample would fail lint | Use `httpx`-based transport for `google-auth` or a scoped `per-file-ignores` entry with a comment |

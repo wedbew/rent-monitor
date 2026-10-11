@@ -41,6 +41,9 @@ jobs:
         continue-on-error: true
         run: uv audit --preview-features audit-command
 
+      - name: semgrep rule tests
+        run: uvx semgrep==1.180.0 --test --metrics=off --config .semgrep/rentmonitor.yml .semgrep/rentmonitor.py
+
       - name: semgrep CE
         run: uvx semgrep==1.180.0 scan --error --config p/python --config p/secrets --config .semgrep/ --metrics=off
 
