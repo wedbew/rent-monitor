@@ -31,7 +31,7 @@ The two last checklist items map to rules: **Legal / GDPR** (`rules/legal-tags.m
 1. Target `staging`, never `main`. Open as draft until the local checks (`make lint types test`) pass.
 2. Keep one concern per PR. Tick only what you verified; unverified boxes stay unticked with a note.
 3. End agent-authored PR bodies with the attribution line the tool requires.
-4. Never merge your own PR.
+4. Merge only as described under *Merge and close*.
 
 ## After opening: watch CI and fix it (agents do this, not the human)
 
@@ -44,13 +44,34 @@ Opening the PR is not the end of the task. Do not report "done" until the checks
    `fix(RM-<n>): ...` to the same branch. Then watch again.
 3. Report to the user: final check status, what failed, what you changed. Paste the check names, not a paraphrase.
 
+## Merge and close (autonomous, into `staging` only)
+
+When **every required check is green** (`lint types test invariants migrations security pr-title`), there are no unresolved review
+threads, and the PR body is complete, the agent that opened the PR merges it:
+
+```bash
+gh pr view <n> --json statusCheckRollup,reviewDecision,mergeable   # confirm all green first
+gh pr merge <n> --squash                                           # branch is deleted automatically (repo setting)
+gh issue close <issue> --reason completed --comment "Merged in #<n> (<short-sha>) into staging."
+git switch staging && git pull --ff-only && git branch -D <branch> # tidy local; history keeps everything
+```
+
+- **Issues are closed, never deleted.** `Closes #n` only auto-closes on merge into `main`, so closing after the `staging` merge is
+  the agent's job. Every issue linked in the PR gets closed with the comment above. Reopen if a regression is found.
+- Branches are deleted on merge; they stay restorable from the PR ("Restore branch") and from history.
+- Squash title = PR title (`type(RM-n): subject`). Never `--admin`, never `--auto` to bypass checks, never merge with a red or pending required check.
+- **Ask a human first (comment on the PR, wait for approval)** if the PR touches: money/ledger/quota/billing/webhooks, auth/sessions/tenant
+  isolation, a migration's contract step, `.github/` workflows or rulesets, `.claude/settings.json`, an `invariant` test, or owner items in `docs/PRE-DEPLOYMENT.md`.
+- **Promotion `staging` → `main`** is a human decision: the agent may open the promotion PR but never merges it (the ruleset requires one approval).
+- After merging, update `CONTEXT.md` §8 if state changed and tick `docs/PRE-DEPLOYMENT.md` items the PR gave evidence for.
+
 **Stop and ask instead of fixing when:**
 - the fix would delete, skip, `xfail` or weaken an `invariant` test, loosen a lint/type/semgrep rule, lower `fail_under`, or edit a workflow or ruleset to make CI pass;
 - the failure is a known gap, not a bug (record it in `docs/LIMITATIONS.md` and tell the user);
 - the failure needs a secret, a token scope, a repo setting or a paid plan;
 - the same check still fails after 3 fix attempts, or a failure looks flaky (re-run once, then report it).
 
-Never: `--no-verify`, force-push, merge the PR, push to `staging`/`main`, or mark a check "expected to fail" in the PR body to avoid fixing it.
+Never: `--no-verify`, force-push, merge before checks are green, push to `staging`/`main` directly, or mark a check "expected to fail" in the PR body to avoid fixing it.
 Known intentional red: the `invariants` job fails until the four named invariant tests exist (blueprint 4.6); report it, do not stub them.
 
 ## Do not

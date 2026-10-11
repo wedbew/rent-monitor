@@ -79,7 +79,7 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
 - PR body contains `Closes #<issue>`, what changed, how it was tested, any blueprint deviation, a **Legal / GDPR** line
   (§11) and a **Context** line (`CONTEXT.md` updated: §n, or not affected and why).
 - After opening a PR, monitor its checks and fix failures yourself (`rules/pull-requests.md`); stop and ask before weakening any test, rule or workflow.
-- Never push to `main` or `staging` directly. Never force-push shared branches. Never merge your own PR.
+- Merging is autonomous into `staging` only, per `rules/pull-requests.md` (green required checks, no open threads, squash, then close the issue — never delete it). Never push to `main` or `staging` directly, never force-push shared branches, never merge into `main` (promotion needs a human approval), never use `--admin`.
 
 ## 7. Implementation order (blueprint 4.8) — do not start step N+1 with step N red
 1. Engine seams → 2. Data plane (models, Alembic baseline, Procrastinate schema, importers) → 3. Auth →
@@ -104,6 +104,7 @@ Read the matching file when your change touches the area; update the doc in the 
 - `rules/readme.md` — `README.md`: How to run, Stack, Project docs, Status.
 - `rules/legal-tags.md` — `LEGAL[...]` / `GDPR[...]` tags (see §11).
 - `rules/poc-reference.md` — POC is read-only reference; greenfield rewrite; production-ready bar (ADR 0001).
+- `docs/PRE-DEPLOYMENT.md` — launch checklist; tick items only with evidence; read before any deploy or visibility change.
 - `rules/pull-requests.md` — PR template (`.github/pull_request_template.md`) and checklist semantics; required for every PR.
 - `rules/context.md` — keep root `CONTEXT.md` current: update it in the same PR as any change that makes it stale; bump its "Last updated" line.
 Cursor mirrors these in `.cursor/rules/*.mdc` as pointers only; edit the `.agent/rules/` file, never the pointer.
