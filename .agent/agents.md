@@ -30,8 +30,8 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
   `ContextRepository` and `ProgressSink` are native seams of the new engine.
 - Never compute a financial number outside `apps/deal-analyzer`. API/worker copy values from `DealAnalysis`
   into typed columns; they never derive them.
-- Layout (blueprint 4.1): `packages/rm-core` (settings, models, repositories, ledger, entitlements, flags),
-  `packages/rm-contracts` (Pydantic API schemas + problem codes), `services/api` (FastAPI), `services/worker`
+- Layout (blueprint 4.1): `packages/rm_core` (settings, models, repositories, ledger, entitlements, flags),
+  `packages/rm_contracts` (Pydantic API schemas + problem codes), `services/rm_api` (FastAPI), `services/rm_worker`
   (Procrastinate). `services/*` may import `packages/*`; `packages/*` never import `services/*`.
 - Server runtime is **Python only**. No Node service, no Redis, no Celery, no second migration tool.
 - One Postgres schema, `app`, owned by Alembic. Procrastinate's tables are applied by `procrastinate schema --apply`.

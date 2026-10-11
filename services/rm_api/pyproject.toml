@@ -15,5 +15,13 @@ dependencies = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build]
+# The folder IS the package: wheel files are prefixed with the module name, and the editable
+# install puts the parent folder on sys.path so `import rm_api` resolves to this folder.
+dev-mode-dirs = [".."]
+
 [tool.hatch.build.targets.wheel]
-packages = ["rm_api"]
+include = ["**/*.py"]
+
+[tool.hatch.build.targets.wheel.sources]
+"" = "rm_api"

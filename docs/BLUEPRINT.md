@@ -288,7 +288,7 @@ How it protects FastAPI:
 7. Cookies work with `EventSource`, so SSE needs no token plumbing.
 
 ```python
-# services/api/rm_api/auth/google.py
+# services/rm_api/auth/google.py
 import cachecontrol, requests
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token
@@ -432,7 +432,7 @@ Design rules the schema encodes:
 ### SQLAlchemy 2.0 models
 
 ```python
-# packages/rm-core/rm_core/db/models.py
+# packages/rm_core/db/models.py
 from __future__ import annotations
 
 from datetime import date, datetime
@@ -922,12 +922,11 @@ rentmonitor/
 │   ├── otodom-investment-screener/
 │   └── agent-context/            # becomes an export target, no longer read at runtime
 ├── packages/
-│   ├── rm-core/                  # settings, db models, repositories, ledger, entitlements, flags
-│   │   └── rm_core/{settings.py, db/, ledger.py, entitlements.py, flags.py, context_repo.py}
-│   └── rm-contracts/             # Pydantic API schemas + problem codes, shared by api and worker
+│   ├── rm_core/                  # settings, db models, repositories, ledger, entitlements, flags (pyproject.toml beside the modules)
+│   └── rm_contracts/             # Pydantic API schemas + problem codes, shared by api and worker
 ├── services/
-│   ├── api/rm_api/{main.py, deps.py, problems.py, sse.py, auth/, routers/, billing/}
-│   └── worker/rm_worker/{app.py, progress.py, tasks/audit.py, tasks/market.py, tasks/maintenance.py}
+│   ├── rm_api/                   # main.py, deps.py, problems.py, sse.py, auth/, routers/, billing/
+│   └── rm_worker/                # app.py, progress.py, tasks/audit.py, tasks/market.py, tasks/maintenance.py
 ├── frontend/                     # existing Vite SPA; server/plugin.ts and server/redesign.ts deleted
 │   └── src/api/{schema.d.ts (generated), client.ts}
 ├── migrations/                   # Alembic, schema "app" only
@@ -1213,7 +1212,7 @@ The snippets below are the load-bearing code paths. They assume `stripe` ≥ 12 
 `current_principal` opens its own short session instead of depending on the request-scoped one, so a long SSE stream never pins a pooled connection.
 
 ```python
-# services/api/rm_api/deps.py
+# services/rm_api/deps.py
 import hashlib
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
@@ -1314,7 +1313,7 @@ def require_quota_or_entitlement(feature: str) -> Callable[..., Awaitable[Reserv
 ```
 
 ```python
-# packages/rm-core/rm_core/ledger.py
+# packages/rm_core/ledger.py
 FEATURE_COST = {"deal_audit": 1, "deal_audit_analyst": 2, "redesign": 1}
 
 
@@ -1385,7 +1384,7 @@ async def settle(db: AsyncSession, audit: Audit, *, capture: bool) -> None:
 #### b) Audit submission, background job and SSE progress stream
 
 ```python
-# services/api/rm_api/routers/audits.py
+# services/rm_api/routers/audits.py
 @router.post("", status_code=202, response_model=AuditAccepted)
 async def create_audit(
     body: AuditCreate,
@@ -1419,7 +1418,7 @@ async def create_audit(
 ```
 
 ```python
-# services/worker/rm_worker/tasks/audit.py
+# services/rm_worker/tasks/audit.py
 app = procrastinate.App(
     connector=procrastinate.PsycopgConnector(conninfo=settings.procrastinate_dsn, min_size=1, max_size=6),
     import_paths=["rm_worker.tasks.audit", "rm_worker.tasks.market", "rm_worker.tasks.maintenance"],
@@ -1499,7 +1498,7 @@ async def reconcile_queued_audits(timestamp: int) -> None:
 The engine runs in a killable child process. The external audit flagged thread-pool exhaustion; with at most 3 audits per worker that cannot happen (the default pool holds `min(32, cpu_count + 4)` threads). The real defect was different: `asyncio.timeout` around `to_thread` stops waiting but cannot stop the thread, so a hung fetch or image decode keeps running after the audit is marked failed. A child process fixes that, returns all its memory after every audit, and turns an OOM kill into a clean `failed_internal` with the credit released. It costs a process start per audit (seconds, *estimate*).
 
 ```python
-# services/worker/rm_worker/engine_proc.py
+# services/rm_worker/engine_proc.py
 import multiprocessing as mp, queue, time
 
 _ctx = mp.get_context("spawn")          # fresh interpreter: no inherited DB pools or event loop
@@ -1549,7 +1548,7 @@ async def run_engine_in_subprocess(ref, *, lang, analyst, sink) -> DealAnalysis:
 Inside the engine, every outbound call still gets explicit timeouts (Otodom via `curl_cffi`: connect 5 s, read 30 s; OpenRouter: 120 s), as the audit recommends, so most failures surface as typed errors long before the job deadline. `EngineCrashed` maps to `failed_internal` in the error table.
 
 ```python
-# services/worker/rm_worker/progress.py
+# services/rm_worker/progress.py
 class ProgressSink:
     def __init__(self, sessionmaker, audit_id: str, loop: asyncio.AbstractEventLoop) -> None:
         self._sm, self._audit_id, self._loop = sessionmaker, audit_id, loop
@@ -1570,7 +1569,7 @@ class ProgressSink:
 ```
 
 ```python
-# services/api/rm_api/sse.py
+# services/rm_api/sse.py
 class ProgressHub:
     """One LISTEN connection per API process, fanned out to in-memory queues."""
 
@@ -1646,7 +1645,7 @@ Closing the tab no longer orphans work (audit finding 2.4): the job belongs to t
 #### c) Idempotent Stripe webhook
 
 ```python
-# services/api/rm_api/billing/webhook.py
+# services/rm_api/billing/webhook.py
 GRANT_REASONS = {"subscription_create", "subscription_cycle"}
 
 
