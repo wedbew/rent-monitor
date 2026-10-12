@@ -28,3 +28,24 @@ environment variables (`GH_TOKEN`, Actions secrets), which tools use without pri
 ## Limits that stay
 Merges go to `staging` only; `main` needs your approval (ruleset). Sensitive areas in `rules/pull-requests.md` still wait for a human comment.
 A run is capped at 40 turns and 30 minutes; a ticket that does not finish leaves a comment explaining where it stopped.
+
+## Dispatcher (opt-in, ADR 0012)
+
+`.github/workflows/dispatch.yml` runs `scripts/dispatch_next.py` every 30 minutes **only when the repo variable `ENABLE_DISPATCH` is
+`true`** (set it with `gh variable set ENABLE_DISPATCH --body true`; unset it to stop). It looks at open issues:
+
+- an issue labelled `agent` is in flight → nothing else starts (one at a time);
+- no activity on it (issue or its `rm-<n>-*`/`claude/issue-<n>-*` PR) for 60 minutes → one `@claude resume` comment, then a second,
+  then label `blocked` and a comment naming the owner action; the dispatcher never retries a `blocked` issue;
+- nothing in flight → the lowest `Priority: P0..P2`, then lowest number, issue labelled `ready` whose `Depends on:` issues are all closed
+  and that is not `blocked`, `umbrella`, `owner` or `in-progress` gets the `agent` label (which starts `claude.yml`).
+
+Manual run: Actions → dispatch → *Run workflow* (dry by default; tick *apply* to act). Local dry run: `python3 scripts/dispatch_next.py`.
+Idempotency: each dispatch or resume leaves a `<!-- rm-dispatch attempt=n -->` comment; attempts are capped at 2.
+Everything the agent needs to continue is the checkpoint comment (`rules/delivery.md`).
+
+## Canary log
+
+| Date | Issue | Result | Evidence |
+|---|---|---|---|
+| 2026-10-11 | #100 (labelled `agent`) | failed in ~2 s, 0 turns, $0 cost; no PR | run 38182957497: `is_error:true` before any model call, then `compare` 404 from the action's own change check |

@@ -16,6 +16,25 @@ env:
   APP_ENV: test
 
 jobs:
+  changes:
+    # Documentation-only changes skip the code stages (types, test, invariants, migrations). A skipped job shows as
+    # "skipped" in the checks list; lint, security and the title check always run. Any doubt means the full pipeline.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      docs_only: ${{ steps.diff.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 scripts/changed_paths.py "$BASE" "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+
   lint:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -33,6 +52,8 @@ jobs:
         run: test ! -e frontend/src/lib/cashflow.ts && test ! -e frontend/src/lib/appreciation.ts
 
   types:
+    if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' }}
+    needs: changes
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -46,6 +67,8 @@ jobs:
       - run: uv run pyright
 
   types-ty-trial:
+    if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' }}
+    needs: changes
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     continue-on-error: true
@@ -60,6 +83,8 @@ jobs:
       - run: uvx ty check packages services
 
   test:
+    if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' }}
+    needs: changes
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -75,7 +100,8 @@ jobs:
   invariants:
     # Off until the engine and its four invariant tests exist: set repo variable ENABLE_INVARIANTS_JOB=true
     # (and re-add `invariants` to the staging required checks) in the PR that lands them. See docs/PRE-DEPLOYMENT.md §1.
-    if: vars.ENABLE_INVARIANTS_JOB == 'true'
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' && vars.ENABLE_INVARIANTS_JOB == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -106,7 +132,8 @@ jobs:
   migrations:
     # Off until Alembic and tests/migrations exist: set repo variable ENABLE_MIGRATIONS_JOB=true
     # (and re-add `migrations` to the staging required checks) in the data-plane PR.
-    if: vars.ENABLE_MIGRATIONS_JOB == 'true'
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' && vars.ENABLE_MIGRATIONS_JOB == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:

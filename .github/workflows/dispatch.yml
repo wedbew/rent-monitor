@@ -1,0 +1,41 @@
+name: dispatch
+# Starts the headless agent on the next `ready` issue whose `Depends on:` issues are closed (ADR 0012,
+# scripts/dispatch_next.py). Opt-in: nothing runs until the repo variable ENABLE_DISPATCH is "true". One issue at a time;
+# a stalled run is resumed twice and then marked `blocked` with the owner action. Manual runs are dry by default.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Perform the action (default: only print it)"
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: dispatch
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    if: vars.ENABLE_DISPATCH == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: decide and act
+        env:
+          # The bot token, not GITHUB_TOKEN: labels set with GITHUB_TOKEN do not start other workflows.
+          GH_TOKEN: ${{ secrets.AGENT_BOT_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          APPLY: ${{ github.event_name == 'schedule' || inputs.apply }}
+        run: |
+          flag=""
+          if [ "$APPLY" = "true" ]; then flag="--apply"; fi
+          python3 scripts/dispatch_next.py $flag | tee "$GITHUB_STEP_SUMMARY"

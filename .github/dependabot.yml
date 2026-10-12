@@ -6,6 +6,10 @@ updates:
     schedule: { interval: weekly, day: monday, time: "06:00", timezone: Europe/Warsaw }
     cooldown: { default-days: 7 }
     commit-message: { prefix: build, prefix-development: build, include: scope }
+    ignore:
+      # ADR 0007: SQLAlchemy stays on the 2.0 line until the owner revisits it.
+      - dependency-name: sqlalchemy
+        update-types: [version-update:semver-minor, version-update:semver-major]
     groups:
       python-minor-patch:
         update-types: [minor, patch]
