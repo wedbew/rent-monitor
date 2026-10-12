@@ -65,4 +65,15 @@ async def current_principal(principal: Annotated[Principal | None, Depends(optio
 SessionDep = Annotated[AsyncSession, Depends(get_session, scope="function")]
 HttpClientDep = Annotated[httpx.AsyncClient, Depends(get_http_client)]
 PrincipalDep = Annotated[Principal, Depends(current_principal)]
+
+
+async def require_admin(principal: PrincipalDep) -> Principal:
+    """`/api/admin/*`: role 'admin' only. The role is read when the session is resolved (30 s cache at
+    most)."""
+    if not principal.is_admin:
+        raise Problem(403, ProblemCode.ADMIN_ONLY, "Administrators only")
+    return principal
+
+
+AdminDep = Annotated[Principal, Depends(require_admin)]
 OptionalPrincipalDep = Annotated[Principal | None, Depends(optional_principal)]

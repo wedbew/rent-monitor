@@ -165,12 +165,12 @@ FastAPI is stateless: every byte of state — sessions, audits, credits, jobs, p
 | `/api/auth/*` | FastAPI | public | Google ID-token sign-in, email magic link, sign-out, session list |
 | `/api/me` | FastAPI | session | Profile, plan, credit balance, feature flags; `GET /api/me/export` (access request, 5 per hour); `DELETE /api/me` (account erasure, confirmed by typing the address) |
 | `/api/audits` | FastAPI | session + entitlement | `POST` create (202), `GET` list, `GET /{id}`, `GET /{id}/events` (SSE), `POST /{id}/cancel` |
-| `/api/saved` | FastAPI | session | Save or unsave listings, notes |
+| `/api/saved` | FastAPI | session | Save or unsave listings, notes; only listings the caller has audited can be saved (anything else is 404), at most 500 |
 | `/api/market/*` | FastAPI | session; free tier sees top 20 | 727-city yield radar, city sidecars by grain |
 | `/api/screener/*` | FastAPI | Pro feature flag | Discovery runs, approval queue, batch generate |
 | `/api/billing/checkout`, `/api/billing/portal` | FastAPI | session | Create Stripe Checkout or Portal session, return URL |
 | `/api/billing/webhook` | FastAPI | Stripe signature | Webhook state machine (Section 3) |
-| `/api/admin/*` | FastAPI | `user.role = 'admin'` | Flags, overrides, credit adjustments, job inspection |
+| `/api/admin/*` | FastAPI | `user.role = 'admin'` | Flags, overrides, credit adjustments (idempotent by a caller-chosen UUID), job inspection (metadata only, never arguments) |
 | `/healthz`, `/readyz` | FastAPI | internal only (Caddy blocks external) | Liveness; readiness checks DB and queue. A separate public \`/api/health\` (no DB) serves the uptime monitor |
 
 ### Frontend boundary and data fetching
@@ -255,6 +255,9 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `GOOGLE_EMAIL_UNVERIFIED` | valid Google token whose `email_verified` is false | 401 (the SPA offers the magic link) | none | n/a |
 | `MAGIC_LINK_INVALID` | magic-link token unknown, already used or expired | 401 | request a new link | n/a |
 | `RATE_LIMITED` | atomic per-address or per-IP counter exceeded | 429 with `Retry-After` | after the window | n/a |
+| `ADMIN_ONLY` | `require_admin` dependency: caller's role is not `admin` | 403 | none | n/a |
+| `CREDIT_BELOW_ZERO` | admin credit adjustment would make the balance negative | 409 | none | n/a |
+| `SAVED_LIMIT_REACHED` | saving a new listing beyond the per-user cap | 409 | unsave one | n/a |
 | `CONFIRMATION_MISMATCH` | `DELETE /api/me` body address differs from the account's | 422 | retype the address | n/a |
 | `ORIGIN_NOT_ALLOWED` | unsafe method on `/api/*` without `Origin == PUBLIC_APP_URL` | 403 | none | never reserved |
 
