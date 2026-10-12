@@ -1,10 +1,19 @@
 """Magic-link mail: content, retries, provider errors and the production guards."""
 
+from datetime import UTC, datetime
+
 import httpx
 import pytest
 from pydantic import SecretStr
 from rm_core.settings import Settings
-from rm_worker.clients.resend import LogMailer, MailError, ResendMailer, is_onboarding_sender
+from rm_worker.clients.resend import (
+    LogMailer,
+    MailError,
+    PermanentMailError,
+    ResendMailer,
+    TransientMailError,
+    is_onboarding_sender,
+)
 from rm_worker.tasks.email import build_mailer, deliver_magic_link, magic_link_message
 
 URL = "https://app.example.test/login/email#t=abcDEF123_-"
@@ -117,3 +126,37 @@ async def test_a_network_error_is_retryable_and_leaks_nothing() -> None:
     with pytest.raises(MailError) as err:
         await mailer(boom).send(magic_link_message("a@example.test", URL, 30))
     assert not err.value.permanent
+
+
+# ---------- the retry policy of the job ----------
+def _decision(exception: Exception, attempts: int) -> object:
+    from types import SimpleNamespace  # noqa: PLC0415
+
+    from rm_worker.tasks.email import send_magic_link  # noqa: PLC0415
+
+    strategy = send_magic_link.retry_strategy
+    return strategy.get_retry_decision(exception=exception, job=SimpleNamespace(attempts=attempts))  # type: ignore[union-attr, arg-type]
+
+
+def test_a_permanent_mail_error_is_never_retried() -> None:
+    assert _decision(PermanentMailError("bad key"), 1) is None
+    assert _decision(PermanentMailError("bad key"), 3) is None
+
+
+def test_a_transient_mail_error_is_retried_with_waits_that_fit_a_30_minute_link() -> None:
+    waits = []
+    for attempt in (1, 2, 3):
+        started = datetime.now(UTC)
+        decision = _decision(TransientMailError("503"), attempt)
+        assert decision is not None
+        waits.append((decision.retry_at - started).total_seconds())  # type: ignore[attr-defined]
+    assert waits == pytest.approx([9, 27, 81], abs=2)
+    assert sum(waits) < 30 * 60  # the last retry still happens inside the link's lifetime
+
+
+def test_the_job_gives_up_after_four_attempts() -> None:
+    assert _decision(TransientMailError("503"), 4) is None
+
+
+def test_an_unexpected_exception_is_not_retried() -> None:
+    assert _decision(RuntimeError("bug"), 1) is None

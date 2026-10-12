@@ -20,11 +20,19 @@ ONBOARDING_DOMAIN = "resend.dev"
 
 
 class MailError(Exception):
-    """The provider refused or could not be reached; safe to retry unless `permanent`."""
+    """The provider refused or could not be reached. Subclasses say whether a retry can help."""
 
-    def __init__(self, message: str, *, permanent: bool = False) -> None:
-        super().__init__(message)
-        self.permanent = permanent
+    permanent = False
+
+
+class TransientMailError(MailError):
+    """Network error, 429 or 5xx: worth retrying."""
+
+
+class PermanentMailError(MailError):
+    """Bad key, unverified domain, invalid address or unsafe configuration: retrying cannot help."""
+
+    permanent = True
 
 
 @dataclass(frozen=True)
@@ -64,11 +72,11 @@ class ResendMailer:
                 timeout=TIMEOUT,
             )
         except httpx.HTTPError as exc:
-            raise MailError(f"resend unreachable: {type(exc).__name__}") from exc
+            raise TransientMailError(f"resend unreachable: {type(exc).__name__}") from exc
         if response.status_code == 429 or response.status_code >= 500:
-            raise MailError(f"resend answered HTTP {response.status_code}")
+            raise TransientMailError(f"resend answered HTTP {response.status_code}")
         if response.status_code >= 400:  # bad key, unverified domain, invalid address: retrying will not help
-            raise MailError(f"resend refused with HTTP {response.status_code}", permanent=True)
+            raise PermanentMailError(f"resend refused with HTTP {response.status_code}")
 
 
 @dataclass

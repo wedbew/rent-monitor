@@ -71,7 +71,8 @@ for launch, revisit if abuse appears. Not implemented as (b) because it changes 
 - The token is 32 random bytes; only its SHA-256 is stored; valid 30 minutes; single use by one
   `UPDATE ... WHERE used_at IS NULL AND expires_at > now() RETURNING` (ten concurrent verifies give one 200 and nine 401).
 - The mail is a Procrastinate job deferred **by name** from the API (`rm_worker.tasks.email.send_magic_link`, queue `ops`,
-  4 attempts with exponential backoff). Live delivery is untested until the Resend key and domain are verified (B-004).
+  4 attempts at 9, 27 and 81 s, **transient errors only** (network, 429, 5xx); a bad key, an unverified domain or the
+  onboarding sender in production fails at once, so a dead link is never retried and the token does not linger). Live delivery is untested until the Resend key and domain are verified (B-004).
   In production the worker refuses to send without a key or from the Resend onboarding sender.
 
 ## 6. Signup grant

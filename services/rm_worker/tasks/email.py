@@ -1,10 +1,8 @@
 """Transactional email jobs (queue `ops`). The API defers them by name, so it never imports the worker.
 
 GDPR[processor]: the job arguments carry the recipient address and, for the magic link, the single-use token
-inside
-the URL, and Resend receives the message (RM-12). The token is valid for 30 minutes and once; the plaintext
-sits in
-`procrastinate_jobs` until the job is removed (docs/LIMITATIONS.md L-011).
+inside the URL, and Resend receives the message (RM-12). The token is valid for 30 minutes and once; the
+plaintext sits in `procrastinate_jobs` until the job is removed (docs/LIMITATIONS.md L-011).
 """
 
 import hashlib
@@ -17,7 +15,15 @@ from rm_contracts.jobs import OPS_QUEUE, SEND_MAGIC_LINK_TASK
 from rm_core.settings import Settings, get_settings
 
 from rm_worker.app import app
-from rm_worker.clients.resend import LogMailer, Mailer, MailError, Message, ResendMailer, is_onboarding_sender
+from rm_worker.clients.resend import (
+    LogMailer,
+    Mailer,
+    Message,
+    PermanentMailError,
+    ResendMailer,
+    TransientMailError,
+    is_onboarding_sender,
+)
 
 log = structlog.get_logger(__name__)
 
@@ -42,12 +48,10 @@ def build_mailer(settings: Settings, http: httpx.AsyncClient) -> Mailer:
     key = settings.resend_api_key.get_secret_value()
     if key:
         if settings.app_env == "production" and is_onboarding_sender(settings.mail_from):
-            raise MailError(
-                "MAIL_FROM is the Resend onboarding sender; verify a domain first", permanent=True
-            )
+            raise PermanentMailError("MAIL_FROM is the Resend onboarding sender; verify a domain first")
         return ResendMailer(http, key, settings.mail_from)
     if settings.app_env == "production":
-        raise MailError("RESEND_API_KEY is not set", permanent=True)
+        raise PermanentMailError("RESEND_API_KEY is not set")
     return LogMailer()
 
 
@@ -61,7 +65,9 @@ async def deliver_magic_link(mailer: Mailer, settings: Settings, email: str, url
 @app.task(
     queue=OPS_QUEUE,
     name=SEND_MAGIC_LINK_TASK,
-    retry=RetryStrategy(max_attempts=4, exponential_wait=10),
+    # Waits of 9, 27 and 81 s: the link is valid for 30 minutes, so a late retry would send a dead link.
+    # Only transient failures retry; a bad key or sender fails at once instead of keeping the token around.
+    retry=RetryStrategy(max_attempts=4, exponential_wait=3, retry_exceptions=[TransientMailError]),
 )
 async def send_magic_link(email: str, url: str) -> None:
     settings = get_settings()
