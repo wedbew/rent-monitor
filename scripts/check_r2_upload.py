@@ -17,11 +17,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-import boto3
+# boto3 is declared in the inline script metadata above, not in the project environment.
+import boto3  # pyright: ignore[reportMissingImports]
 import httpx
 import structlog
-from botocore.config import Config
-from botocore.exceptions import BotoCoreError, ClientError
+from botocore.config import Config  # pyright: ignore[reportMissingImports]
+from botocore.exceptions import BotoCoreError, ClientError  # pyright: ignore[reportMissingImports]
 from dotenv import dotenv_values
 
 log = structlog.get_logger()
@@ -77,6 +78,7 @@ def main() -> int:
     key = f"connection-tests/{datetime.now(UTC):%Y%m%dT%H%M%SZ}-{uuid4().hex}.txt"
     body = b"RentMonitor R2 upload and read-back connectivity test.\n"
     phase = "credentials"
+    access = secret = ""
     try:
         access, secret = credentials(values, account)
         client = boto3.client(
