@@ -15,6 +15,12 @@ as the bot user, watches CI, fixes failures, enables auto-merge, and `close-issu
 3. Create the label once: `gh label create agent --color 5319e7 --description "Let the Actions agent implement this"`.
 4. Repo → Settings → Actions → General: allow GitHub Actions to create and approve pull requests is **not** needed; keep it off.
 
+## Trigger from your phone
+
+- GitHub mobile app → open an issue → add the label `agent`, or comment `@claude <task>` (owner/member/collaborator only).
+- The run appears under Actions → `claude`; it opens a PR against `staging` and comments on the issue where it stopped.
+- Alternative for interactive work: Claude app → Code (claude.ai/code) with the repo connected.
+
 ## Why the agent does not read `.env`
 `.env` holds secrets that would land in transcripts and logs (a token pasted into a chat has to be revoked). Agents receive credentials as
 environment variables (`GH_TOKEN`, Actions secrets), which tools use without printing them. `.env` stays unreadable to agents (`agents.md` §4).
