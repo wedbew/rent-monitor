@@ -92,7 +92,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Evidence:** confirmed (the script served at `https://cloud.umami.is/script.js` on 2026-10-12 posts to `https://gateway.umami.is/api/send`; the blueprint `connect-src` lists only `https://cloud.umami.is`); whether the script host ever changes is unverified
 - **Description:** With the blueprint CSP the browser would block every analytics event while the script itself loads. The blueprint is not edited until the maintainer decides (`rules/architecture.md`).
 - **Workaround:** none needed in Phase 1 (no frontend). Options: allow `https://gateway.umami.is` in `connect-src`, or proxy events through our own domain.
-- **Target:** #143 (`docs/ANALYTICS-SPEC.md`); decide before the Caddy config (#15) and N-30 (#72)
+- **Target:** #143 (`docs/ANALYTICS-SPEC.md` section 2 lays out both options); decide before the Caddy config (#15) and N-30 (#72)
 
 ## Resolved
 
