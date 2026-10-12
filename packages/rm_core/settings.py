@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     openrouter_call_estimate_usd: Decimal = Field(
         default=Decimal("0.02"), ge=0
     )  # placeholder until L-003 is measured
+    nominatim_user_agent: str = (
+        "RentMonitor/1.0 (set-an-ops-contact)"  # OSM policy: identify yourself with a contact
+    )
     image_host_allowlist: str = (
         "olxcdn.com,otodom.pl"  # comma-separated host suffixes photos may be fetched from
     )

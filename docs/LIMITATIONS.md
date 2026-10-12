@@ -67,6 +67,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** None until the owner supplies a sourced price list (per condition and city tier, ideally per item: bathroom, kitchen, floors, windows, wiring) or approves a source to import.
 - **Target:** blocker B-015; PRE-DEPLOYMENT §5
 
+### L-008 — OpenStreetMap: attribution and public-service limits
+- **Status:** active
+- **Discovered:** 2026-10-12
+- **Affects:** `rm_worker.clients.osm`, `app.geo_cache`, any screen or report that shows distances
+- **Evidence:** confirmed (OSM usage policy and ODbL licence, read 2026-10-12; not legal advice)
+- **Description:** Distances and points of interest come from OpenStreetMap (ODbL): the product must show "© OpenStreetMap contributors" wherever they are shown. The public Nominatim and Overpass services forbid heavy or bulk use and require an identifying User-Agent, a 1 request per second cap and caching, all enforced in code (placeholder User-Agent refused). Batch refreshes of hundreds of cities would breach the policy.
+- **Workaround:** Cache 90 days (geocoding) and 30 days (POIs); degrade to "no distances" on any failure. Self-hosting Nominatim/Overpass is the path for scale.
+- **Target:** frontend attribution (Phase 2); revisit before the batch lane (RM-16)
+
 ## Resolved
 
 _None yet._
