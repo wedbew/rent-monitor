@@ -9,7 +9,7 @@ dependencies = [
   "pydantic>=2.12",
   "pydantic-settings>=2.11",
   "sentry-sdk>=2.40,<3",
-  "sqlalchemy[asyncio]>=2.0,<2.1",
+  "sqlalchemy[asyncio]>=2.0,<2.2",
   "structlog>=25.4",
 ]
 
