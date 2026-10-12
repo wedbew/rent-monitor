@@ -249,7 +249,13 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `VALIDATION_ERROR` | request body, query or path fails Pydantic (`extra="forbid"`) | 422, field errors without echoing input | none | never reserved |
 | `NOT_FOUND` | unknown route, or a resource of another tenant (never 403) | 404 | none | never reserved |
 | `HTTP_ERROR` | other transport errors (405, 413, …) | as raised | none | never reserved |
-| `NOT_READY` | `/readyz` database or queue check fails | 503 with `checks` | orchestrator retries | n/a |
+| `NOT_READY` | `/readyz` database or queue check fails; Google's signing certificates unreachable | 503 with `checks` | orchestrator retries | n/a |
+| `UNAUTHENTICATED` | `current_principal`: no, unknown or expired session cookie | 401 | sign in | never reserved |
+| `INVALID_GOOGLE_TOKEN` | `google-auth` rejects signature, audience, issuer, expiry or claims | 401 | none | n/a |
+| `GOOGLE_EMAIL_UNVERIFIED` | valid Google token whose `email_verified` is false | 401 (the SPA offers the magic link) | none | n/a |
+| `MAGIC_LINK_INVALID` | magic-link token unknown, already used or expired | 401 | request a new link | n/a |
+| `RATE_LIMITED` | atomic per-address or per-IP counter exceeded | 429 with `Retry-After` | after the window | n/a |
+| `ORIGIN_NOT_ALLOWED` | unsafe method on `/api/*` without `Origin == PUBLIC_APP_URL` | 403 | none | never reserved |
 
 Scraping hygiene the workers enforce:
 

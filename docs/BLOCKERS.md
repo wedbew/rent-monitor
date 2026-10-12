@@ -6,7 +6,9 @@ matter for production or a domain are *Deferred*, not blocking.
 
 ## Awaiting your approval (PRs the agent will not merge)
 
-_None. #108 (ledger, entitlements, flags) and #109 (AI budget) were approved and merged on 2026-10-12; auth (#12) and audits (#13) are unblocked._
+| PR | What | Why it waits | To approve |
+|---|---|---|---|
+| auth (RM-12, closes #12 and #130) | Google sign-in, magic link, sessions, Origin check, `rate_limit` migration | auth/sessions are human-review areas (`rules/pull-requests.md`) | comment "approved to merge" on the PR; read `docs/GOOGLE-AUTH-SPEC.md` §3 and §9 first |
 
 ## Open (needs the owner)
 

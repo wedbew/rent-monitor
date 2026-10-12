@@ -94,6 +94,24 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none needed in Phase 1 (no frontend). Options: allow `https://gateway.umami.is` in `connect-src`, or proxy events through our own domain.
 - **Target:** #143 (`docs/ANALYTICS-SPEC.md`); decide before the Caddy config (#15) and N-30 (#72)
 
+### L-011 — The magic-link token travels in Procrastinate job arguments
+- **Status:** active
+- **Discovered:** 2026-10-12
+- **Affects:** `rm_worker.tasks.email.send_magic_link`, table `procrastinate_jobs`, GDPR retention
+- **Evidence:** confirmed (the API defers the task with `email` and `url`; the URL fragment holds the raw token)
+- **Description:** Everywhere else only the SHA-256 of a login token is stored. The job arguments hold the raw token and the address until the job row is deleted, and failed jobs are kept for inspection. The token is single-use and expires after 30 minutes, which bounds the damage of a database leak; it does not remove it.
+- **Workaround:** none yet. Planned: delete finished and old failed `send_magic_link` jobs in the ops maintenance task (Procrastinate's built-in `remove_old_jobs`).
+- **Target:** #25 (worker-ops); blueprint §2 Auth decision, rule 1
+
+### L-012 — Client IP behind the proxy decides the per-IP limit
+- **Status:** active
+- **Discovered:** 2026-10-12
+- **Affects:** `POST /api/auth/email/start` (20/hour per IP), the stored session IP, deploy (Caddy → uvicorn)
+- **Evidence:** inferred (uvicorn `--proxy-headers` trusts forwarded headers only from `127.0.0.1` unless `--forwarded-allow-ips` is set; the image enables `--proxy-headers` but not the allow-list; not yet run behind Caddy)
+- **Description:** If uvicorn does not trust Caddy, every request looks like it comes from the proxy, so the per-IP limit would become one shared limit for all users and the stored session IP would be wrong.
+- **Workaround:** none needed locally. Before deploy set `--forwarded-allow-ips` to the Caddy container address and add a smoke check.
+- **Target:** #15 (ops); PRE-DEPLOYMENT §6
+
 ## Resolved
 
 _None yet._

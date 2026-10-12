@@ -4,6 +4,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import httpx
+import procrastinate
 import structlog
 from fastapi import FastAPI
 from rm_core.db.session import make_engine, make_sessionmaker
@@ -11,16 +12,28 @@ from rm_core.logging import configure_logging
 from rm_core.observability import init_sentry
 from rm_core.settings import Settings, get_settings
 
+from rm_api.auth.google import GoogleCerts, GoogleVerifier
+from rm_api.auth.router import router as auth_router
+from rm_api.auth.sessions import REVOKED_CHANNEL, PrincipalCache
 from rm_api.health import router as health_router
 from rm_api.middleware import RequestContextMiddleware
+from rm_api.notify import NotifyListener
+from rm_api.origin import OriginCheckMiddleware
 from rm_api.problems import install_problem_handlers
+from rm_api.queue import EmailQueue, ProcrastinateEmailQueue
 
 log = structlog.get_logger(__name__)
 HTTP_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
 HTTP_LIMITS = httpx.Limits(max_connections=20, max_keepalive_connections=10)
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    *,
+    email_queue: EmailQueue | None = None,
+    google_verifier: GoogleVerifier | None = None,
+) -> FastAPI:
+    """`email_queue` and `google_verifier` are test seams; production builds them in the lifespan."""
     settings = settings or get_settings()
     configure_logging(level=settings.log_level, json_logs=settings.log_json)
     init_sentry(settings)
@@ -31,10 +44,35 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.engine = engine
         app.state.sessionmaker = make_sessionmaker(engine) if engine else None
         app.state.http_client = httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS)
+        app.state.google_verifier = google_verifier or GoogleVerifier(
+            settings.google_client_id, GoogleCerts(app.state.http_client)
+        )
+        jobs: ProcrastinateEmailQueue | None = None
+        if email_queue is None and settings.psycopg_dsn:
+            # Two connections at most, opened on first use: the API only defers jobs (blueprint §6 budget).
+            jobs = ProcrastinateEmailQueue(
+                procrastinate.App(
+                    connector=procrastinate.PsycopgConnector(
+                        conninfo=settings.psycopg_dsn, min_size=1, max_size=2
+                    )
+                )
+            )
+        app.state.email_queue = email_queue or jobs or _NoQueue()
+        listener: NotifyListener | None = None
+        if settings.psycopg_dsn:
+            listener = NotifyListener(settings.psycopg_dsn, [REVOKED_CHANNEL])
+            listener.subscribe(REVOKED_CHANNEL, app.state.principal_cache.on_notify)
+            listener.on_reconnect(app.state.principal_cache.clear)  # missed notifications: treat all as stale
+            listener.start()
+        app.state.notify_listener = listener
         log.info("startup", env=settings.app_env, database=engine is not None)
         try:
             yield
         finally:
+            if listener is not None:
+                await listener.stop()
+            if jobs is not None:
+                await jobs.close()
             await app.state.http_client.aclose()
             if engine is not None:
                 await engine.dispose()
@@ -50,7 +88,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = None  # replaced by the lifespan; set so dependencies work without one
     app.state.sessionmaker = None
     app.state.http_client = None
+    app.state.settings = settings
+    app.state.principal_cache = PrincipalCache()
+    app.state.notify_listener = None
+    app.state.google_verifier = google_verifier
+    app.state.email_queue = email_queue
+    app.add_middleware(OriginCheckMiddleware, allowed_origin=settings.public_origin)
     app.add_middleware(RequestContextMiddleware)
     install_problem_handlers(app)
     app.include_router(health_router)
+    app.include_router(auth_router)
     return app
+
+
+class _NoQueue:
+    """Used when no database DSN is configured (unit tests of unrelated routes): refuses instead of dropping
+    mail."""
+
+    async def send_magic_link(self, *, email: str, url: str) -> None:
+        raise RuntimeError("no job queue configured")

@@ -8,5 +8,5 @@ from rm_core.settings import get_settings
 
 app = procrastinate.App(
     connector=procrastinate.PsycopgConnector(conninfo=get_settings().procrastinate_dsn),
-    import_paths=["rm_worker.tasks.retention", "rm_worker.tasks.ai_budget"],
+    import_paths=["rm_worker.tasks.retention", "rm_worker.tasks.ai_budget", "rm_worker.tasks.email"],
 )
