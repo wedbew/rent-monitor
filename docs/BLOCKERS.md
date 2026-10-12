@@ -6,7 +6,7 @@ matter for production or a domain are *Deferred*, not blocking.
 
 ## Awaiting your approval (PRs the agent will not merge)
 
-_None. On 2026-10-12 the owner approved merging every pending PR: auth (#147), worker ops (#158), the Resend and Stripe specs (#159, #160), and the GDPR, me/saved/admin and OpenAPI work (#173, #174, #175). Merged earlier: ledger and entitlements (#108), AI budget (#109). Promotion  to  stays a human decision._
+_None. On 2026-10-12 the owner approved merging every pending PR: auth (#147), worker ops (#158), the Resend and Stripe specs (#159, #160), and the GDPR, me/saved/admin and OpenAPI work (#173, #174, #175). Merged earlier: ledger and entitlements (#108), AI budget (#109). Promotion `staging` to `main` stays a human decision._
 
 ## Open (needs the owner)
 
