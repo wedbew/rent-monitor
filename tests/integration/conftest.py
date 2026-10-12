@@ -8,8 +8,8 @@ import pytest
 import pytest_asyncio
 from alembic import command
 from alembic.config import Config
+from pg_container import postgres_container
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
-from testcontainers.community.postgres import PostgresContainer
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -21,7 +21,7 @@ def pg_url() -> Iterator[str]:
     if override:
         yield override
         return
-    with PostgresContainer("postgres:17", driver="psycopg") as pg:
+    with postgres_container() as pg:
         yield pg.get_connection_url()
 
 
