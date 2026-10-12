@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     procrastinate_dsn: str = ""
 
     google_client_id: str = ""
+    google_client_secret: SecretStr = SecretStr(
+        ""
+    )  # only for a server-side code flow; ID-token sign-in needs the ID alone
     session_cookie_name: str = "rm_session"
     session_ttl_days: int = Field(default=30, ge=1)
     magic_link_ttl_minutes: int = Field(default=30, ge=1)
