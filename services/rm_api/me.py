@@ -1,4 +1,5 @@
-"""`/api/me/*`: the data-subject rights endpoints (blueprint §2 Route map; docs/RUNBOOK-GDPR.md).
+"""`/api/me`: the profile, and the data-subject rights endpoints (blueprint §2 Route map;
+docs/RUNBOOK-GDPR.md).
 
 GDPR[erasure]: `DELETE /api/me` removes every tenant-owned row (FK cascade) and the processor's customer.
 GDPR[personal-data]: `GET /api/me/export` returns everything held about the caller, to the caller only.
@@ -7,10 +8,14 @@ GDPR[personal-data]: `GET /api/me/export` returns everything held about the call
 import structlog
 from fastapi import APIRouter, Request, Response
 from rm_contracts.auth import AccountDelete
+from rm_contracts.me import MeDetailOut, PeriodOut, PlanOut, UpstreamOut
 from rm_contracts.problems import ProblemCode
-from rm_core.db.models import StripeCustomer
+from rm_core.db.models import StripeCustomer, User
+from rm_core.entitlements import load_entitlements
+from rm_core.flags import resolve_flags
 from rm_core.privacy import UserDataExport, delete_account, export_user_data, user_hash
 from rm_core.ratelimit import hit
+from rm_core.throttle import OTODOM_HOST, breaker_status
 from sqlalchemy import select
 
 from rm_api.auth.sessions import clear_session_cookie, revoke_all_sessions
@@ -71,3 +76,43 @@ async def delete_my_account(
     out = Response(status_code=204)
     clear_session_cookie(out, settings)
     return out
+
+
+@router.get("", response_model=MeDetailOut)
+async def my_profile(db: SessionDep, principal: PrincipalDep) -> MeDetailOut:
+    """Profile, plan, credits, feature flags and the Otodom circuit-breaker state, in one call for the SPA."""
+    user = await db.get(User, principal.user_id)
+    if user is None:
+        raise Problem.unauthorized(ProblemCode.UNAUTHENTICATED, "Sign in required")
+    ent = await load_entitlements(db, principal.user_id)
+    flags = await resolve_flags(db, user_id=principal.user_id, plan=ent.plan_code)
+    breaker = await breaker_status(db, OTODOM_HOST)
+    period = ent.period
+    return MeDetailOut(
+        id=user.id,
+        email=user.email,
+        name=user.name,
+        avatar_url=user.avatar_url,
+        role=user.role,
+        email_verified=user.email_verified_at is not None,
+        plan=PlanOut(
+            code=ent.plan_code,
+            is_pro=ent.is_pro,
+            subscription_status=ent.subscription_status.value if ent.subscription_status else None,
+            grace_until=ent.grace_until,
+            period=None
+            if period is None
+            else PeriodOut(
+                kind=period.kind,
+                period_end=period.period_end,
+                allowance=period.allowance,
+                used=period.used,
+                remaining=period.remaining,
+            ),
+        ),
+        credit_balance=ent.credit_balance,
+        flags=flags,
+        upstream=UpstreamOut(
+            otodom_breaker_open=breaker.open, retry_after_s=breaker.retry_after_s, reason=breaker.reason
+        ),
+    )

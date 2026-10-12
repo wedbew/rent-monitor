@@ -32,6 +32,9 @@ async def reserve_slot(session: AsyncSession, host: str, interval: timedelta = D
     return max(0.0, (slot - now).total_seconds())
 
 
+OTODOM_HOST = "otodom.pl"  # the host the shared throttle and circuit breaker are keyed on
+
+
 @dataclass(frozen=True)
 class BreakerStatus:
     open: bool

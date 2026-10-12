@@ -12,6 +12,7 @@ from rm_core.logging import configure_logging
 from rm_core.observability import init_sentry
 from rm_core.settings import Settings, get_settings
 
+from rm_api.admin import router as admin_router
 from rm_api.auth.google import GoogleCerts, GoogleVerifier
 from rm_api.auth.router import router as auth_router
 from rm_api.auth.sessions import REVOKED_CHANNEL, PrincipalCache
@@ -23,6 +24,7 @@ from rm_api.notify import NotifyListener
 from rm_api.origin import OriginCheckMiddleware
 from rm_api.problems import install_problem_handlers
 from rm_api.queue import EmailQueue, ProcrastinateEmailQueue
+from rm_api.saved import router as saved_router
 
 log = structlog.get_logger(__name__)
 HTTP_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
@@ -100,10 +102,13 @@ def create_app(
     app.add_middleware(OriginCheckMiddleware, allowed_origin=settings.public_origin)
     app.add_middleware(RequestContextMiddleware)
     install_problem_handlers(app)
-    app.include_router(health_router)
-    app.include_router(auth_router)
-    app.include_router(me_router)
+    _include_routers(app)
     return app
+
+
+def _include_routers(app: FastAPI) -> None:
+    for router in (health_router, auth_router, me_router, saved_router, admin_router):
+        app.include_router(router)
 
 
 class _NoQueue:

@@ -20,8 +20,9 @@ from urllib.parse import urlsplit
 from rm_contracts.problems import ProblemCode
 from rm_core.deadline import Deadline
 from rm_core.snapshots import FetchedListing, content_hash
+from rm_core.throttle import OTODOM_HOST
 
-HOST = "otodom.pl"
+HOST = OTODOM_HOST
 MAX_BODY_BYTES = 5 * 1024 * 1024
 MAX_ATTEMPTS = 4
 BACKOFF_BASE_S = 2.0
