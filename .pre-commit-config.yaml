@@ -1,6 +1,6 @@
 # Run with prek (drop-in, faster): `uv tool install prek && prek install --hook-type pre-commit --hook-type commit-msg`
 # Plain `pre-commit` also works with this file.
-default_install_hook_types: [pre-commit, commit-msg]
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
 default_stages: [pre-commit]
 
 repos:
@@ -64,3 +64,10 @@ repos:
         entry: frontend cashflow/appreciation code is banned (blueprint P0.3)
         language: fail
         files: ^frontend/src/lib/(cashflow|appreciation)\.ts$
+      - id: ci-fast-before-push
+        name: "fast local CI (commits, lint, types, unit tests) before push"
+        entry: ./scripts/ci_local.sh --fast
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true

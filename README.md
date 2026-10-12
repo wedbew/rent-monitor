@@ -11,7 +11,11 @@ make sync        # uv sync --all-packages --group dev
 make test        # uv run pytest -m "not e2e" -q
 make lint        # ruff check + format check
 make types       # pyright
-make check       # lint + types + test (run before pushing)
+make check       # lint + types + test
+make ci-fast     # the GitHub pipeline locally, fast (commits, lint, types, unit tests; ~1 min)
+make ci          # everything CI runs: tests+coverage, invariants, migrations+squawk, semgrep, audit, gitleaks, actionlint (run before every push)
+make ci-full     # make ci + the Docker smoke test
+make hooks       # install git hooks incl. a pre-push that runs make ci-fast
 cp .env.example .env   # names only; fill values locally, never commit .env
 make up          # the WHOLE app in Docker: Postgres 17, bootstrap (migrations, queue schema, seed), API on :8000, worker
 make smoke       # build, start, check /api/health, /readyz, worker and seed, then stop
