@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-12 · by: RM-125 (design direction)
+**Last updated:** 2026-10-12 · by: RM-12 (Google auth handoff), RM-125 (design direction)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -203,6 +203,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Expensive-to-reverse decisions (runtime, queue, auth, billing, host, pins) | `docs/adr/0002`–`0009` |
 | Rules, invariants, git flow, PR template | `.agent/agents.md`, `.agent/rules/*.md`, `.github/pull_request_template.md` |
 | Architecture, schema, Stripe, auth, tests | `docs/BLUEPRINT.md` §2–§4 |
+| Google sign-in specification (to be written, #130) and the owner's local setup notes | `docs/GOOGLE-AUTH-SPEC.md` (planned); local handoff `docs/GOOGLE-AUTH-INTEGRATION.md` is gitignored |
 | CI, hooks, rulesets, MCP, skills | `docs/TOOLCHAIN.md` |
 | Risk register and release gates | `docs/BLUEPRINT.md` §5–§6 |
 | Headless agent (Actions), secrets | `docs/AUTONOMY.md` |
