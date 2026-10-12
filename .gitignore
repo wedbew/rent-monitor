@@ -68,3 +68,7 @@ docker-compose.override.yml
 *.log
 tmp/
 .tmp/
+
+# --- Owner-only infrastructure notes (hostnames, prices, renewals); public repo ---
+/docs/INFRASTRUCTURE.md
+/deploy/README.md
