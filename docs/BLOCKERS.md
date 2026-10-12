@@ -29,6 +29,7 @@ _None. #108 (ledger, entitlements, flags) and #109 (AI budget) were approved and
 
 | ID | What | Resolution | Date |
 |---|---|---|---|
+| B-005c | R2 connectivity | corrected S3 credentials saved privately; `scripts/check_r2_upload.py` uploaded 55 bytes to `rent-monitor` at `connection-tests/20261012T173240Z-f9eb4c3fe2594328bdeb6f2f194f0322.txt` and read back identical content. Test object retained. SHA-256: `2038114c0ffb30fe0da1ff2434f06a7f8605bbac59973461225660d76314a704`. Previous failure was an invalid access-key length. Specification tracked in #140 | 2026-10-12 |
 | B-006a | VPS purchase | Owner bought an OVH VPS-1 (no commitment); details in the owner's local notes (not in the repo) | 2026-10-12 |
 | B-005b | Domain registration | Owner registered the production domain at OVH; details in the owner's local notes (not in the repo) | 2026-10-12 |
 | B-005a | R2 bucket and keys | Owner states the R2 values are in `.env` (not verified by agents, which cannot read it) | 2026-10-11 |
