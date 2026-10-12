@@ -52,6 +52,7 @@ Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton (RM
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
 | [`docs/adr/`](docs/adr) | Architecture decision records (0001 greenfield … 0009 Better Stack) |
 | [`docs/ENGINE-SPEC.md`](docs/ENGINE-SPEC.md) | Engine rules, approved with amendments (B-007 resolved) |
+| [`docs/GOOGLE-AUTH-SPEC.md`](docs/GOOGLE-AUTH-SPEC.md) | Google sign-in, sessions and magic link as built (RM-12, awaiting review) |
 | [`docs/ANALYTICS-SPEC.md`](docs/ANALYTICS-SPEC.md) | Umami loading, CSP options, event allow-list, consent notice (Phase 2) |
 | [`docs/OBSERVABILITY-SPEC.md`](docs/OBSERVABILITY-SPEC.md) | Better Stack errors, logs, uptime, heartbeats, alerts (spec) |
 | [`docs/R2-SPEC.md`](docs/R2-SPEC.md) | R2 buckets, tokens, WAL-G, restore drill, alerts (spec) |

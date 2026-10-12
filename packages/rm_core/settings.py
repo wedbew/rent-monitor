@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     google_client_secret: SecretStr = SecretStr(
         ""
     )  # only for a server-side code flow; ID-token sign-in needs the ID alone
-    session_cookie_name: str = "rm_session"
+    session_cookie_name: str = "rm_session"  # production adds the `__Host-` prefix (cookie_name property)
     session_ttl_days: int = Field(default=30, ge=1)
     magic_link_ttl_minutes: int = Field(default=30, ge=1)
 
@@ -56,6 +56,11 @@ class Settings(BaseSettings):
     retention_snapshot_days: int = Field(default=30, ge=1)  # raw listing payloads (may hold seller data)
     retention_audit_event_days: int = Field(default=30, ge=1)  # progress events; the audit result is kept
 
+    resend_api_key: SecretStr = SecretStr("")  # empty: development logs the magic link instead of sending it
+    mail_from: str = (
+        "RentMonitor <onboarding@resend.dev>"  # local test sender; production needs a verified domain
+    )
+
     # Better Stack heartbeat URLs carry their own secret; empty means that monitor is off
     # (docs/OBSERVABILITY-SPEC.md section 4).
     betterstack_heartbeat_ledger_url: SecretStr = SecretStr("")
@@ -66,6 +71,25 @@ class Settings(BaseSettings):
         default=Decimal("0.05"), ge=0, le=1
     )  # a probability; Decimal keeps floats out of settings
     release: str = ""  # image tag / git sha, set by the deploy
+
+    @property
+    def cookie_name(self) -> str:
+        """`__Host-` requires Secure, Path=/ and no Domain: only possible over HTTPS, so production only."""
+        return (
+            f"__Host-{self.session_cookie_name}" if self.app_env == "production" else self.session_cookie_name
+        )
+
+    @property
+    def psycopg_dsn(self) -> str:
+        """Plain libpq DSN for LISTEN/NOTIFY and Procrastinate (the SQLAlchemy URL minus its driver
+        suffix)."""
+        return self.procrastinate_dsn or self.database_url.replace(
+            "postgresql+psycopg://", "postgresql://", 1
+        )
+
+    @property
+    def public_origin(self) -> str:
+        return self.public_app_url.strip().rstrip("/").lower()
 
     @property
     def image_hosts(self) -> tuple[str, ...]:

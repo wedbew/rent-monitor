@@ -43,6 +43,19 @@ class Problem(Exception):
     def not_found(cls, what: str = "Resource") -> "Problem":
         return cls(404, ProblemCode.NOT_FOUND, f"{what} not found")
 
+    @classmethod
+    def unauthorized(cls, code: ProblemCode, title: str) -> "Problem":
+        return cls(401, code, title)
+
+    @classmethod
+    def rate_limited(cls, retry_after_s: int) -> "Problem":
+        return cls(
+            429,
+            ProblemCode.RATE_LIMITED,
+            "Too many requests",
+            headers={"Retry-After": str(retry_after_s)},
+        )
+
 
 def _request_id(request: Request) -> str | None:
     value = getattr(request.state, "request_id", None)

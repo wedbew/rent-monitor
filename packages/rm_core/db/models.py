@@ -557,3 +557,19 @@ class FeatureOverride(Base):
     reason: Mapped[str] = mapped_column(Text)
     expires_at: Mapped[datetime | None]
     created_by: Mapped[str] = mapped_column(Text)
+
+
+class RateLimit(Base):
+    """Fixed-window counters for abuse limits (magic links today).
+
+    GDPR[personal-data]: `key` is a SHA-256 of "<scope>:<subject>" (an email or an IP), never the raw value.
+    Retention: rows are purged one day after their window ends (`purge_expired`, RM-12). Erasure: nothing to
+    delete per user, the hash cannot be reversed without guessing the input.
+    """
+
+    __tablename__ = "rate_limit"
+    __table_args__ = (CheckConstraint("n >= 0", name="n_non_negative"),)
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    window_start: Mapped[datetime] = mapped_column(primary_key=True, index=True)
+    n: Mapped[int] = mapped_column(Integer, server_default="0")

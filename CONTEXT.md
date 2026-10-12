@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-12 · by: RM-157 (worker ops), RM-171 (decisions D-14, L-010), RM-144 (Umami)
+**Last updated:** 2026-10-12 · by: RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -168,7 +168,7 @@ CI/security workflows, pre-commit, semgrep rules and commit-message checker exis
 settings + `LegalTag`, `rm-contracts` `ProblemCode`, `rm-api` `/api/health`, empty `rm-worker`), `Makefile`, `.env.example`,
 `README.md`, `CHANGELOG.md`, `docs/LIMITATIONS.md`. ADR 0001 made the build greenfield. A first attempt to copy POC packages was
 discarded. RM-11 added `packages/rm_core/db/` (all §3 models), `alembic.ini`, `migrations/` (baseline `0001`), Testcontainers fixtures and
-`test_invariant_asking_is_not_deed`. RM-23 added `rm_worker.images`, `rm_worker.clients.{openrouter,limiter}` (budget gate and in-flight cap are protocols; RM-24 supplies the gate). RM-22 added `rm_core.{listing_ref,deadline,throttle,snapshots}`, `rm_worker.clients.otodom*`, `rm_worker.snapshot_service` and migration `0002` (`host_throttle`). RM-24 added `rm_core.ai_budget`, `rm_worker.tasks.ai_budget`, migration `0005`. RM-19 added `rm_core.{ledger,entitlements,flags}` (PR open, human review required). RM-86 added `deal_analyzer.geo`, `rm_core.geocache`, `rm_worker.clients.osm`, `rm_worker.geo_service`, migration `0004` (`geo_cache`). RM-87 added `deal_analyzer.rent` (N-04 engine side; comparables come from the market lane). RM-93 added golden snapshots (`tests/engine/golden/`) and made seven invariant tests required in CI. RM-92 added `deal_analyzer.{analysis,markdown}` (N-09). RM-88 added `deal_analyzer.capex` (N-05, placeholder prices). RM-91 added `deal_analyzer.vision` (N-08). RM-90 added `deal_analyzer.maxbid` (N-07). RM-89 added `deal_analyzer.{money,assumptions,costs,tax,cashflow}` (N-06). RM-85 added `deal_analyzer.{ownership,legal_class,text}` (N-02). RM-84 added `apps/deal_analyzer` (N-01: `extract_listing`, `Listing`, errors; fractional-ownership and VAT classifiers are N-02) and tests under `tests/engine/`. RM-30 added `rm_core.privacy` (retention sweeps, `delete_account`, `reapply_erasures`, `export_user_data`), `rm_worker.tasks.retention`, migration `0003` (`erasure_log`). Endpoints: RM-82. RM-69 added `deploy/Dockerfile`, `deploy/compose.yml` (api, worker, bootstrap, postgres) and `scripts/bootstrap.py`, replacing `compose.dev.yml`. RM-29 added Makefile dev targets, `rm_core.seed`, `scripts/seed.py` and `rm_worker.app`. RM-18 added `rm_core.logging`/`observability`, `rm_api.{app,problems,middleware,health,deps}` (problem codes, `/healthz`, `/readyz`, session dependency). Still missing: `apps/`, production deploy files (Caddy, WAL-G, backups: RM-15), the other named invariant tests (the CI `invariants` job stays off
+`test_invariant_asking_is_not_deed`. RM-23 added `rm_worker.images`, `rm_worker.clients.{openrouter,limiter}` (budget gate and in-flight cap are protocols; RM-24 supplies the gate). RM-22 added `rm_core.{listing_ref,deadline,throttle,snapshots}`, `rm_worker.clients.otodom*`, `rm_worker.snapshot_service` and migration `0002` (`host_throttle`). RM-24 added `rm_core.ai_budget`, `rm_worker.tasks.ai_budget`, migration `0005`. RM-19 added `rm_core.{ledger,entitlements,flags}` (PR open, human review required). RM-86 added `deal_analyzer.geo`, `rm_core.geocache`, `rm_worker.clients.osm`, `rm_worker.geo_service`, migration `0004` (`geo_cache`). RM-87 added `deal_analyzer.rent` (N-04 engine side; comparables come from the market lane). RM-93 added golden snapshots (`tests/engine/golden/`) and made seven invariant tests required in CI. RM-92 added `deal_analyzer.{analysis,markdown}` (N-09). RM-88 added `deal_analyzer.capex` (N-05, placeholder prices). RM-91 added `deal_analyzer.vision` (N-08). RM-90 added `deal_analyzer.maxbid` (N-07). RM-89 added `deal_analyzer.{money,assumptions,costs,tax,cashflow}` (N-06). RM-85 added `deal_analyzer.{ownership,legal_class,text}` (N-02). RM-84 added `apps/deal_analyzer` (N-01: `extract_listing`, `Listing`, errors; fractional-ownership and VAT classifiers are N-02) and tests under `tests/engine/`. RM-12 added `rm_api.auth.*` (Google ID-token sign-in, magic link, sessions, session list; PR awaits owner review), `rm_api.{origin,notify,queue}`, `rm_core.{ratelimit,principal}`, `rm_worker.tasks.email` + `rm_worker.clients.resend`, migration `0006` (`rate_limit`). RM-30 added `rm_core.privacy` (retention sweeps, `delete_account`, `reapply_erasures`, `export_user_data`), `rm_worker.tasks.retention`, migration `0003` (`erasure_log`). Endpoints: RM-82. RM-69 added `deploy/Dockerfile`, `deploy/compose.yml` (api, worker, bootstrap, postgres) and `scripts/bootstrap.py`, replacing `compose.dev.yml`. RM-29 added Makefile dev targets, `rm_core.seed`, `scripts/seed.py` and `rm_worker.app`. RM-18 added `rm_core.logging`/`observability`, `rm_api.{app,problems,middleware,health,deps}` (problem codes, `/healthz`, `/readyz`, session dependency). Still missing: `apps/`, production deploy files (Caddy, WAL-G, backups: RM-15), the other named invariant tests (the CI `invariants` job stays off
 until they exist; do not stub them), Procrastinate worker bootstrap, `frontend/`. The `migrations` CI job can be switched on
 (`ENABLE_MIGRATIONS_JOB=true` plus the `staging` required check) — an owner action, see §9.
 RM-157 added `rm_worker.tasks.maintenance` (ledger check, monitor, old-job cleanup), `rm_worker.monitors` and `rm_worker.clients.heartbeat`; the worker now initialises Sentry. Repo `wedbew/rent-monitor` is **public during development** (switch back to private before real keys or data: `docs/PRE-DEPLOYMENT.md` §0);
@@ -178,7 +178,7 @@ Roadmap milestones, issue dependencies, gates and owner deadlines are in `docs/R
 not permission to copy POC or GUS-PoC artifacts.
 
 **Design exploration (12 Oct 2026, maintainer request):** `design/` contains proposed UX principles, a documentation-state review,
-and responsive interactive home, analyses-list and separate city-context prototypes with fictional fixtures. This is a Phase 2 design artifact, not a production SPA;
+and responsive interactive home, analyses-list and separate city-context prototypes with fictional fixtures. `design/v1/` holds the warm editorial direction; `design/v2/` adds a monochrome architectural alternative with new tokens and restrained motion. Neither is selected for production. This is a Phase 2 design artifact, not a production SPA;
 `frontend/` and backend contracts are unchanged.
 
 ## 9. Open decisions (owner: you)
@@ -195,6 +195,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 - [ ] Pro allowance (40 is a placeholder until COGS is measured); free-tier scope
 - [x] SQLAlchemy 2.0 and Stripe SDK pin at #14: ADR 0007 accepted (D-02)
 - [ ] Gemini and Claude auth in Actions; GitHub plan for private-repo rulesets
+- [x] D-13 Google links or creates accounts only for `@gmail.com` or a matching `hd`; others confirm by magic link (ADR 0010, RM-12)
 - [ ] Polish legal review of Otodom scraping before charging (blueprint §5, not legal advice)
 - [x] D-14 R2 backups in the EU jurisdiction (fixed at creation), `rentmonitor-backups`, WAL-G retention 14 days: decided (ADR 0011, RM-171)
 
@@ -206,7 +207,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Expensive-to-reverse decisions (runtime, queue, auth, billing, host, pins) | `docs/adr/0002`–`0009` |
 | Rules, invariants, git flow, PR template | `.agent/agents.md`, `.agent/rules/*.md`, `.github/pull_request_template.md` |
 | Architecture, schema, Stripe, auth, tests | `docs/BLUEPRINT.md` §2–§4 |
-| Google sign-in specification (to be written, #130) and the owner's local setup notes | `docs/GOOGLE-AUTH-SPEC.md` (planned); local handoff `docs/GOOGLE-AUTH-INTEGRATION.md` is gitignored |
+| Google sign-in and session specification, as built (RM-12) and the owner's local setup notes | `docs/GOOGLE-AUTH-SPEC.md`; local handoff `docs/GOOGLE-AUTH-INTEGRATION.md` is gitignored |
 | Resend local configuration and mailer integration instructions | `docs/RESEND-INTEGRATION.md` (owner's local handoff, gitignored; RM-12) |
 | Umami analytics setup, verified script behaviour and the CSP finding | `docs/UMAMI-INTEGRATION.md` (owner's local handoff, gitignored; RM-143) |
 | Better Stack Errors DSN, Python logs and verified source setup | `docs/BETTERSTACK-INTEGRATION.md` (owner's local handoff, gitignored; RM-18/RM-112) |
@@ -215,7 +216,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Headless agent (Actions), secrets | `docs/AUTONOMY.md` |
 | Backlog (blueprint → issues) | `docs/BACKLOG.md` |
 | Milestones, dependencies and launch gates | `docs/ROADMAP.md` |
-| Proposed Phase 2 UX principles and interactive home design (fictional data; not production frontend) | `design/README.md`, `design/design-principles.md`, `design/main-view.html` |
+| Proposed Phase 2 UX principles and interactive design alternatives (fictional data; not production frontend) | `design/README.md`, `design/v1/`, `design/v2/design-principles.md`, `design/v2/main-view.html` |
 | Phase 2 design direction (prototype, principles, spec) | `design/README.md` (#44 input; no backend or rule change) |
 | Owner-only blockers | `docs/BLOCKERS.md`, `.agent/rules/blockers.md` |
 | Agent bot setup | `docs/AGENT-BOT.md`, `scripts/setup_agent_bot.sh` |

@@ -17,7 +17,20 @@ from typing import Any, cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import CursorResult, Delete, Update, and_, delete, exists, func, literal, or_, select, update
+from sqlalchemy import (
+    CursorResult,
+    Delete,
+    Update,
+    and_,
+    delete,
+    exists,
+    func,
+    literal,
+    or_,
+    select,
+    tuple_,
+    update,
+)
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -32,6 +45,7 @@ from rm_core.db.models import (
     GeoCache,
     ListingSnapshot,
     LoginToken,
+    RateLimit,
     SavedListing,
     StripeCustomer,
     Subscription,
@@ -63,6 +77,7 @@ class PurgeReport:
     audit_events: int = 0
     erasure_log: int = 0
     geo_cache: int = 0
+    rate_limit: int = 0
 
 
 async def _until_drained(
@@ -162,7 +177,18 @@ async def purge_expired(sessionmaker: async_sessionmaker[AsyncSession], settings
             )
         ),
     )
-    return PurgeReport(sessions, tokens, snapshots_deleted, snapshots_scrubbed, events, erasure, geo)
+    # GDPR[retention]: abuse counters (hashed email/IP) are useless after their window; keep one day of slack.
+    limits = await _until_drained(
+        sessionmaker,
+        lambda: delete(RateLimit).where(
+            tuple_(RateLimit.key, RateLimit.window_start).in_(
+                select(RateLimit.key, RateLimit.window_start)
+                .where(RateLimit.window_start < _ago(1))
+                .limit(BATCH_SIZE)
+            )
+        ),
+    )
+    return PurgeReport(sessions, tokens, snapshots_deleted, snapshots_scrubbed, events, erasure, geo, limits)
 
 
 # ---------- erasure ----------

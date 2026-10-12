@@ -16,5 +16,6 @@ app = procrastinate.App(
         "rm_worker.tasks.retention",
         "rm_worker.tasks.ai_budget",
         "rm_worker.tasks.maintenance",
+        "rm_worker.tasks.email",
     ],
 )

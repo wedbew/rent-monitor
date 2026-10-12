@@ -249,7 +249,14 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `VALIDATION_ERROR` | request body, query or path fails Pydantic (`extra="forbid"`) | 422, field errors without echoing input | none | never reserved |
 | `NOT_FOUND` | unknown route, or a resource of another tenant (never 403) | 404 | none | never reserved |
 | `HTTP_ERROR` | other transport errors (405, 413, …) | as raised | none | never reserved |
-| `NOT_READY` | `/readyz` database or queue check fails | 503 with `checks` | orchestrator retries | n/a |
+| `NOT_READY` | `/readyz` database or queue check fails; Google's signing certificates unreachable | 503 with `checks` | orchestrator retries | n/a |
+| `UNAUTHENTICATED` | `current_principal`: no, unknown or expired session cookie | 401 | sign in | never reserved |
+| `INVALID_GOOGLE_TOKEN` | `google-auth` rejects signature, audience, issuer, expiry or claims | 401 | none | n/a |
+| `EMAIL_CONFIRMATION_REQUIRED` | verified Google token for an address Google cannot vouch for (not `@gmail.com`, no matching `hd`) and no existing identity | 401 (the SPA offers the magic link) | confirm with a magic link | n/a |
+| `GOOGLE_EMAIL_UNVERIFIED` | valid Google token whose `email_verified` is false | 401 (the SPA offers the magic link) | none | n/a |
+| `MAGIC_LINK_INVALID` | magic-link token unknown, already used or expired | 401 | request a new link | n/a |
+| `RATE_LIMITED` | atomic per-address or per-IP counter exceeded | 429 with `Retry-After` | after the window | n/a |
+| `ORIGIN_NOT_ALLOWED` | unsafe method on `/api/*` without `Origin == PUBLIC_APP_URL` | 403 | none | never reserved |
 
 Scraping hygiene the workers enforce:
 
@@ -284,7 +291,7 @@ How it protects FastAPI:
 3. Unsafe methods on `/api/*` must carry `Origin` equal to `PUBLIC_APP_URL`. That covers `POST /api/auth/google`, because the SPA uses GIS's JavaScript callback mode, not the `login_uri` form-post mode that needs Google's `g_csrf_token` double-submit check.
 4. Sign-out deletes the session row; "sign out everywhere" deletes all of the user's rows. Both send NOTIFY session\_revoked, which every API process receives on the SSE hub's existing LISTEN connection and uses to drop cached principals, so revocation is near-immediate. If that connection is down, revocation falls back to the 30-second cache TTL — a stated bound, not a hidden one.
 5. `/api/auth/email/start` is rate-limited to 5 per hour per address and 20 per hour per IP through one atomic Postgres upsert (INSERT … ON CONFLICT (key, window\_start) DO UPDATE SET n = n + 1 RETURNING n), so concurrent API processes cannot overshoot.
-6. Unverified Google emails are rejected outright (the SPA offers the magic link instead), so every Google identity is verified. Account linking therefore only happens on a **verified** email: a Google sign-in whose `email_verified` is true joins an existing magic-link user with the same address; an unverified one never links, which blocks account takeover.
+6. Unverified Google emails are rejected outright (the SPA offers the magic link instead), so every Google identity is verified. Account linking and creation additionally require that Google is **authoritative** for the address (ADR 0010, owner decision D-13): the address ends in `@gmail.com`, or the token carries an `hd` claim equal to the address's domain. A verified Google sign-in for any other address joins or creates nothing and is answered `EMAIL_CONFIRMATION_REQUIRED`; the user confirms the address with the magic link first. An unverified one never links, which blocks account takeover.
 7. Cookies work with `EventSource`, so SSE needs no token plumbing.
 
 ```python
