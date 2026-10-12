@@ -15,17 +15,29 @@ Code: `rm_core/privacy.py`, nightly task `rm_worker/tasks/retention.py`. Retenti
 
 The sweep runs nightly at 03:17 (queue `ops`, one at a time) and works in batches of 1,000 rows, each in its own short transaction.
 
-## Erase an account (until the API endpoint exists, RM-82)
-In a Python shell on the box (never against production from a laptop):
+## Erase an account
+Self-service: the signed-in user calls `DELETE /api/me` with `{"confirm_email": "<own address>"}` (RM-82). The server:
+1. refuses with 422 `CONFIRMATION_MISMATCH` if the address differs, and 401 without a session;
+2. if the user has a Stripe customer, deletes it at Stripe **first**; if Stripe is unreachable the answer is 503 and nothing else
+   is deleted, so the request can simply be repeated (deleting an already deleted customer succeeds). Until billing (#14)
+   supplies the Stripe eraser, a user who has a customer cannot be deleted through the API and gets 503, never a silent loss
+   of the processor id;
+3. deletes the sessions (and `NOTIFY`s every API process, so cached sessions disappear within a second), then every tenant-owned
+   row by FK cascade, and logs `sha256(user_id)` in `erasure_log`;
+4. answers 204 and clears the cookie. Repeating it is harmless.
+
+Operator path (an erasure request that arrives by email, for a user who cannot sign in): in a Python shell on the box (never
+against production from a laptop):
 ```python
 async with session.begin():
     report = await rm_core.privacy.delete_account(session, user_id)
 # report.stripe_customer_id -> delete that customer in the Stripe Dashboard/API (processor erasure)
 ```
-One statement removes every tenant-owned row (FK cascade), and `erasure_log` records the hash. Calling it again is harmless.
+Invoices stay in Fakturownia for tax reasons and are not erased by us.
 
 ## Access request (export)
-`await rm_core.privacy.export_user_data(session, user_id)` returns one JSON-serialisable document with the profile,
+Self-service: `GET /api/me/export` (signed in, 5 per hour) returns the document below as a download with `Cache-Control: no-store`.
+For a requester who cannot sign in, `await rm_core.privacy.export_user_data(session, user_id)` returns one JSON-serialisable document with the profile,
 identities, sessions (including IP and user agent), credit ledger, subscriptions, usage periods, audits with results, saved
 listings and feature overrides. Token hashes and other tenants' data are never included. Send it to the requester by a
 channel the owner verifies.
