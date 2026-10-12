@@ -6,7 +6,12 @@ matter for production or a domain are *Deferred*, not blocking.
 
 ## Awaiting your approval (PRs the agent will not merge)
 
-_None. On 2026-10-12 the owner approved merging every pending PR: auth (#147), worker ops (#158), the Resend and Stripe specs (#159, #160), and the GDPR, me/saved/admin and OpenAPI work (#173, #174, #175). Merged earlier: ledger and entitlements (#108), AI budget (#109). Promotion `staging` to `main` stays a human decision._
+| PR | Why it waits | Owner action |
+|---|---|---|
+| #192 `feat(RM-184)` audit journey slice 1 | Money/ledger paths (reserve/settle through the new route and task); `rules/pull-requests.md` | Comment "approved" on the PR; all required checks were green on the head commit |
+| #191 `ci(RM-189)` docs-only CI filter, dispatcher, secret preflight | `.github/workflows/` change; the auto-mode merge classifier refused an agent merge without review | Review the workflow diff and merge (or comment "approved" and the agent merges) |
+
+On 2026-10-12 the owner approved merging every earlier pending PR (auth #147, worker ops #158, specs #159, #160, GDPR, me/saved/admin and OpenAPI #173, #174, #175); ledger and AI budget (#108, #109) merged before. Promotion `staging` to `main` stays a human decision.
 
 ## Approved (recorded once; later non-trivial pushes need a new approval)
 
