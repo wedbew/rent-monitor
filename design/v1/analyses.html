@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>RentMonitor — Moje analizy</title>
+  <link rel="stylesheet" href="main-view.css">
+  <script src="main-view.js" defer></script>
+  <script src="analyses.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Przejdź do treści</a>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z M9 20v-7h6v7"/></symbol>
+    <symbol id="i-files" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6Z M15 3v5h4 M9 12h7 M9 16h5"/></symbol>
+    <symbol id="i-market" viewBox="0 0 24 24"><path d="M3 20h18 M5 16v-5 M11 16V7 M17 16V3"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15 M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="m9 15 6-6 M7 14l-2 2a4 4 0 0 0 5 5l4-4 M10 7l4-4a4 4 0 0 1 5 5l-2 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m12 3 10 18H2Z M12 9v5 M12 17v1"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5 M12 17v1"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12 M6 18 18 6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10v7 M12 6v1"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Nawigacja aplikacji">
+      <a class="brand" href="main-view.html" aria-label="RentMonitor — pulpit"><span class="brand-mark"><svg class="icon"><use href="#i-home"/></svg></span><span>rentmonitor<span class="brand-dot">.</span></span></a>
+      <div class="nav-caption">TWOJA PRZESTRZEŃ</div>
+      <nav class="primary-nav">
+        <a class="nav-item" href="main-view.html"><svg class="icon"><use href="#i-home"/></svg>Pulpit</a>
+        <a class="nav-item active" href="analyses.html" aria-current="page"><svg class="icon"><use href="#i-files"/></svg>Moje analizy<span class="nav-count">12</span></a>
+        <a class="nav-item" href="market.html"><svg class="icon"><use href="#i-market"/></svg>Rynek</a>
+      </nav>
+      <div class="rail-note"><div class="tiny-line"></div><p>Mniej domysłów.<br>Więcej dobrych decyzji.</p><span>Twoje mieszkanie, sprawdzone.</span></div>
+      <div class="sidebar-bottom">
+        <button class="nav-item" data-action="help"><svg class="icon"><use href="#i-help"/></svg>Jak to działa?</button>
+        <button class="profile" data-action="account"><span class="avatar">AK</span><span><strong>Anna Kowalska</strong><small>Moje konto</small></span><svg class="icon"><use href="#i-chevron"/></svg></button>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar"><span>Moje analizy <span class="topbar-divider">/</span> <span class="muted">Twoje mieszkania w jednym miejscu</span></span><button class="quiet" data-action="account"><span class="credit-dot"></span><span id="credit-label">2 analizy do wykorzystania</span><svg class="icon small"><use href="#i-chevron"/></svg></button></header>
+      <main id="main" class="analyses-page">
+        <div class="greeting"><div><p class="eyebrow">TWOJE MIESZKANIA</p><h1>Wróć do tego, co ważne.</h1></div><a class="primary" href="main-view.html#analysis-form">Sprawdź nowe mieszkanie<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
+        <p class="market-lead">Twoje analizy w jednym miejscu.<br>Wybierz mieszkanie, żeby wrócić do wyników lub sprawdzić brakujące informacje.</p>
+        <div class="analyses-toolbar"><p id="analyses-count" role="status">12 analiz</p><div><label class="input-label" for="analyses-filter">Status analizy</label><select id="analyses-filter"><option value="all">Wszystkie</option><option value="ready">Gotowe</option><option value="attention">Do wyjaśnienia</option><option value="running">W trakcie</option></select></div></div>
+        <section class="property-grid" id="analyses-grid" aria-label="Lista analiz"></section>
+        <footer class="product-footer"><span>Otwarcie wcześniejszego wyniku nie zużywa kolejnej analizy.</span><a class="text-link" href="main-view.html">Wróć do pulpitu</a></footer>
+      </main>
+      <div class="preview-bar"><span><b>Podgląd projektu</b> · Dane przykładowe, bez połączenia z usługą</span><span>Moje analizy · projekt wstępny</span></div>
+    </div>
+  </div>
+
+  <dialog id="detail-dialog" class="drawer" aria-labelledby="detail-title"><div class="overlay-heading"><span class="overline">PODSUMOWANIE ANALIZY</span><button class="icon-button" data-close aria-label="Zamknij podsumowanie"><svg class="icon"><use href="#i-close"/></svg></button></div><div id="detail-content"></div></dialog>
+  <dialog id="general-dialog" class="modal" aria-labelledby="modal-title"><div class="overlay-heading"><span class="overline" id="modal-eyebrow"></span><button class="icon-button" data-close aria-label="Zamknij okno"><svg class="icon"><use href="#i-close"/></svg></button></div><div id="modal-content"></div></dialog>
+  <div class="sr-only" id="announcement" role="status" aria-live="polite"></div>
+</body>
+</html>

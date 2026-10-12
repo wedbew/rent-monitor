@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-12 · by: RM-24 (AI budget, merged after RM-19)
+**Last updated:** 2026-10-12 · by: RM-125 (design direction)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -177,6 +177,10 @@ Roadmap milestones, issue dependencies, gates and owner deadlines are in `docs/R
 #48 requires metric provenance/completeness gates; #49 requires city coverage/deduplication policy. Both are fresh-import design,
 not permission to copy POC or GUS-PoC artifacts.
 
+**Design exploration (12 Oct 2026, maintainer request):** `design/` contains proposed UX principles, a documentation-state review,
+and responsive interactive home, analyses-list and separate city-context prototypes with fictional fixtures. This is a Phase 2 design artifact, not a production SPA;
+`frontend/` and backend contracts are unchanged.
+
 ## 9. Open decisions (owner: you)
 
 From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on money, auth or anything irreversible.
@@ -204,6 +208,8 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Headless agent (Actions), secrets | `docs/AUTONOMY.md` |
 | Backlog (blueprint → issues) | `docs/BACKLOG.md` |
 | Milestones, dependencies and launch gates | `docs/ROADMAP.md` |
+| Proposed Phase 2 UX principles and interactive home design (fictional data; not production frontend) | `design/README.md`, `design/design-principles.md`, `design/main-view.html` |
+| Phase 2 design direction (prototype, principles, spec) | `design/README.md` (#44 input; no backend or rule change) |
 | Owner-only blockers | `docs/BLOCKERS.md`, `.agent/rules/blockers.md` |
 | Agent bot setup | `docs/AGENT-BOT.md`, `scripts/setup_agent_bot.sh` |
 | Launch checklist (incl. back to private) | `docs/PRE-DEPLOYMENT.md` |

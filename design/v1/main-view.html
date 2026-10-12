@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>RentMonitor — Twój punkt wyjścia</title>
+  <link rel="stylesheet" href="main-view.css">
+  <script src="main-view.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Przejdź do treści</a>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z M9 20v-7h6v7"/></symbol>
+    <symbol id="i-files" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6Z M15 3v5h4 M9 12h7 M9 16h5"/></symbol>
+    <symbol id="i-market" viewBox="0 0 24 24"><path d="M3 20h18 M5 16v-5 M11 16V7 M17 16V3"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15 M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="m9 15 6-6 M7 14l-2 2a4 4 0 0 0 5 5l4-4 M10 7l4-4a4 4 0 0 1 5 5l-2 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m12 3 10 18H2Z M12 9v5 M12 17v1"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5 M12 17v1"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12 M6 18 18 6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10v7 M12 6v1"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Nawigacja aplikacji">
+      <a class="brand" href="main-view.html" aria-label="RentMonitor — pulpit"><span class="brand-mark"><svg class="icon"><use href="#i-home"/></svg></span><span>rentmonitor<span class="brand-dot">.</span></span></a>
+      <div class="nav-caption">TWOJA PRZESTRZEŃ</div>
+      <nav class="primary-nav">
+        <button class="nav-item active" id="home-nav" aria-current="page"><svg class="icon"><use href="#i-home"/></svg>Pulpit</button>
+        <a class="nav-item" href="analyses.html"><svg class="icon"><use href="#i-files"/></svg>Moje analizy<span class="nav-count" id="nav-count">12</span></a>
+        <a class="nav-item" href="market.html"><svg class="icon"><use href="#i-market"/></svg>Rynek</a>
+      </nav>
+      <div class="rail-note"><div class="tiny-line"></div><p>Mniej domysłów.<br>Więcej dobrych decyzji.</p><span>Twoje mieszkanie, sprawdzone.</span></div>
+      <div class="sidebar-bottom">
+        <button class="nav-item" data-action="help"><svg class="icon"><use href="#i-help"/></svg>Jak to działa?</button>
+        <button class="profile" data-action="account"><span class="avatar">AK</span><span><strong>Anna Kowalska</strong><small>Moje konto</small></span><svg class="icon"><use href="#i-chevron"/></svg></button>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar"><span>Pulpit <span class="topbar-divider">/</span> <span class="muted">Twój punkt wyjścia</span></span><button class="quiet" data-action="account"><span class="credit-dot"></span><span id="credit-label">2 analizy do wykorzystania</span><svg class="icon small"><use href="#i-chevron"/></svg></button></header>
+      <main id="main">
+        <div class="greeting"><div><p class="eyebrow">DOBRZE CIĘ WIDZIEĆ, ANNO</p><h1>Spokojnie. Sprawdźmy to.</h1></div><p class="today">Poniedziałek, 12 października</p></div>
+
+        <section class="hero" aria-labelledby="hero-title">
+          <div class="hero-content"><span class="overline">ZANIM KUPISZ MIESZKANIE</span><h2 id="hero-title">Dobry adres.<br>Jeszcze lepsza decyzja.</h2><p class="hero-description">Sprawdź potencjał najmu, koszty i cenę zakupu.<br class="desktop-break"> Zaczynamy od linku do ogłoszenia.</p>
+            <form id="analysis-form" novalidate>
+              <label class="input-label" for="listing-url">Link do ogłoszenia sprzedaży na Otodom</label>
+              <div class="url-entry"><svg class="icon"><use href="#i-link"/></svg><input id="listing-url" name="listing-url" type="url" autocomplete="off" inputmode="url" placeholder="https://www.otodom.pl/pl/oferta/…" aria-describedby="url-help url-error"><button class="primary" type="submit">Sprawdź mieszkanie<svg class="icon"><use href="#i-arrow"/></svg></button></div>
+              <p id="url-error" class="field-error" role="alert" hidden></p>
+              <p class="form-foot" id="url-help"><span>1 analiza z Twojego limitu · koszt potwierdzisz przed startem</span><button type="button" class="text-link" data-action="example">Zobacz przykład<svg class="icon small"><use href="#i-arrow"/></svg></button></p>
+            </form>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <svg viewBox="0 0 320 320" fill="none"><circle cx="182" cy="153" r="119" fill="#E4D6C8"/><path d="M60 273h235" stroke="#CCB9A8"/><path d="m96 108 90-38 74 40-88 40Z" fill="#B2B8AB"/><path d="M96 108v130l76 39V150Z" fill="#F9F5EC"/><path d="m172 150 88-40v126l-88 41Z" fill="#D0C2B1"/><path d="m96 108 76 42 88-40 M172 150v127" stroke="#A89F90"/><path d="m113 147 19 10v26l-19-10Z m30 16 17 9v26l-17-9Z m-30 30 19 10v26l-19-10Z m30 16 17 9v26l-17-9Z" fill="#87998C"/><path d="m188 158 18-8v25l-18 8Z m33-15 20-9v25l-20 9Z m-33 56 18-8v25l-18 8Z m33-15 20-9v25l-20 9Z" fill="#736E65"/><path d="m96 108 90-38 74 40" stroke="#9DAB9B" stroke-width="6" stroke-linejoin="round"/><path d="M69 217v53" stroke="#6F8573" stroke-width="3"/><ellipse cx="69" cy="205" rx="17" ry="28" fill="#8D9F86"/><path d="m253 262 29-13" stroke="#AC9C89"/><circle cx="266" cy="75" r="15" stroke="#BBA895"/><path d="M266 49v7 M266 94v7 M240 75h7 M285 75h7" stroke="#BBA895"/></svg>
+            <span class="art-note">PERSPEKTYWA MA ZNACZENIE</span>
+          </div>
+        </section>
+
+        <div class="service-notice" id="service-notice" hidden><svg class="icon"><use href="#i-alert"/></svg><div><strong>Otodom jest chwilowo niedostępny.</strong><p>Możesz przeglądać wcześniejsze analizy. Zachowamy wpisany link, żeby łatwo spróbować ponownie.</p></div></div>
+
+        <section class="activity" id="activity" aria-label="Podsumowanie Twoich analiz">
+          <button class="activity-item" data-filter="ready"><span class="activity-icon green"><svg class="icon"><use href="#i-check"/></svg></span><span><strong>8 <span>gotowych analiz</span></strong><small>Możesz wrócić do wyników</small></span><svg class="icon end"><use href="#i-chevron"/></svg></button>
+          <button class="activity-item" data-filter="attention"><span class="activity-icon amber"><svg class="icon"><use href="#i-alert"/></svg></span><span><strong>3 <span>do wyjaśnienia</span></strong><small>Warto uzupełnić informacje</small></span><svg class="icon end"><use href="#i-chevron"/></svg></button>
+          <button class="activity-item" data-filter="running"><span class="activity-icon neutral"><svg class="icon"><use href="#i-clock"/></svg></span><span><strong>1 <span>w trakcie analizy</span></strong><small>Damy znać tutaj, gdy będzie gotowa</small></span><svg class="icon end"><use href="#i-chevron"/></svg></button>
+        </section>
+
+        <section class="recent" id="recent" aria-labelledby="recent-title">
+          <div class="section-heading"><div><h2 id="recent-title">Wróć do swoich mieszkań</h2><p id="recent-caption">Ostatnie analizy. Najważniejsze rzeczy na pierwszy rzut oka.</p></div><a class="text-link" id="all-button" href="analyses.html">Wszystkie analizy<svg class="icon"><use href="#i-arrow"/></svg></a></div>
+          <div id="filter-bar" class="filter-bar" hidden><span id="filter-label"></span><button class="text-link" id="reset-filter">Pokaż ostatnie</button></div>
+          <div class="property-grid" id="property-grid" aria-live="polite"></div>
+          <div class="empty-state" id="empty-state" hidden><span class="empty-symbol"><svg class="icon"><use href="#i-home"/></svg></span><h3>Twoje pierwsze mieszkanie czeka na sprawdzenie.</h3><p>Wklej link powyżej. Tutaj znajdziesz wynik i wrócisz do niego, kiedy zechcesz.</p><button class="secondary" data-action="example">Zobacz przykładową analizę<svg class="icon"><use href="#i-arrow"/></svg></button></div>
+        </section>
+
+        <section class="market-invitation" aria-labelledby="market-title"><span class="market-symbol"><svg class="icon"><use href="#i-market"/></svg></span><div><p class="eyebrow">SZERSZA PERSPEKTYWA</p><h2 id="market-title">A jak wygląda rynek w Twoim mieście?</h2><p>Zobacz lokalny poziom najmu, zanim ocenisz konkretną ofertę.</p></div><a class="secondary" href="market.html">Sprawdź miasto<svg class="icon"><use href="#i-arrow"/></svg></a></section>
+        <footer class="product-footer"><span>Każda dobra decyzja zaczyna się od zrozumienia.</span><button class="text-link" data-action="help">Potrzebujesz wskazówki?</button></footer>
+      </main>
+      <div class="preview-bar" aria-label="Kontrolki podglądu projektu"><span><b>Podgląd projektu</b> · Dane przykładowe, bez połączenia z usługą</span><label for="preview-state">Stan widoku<select id="preview-state"><option value="returning">Powracający użytkownik</option><option value="empty">Pierwsza analiza</option><option value="loading">Ładowanie</option><option value="unavailable">Otodom niedostępny</option><option value="no-credits">Brak analiz w limicie</option></select></label></div>
+    </div>
+  </div>
+
+  <dialog id="detail-dialog" class="drawer" aria-labelledby="detail-title"><div class="overlay-heading"><span class="overline">PODSUMOWANIE ANALIZY</span><button class="icon-button" data-close aria-label="Zamknij podsumowanie"><svg class="icon"><use href="#i-close"/></svg></button></div><div id="detail-content"></div></dialog>
+  <dialog id="general-dialog" class="modal" aria-labelledby="modal-title"><div class="overlay-heading"><span class="overline" id="modal-eyebrow"></span><button class="icon-button" data-close aria-label="Zamknij okno"><svg class="icon"><use href="#i-close"/></svg></button></div><div id="modal-content"></div></dialog>
+  <div class="sr-only" id="announcement" role="status" aria-live="polite"></div>
+</body>
+</html>
