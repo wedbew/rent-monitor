@@ -64,6 +64,7 @@ Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton (RM
 | [`docs/BLOCKERS.md`](docs/BLOCKERS.md) | Owner-only blockers agents stop on |
 | [`docs/BACKLOG.md`](docs/BACKLOG.md) | Blueprint → issue traceability |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Milestones, dependencies and launch gates |
+| [`docs/DELIVERY-AUDIT.md`](docs/DELIVERY-AUDIT.md) | Autonomous delivery audit: GitHub throughput, bottlenecks and proposed faster workflow (RM-177) |
 | [`docs/AUTONOMY.md`](docs/AUTONOMY.md) | Running agents in GitHub Actions, secrets, limits |
 | [`docs/AGENT-BOT.md`](docs/AGENT-BOT.md) | Limited machine user for autonomous agents |
 | [`docs/PRE-DEPLOYMENT.md`](docs/PRE-DEPLOYMENT.md) | Launch checklist (gates, security, legal, ops) |
