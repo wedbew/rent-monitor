@@ -94,6 +94,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none needed in Phase 1 (no frontend). Options: allow `https://gateway.umami.is` in `connect-src`, or proxy events through our own domain.
 - **Target:** #143 (`docs/ANALYTICS-SPEC.md` section 2 lays out both options); decide before the Caddy config (#15) and N-30 (#72)
 
+### L-013 — Error events may carry stack-frame variables and unscrubbed free text
+- **Status:** active
+- **Discovered:** 2026-10-12
+- **Affects:** `rm_core.observability` (every error event sent to Better Stack), auth handlers
+- **Evidence:** confirmed (sentry-sdk 2.71 defaults `include_local_variables=True`; `scrub_event` was run on a sample event and left frame `vars`, breadcrumbs and `extra` untouched; the SDK's own denylist hides keys like `token` but not `email`, `credential` or a `url` holding a magic-link token)
+- **Description:** An unhandled exception inside a sign-in or mail handler could send local variables with emails, Google credentials or links to Better Stack (GDPR[processor]).
+- **Workaround:** none until the fix; error tracking is off while `SENTRY_DSN` is empty, which it is today, so nothing has been sent.
+- **Target:** #149 (must land before `SENTRY_DSN` is set); `docs/OBSERVABILITY-SPEC.md` section 1
+
 ## Resolved
 
 _None yet._
