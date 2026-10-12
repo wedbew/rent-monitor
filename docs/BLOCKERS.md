@@ -6,12 +6,7 @@ matter for production or a domain are *Deferred*, not blocking.
 
 ## Awaiting your approval (PRs the agent will not merge)
 
-| PR | What | Why gated | What you do |
-|---|---|---|---|
-| #108 | Credit ledger, quota, entitlements, feature flags (RM-19) | money / ledger / quota | Review, then comment "approved to merge" (or approve in GitHub) |
-| #109 | AI budget: atomic reservation, usage log, nightly sweep, migration 0005 (RM-24) | money / spend control | Same |
-
-Dependent tickets wait for these merges: auth (#12) builds on the ledger, audits (#13) on both.
+_None. #108 (ledger, entitlements, flags) and #109 (AI budget) were approved and merged on 2026-10-12; auth (#12) and audits (#13) are unblocked._
 
 ## Open (needs the owner)
 
