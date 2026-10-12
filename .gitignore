@@ -74,6 +74,7 @@ tmp/
 /deploy/README.md
 /docs/STRIPE-INTEGRATION.md
 /docs/GOOGLE-AUTH-INTEGRATION.md
+/docs/RESEND-INTEGRATION.md
 
 # --- OAuth client secrets and CLI credentials: never commit (the repo is public) ---
 client_secret*.json

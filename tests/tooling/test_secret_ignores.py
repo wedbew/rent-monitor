@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
         ".ovh.conf",
         "docs/STRIPE-INTEGRATION.md",
         "docs/GOOGLE-AUTH-INTEGRATION.md",
+        "docs/RESEND-INTEGRATION.md",
         "docs/INFRASTRUCTURE.md",
         "deploy/ssh.key",
     ],
