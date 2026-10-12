@@ -28,7 +28,7 @@ recipient address is written into a committed file.
 | Magic link | `POST /api/auth/email/start` | #147 (done) | pl, text + minimal HTML, one link, no images or tracking; valid 30 minutes, once |
 | Payment failed (dunning) | `invoice.payment_failed`, first time per period | #14 / #25 | blueprint sketch `send_dunning_email(user_id, invoice_id)`; mentions the 7-day grace and a link to the Portal |
 | Pass expiring | 3 days before a BLIK pass ends | #25 | one email with a new pay link; skipped if the user already has a newer period |
-| Invoice | KSeF number received | Fakturownia or us, **owner decision** | blueprint §3 says the task "emails the invoice"; if Fakturownia sends it, we send nothing |
+| Invoice | KSeF number received | **Fakturownia sends it** (owner decision, 2026-10-12) | it already holds the PDF and the KSeF number, so we store and send nothing and keep no invoice documents; Stripe's own receipts stay off |
 
 Rules for every message: Polish first, English later; plain text and HTML in one message; links built only from
 `PUBLIC_APP_URL`; no open or click tracking; the subject never contains the amount or the listing; the footer states
@@ -94,5 +94,5 @@ Names exist in `.env.example`: `RESEND_API_KEY`, `MAIL_FROM`. Planned: `RESEND_W
 
 1. Resend key validity and delivery are untested (B-004); a first real send needs the key and a recipient the account allows.
 2. Verified domain and DNS (B-005).
-3. Decide who sends the invoice email: Fakturownia or us (section 2).
+3. Invoice email: decided, Fakturownia sends it (section 2). Confirm in the Fakturownia trial that API-created invoices are emailed automatically (#26).
 4. Keep production and development keys separate and rotate a key at once if it may have been exposed.
