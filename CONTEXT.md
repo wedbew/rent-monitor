@@ -195,6 +195,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 - [ ] SQLAlchemy 2.0 vs 2.1; Stripe SDK major (ADR 0007 *proposes* 2.0 and an exact SDK pin at #14; owner confirms); Gemini and Claude auth in Actions; GitHub plan for private-repo rulesets
 - [ ] D-13 Google linking policy for non-Gmail addresses (`docs/GOOGLE-AUTH-SPEC.md` §3; recommendation: keep the blueprint behaviour)
 - [ ] Polish legal review of Otodom scraping before charging (blueprint §5, not legal advice)
+- [ ] D-14 R2 backup bucket in the EU jurisdiction (cannot be changed after creation), layout `rentmonitor-backups`, and WAL-G retention of 14 days to match the privacy design (`docs/R2-SPEC.md` sections 2 and 4)
 
 ## 10. Where to look
 

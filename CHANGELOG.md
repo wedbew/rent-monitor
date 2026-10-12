@@ -4,6 +4,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Security
+- Error events no longer carry stack-frame variables, breadcrumb data, log params or emails, JWTs and token-like parameters in free text, and are dropped if scrubbing fails; must be in place before `SENTRY_DSN` is set (RM-149)
+
 ### Added
 - Auth (RM-12, **awaiting human review: auth**): `POST /api/auth/google` (ID-token verification over `httpx`, `sub`-keyed identities, links a verified email, rejects unverified), `POST /api/auth/email/start|verify` (single-use 30-minute link in a URL fragment, 5/hour per address and 20/hour per IP through one atomic counter), `POST /api/auth/signout|signout-all`, `GET /api/auth/sessions`; hashed 32-byte session cookie (`__Host-` prefix in production), 30 s principal cache with `NOTIFY` revocation across API processes, Origin check on unsafe `/api/*` methods; new problem codes `UNAUTHENTICATED`, `RATE_LIMITED`, `ORIGIN_NOT_ALLOWED`; Procrastinate task `send_magic_link` (Resend client, production refuses the onboarding sender); migration `0006` `rate_limit` (hashed keys, purged after a day); new dependencies `google-auth` and `procrastinate` for `rm-api`; settings `RESEND_API_KEY`, `MAIL_FROM`; **operator action:** `make migrate` (RM-12)
 - Setting `GOOGLE_CLIENT_SECRET` (typed secret, never logged; only needed for a server-side code flow, ID-token sign-in uses the client ID alone) added to `Settings` and `.env.example` (RM-123)

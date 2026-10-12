@@ -5,9 +5,9 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from pg_container import postgres_container
 from pytest_alembic.config import Config
 from sqlalchemy import Engine, create_engine, text
-from testcontainers.community.postgres import PostgresContainer
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -25,7 +25,7 @@ def alembic_url() -> Iterator[str]:
     if override:
         yield override
         return
-    with PostgresContainer("postgres:17", driver="psycopg") as pg:
+    with postgres_container() as pg:
         yield pg.get_connection_url()
 
 
