@@ -15,3 +15,18 @@ def test_the_ai_budget_sweep_is_registered_nightly() -> None:
     entries = [p for p in app.periodic_registry.periodic_tasks.values() if p.task.name == "ai_budget_sweep"]
     assert len(entries) == 1
     assert entries[0].cron == "23 3 * * *"
+
+
+def test_the_maintenance_tasks_are_registered_with_their_schedules() -> None:
+    from rm_worker.tasks import maintenance  # noqa: F401, PLC0415
+
+    expected = {
+        "ledger_check": "41 3 * * *",
+        "monitor": "*/5 * * * *",
+        "remove_old_jobs_ops": "31 3 * * *",
+        "remove_old_jobs_other": "33 3 * * *",
+    }
+    scheduled = {p.task.name: p.cron for p in app.periodic_registry.periodic_tasks.values()}
+    for name, cron in expected.items():
+        assert scheduled[name] == cron
+        assert app.tasks[name].queue == "ops"

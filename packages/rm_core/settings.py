@@ -56,6 +56,11 @@ class Settings(BaseSettings):
     retention_snapshot_days: int = Field(default=30, ge=1)  # raw listing payloads (may hold seller data)
     retention_audit_event_days: int = Field(default=30, ge=1)  # progress events; the audit result is kept
 
+    # Better Stack heartbeat URLs carry their own secret; empty means that monitor is off
+    # (docs/OBSERVABILITY-SPEC.md section 4).
+    betterstack_heartbeat_ledger_url: SecretStr = SecretStr("")
+    betterstack_heartbeat_retention_url: SecretStr = SecretStr("")
+
     sentry_dsn: str = ""
     sentry_traces_sample_rate: Decimal = Field(
         default=Decimal("0.05"), ge=0, le=1
