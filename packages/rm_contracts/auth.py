@@ -47,3 +47,10 @@ class SessionOut(BaseModel):
     expires_at: datetime
     user_agent: str | None
     ip: str | None
+
+
+class AccountDelete(BaseModel):
+    """Account erasure must be confirmed by typing the account's own address (GDPR[erasure])."""
+
+    model_config = ConfigDict(extra="forbid")
+    confirm_email: Email

@@ -15,7 +15,9 @@ from rm_core.settings import Settings, get_settings
 from rm_api.auth.google import GoogleCerts, GoogleVerifier
 from rm_api.auth.router import router as auth_router
 from rm_api.auth.sessions import REVOKED_CHANNEL, PrincipalCache
+from rm_api.billing_erasure import BillingEraser
 from rm_api.health import router as health_router
+from rm_api.me import router as me_router
 from rm_api.middleware import RequestContextMiddleware
 from rm_api.notify import NotifyListener
 from rm_api.origin import OriginCheckMiddleware
@@ -32,6 +34,7 @@ def create_app(
     *,
     email_queue: EmailQueue | None = None,
     google_verifier: GoogleVerifier | None = None,
+    billing_eraser: BillingEraser | None = None,
 ) -> FastAPI:
     """`email_queue` and `google_verifier` are test seams; production builds them in the lifespan."""
     settings = settings or get_settings()
@@ -93,11 +96,13 @@ def create_app(
     app.state.notify_listener = None
     app.state.google_verifier = google_verifier
     app.state.email_queue = email_queue
+    app.state.billing_eraser = billing_eraser  # the real Stripe eraser arrives with billing (#14)
     app.add_middleware(OriginCheckMiddleware, allowed_origin=settings.public_origin)
     app.add_middleware(RequestContextMiddleware)
     install_problem_handlers(app)
     app.include_router(health_router)
     app.include_router(auth_router)
+    app.include_router(me_router)
     return app
 
 
