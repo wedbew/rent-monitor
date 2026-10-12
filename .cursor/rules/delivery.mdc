@@ -1,0 +1,10 @@
+---
+description: Journey-first priority, ready and done levels, checkpoints, docs/STATUS.md upkeep (ADR 0012)
+alwaysApply: true
+---
+
+Canonical rule lives in `.agent/rules/delivery.md`. Follow it:
+
+@.agent/rules/delivery.md
+
+Current state: @docs/STATUS.md

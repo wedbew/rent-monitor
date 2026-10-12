@@ -6,7 +6,7 @@
 
 ## 0. Status of this document
 - **POC is reference only; build from scratch to production quality** — read `rules/poc-reference.md` before any engine work.
-- Orientation: `CONTEXT.md` at the repo root (summary, POC porting map, open decisions — living file, see §10). Toolchain: `docs/TOOLCHAIN.md`.
+- Delivery state: `docs/STATUS.md` (the only place that says what works). Orientation: `CONTEXT.md` at the repo root (summary, POC porting map, open decisions — living file, see §10). Toolchain: `docs/TOOLCHAIN.md`.
 - Spec of record: `docs/blueprint.md` (RentMonitor SaaS — Architecture & Implementation Blueprint, 11 Oct 2026).
 - Current phase: **Phase 1 — backend only.** Do not create or modify anything under `frontend/` except deleting
   `frontend/server/*.ts`, `frontend/src/lib/cashflow.ts`, `frontend/src/lib/appreciation.ts` when the ticket says so.
@@ -84,10 +84,11 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
 - After opening a PR, monitor its checks and fix failures yourself (`rules/pull-requests.md`); stop and ask before weakening any test, rule or workflow.
 - Merging is autonomous into `staging` only, per `rules/pull-requests.md` (green required checks, no open threads, squash, then close the issue — never delete it). Never push to `main` or `staging` directly, never force-push shared branches, never merge into `main` (promotion needs a human approval), never use `--admin`.
 
-## 7. Implementation order (blueprint 4.8) — do not start step N+1 with step N red
-1. Engine seams → 2. Data plane (models, Alembic baseline, Procrastinate schema, importers) → 3. Auth →
-4. Audits (submit, worker, SSE, reconciler) → 5. Billing (Checkout, BLIK pass, webhook, entitlements, VAT outbox)
-→ 7. Ops (compose, backups) → 8. Market & screener. Step 6 (frontend) is Phase 2.
+## 7. Implementation order — gated by `Depends on:`, not by step number (ADR 0012)
+Blueprint 4.8 gives the default narrative: 1. Engine seams → 2. Data plane → 3. Auth → 4. Audits → 5. Billing → 7. Ops →
+8. Market & screener (step 6, frontend, is Phase 2). What blocks work is an unmerged interface it consumes, or a red check on
+`staging`; "not started" is not red. **P0 is the authenticated analysis journey** (`docs/STATUS.md`). Ready, done, checkpoints and
+approvals: `rules/delivery.md`.
 
 ## 8. Tools available to agents
 - MCP: `github` (this repo), `context7` (library docs — use it before writing Procrastinate, Stripe, SQLAlchemy
@@ -112,6 +113,7 @@ Read the matching file when your change touches the area; update the doc in the 
 - `rules/env-example.md` — keep `.env.example` in sync (names, defaults, where to get each value; no secrets); agents may edit it.
 - `rules/repo-layout.md` — shallow repo: no single-child dirs, flat package layout (no `src/`).
 - `rules/blockers.md` — stop and record owner-only blockers in `docs/BLOCKERS.md`; work only in this checkout; pull `staging` after every merge.
+- `rules/delivery.md` — journey-first priority, ready/done levels, checkpoints, `docs/STATUS.md` upkeep.
 - `rules/context.md` — keep root `CONTEXT.md` current: update it in the same PR as any change that makes it stale; bump its "Last updated" line.
 Cursor mirrors these in `.cursor/rules/*.mdc` as pointers only; edit the `.agent/rules/` file, never the pointer.
 

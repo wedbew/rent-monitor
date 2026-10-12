@@ -10,6 +10,8 @@
 @.agent/rules/poc-reference.md
 @.agent/rules/pull-requests.md
 @.agent/rules/blockers.md
+@.agent/rules/delivery.md
+@docs/STATUS.md
 @.agent/rules/repo-layout.md
 @.agent/rules/env-example.md
 @docs/BLOCKERS.md

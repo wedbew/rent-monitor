@@ -8,6 +8,11 @@ matter for production or a domain are *Deferred*, not blocking.
 
 _None. On 2026-10-12 the owner approved merging every pending PR: auth (#147), worker ops (#158), the Resend and Stripe specs (#159, #160), and the GDPR, me/saved/admin and OpenAPI work (#173, #174, #175). Merged earlier: ledger and entitlements (#108), AI budget (#109). Promotion `staging` to `main` stays a human decision._
 
+## Approved (recorded once; later non-trivial pushes need a new approval)
+
+| PR | Approved head SHA | By / when | Scope |
+|---|---|---|---|
+
 ## Open (needs the owner)
 
 | ID | What | Owner action | Waits on it |

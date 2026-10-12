@@ -39,7 +39,8 @@ Python ≥ 3.12 (uv workspace), FastAPI, Pydantic v2, structlog. SQLAlchemy 2.0 
 
 ## Status
 
-Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton (RM-2) and the data-plane baseline (models, Alembic, Postgres tests; RM-11) are in place; next is step 1, the engine foundation (greenfield, ADR 0001; open decisions in [`CONTEXT.md`](CONTEXT.md) §9).
+Phase 1 (backend only). The authoritative, dated delivery state, with evidence per journey step, is [`docs/STATUS.md`](docs/STATUS.md);
+it also separates "implemented" from "integrated" and "verified against a real provider". Open decisions: [`CONTEXT.md`](CONTEXT.md) §9.
 
 ## Project docs
 
@@ -47,6 +48,7 @@ Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton (RM
 |---|---|
 | [`docs/BLUEPRINT.md`](docs/BLUEPRINT.md) | Spec of record |
 | [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md) | CI, hooks, governance, agents |
+| [`docs/STATUS.md`](docs/STATUS.md) | Delivery state: journey, backlog map, owner actions |
 | [`CONTEXT.md`](CONTEXT.md) | Orientation and POC porting map |
 | [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) | Known limits register |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
