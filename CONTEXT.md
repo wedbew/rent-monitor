@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-13 · by: RM-177 (delivery audit); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
+**Last updated:** 2026-10-13 · by: RM-177 (delivery loop, STATUS.md); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -160,22 +160,16 @@ Engine limits per audit: ≤ 25 photos at ≤ 1,600 px long edge, ≤ 2 floor pl
 ## 8. Order of work and where we are
 
 1. Engine seams → 2. Data plane → 3. Auth → 4. Audits → 5. Billing → 7. Ops → 8. Market & screener (step 6, frontend, is Phase 2).
-Do not start step N+1 with step N red. TOOLCHAIN §8 adds **Step 0** (pre-setup RM-1…RM-6: apply the tooling pack,
+Order is gated by `Depends on:` lines, not step numbers (ADR 0012); only a red `staging` stops work. TOOLCHAIN §8 adds **Step 0** (pre-setup RM-1…RM-6: apply the tooling pack,
 rulesets, Claude and Gemini apps, rename `agent-context/AGENTS.md`, commit the blueprint and ADRs).
 
-**State of this repo (11 Oct 2026):** blueprint, toolchain, agent rules (`.agent/`, `.cursor/rules/`, `CLAUDE.md`, `AGENTS.md`),
-CI/security workflows, pre-commit, semgrep rules and commit-message checker exist. RM-2 added the empty workspace (`rm-core`
-settings + `LegalTag`, `rm-contracts` `ProblemCode`, `rm-api` `/api/health`, empty `rm-worker`), `Makefile`, `.env.example`,
-`README.md`, `CHANGELOG.md`, `docs/LIMITATIONS.md`. ADR 0001 made the build greenfield. A first attempt to copy POC packages was
-discarded. RM-11 added `packages/rm_core/db/` (all §3 models), `alembic.ini`, `migrations/` (baseline `0001`), Testcontainers fixtures and
-`test_invariant_asking_is_not_deed`. RM-23 added `rm_worker.images`, `rm_worker.clients.{openrouter,limiter}` (budget gate and in-flight cap are protocols; RM-24 supplies the gate). RM-22 added `rm_core.{listing_ref,deadline,throttle,snapshots}`, `rm_worker.clients.otodom*`, `rm_worker.snapshot_service` and migration `0002` (`host_throttle`). RM-24 added `rm_core.ai_budget`, `rm_worker.tasks.ai_budget`, migration `0005`. RM-19 added `rm_core.{ledger,entitlements,flags}` (PR open, human review required). RM-86 added `deal_analyzer.geo`, `rm_core.geocache`, `rm_worker.clients.osm`, `rm_worker.geo_service`, migration `0004` (`geo_cache`). RM-87 added `deal_analyzer.rent` (N-04 engine side; comparables come from the market lane). RM-93 added golden snapshots (`tests/engine/golden/`) and made seven invariant tests required in CI. RM-92 added `deal_analyzer.{analysis,markdown}` (N-09). RM-88 added `deal_analyzer.capex` (N-05, placeholder prices). RM-91 added `deal_analyzer.vision` (N-08). RM-90 added `deal_analyzer.maxbid` (N-07). RM-89 added `deal_analyzer.{money,assumptions,costs,tax,cashflow}` (N-06). RM-85 added `deal_analyzer.{ownership,legal_class,text}` (N-02). RM-84 added `apps/deal_analyzer` (N-01: `extract_listing`, `Listing`, errors; fractional-ownership and VAT classifiers are N-02) and tests under `tests/engine/`. RM-167 added `scripts/gen_openapi.py` and `docs/openapi.json` with a drift test. RM-20 added `GET /api/me`, `rm_api.saved` and `rm_api.admin` (flags, overrides, idempotent credit adjustments, job inspection) and `rm_core.throttle.OTODOM_HOST`. RM-82 added `rm_api.me` (`GET /api/me/export`, `DELETE /api/me`) and the `rm_api.billing_erasure` seam; the Stripe eraser arrives with billing. RM-12 added `rm_api.auth.*` (Google ID-token sign-in, magic link, sessions, session list; PR awaits owner review), `rm_api.{origin,notify,queue}`, `rm_core.{ratelimit,principal}`, `rm_worker.tasks.email` + `rm_worker.clients.resend`, migration `0006` (`rate_limit`). RM-30 added `rm_core.privacy` (retention sweeps, `delete_account`, `reapply_erasures`, `export_user_data`), `rm_worker.tasks.retention`, migration `0003` (`erasure_log`). Endpoints: RM-82. RM-69 added `deploy/Dockerfile`, `deploy/compose.yml` (api, worker, bootstrap, postgres) and `scripts/bootstrap.py`, replacing `compose.dev.yml`. RM-29 added Makefile dev targets, `rm_core.seed`, `scripts/seed.py` and `rm_worker.app`. RM-18 added `rm_core.logging`/`observability`, `rm_api.{app,problems,middleware,health,deps}` (problem codes, `/healthz`, `/readyz`, session dependency). Still missing: `apps/`, production deploy files (Caddy, WAL-G, backups: RM-15), the other named invariant tests (the CI `invariants` job stays off
-until they exist; do not stub them), Procrastinate worker bootstrap, `frontend/`. The `migrations` CI job can be switched on
-(`ENABLE_MIGRATIONS_JOB=true` plus the `staging` required check) — an owner action, see §9.
-RM-157 added `rm_worker.tasks.maintenance` (ledger check, monitor, old-job cleanup), `rm_worker.monitors` and `rm_worker.clients.heartbeat`; the worker now initialises Sentry. Repo `wedbew/rent-monitor` is **public during development** (switch back to private before real keys or data: `docs/PRE-DEPLOYMENT.md` §0);
-rulesets for `main` and `staging` are active; `staging` exists (PR #3 merged by admin bypass with `invariants` and `migrations` red).
-Roadmap milestones, issue dependencies, gates and owner deadlines are in `docs/ROADMAP.md` (RM-47). New market-data planning gaps:
-#48 requires metric provenance/completeness gates; #49 requires city coverage/deduplication policy. Both are fresh-import design,
-not permission to copy POC or GUS-PoC artifacts.
+**State of this repo:** see [`docs/STATUS.md`](docs/STATUS.md), the single delivery-state view (journey steps, evidence, backlog map,
+owner actions). What exists is also derivable from `packages/`, `services/`, `apps/`, `migrations/` and `git log`; this file no longer
+keeps a per-PR history. Standing facts: Phase 1 is backend only; `invariants` and `migrations` CI jobs are on and required; the
+`wedbew/rent-monitor` repo is **public during development** (switch to private before real keys or data: `docs/PRE-DEPLOYMENT.md` §0);
+rulesets for `main` and `staging` are active. Roadmap, gates and owner deadlines: `docs/ROADMAP.md`. Market-data planning gaps: #48
+(metric provenance and completeness gates) and #49 (city coverage and deduplication) are fresh-import design, not permission to copy POC
+or GUS-PoC artifacts. Delivery process: `.agent/rules/delivery.md`, ADR 0012.
 
 **Design exploration (12 Oct 2026, maintainer request):** `design/` contains proposed UX principles, a documentation-state review,
 and responsive interactive home, analyses-list and separate city-context prototypes with fictional fixtures. `design/v1/` holds the warm editorial direction; `design/v2/` adds a monochrome architectural alternative with new tokens, restrained motion, and a dedicated analysis-page scaffold/UX contract (full analytic rendering deferred). Neither is selected for production. This is a Phase 2 design artifact, not a production SPA;
@@ -216,6 +210,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Headless agent (Actions), secrets | `docs/AUTONOMY.md` |
 | Backlog (blueprint → issues) | `docs/BACKLOG.md` |
 | Milestones, dependencies and launch gates | `docs/ROADMAP.md` |
+| Delivery state (journey, backlog map, owner actions) | `docs/STATUS.md` |
 | Autonomous delivery evidence, bottlenecks and proposed faster workflow (recommendations only) | `docs/DELIVERY-AUDIT.md` (RM-177) |
 | Proposed Phase 2 UX principles and interactive design alternatives (fictional data; not production frontend) | `design/README.md`, `design/v1/`, `design/v2/design-principles.md`, `design/v2/main-view.html` |
 | Phase 2 design direction (prototype, principles, spec) | `design/README.md` (#44 input; no backend or rule change) |
