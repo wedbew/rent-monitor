@@ -13,7 +13,7 @@ query strings, auth headers and user details except the id. The API initialises 
 
 | Requirement | Status |
 |---|---|
-| API and worker both call `init_sentry` at start; the worker tags each event with `job_id`, `queue` and `task` | worker missing (#25) |
+| API and worker both call `init_sentry` at start; the worker tags each event with `job_id`, `queue` and `task` | both initialise (#157); job tags still to add |
 | **No stack-frame variables** (`include_local_variables=False`); drop frame `vars`, breadcrumb data and `extra` | done in #149 (L-013 resolved; was confirmed: SDK default is True and the old `scrub_event` left them) |
 | Redact emails and `#t=` / `token=` / `credential=` values inside exception messages and breadcrumb messages | done in #149 |
 | Convention: never put personal data in an exception message; log ids, not values | in force (legal-tags rule) |
@@ -55,8 +55,8 @@ on the free tier: email (and Slack if the owner connects it).
 |---|---|---|---|
 | Nightly backup | 24 h + grace | the backup script, success and `/fail` (ADR 0009) | `BETTERSTACK_HEARTBEAT_BACKUP_URL` (exists) |
 | Readiness | 5 min + grace | host cron (section 3) | `BETTERSTACK_HEARTBEAT_READY_URL` (new) |
-| Ledger check | 24 h | worker task `ledger_mismatches`, success only when zero mismatches | `BETTERSTACK_HEARTBEAT_LEDGER_URL` (new) |
-| Retention sweep | 24 h | the `retention` worker task | `BETTERSTACK_HEARTBEAT_RETENTION_URL` (new) |
+| Ledger check | 24 h | worker task `ledger_check`, success only when zero mismatches | `BETTERSTACK_HEARTBEAT_LEDGER_URL` (built, #157) |
+| Retention sweep | 24 h | the `retention_sweep` worker task | `BETTERSTACK_HEARTBEAT_RETENTION_URL` (built, #157) |
 
 New names are added to `.env.example` in the PR that implements the pings (#25, #15). An unset URL means no ping and no error.
 
