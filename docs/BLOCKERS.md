@@ -4,6 +4,15 @@ Agents add a row the moment they hit one and stop that work (`.agent/rules/block
 Strategy (owner decision, 2026-10-11): **work locally until the whole app works, in Docker; deploy later.** Items that only
 matter for production or a domain are *Deferred*, not blocking.
 
+## Awaiting your approval (PRs the agent will not merge)
+
+| PR | What | Why gated | What you do |
+|---|---|---|---|
+| #108 | Credit ledger, quota, entitlements, feature flags (RM-19) | money / ledger / quota | Review, then comment "approved to merge" (or approve in GitHub) |
+| #109 | AI budget: atomic reservation, usage log, nightly sweep, migration 0005 (RM-24) | money / spend control | Same |
+
+Dependent tickets wait for these merges: auth (#12) builds on the ledger, audits (#13) on both.
+
 ## Open (needs the owner)
 
 | ID | What | Owner action | Waits on it |
