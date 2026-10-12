@@ -1,6 +1,6 @@
 # ADR 0007 — Library pins: SQLAlchemy, Stripe SDK, Procrastinate
 
-- **Status:** **proposed — owner decision D-02 outstanding** · **Date:** 2026-10-11 · **Ticket:** RM-31
+- **Status:** **accepted** (owner decision D-02, 2026-10-12) · **Date:** 2026-10-11 · **Ticket:** RM-31
 
 ## Context
 The blueprint text says SQLAlchemy 2.0; PyPI's current release is 2.1.4 (read 2026-10-11). The blueprint targets Stripe API
@@ -18,4 +18,4 @@ Alembic 1.20.0, psycopg 3.3.6, sse-starlette 3.5.0 (all read 2026-10-11).
 ## Consequences
 - Nothing here is irreversible while no migrations or billing code exist; the first baseline migration (#11) uses only
   constructs valid on both SQLAlchemy lines.
-- The owner confirms or overrides in issue #43 / D-02; on confirmation change **Status** to accepted.
+- The owner accepted the proposal on 2026-10-12: SQLAlchemy stays on 2.0; the Stripe SDK is pinned exactly when billing (#14) starts, with a test that its default API version is `2026-09-30.endive`.
