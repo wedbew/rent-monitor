@@ -163,7 +163,7 @@ FastAPI is stateless: every byte of state — sessions, audits, credits, jobs, p
 | Prefix | Owner | Auth | Purpose |
 | --- | --- | --- | --- |
 | `/api/auth/*` | FastAPI | public | Google ID-token sign-in, email magic link, sign-out, session list |
-| `/api/me` | FastAPI | session | Profile, plan, credit balance, feature flags |
+| `/api/me` | FastAPI | session | Profile, plan, credit balance, feature flags; `GET /api/me/export` (access request, 5 per hour); `DELETE /api/me` (account erasure, confirmed by typing the address) |
 | `/api/audits` | FastAPI | session + entitlement | `POST` create (202), `GET` list, `GET /{id}`, `GET /{id}/events` (SSE), `POST /{id}/cancel` |
 | `/api/saved` | FastAPI | session | Save or unsave listings, notes |
 | `/api/market/*` | FastAPI | session; free tier sees top 20 | 727-city yield radar, city sidecars by grain |
@@ -256,6 +256,7 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `GOOGLE_EMAIL_UNVERIFIED` | valid Google token whose `email_verified` is false | 401 (the SPA offers the magic link) | none | n/a |
 | `MAGIC_LINK_INVALID` | magic-link token unknown, already used or expired | 401 | request a new link | n/a |
 | `RATE_LIMITED` | atomic per-address or per-IP counter exceeded | 429 with `Retry-After` | after the window | n/a |
+| `CONFIRMATION_MISMATCH` | `DELETE /api/me` body address differs from the account's | 422 | retype the address | n/a |
 | `ORIGIN_NOT_ALLOWED` | unsafe method on `/api/*` without `Origin == PUBLIC_APP_URL` | 403 | none | never reserved |
 
 Scraping hygiene the workers enforce:
