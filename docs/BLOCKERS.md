@@ -4,6 +4,15 @@ Agents add a row the moment they hit one and stop that work (`.agent/rules/block
 Strategy (owner decision, 2026-10-11): **work locally until the whole app works, in Docker; deploy later.** Items that only
 matter for production or a domain are *Deferred*, not blocking.
 
+## Awaiting your approval (PRs the agent will not merge)
+
+| PR | What | Why gated | What you do |
+|---|---|---|---|
+| #108 | Credit ledger, quota, entitlements, feature flags (RM-19) | money / ledger / quota | Review, then comment "approved to merge" (or approve in GitHub) |
+| #109 | AI budget: atomic reservation, usage log, nightly sweep, migration 0005 (RM-24) | money / spend control | Same |
+
+Dependent tickets wait for these merges: auth (#12) builds on the ledger, audits (#13) on both.
+
 ## Open (needs the owner)
 
 | ID | What | Owner action | Waits on it |
@@ -13,18 +22,20 @@ matter for production or a domain are *Deferred*, not blocking.
 
 | ID | What | Why deferred | Revisit when |
 |---|---|---|---|
-| B-001 | Sentry project and DSN (org `mb-web-dev`) | Code is ready and Sentry stays off while `SENTRY_DSN` is empty; owner connects it later. Agents keep issues tracked here | before launch; steps: create project `rentmonitor-api`, set `SENTRY_DSN`, cron + uptime monitors |
+| B-001 | Better Stack account and DSN (replaces Sentry, ADR 0009) | Code is ready (Sentry SDK) and error tracking stays off while `SENTRY_DSN` is empty; owner connects it later | before launch; steps: Better Stack → Errors → create application `rentmonitor-api` (platform Python) → copy the Sentry-SDK DSN into `SENTRY_DSN`; Uptime → monitor on `/api/health`; Heartbeats → 24 h heartbeat → `BETTERSTACK_HEARTBEAT_BACKUP_URL` |
 | B-002 | Umami analytics | Frontend only, and no domain yet | Phase 2 frontend |
 | B-003 | Stripe sandbox keys, webhook, BLIK activation (#39) | Implemented after the API endpoints work, together with Google auth | billing step (#14); request BLIK activation early, it has lead time |
 | B-004 | Google OAuth client id, Resend key and sending domain | Owner decision: set up at the very end, after everything works locally. Resend needs the domain (B-005); Google OAuth needs the final origins. Until then auth is built and tested with fakes and the magic link is logged in dev | Final step before deployment preparation, together with the domain |
-| B-005 | Domain and DNS | Not needed locally | deployment preparation |
+| B-005 | DNS (domain registered, see B-005b) | Not needed locally; records still registrar defaults, nothing points to the VPS | deployment preparation (RM-15) |
 | B-012 | Legal review (#41): counsel confirms Otodom scraping and image use, privacy docs, processor list | Features are tagged and each has a default-on kill switch, so building is not blocked; scope list = the tag inventory in `.agent/rules/legal-tags.md` | before paid launch (PRE-DEPLOYMENT §4); start the accountant (VAT, KSeF penalties from 2027-01-01) early |
-| B-006 | VPS purchase and Otodom datacenter-IP test (#42) | Buy after the app works locally | deployment preparation |
+| B-006 | Otodom datacenter-IP test (#42) and VPS sizing decision (VPS bought, see B-006a) | Bought VPS-1 (4 GB) differs from the blueprint's VPS-3 (12 GB, Poland); VPS-2/3 Linux out of stock. Owner plans: VPS-1 as test/beta box, buy VPS-3 when stock returns (owner's local notes) | deployment preparation; IP test can run now |
 
 ## Resolved
 
 | ID | What | Resolution | Date |
 |---|---|---|---|
+| B-006a | VPS purchase | Owner bought an OVH VPS-1 (no commitment); details in the owner's local notes (not in the repo) | 2026-10-12 |
+| B-005b | Domain registration | Owner registered the production domain at OVH; details in the owner's local notes (not in the repo) | 2026-10-12 |
 | B-005a | R2 bucket and keys | Owner states the R2 values are in `.env` (not verified by agents, which cannot read it) | 2026-10-11 |
 | B-007 | Engine specification | Owner approved `docs/ENGINE-SPEC.md` with amendments (rows 2, 3, 5, 6, 7, 9, 10, 13); tax items stay flagged for the accountant but are versioned constants and do not block code. #17 can be split into N-01..N-11 | 2026-10-11 |
 | B-008 | `migrations` CI job and required check | Enabled: `ENABLE_MIGRATIONS_JOB=true`, `migrations` required on `staging`, squawk clean (RM-68). `invariants` stays off: it needs the engine's three missing named tests, see #17 | 2026-10-11 |

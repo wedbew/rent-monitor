@@ -132,7 +132,7 @@ Seven workflows, each with `permissions: {}` at the top and only what a job need
 | `gemini-*.yml` | PR, issues, `@gemini-cli` | review, triage, dispatch | Section 5 |
 | `claude.yml` | `@claude` comments | implement, answer | Section 5 |
 
-Why release-please over python-semantic-release: ticket IDs occupy the commit scope, and PSR's monorepo parser uses scope prefixes to route commits to packages, so the two conventions collide. A SaaS ships one product version anyway; release-please reads `feat`/`fix`, writes `CHANGELOG.md`, and works through a PR, which respects branch protection. Container tags stay the commit SHA; the semver tag is for humans and Sentry releases.
+Why release-please over python-semantic-release: ticket IDs occupy the commit scope, and PSR's monorepo parser uses scope prefixes to route commits to packages, so the two conventions collide. A SaaS ships one product version anyway; release-please reads `feat`/`fix`, writes `CHANGELOG.md`, and works through a PR, which respects branch protection. Container tags stay the commit SHA; the semver tag is for humans and error-tracker releases (`RELEASE`).
 
 CI runtime target: under 6 minutes for a PR. Testcontainers starts Postgres once per session; the `invariants` job re-runs only `-m invariant` so its pass or fail is visible on its own.
 
@@ -170,7 +170,7 @@ Install few, scope each tightly, and keep every production credential out of age
 | Context7 | read-only docs | Blueprint pins fast-moving APIs: Procrastinate 3.x, Stripe SDK on `2026-09-30.endive`, SQLAlchemy async, sse-starlette. Stale training data is the biggest agent error source here |
 | Postgres MCP Pro (Crystal DBA) | **restricted mode**, local dev DB only | `explain_query`, hypothetical indexes and health checks while writing the partial indexes and `market_sidecar` queries. Never pointed at the VPS |
 | Stripe (`mcp.stripe.com`) | sandbox only, an Agent-tagged restricted key | Docs search and inspecting test objects while building the webhook state machine. From 31 Oct 2026 the server rejects keys without the Agent tag |
-| Sentry | later, at ops step 7 | Read production errors when triaging `UPSTREAM_SCHEMA_DRIFT` |
+| Better Stack (ADR 0009) | later, at ops step 7 | Read production errors when triaging `UPSTREAM_SCHEMA_DRIFT` |
 
 Deferred to Phase 2: Playwright, Chrome DevTools and Figma servers.
 

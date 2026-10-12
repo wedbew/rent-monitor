@@ -1,4 +1,4 @@
-.PHONY: sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
+.PHONY: ci ci-fast ci-full hooks sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
 
 sync:
 	uv sync --all-packages --group dev
@@ -22,6 +22,20 @@ types:
 	uv run pyright
 
 check: lint types test
+
+# The GitHub pipeline, locally, before you push (scripts/ci_local.sh).
+ci-fast:
+	./scripts/ci_local.sh --fast
+
+ci:
+	./scripts/ci_local.sh
+
+ci-full:
+	./scripts/ci_local.sh --full
+
+# Install git hooks: commit message check, formatting, secrets, and the fast CI before every push.
+hooks:
+	uvx pre-commit install --hook-type pre-commit --hook-type commit-msg --hook-type pre-push
 
 # Applies Alembic migrations to $DATABASE_URL (postgresql+psycopg://...). Procrastinate's tables: see README.
 migrate:
