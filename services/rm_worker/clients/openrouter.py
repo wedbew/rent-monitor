@@ -15,11 +15,13 @@ from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, Protocol
+from uuid import UUID
 
 import httpx
 import structlog
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from rm_contracts.problems import ProblemCode
+from rm_core.ai_budget import CallUsage
 from rm_core.deadline import Deadline
 
 from rm_worker.images import PreparedImage
@@ -51,6 +53,7 @@ class VisionRequest:
     prompt: str
     images: Sequence[PreparedImage]
     system: str | None = None
+    audit_id: UUID | None = None  # recorded with the call's cost
     max_tokens: int = 1500
     json_mode: bool = False
 
@@ -65,7 +68,7 @@ class VisionResult:
 
 
 class BudgetTicket(Protocol):
-    async def settle(self, actual_usd: Decimal) -> None: ...
+    async def settle(self, actual_usd: Decimal, usage: CallUsage | None = None) -> None: ...
 
     async def release(self) -> None: ...
 
@@ -178,7 +181,16 @@ class OpenRouterClient:
         except BaseException:
             await ticket.release()
             raise
-        await ticket.settle(result.cost_usd if result.cost_usd is not None else self.estimate_usd)
+        await ticket.settle(
+            result.cost_usd if result.cost_usd is not None else self.estimate_usd,
+            CallUsage(
+                model=result.model or req.model,
+                prompt_tokens=result.prompt_tokens,
+                completion_tokens=result.completion_tokens,
+                estimated=result.cost_usd is None,
+                audit_id=req.audit_id,
+            ),
+        )
         log.info(
             "vision_call",
             model=result.model,

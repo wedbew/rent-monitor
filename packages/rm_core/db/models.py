@@ -455,6 +455,59 @@ class HostThrottle(Base):
     breaker_reason: Mapped[str | None] = mapped_column(String(40))
 
 
+# ---------- AI spend control (blueprint §6 "Atomic AI budget") ----------
+class AiBudget(Base):
+    """One row per UTC month: the cap, and what is spent and reserved. Holds are taken atomically (RM-24)."""
+
+    __tablename__ = "ai_budget"
+    __table_args__ = (
+        CheckConstraint("cap_usd >= 0 AND reserved_usd >= 0 AND spent_usd >= 0", name="non_negative"),
+    )
+
+    month: Mapped[date] = mapped_column(Date, primary_key=True)  # first day of the month, UTC
+    cap_usd: Mapped[Decimal] = mapped_column(Numeric(14, 6))
+    reserved_usd: Mapped[Decimal] = mapped_column(Numeric(14, 6), default=Decimal(0), server_default="0")
+    spent_usd: Mapped[Decimal] = mapped_column(Numeric(14, 6), default=Decimal(0), server_default="0")
+    warned_at: Mapped[datetime | None]  # when the 80 % warning fired (once per month)
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+
+
+class AiReservation(Base):
+    """One held amount, so a crashed worker's reservation can be found and released by the nightly sweep."""
+
+    __tablename__ = "ai_reservation"
+    __table_args__ = (
+        CheckConstraint("state IN ('reserved','settled','released','swept')", name="state_vocab"),
+        CheckConstraint("amount_usd >= 0", name="amount_non_negative"),
+        Index("ix_ai_reservation_open", "created_at", postgresql_where=text("state = 'reserved'")),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4, server_default=_UUID_DEFAULT)
+    month: Mapped[date] = mapped_column(ForeignKey("ai_budget.month"))
+    amount_usd: Mapped[Decimal] = mapped_column(Numeric(14, 6))
+    state: Mapped[str] = mapped_column(String(10), default="reserved", server_default="reserved")
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class AiUsage(Base):
+    """Tokens and USD of every model call, for per-audit cost (L-003). Not personal data."""
+
+    __tablename__ = "ai_usage"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    month: Mapped[date] = mapped_column(Date, index=True)
+    # No foreign key on purpose: a paid call's cost is recorded even if the audit row is gone.
+    audit_id: Mapped[UUID | None] = mapped_column(index=True)
+    model: Mapped[str] = mapped_column(String(120))
+    prompt_tokens: Mapped[int] = mapped_column(default=0, server_default="0")
+    completion_tokens: Mapped[int] = mapped_column(default=0, server_default="0")
+    cost_usd: Mapped[Decimal] = mapped_column(Numeric(14, 6))
+    cost_estimated: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("false")
+    )  # provider gave no cost
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
 # ---------- Third-party lookup cache ----------
 class GeoCache(Base):
     """Cached geocoding and points-of-interest answers (OpenStreetMap), keyed by a hash of the

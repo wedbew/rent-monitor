@@ -28,7 +28,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Affects:** `PRO_MONTHLY_AUDIT_ALLOWANCE` (40, placeholder), pricing, release gate 4
 - **Evidence:** estimate
 - **Description:** No measured tokens/USD per audit; the Pro allowance has no cost basis yet.
-- **Workaround:** Log tokens and USD per audit from day one; monthly budget kill-switch.
+- **Workaround:** Tokens and USD of every call are logged in `app.ai_usage` (RM-24) and spend is capped monthly with a kill switch (`OPENROUTER_MONTHLY_BUDGET_USD`, 0 = off). Measurement itself still needs real traffic.
 - **Target:** Set allowance after two weeks of measured COGS
 
 ### L-004 — POC engine models money as float

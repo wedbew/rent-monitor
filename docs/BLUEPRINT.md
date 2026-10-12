@@ -740,6 +740,15 @@ class MarketSidecar(Base):
     )
 
 
+# ---------- AI spend control (added by RM-24) ----------
+class AiBudget(Base):        # one row per UTC month: cap_usd, reserved_usd, spent_usd, warned_at
+    __tablename__ = "ai_budget"
+class AiReservation(Base):   # one hold per model call: amount_usd, state reserved|settled|released|swept
+    __tablename__ = "ai_reservation"
+class AiUsage(Base):         # per-call log: model, tokens, cost_usd, cost_estimated, audit_id (no FK)
+    __tablename__ = "ai_usage"
+
+
 # ---------- OSM lookup cache (added by RM-86) ----------
 class GeoCache(Base):
     """Cached Nominatim/Overpass answers keyed by sha256 of the normalised request; expires_at drives retention."""
