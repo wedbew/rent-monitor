@@ -7,7 +7,7 @@ add an issue and a row here (same PR). Labels: `phase-1`, `launch`, `owner`, `ph
 |---|---|---|
 | §1 | Host purchase, Poland, Ubuntu 24.04, Black Friday plan, datacenter-IP test | #42 |
 | §1 | Compose limits, Caddy, host hardening, WAL-G image, backup container | #15 |
-| §2 process model | Lifespan singletons, structlog, Sentry, Problem responses, `/healthz` `/readyz` `/api/health` | #18 |
+| §2 process model | Lifespan singletons, structlog, Sentry SDK (Better Stack, ADR 0009), Problem responses, `/healthz` `/readyz` `/api/health` | #18 |
 | §2 route map | `/api/auth/*` | #12 |
 | §2 route map | `/api/me`, `/api/saved`, `/api/admin/*` | #20 |
 | §2 route map | `/api/audits` (create, list, get, SSE, cancel) | #13 |
@@ -54,7 +54,7 @@ add an issue and a row here (same PR). Labels: `phase-1`, `launch`, `owner`, `ph
 | §6 release gates 1–7 | Gate evidence | #32–#38 |
 | TOOLCHAIN §7 | ADRs | #31 |
 | Rules (not in blueprint) | GDPR retention, deletion, export | #30 |
-| Rules (not in blueprint) | Owner accounts: Resend, Sentry, Umami, R2, domain | #40 |
+| Rules (not in blueprint) | Owner accounts: Resend, Better Stack, Umami, R2, domain | #40 |
 | Rules (not in blueprint) | Legal/privacy docs, DPAs | #41 |
 
 ## Known gaps (deliberate)
