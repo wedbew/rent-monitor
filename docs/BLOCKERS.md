@@ -6,7 +6,19 @@ matter for production or a domain are *Deferred*, not blocking.
 
 ## Awaiting your approval (PRs the agent will not merge)
 
-_None. #108 (ledger, entitlements, flags) and #109 (AI budget) were approved and merged on 2026-10-12; auth (#12) and audits (#13) are unblocked._
+| PR | What | Why it waits | To approve |
+|---|---|---|---|
+| #147 (RM-12, closes #12 and #130) | Google sign-in, magic link, sessions, Origin check, `rate_limit` migration, `docs/GOOGLE-AUTH-SPEC.md` | auth and sessions are human-review areas | read the spec sections 3 (decision D-13) and 9, then comment "approved to merge" |
+| #163 (RM-82, closes #82), **stacked on #147** | `GET /api/me/export` and `DELETE /api/me` (Stripe customer erased first, nothing deleted if the processor is down) | auth and erasure; merge after #147 | comment "approved to merge"; note the order of erasure differs from the issue text (PR body explains) |
+| #164 (RM-20, closes #20), **stacked on #163** | `GET /api/me`, `/api/saved`, `/api/admin/*` (flags, overrides, idempotent credit adjustments, job inspection) | admin authorisation and ledger writes; merge after #163 | comment "approved to merge"; first admin is created with SQL (see PR) |
+| #168 (RM-167, closes #167), **stacked on #164** | `scripts/gen_openapi.py`, `docs/openapi.json` and a drift test | contains the whole stack; merge last | comment "approved to merge" after #164 |
+| #158 (RM-157, closes #157) | nightly ledger-vs-balance check, queue/connection/memory monitor, old-job cleanup, heartbeats | reads the credit ledger (money area) | comment "approved to merge" |
+| #159 (RM-133, closes #133) | `docs/RESEND-SPEC.md` | sign-in and billing email; owner decides who sends the invoice | review, then comment "approved to merge" |
+| #160 (RM-127, closes #127) | `docs/STRIPE-SPEC.md` | billing; owner decisions D-02, D-03, retry window, refund policy | review, then comment "approved to merge" |
+
+**Merge order for the stack: #147, #163, #164, #168.** #163, #164 and #168 are drafts on purpose (each branch contains its parents' commits); the agent marks each ready after its parent merges.
+
+Earlier, #108 (ledger, entitlements, flags) and #109 (AI budget) were approved and merged on 2026-10-12.
 
 ## Open (needs the owner)
 

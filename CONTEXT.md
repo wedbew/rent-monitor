@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-12 · by: RM-144 (Umami handoff), RM-141 (R2), RM-137 (Better Stack)
+**Last updated:** 2026-10-12 · by: RM-171 (decisions D-14, L-010)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -194,7 +194,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 - [ ] VAT presentation of 100 zł; Pro allowance (40 is a placeholder until COGS is measured); free-tier scope
 - [ ] SQLAlchemy 2.0 vs 2.1; Stripe SDK major (ADR 0007 *proposes* 2.0 and an exact SDK pin at #14; owner confirms); Gemini and Claude auth in Actions; GitHub plan for private-repo rulesets
 - [ ] Polish legal review of Otodom scraping before charging (blueprint §5, not legal advice)
-- [ ] D-14 R2 backup bucket in the EU jurisdiction (cannot be changed after creation), layout `rentmonitor-backups`, and WAL-G retention of 14 days to match the privacy design (`docs/R2-SPEC.md` sections 2 and 4)
+- [x] D-14 R2 backups in the EU jurisdiction (fixed at creation), `rentmonitor-backups`, WAL-G retention 14 days: decided (ADR 0011, RM-171)
 
 ## 10. Where to look
 
