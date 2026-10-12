@@ -4,9 +4,11 @@ import json
 import random
 from contextlib import asynccontextmanager
 from decimal import Decimal
+from uuid import uuid4
 
 import httpx
 import pytest
+from rm_core.ai_budget import CallUsage
 from rm_core.deadline import Deadline
 from rm_worker.clients.openrouter import (
     MAX_ATTEMPTS,
@@ -30,10 +32,12 @@ OK_BODY = {
 class Ticket:
     def __init__(self) -> None:
         self.settled: Decimal | None = None
+        self.usage: CallUsage | None = None
         self.released = False
 
-    async def settle(self, actual_usd: Decimal) -> None:
+    async def settle(self, actual_usd: Decimal, usage: CallUsage | None = None) -> None:
         self.settled = actual_usd
+        self.usage = usage
 
     async def release(self) -> None:
         self.released = True
@@ -168,6 +172,26 @@ async def test_success_settles_the_actual_cost() -> None:
     assert gate.ticket.released is False
     assert limiter.entered == 1
     assert limiter.active == 0
+
+
+async def test_settle_receives_model_tokens_and_the_audit_id() -> None:
+    audit = uuid4()
+    client, gate, *_ = make(ok)
+    await client.complete(
+        VisionRequest(model="vendor/vision-1", prompt="p", images=[IMG], audit_id=audit),
+        deadline=Deadline.after(60),
+    )
+    assert gate.ticket.usage == CallUsage(
+        model="vendor/vision-1", prompt_tokens=120, completion_tokens=30, estimated=False, audit_id=audit
+    )
+
+
+async def test_an_unreported_cost_is_marked_as_estimated_in_the_usage() -> None:
+    body = {**OK_BODY, "usage": {"prompt_tokens": 1, "completion_tokens": 1}}
+    client, gate, *_ = make(lambda r: httpx.Response(200, content=json.dumps(body).encode()))
+    await client.complete(REQ, deadline=Deadline.after(60))
+    assert gate.ticket.usage is not None
+    assert gate.ticket.usage.estimated is True
 
 
 async def test_unreported_cost_settles_the_estimate() -> None:
