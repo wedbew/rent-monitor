@@ -6,7 +6,14 @@ matter for production or a domain are *Deferred*, not blocking.
 
 ## Awaiting your approval (PRs the agent will not merge)
 
-_None. #108 (ledger, entitlements, flags) and #109 (AI budget) were approved and merged on 2026-10-12; auth (#12) and audits (#13) are unblocked._
+| PR | What | Why it waits | To approve |
+|---|---|---|---|
+| #147 (RM-12, closes #12 and #130) | Google sign-in, magic link, sessions, Origin check, `rate_limit` migration, `docs/GOOGLE-AUTH-SPEC.md` | auth and sessions are human-review areas | read the spec sections 3 (decision D-13) and 9, then comment "approved to merge" |
+| #158 (RM-157, closes #157) | nightly ledger-vs-balance check, queue/connection/memory monitor, old-job cleanup, heartbeats | reads the credit ledger (money area) | comment "approved to merge" |
+| #159 (RM-133, closes #133) | `docs/RESEND-SPEC.md` | sign-in and billing email; owner decides who sends the invoice | review, then comment "approved to merge" |
+| #160 (RM-127, closes #127) | `docs/STRIPE-SPEC.md` | billing; owner decisions D-02, D-03, retry window, refund policy | review, then comment "approved to merge" |
+
+Earlier, #108 (ledger, entitlements, flags) and #109 (AI budget) were approved and merged on 2026-10-12.
 
 ## Open (needs the owner)
 
