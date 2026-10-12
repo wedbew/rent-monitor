@@ -19,7 +19,7 @@ account id, key id, token or endpoint host is written into a committed file.
 | Backup bucket | `rentmonitor-backups` (the name already in the blueprint and `.env.example`), prefixes `wal/`, `base/`, `dump/` | one place to apply lifecycle and one token pair |
 | Existing bucket `rent-monitor` | keep for connectivity checks (`connection-tests/`) and later non-backup exports | the owner's proven bucket; do not mix it with backups |
 | Jurisdiction | **EU, set when the backup bucket is created; it cannot be changed afterwards** (*inferred* from Cloudflare's R2 jurisdiction feature) | backups contain personal data (`app_user`, sessions, snapshots); an EU-jurisdiction bucket pins storage to the EU. The endpoint then carries the jurisdiction (`<account>.eu.r2.cloudflarestorage.com`), so `AWS_ENDPOINT` differs from the blueprint's default form. `check_r2_upload.py --jurisdiction eu` already supports this |
-| Region question | open: **D-14** owner confirms EU jurisdiction before the first real backup | counsel may also need it for the processor list (B-012) |
+| Region question | **decided (D-14, ADR 0011): EU jurisdiction** | counsel may also need it for the processor list (B-012) |
 
 ## 3. Credentials (least privilege)
 
@@ -43,9 +43,9 @@ account id, key id, token or endpoint host is written into a committed file.
   `rclone` and verified with `rclone check`. It is version independent and survives a WAL-G problem.
 - **Retention must be reconciled (found while writing this):** the blueprint runs `wal-g delete retain FULL 7`, about 7 days
   of point-in-time restore, while the privacy design and `RUNBOOK-GDPR.md` state backups of 14 days / 56 days and the
-  `erasure_log` is kept 70 days for that reason. Decision for review: **WAL-G keeps 14 days (`retain FULL 14`)**, dumps keep
+  `erasure_log` is kept 70 days for that reason. **Decided (D-14, ADR 0011): WAL-G keeps 14 days (`retain FULL 14`)**, dumps keep
   14 daily + 8 weekly (`BACKUP_RETENTION_DAILY`, `BACKUP_RETENTION_WEEKLY`), so the longest copy is 56 days and the 70-day
-  erasure window stays correct. The blueprint line is not edited until the maintainer agrees.
+  erasure window stays correct. The blueprint line is updated accordingly.
 - Keys: `WALG_LIBSODIUM_KEY` and the `age` private key are stored offline and in the password manager. The blueprint sample
   value (`change-me-...`) is a placeholder and must never be used; without the key a backup is unreadable.
 
@@ -92,7 +92,7 @@ backup retention in the privacy notice (B-012). No `LEGAL[...]` tag applies.
 Names are already in `.env.example`: `R2_*`, `S3_*` (script only), `BACKUP_AGE_RECIPIENT`, `BACKUP_RETENTION_DAILY`,
 `BACKUP_RETENTION_WEEKLY`, `WALG_S3_PREFIX`, `WALG_COMPRESSION_METHOD`, `WALG_LIBSODIUM_KEY`, `BETTERSTACK_HEARTBEAT_BACKUP_URL`.
 
-1. Decide D-14 (EU jurisdiction) and create `rentmonitor-backups` accordingly.
+1. Create `rentmonitor-backups` in the **EU jurisdiction** (decided, ADR 0011; it cannot be changed afterwards).
 2. Create the `backup-writer` and `restore-reader` tokens; put the writer in the VPS `.env`, the reader in the password manager.
 3. Generate the `age` key pair (`age-keygen`) and a 32-byte libsodium key; store both offline.
 4. Set the bucket lifecycle rules to 14 d for `wal/`, `base/` and daily dumps, 56 d for weekly dumps.
