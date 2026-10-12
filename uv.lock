@@ -1857,6 +1857,7 @@ name = "rm-api"
 version = "0.0.0"
 source = { editable = "services/rm_api" }
 dependencies = [
+    { name = "deal-analyzer" },
     { name = "fastapi" },
     { name = "google-auth" },
     { name = "httpx" },
@@ -1868,6 +1869,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "deal-analyzer", editable = "apps/deal_analyzer" },
     { name = "fastapi", specifier = ">=0.120" },
     { name = "google-auth", specifier = ">=2.61.0" },
     { name = "httpx", specifier = ">=0.28" },
@@ -1919,6 +1921,7 @@ version = "0.0.0"
 source = { editable = "services/rm_worker" }
 dependencies = [
     { name = "curl-cffi" },
+    { name = "deal-analyzer" },
     { name = "httpx" },
     { name = "pillow" },
     { name = "procrastinate" },
@@ -1929,6 +1932,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "curl-cffi", specifier = ">=0.16,<0.17" },
+    { name = "deal-analyzer", editable = "apps/deal_analyzer" },
     { name = "httpx", specifier = ">=0.28" },
     { name = "pillow", specifier = ">=11,<13" },
     { name = "procrastinate", specifier = ">=3.10,<4" },

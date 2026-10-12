@@ -18,6 +18,336 @@
         "title": "AccountDelete",
         "type": "object"
       },
+      "AuditAccepted": {
+        "properties": {
+          "audit_id": {
+            "format": "uuid",
+            "title": "Audit Id",
+            "type": "string"
+          },
+          "credits_remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "None: the audit is within the plan allowance",
+            "title": "Credits Remaining"
+          },
+          "events_url": {
+            "title": "Events Url",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AuditState"
+          }
+        },
+        "required": [
+          "audit_id",
+          "status",
+          "events_url",
+          "credits_remaining"
+        ],
+        "title": "AuditAccepted",
+        "type": "object"
+      },
+      "AuditCreate": {
+        "additionalProperties": false,
+        "description": "`listing_ref` is bounded here and normalised to the short Otodom id by the route\n(`rm_core.listing_ref.parse_listing_ref`, which rejects anything but an Otodom URL or id).",
+        "properties": {
+          "analyst": {
+            "default": false,
+            "title": "Analyst",
+            "type": "boolean"
+          },
+          "lang": {
+            "default": "pl",
+            "enum": [
+              "pl",
+              "en"
+            ],
+            "title": "Lang",
+            "type": "string"
+          },
+          "listing_ref": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Listing Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "listing_ref"
+        ],
+        "title": "AuditCreate",
+        "type": "object"
+      },
+      "AuditOut": {
+        "description": "One audit. Money columns are copied from `result` by the worker, never computed by the API.",
+        "properties": {
+          "asking_price_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asking Price Pln"
+          },
+          "audit_id": {
+            "format": "uuid",
+            "title": "Audit Id",
+            "type": "string"
+          },
+          "capex_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capex Pln"
+          },
+          "charge_state": {
+            "$ref": "#/components/schemas/ChargeStateName"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade"
+          },
+          "irr_10y": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Irr 10Y"
+          },
+          "max_bid_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Bid Pln"
+          },
+          "otodom_id": {
+            "title": "Otodom Id",
+            "type": "string"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "canonical DealAnalysis JSON; null until a terminal success",
+            "title": "Result"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AuditState"
+          }
+        },
+        "required": [
+          "audit_id",
+          "otodom_id",
+          "status",
+          "error_code",
+          "charge_state",
+          "created_at",
+          "started_at",
+          "finished_at",
+          "grade",
+          "asking_price_pln",
+          "max_bid_pln",
+          "irr_10y",
+          "capex_pln",
+          "result"
+        ],
+        "title": "AuditOut",
+        "type": "object"
+      },
+      "AuditState": {
+        "description": "Mirrors `rm_core.db.models.AuditStatus`; `tests/unit/test_audit_contracts.py` fails if they drift.",
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "succeeded_degraded",
+          "rejected",
+          "failed_input",
+          "failed_upstream",
+          "failed_internal",
+          "cancelled"
+        ],
+        "title": "AuditState",
+        "type": "string"
+      },
+      "AuditSummary": {
+        "description": "List row: the same fields without the full result.",
+        "properties": {
+          "asking_price_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asking Price Pln"
+          },
+          "audit_id": {
+            "format": "uuid",
+            "title": "Audit Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade"
+          },
+          "max_bid_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Bid Pln"
+          },
+          "otodom_id": {
+            "title": "Otodom Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AuditState"
+          }
+        },
+        "required": [
+          "audit_id",
+          "otodom_id",
+          "status",
+          "error_code",
+          "created_at",
+          "finished_at",
+          "grade",
+          "asking_price_pln",
+          "max_bid_pln"
+        ],
+        "title": "AuditSummary",
+        "type": "object"
+      },
+      "ChargeStateName": {
+        "description": "Mirrors `rm_core.db.models.ChargeState`.",
+        "enum": [
+          "reserved",
+          "captured",
+          "released"
+        ],
+        "title": "ChargeStateName",
+        "type": "string"
+      },
       "CreditAdjust": {
         "additionalProperties": false,
         "description": "`idempotency_key` is chosen by the caller; repeating it never adjusts twice.",
@@ -1654,6 +1984,137 @@
         "summary": "Inspect Jobs",
         "tags": [
           "admin"
+        ]
+      }
+    },
+    "/api/audits": {
+      "get": {
+        "operationId": "list_audits_api_audits_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuditSummary"
+                  },
+                  "title": "Response List Audits Api Audits Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Audits",
+        "tags": [
+          "audits"
+        ]
+      },
+      "post": {
+        "operationId": "create_audit_api_audits_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditAccepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Audit",
+        "tags": [
+          "audits"
+        ]
+      }
+    },
+    "/api/audits/{audit_id}": {
+      "get": {
+        "operationId": "get_audit_api_audits__audit_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "audit_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Audit Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Audit",
+        "tags": [
+          "audits"
         ]
       }
     },

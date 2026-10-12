@@ -2,3 +2,5 @@
 
 SEND_MAGIC_LINK_TASK = "rm_worker.tasks.email.send_magic_link"
 OPS_QUEUE = "ops"
+RUN_AUDIT_TASK = "rm_worker.tasks.audit.run_audit"
+AUDIT_QUEUE = "audit"
