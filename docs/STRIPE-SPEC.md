@@ -1,6 +1,6 @@
 # Stripe integration specification (closes #127)
 
-Status: specification, **awaiting owner review** (billing is a human-review area). It is the contract that billing (#14),
+Status: specification, owner decisions recorded 2026-10-12 (D-02, D-03, retry window, refunds and disputes). It is the contract that billing (#14),
 the VAT invoice work (#26) and disputes/refunds (#27) are implemented from; blueprint §3 *Stripe webhook lifecycle*,
 *BLIK at launch* and *VAT invoices* stay the spec of record and are not repeated. *Confirmed* = in the blueprint with a source
 or in the merged code; *inferred* = from vendor documentation or reasoning, to verify in the sandbox. The owner's local notes
@@ -12,8 +12,9 @@ are in `docs/STRIPE-INTEGRATION.md` (gitignored); no key, id or webhook secret i
   Agents use test mode only, never `--live`. No Stripe resource exists yet.
 - **BLIK recurring activation** (`blik_payments` and `blik_recurring_payments`) is a Stripe-side request with lead time (#39). Card
   and the 30-day pass work without it.
-- **D-03 VAT presentation** of the 100 zł price and the invoice treatment come from the accountant (#41). Prices are created in the
-  sandbox first; final prices wait for D-03.
+- **D-03 decided:** the price is shown as **100 zł including VAT** (81.30 zł net + 23 % VAT) because Polish consumers expect gross prices;
+  business customers still receive a VAT invoice. Stripe prices are therefore **tax-inclusive**. The accountant must still confirm
+  whether the business is a VAT payer at all (under the exemption limit there is no VAT line), so final prices wait for that (#41).
 
 ## 1. Catalog (names and purpose; ids live only in `.env` and the `plan` table)
 
@@ -25,8 +26,8 @@ are in `docs/STRIPE-INTEGRATION.md` (gitignored); no key, id or webhook secret i
 - **Tidy-up needed:** `.env.example` also has `STRIPE_PRICE_ID_PRO`, documented as "same as `STRIPE_PRICE_PRO_MONTHLY`". Two names for
   one value will drift; the spec keeps `STRIPE_PRICE_PRO_MONTHLY` and `make seed` stores it on the `pro` plan row, so
   `STRIPE_PRICE_ID_PRO` is dropped in the billing PR.
-- Tax behaviour (inclusive or exclusive) and whether Stripe Tax is used are D-03 and the accountant's call. Invoicing is done by
-  Fakturownia, so the app does not use Stripe Tax or Stripe's invoice PDF as the legal document.
+- Prices are **tax-inclusive** (D-03). Stripe Tax is not used. Invoicing is done by Fakturownia, so Stripe's invoice PDF is never the
+  legal document.
 - Money rules: Stripe sends integer minor units; they are converted to `Decimal` at the boundary and never held as `float`.
 
 ## 2. Checkout, Portal and Dashboard settings
@@ -39,12 +40,11 @@ are in `docs/STRIPE-INTEGRATION.md` (gitignored); no key, id or webhook secret i
 - **Customer Portal:** payment-method update (card and BLIK), cancel at period end, invoice history; no plan switching (one plan).
 - **Dashboard:** Smart Retries on, "if all retries fail" = cancel the subscription (produces `customer.subscription.deleted`);
   Stripe's own receipt and invoice emails off (one document set; *inferred* to verify which emails the account sends).
-- **Retry window vs grace (decision needed):** our grace is 7 days (`PAST_DUE_GRACE_DAYS`). Stripe's Smart Retries can be set to retry
-  for 1 week up to 2 months (*inferred*). If Stripe keeps retrying for longer, a user loses Pro on day 7 while the subscription is
-  still alive and may pay on day 12. Recommendation: set the retry window to **1 week** so final failure and `deleted` land at
-  the end of the grace; otherwise state plainly that Pro ends on day 7 and a late payment restores it at once through `invoice.paid`.
-- **Refunds and disputes** (#27): policy is the owner's. Spec default: a refund of the latest invoice or pass ends the matching
-  period; a dispute marks the user `payment_issue` and keeps Pro until resolved. Both are decisions to confirm, not blueprint text.
+- **Retry window = 1 week (decided).** Our grace is 7 days (`PAST_DUE_GRACE_DAYS`) and Stripe's Smart Retries can otherwise run for
+  weeks (*inferred*), which would cut Pro off while Stripe is still trying to charge. With a one-week window the final failure and
+  `customer.subscription.deleted` land when the grace ends. A late payment still restores Pro at once through `invoice.paid`.
+- **Refunds and disputes** (#27), decided: a refund of the latest invoice or pass ends the matching period; a dispute marks the user
+  `payment_issue` and keeps Pro until it is resolved. These are product rules, not blueprint text.
 
 ## 3. Webhook endpoint (`POST /api/webhooks/stripe`)
 
@@ -60,7 +60,7 @@ are in `docs/STRIPE-INTEGRATION.md` (gitignored); no key, id or webhook secret i
 6. Return 200 after the transaction commits; any error returns 500 so Stripe retries. Handlers are idempotent, so a replay is safe.
 7. **API version:** the account and the endpoint are pinned to `STRIPE_API_VERSION` (`2026-09-30.endive`) and every client call
    sends it. The SDK is pinned **exactly** and a unit test asserts it matches that version; which SDK release defaults to it is
-   unconfirmed (ADR 0007 is still *proposed*, owner decision D-02). Use `context7` for the SDK surface when #14 starts.
+   unconfirmed (ADR 0007 is now accepted: SQLAlchemy stays on 2.0, the Stripe SDK gets its exact pin when #14 starts). Use `context7` for the SDK surface when #14 starts.
 8. Shapes that changed since `2025-03-31.basil`: `current_period_start/end` are on subscription items; an invoice's subscription is at
    `invoice.parent.subscription_details.subscription`.
 
@@ -107,5 +107,6 @@ Names in `.env.example`: `STRIPE_SECRET_KEY` (test mode only; use a restricted k
 Invoices, Billing Portal), `STRIPE_WEBHOOK_SECRET`, `STRIPE_API_VERSION`, `STRIPE_PRICE_PRO_MONTHLY`, `STRIPE_PRICE_PRO_PASS_30D`
 (and the duplicate to drop). Agent tooling for Stripe needs Agent-tagged keys from 2026-10-31 (roadmap calendar).
 
-Open decisions for the owner: D-02 SDK pin; D-03 VAT presentation and price tax behaviour; retry window vs 7-day grace (section 2);
-refund and dispute policy (section 2); who emails the invoice (see `docs/RESEND-SPEC.md`); BLIK recurring activation (#39).
+Decided: D-02 (ADR 0007 accepted), D-03 (gross price, tax-inclusive), retry window of one week, refund and dispute rules, and that
+Fakturownia emails the invoice (`docs/RESEND-SPEC.md`). Still open: the accountant's VAT-payer confirmation (#41) and BLIK
+recurring activation (#39).

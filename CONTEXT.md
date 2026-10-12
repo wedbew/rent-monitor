@@ -191,8 +191,10 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 - [ ] Market-data bootstrap: how the 727-city sidecars are produced fresh (fetch via new importers; no corpus copy)
 - [x] Engine specification approved with amendments: `docs/ENGINE-SPEC.md` (RM-73); tax constants flagged for the accountant
 - [ ] Which POC extras ship in Phase 1: redesign, seller-questions, analyst (§4.3)
-- [ ] VAT presentation of 100 zł; Pro allowance (40 is a placeholder until COGS is measured); free-tier scope
-- [ ] SQLAlchemy 2.0 vs 2.1; Stripe SDK major (ADR 0007 *proposes* 2.0 and an exact SDK pin at #14; owner confirms); Gemini and Claude auth in Actions; GitHub plan for private-repo rulesets
+- [x] VAT presentation: 100 zł shown gross (81.30 net + 23 %), Stripe prices tax-inclusive (D-03); accountant to confirm VAT-payer status (#41)
+- [ ] Pro allowance (40 is a placeholder until COGS is measured); free-tier scope
+- [x] SQLAlchemy 2.0 and Stripe SDK pin at #14: ADR 0007 accepted (D-02)
+- [ ] Gemini and Claude auth in Actions; GitHub plan for private-repo rulesets
 - [ ] Polish legal review of Otodom scraping before charging (blueprint §5, not legal advice)
 - [ ] D-14 R2 backup bucket in the EU jurisdiction (cannot be changed after creation), layout `rentmonitor-backups`, and WAL-G retention of 14 days to match the privacy design (`docs/R2-SPEC.md` sections 2 and 4)
 
