@@ -2061,7 +2061,7 @@ WALG_LIBSODIUM_KEY=<32-byte key kept in your password manager>
 
 # nightly base backup + retention (cron in the backup container, which mounts pgdata read-only)
 wal-g backup-push /var/lib/postgresql/data
-wal-g delete retain FULL 7 --confirm
+wal-g delete retain FULL 14 --confirm   # 14 days, ADR 0011 (was 7)
 
 # point-in-time restore on a fresh box
 wal-g backup-fetch /var/lib/postgresql/data LATEST
