@@ -27,7 +27,7 @@ SQLAlchemy models also put it in the column/field `comment=` or `description=` w
 | `LEGAL[republication]` | Anything that shows or exports third-party content to users or other tenants (reports, Markdown views, API results containing snapshot fields) |
 | `LEGAL[tax-invoice]` | VAT invoices, KSeF, corrective invoices (accountant-owned treatment) |
 | `GDPR[personal-data]` | Columns, fields, logs or payloads holding personal data: email, name, avatar, IP, user agent, session, Google `sub`, NIP / buyer data, seller names or phones inside raw listing payloads |
-| `GDPR[processor]` | Sending personal data to a processor or sub-processor: Google, Stripe, Resend, Fakturownia, OpenRouter, Sentry, Umami, OVH, Cloudflare R2 |
+| `GDPR[processor]` | Sending personal data to a processor or sub-processor: Google, Stripe, Resend, Fakturownia, OpenRouter, Better Stack (errors via the Sentry SDK), Umami, OVH, Cloudflare R2 |
 | `GDPR[retention]` | Retention / deletion jobs and TTLs: sessions, login tokens, snapshots, `audit_event`, backups (14 d / 56 d) |
 | `GDPR[erasure]` | Account deletion, cascade paths, export / access-request code, backup-restore re-deletion handling |
 | `GDPR[consent]` | Cookies, analytics events, marketing email, anything needing consent or a notice |

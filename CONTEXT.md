@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-12 · by: RM-19 (ledger, awaiting review)
+**Last updated:** 2026-10-12 · by: RM-19 (ledger, merged after RM-116)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -36,6 +36,7 @@ data, and returns a deterministic 10-year cash-flow valuation (`DealAnalysis`): 
 | Billing | Stripe: card + BLIK subscription (100 zł/month), 30-day BLIK pass; credit ledger; VAT invoices via Fakturownia → KSeF |
 | Free tier | 3 audits on verified sign-up, yield radar top 20 (proposed) |
 | Jobs / progress | Procrastinate queues; SSE via Postgres `LISTEN/NOTIFY` + `audit_event` replay |
+| Monitoring | **Better Stack** free tier (ADR 0009): errors and traces via the `sentry-sdk` client, uptime monitor, backup heartbeat; replaces Sentry |
 | Budget | ≈ $13.38 net/month infra; OpenRouter spend is COGS governed by the credit ledger |
 
 **Phase 1 = backend only** (blueprint §4.8 steps 1–5, plus step 8 batch tasks). The Vite/React SPA is Phase 2; in
@@ -195,7 +196,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Need | Open |
 |---|---|
 | POC-is-reference and production bar | `.agent/rules/poc-reference.md`, `docs/adr/0001-greenfield-rewrite.md` |
-| Expensive-to-reverse decisions (runtime, queue, auth, billing, host, pins) | `docs/adr/0002`–`0007` |
+| Expensive-to-reverse decisions (runtime, queue, auth, billing, host, pins) | `docs/adr/0002`–`0009` |
 | Rules, invariants, git flow, PR template | `.agent/agents.md`, `.agent/rules/*.md`, `.github/pull_request_template.md` |
 | Architecture, schema, Stripe, auth, tests | `docs/BLUEPRINT.md` §2–§4 |
 | CI, hooks, rulesets, MCP, skills | `docs/TOOLCHAIN.md` |

@@ -85,7 +85,7 @@ Memory rules that make the matrix hold:
 | VPS after commitment | OVHcloud VPS-3, 12 months (−15%) | 44.37 zł net = 54.58 zł gross ≈ $11.37 net / $13.99 gross |
 | DNS, CDN, TLS edge | Cloudflare free | $0 |
 | Off-site backups | Cloudflare R2: 10 GB-month, 1M Class A and 10M Class B ops free, zero egress | $0 up to 10 GB |
-| Errors and uptime | Sentry Developer: 5k errors, 5M spans, 1 uptime monitor, 1 cron monitor, 30-day lookback | $0 |
+| Errors and uptime | Better Stack free (ADR 0009): 100k exceptions/month (90 days), 10 uptime monitors, 10 heartbeats, 1 status page, 3 GB logs/month (3 days); errors sent with the Sentry SDK | $0 |
 | Product analytics | Umami Cloud Hobby: 100K events/month, 1 website, 6-month retention | $0 |
 | Transactional email | Resend Free: 3,000 emails/month, 100/day | $0 |
 | **Total now** |  | **≈ $13.38 net (≈ $16.45 gross)** |
@@ -243,9 +243,9 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `FRACTIONAL_OWNERSHIP` | extract stage | `rejected` | none | released |
 | `LISTING_GONE` | 404 or 410, or redirect to search | `failed_input` | none | released |
 | `UPSTREAM_BLOCKED` | 403, 429, captcha or challenge HTML, missing `__NEXT_DATA__` | `failed_upstream` | tenacity: 4 attempts, exponential 2–60 s with jitter, honour `Retry-After`; then trip a 15-minute host circuit breaker | released |
-| `UPSTREAM_SCHEMA_DRIFT` | `_next/data` payload fails Pydantic | `failed_upstream` + Sentry alert | none (needs a code fix) | released |
+| `UPSTREAM_SCHEMA_DRIFT` | `_next/data` payload fails Pydantic | `failed_upstream` + Better Stack alert | none (needs a code fix) | released |
 | `VISION_UNAVAILABLE` | OpenRouter 5xx or timeout after retries | `succeeded_degraded`: CAPEX marked unknown, confidence lowered | 3 attempts | captured |
-| `INTERNAL` | anything else | `failed_internal` + Sentry | Procrastinate retry once | released |
+| `INTERNAL` | anything else | `failed_internal` + Better Stack error | Procrastinate retry once | released |
 | `VALIDATION_ERROR` | request body, query or path fails Pydantic (`extra="forbid"`) | 422, field errors without echoing input | none | never reserved |
 | `NOT_FOUND` | unknown route, or a resource of another tenant (never 403) | 404 | none | never reserved |
 | `HTTP_ERROR` | other transport errors (405, 413, …) | as raised | none | never reserved |
@@ -891,7 +891,7 @@ Flow:
 1. Checkout sessions set `tax_id_collection: {"enabled": true}`. A buyer who enters a NIP is a business; one who does not is a consumer.
 2. On `invoice.paid` (subscription) and on a paid pass, the event handler inserts a `vat_invoice` row (status `pending`) in the same transaction as the payment's effects. That row is the durable work record; a `billing` task drains pending rows right after commit and every minute.
 3. Business buyer: the task creates the invoice in **Fakturownia** through its API (buyer NIP, name and address from the Stripe customer; 100 zł gross at 23% VAT unless your accountant says otherwise). Fakturownia's KSeF integration is free on every plan and can send invoices to KSeF automatically, per [its KSeF page](https://fakturownia.pl/integracja-z-ksef). It does not say whether API-created invoices are sent automatically — test that on a trial account before building on it.
-4. The task polls until Fakturownia reports a KSeF number, stores it, and emails the invoice. Alerts: not created at Fakturownia within 15 minutes, not accepted by KSeF within 2 hours, or any KSeF rejection → immediate Sentry alert. The legal issuing deadline is your accountant's call; these thresholds sit well inside any plausible one.
+4. The task polls until Fakturownia reports a KSeF number, stores it, and emails the invoice. Alerts: not created at Fakturownia within 15 minutes, not accepted by KSeF within 2 hours, or any KSeF rejection → immediate Better Stack alert. The legal issuing deadline is your accountant's call; these thresholds sit well inside any plausible one.
 5. Consumer buyer: a payment confirmation only, plus a "Poproś o fakturę" button on `/billing` that runs the same task on demand.
 6. In the Stripe Dashboard, turn off Stripe's own invoice and receipt emails so customers receive one document set (*inference* that this avoids confusion; check which emails your account sends).
 
@@ -1017,9 +1017,9 @@ WORKER_BATCH_CONCURRENCY=1
 AUDIT_JOB_TIMEOUT_S=900
 
 # --- Observability ---
-SENTRY_DSN=https://xxx@oXXX.ingest.de.sentry.io/XXX
+SENTRY_DSN=https://$APPLICATION_TOKEN@$INGESTING_HOST/$APPLICATION_ID   # Better Stack Errors DSN for the Sentry SDK (ADR 0009)
 SENTRY_TRACES_SAMPLE_RATE=0.05
-SENTRY_CRON_BACKUP_SLUG=nightly-backup
+BETTERSTACK_HEARTBEAT_BACKUP_URL=https://incidents.betterstack.com/api/v1/heartbeat/XXX
 LOG_LEVEL=INFO
 LOG_JSON=true
 VITE_UMAMI_WEBSITE_ID=00000000-0000-0000-0000-000000000000
@@ -1142,7 +1142,7 @@ volumes: { pgdata: {}, caddy_data: {}, caddy_config: {} }
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
         X-Content-Type-Options nosniff
         Referrer-Policy strict-origin-when-cross-origin
-        Content-Security-Policy "default-src 'self'; script-src 'self' https://cloud.umami.is https://accounts.google.com; style-src 'self' https://accounts.google.com/gsi/style; connect-src 'self' https://cloud.umami.is https://*.ingest.de.sentry.io https://accounts.google.com; img-src 'self' data: https:; frame-src https://accounts.google.com https://checkout.stripe.com https://billing.stripe.com"
+        Content-Security-Policy "default-src 'self'; script-src 'self' https://cloud.umami.is https://accounts.google.com; style-src 'self' https://accounts.google.com/gsi/style; connect-src 'self' https://cloud.umami.is <Better Stack ingesting host from SENTRY_DSN> https://accounts.google.com; img-src 'self' data: https:; frame-src https://accounts.google.com https://checkout.stripe.com https://billing.stripe.com"
     }
     @internal path /healthz /readyz
     respond @internal 404
@@ -2067,7 +2067,8 @@ STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 OUT=/tmp/rentmonitor-$STAMP.dump.age
 PREFIX=daily; [ "$(date -u +%u)" = "7" ] && PREFIX=weekly
 
-curl -fsS -m 10 "$SENTRY_CRON_CHECKIN_URL?status=in_progress" >/dev/null || true
+# Better Stack heartbeat (ADR 0009): no start signal; report a failure on any non-zero exit
+trap 'rc=$?; [ "$rc" -eq 0 ] || curl -fsS -m 10 "$BETTERSTACK_HEARTBEAT_BACKUP_URL/fail" >/dev/null || true' EXIT
 
 PGPASSWORD="$POSTGRES_PASSWORD" pg_dump -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
   --format=custom --compress=zstd:6 --no-owner \
@@ -2080,10 +2081,10 @@ rclone copyto "$OUT" "r2:$R2_BUCKET/$PREFIX/$(basename "$OUT")" --s3-no-check-bu
 rclone check --one-way "$OUT" "r2:$R2_BUCKET/$PREFIX/" --include "$(basename "$OUT")"
 rm -f "$OUT"
 
-curl -fsS -m 10 "$SENTRY_CRON_CHECKIN_URL?status=ok" >/dev/null
+curl -fsS -m 10 "$BETTERSTACK_HEARTBEAT_BACKUP_URL" >/dev/null
 ```
 
-Retention is enforced by R2 lifecycle rules, not by the script: expire `daily/` after 14 days and `weekly/` after 56 days. Twenty-two dumps fit the 10 GB free tier while each dump stays under ≈ 450 MB; alert at 300 MB. Add `SENTRY_CRON_CHECKIN_URL` to `.env` from the Sentry cron monitor's HTTP check-in settings; a missed check-in emails you.
+Retention is enforced by R2 lifecycle rules, not by the script: expire `daily/` after 14 days and `weekly/` after 56 days. Twenty-two dumps fit the 10 GB free tier while each dump stays under ≈ 450 MB; alert at 300 MB. Add `BETTERSTACK_HEARTBEAT_BACKUP_URL` to `.env` from the Better Stack heartbeat (Uptime → Heartbeats, period 24 h, grace 1 h); a missed or failed heartbeat emails you.
 
 **Monthly restore drill** (run on your laptop, where the age private key lives):
 
@@ -2120,14 +2121,14 @@ Record the drill's wall-clock time; if it exceeds 30 minutes, the 1-hour RTO is 
 
 | Signal | Mechanism | Threshold → action |
 | --- | --- | --- |
-| Site up | Sentry uptime monitor on `https://app.rentmonitor.pl/api/health` (public, no DB) | 2 failures → email |
-| Nightly backup | Sentry cron monitor via the check-in URLs above | Missed or failed → email |
+| Site up | Better Stack uptime monitor on `https://app.rentmonitor.pl/api/health` (public, no DB) | 2 failures → email |
+| Nightly backup | Better Stack heartbeat via the URL above (`/fail` on error) | Missed or failed → email |
 | Container health | Docker `healthcheck` on postgres and api; `restart: unless-stopped` | Auto-restart; repeated restarts show in `docker events` |
 | Readiness | `/readyz` (internal): `SELECT 1`, Procrastinate reachable | Used by the deploy script before cutting over |
-| Queue | `maintenance` periodic task every 5 min: oldest `todo` job age, `audit` rows stuck in `running` | Oldest > 10 min or stuck > 2 × timeout → Sentry warning |
-| Host | Same task: disk use from `shutil.disk_usage`, Postgres DB size, `numbackends` | Disk > 80%, connections > 50 → Sentry warning |
-| Money | Nightly: ledger vs balance check; OpenRouter month-to-date spend vs `OPENROUTER_MONTHLY_BUDGET_USD` | Any mismatch → Sentry error; spend > 80% → warning, 100% → vision disabled, audits run degraded |
-| OOM | `docker inspect --format '{{.State.OOMKilled}}'` in the same task via the Docker socket proxy, or check `dmesg` weekly | Any OOM kill → Sentry warning with the container name |
+| Queue | `maintenance` periodic task every 5 min: oldest `todo` job age, `audit` rows stuck in `running` | Oldest > 10 min or stuck > 2 × timeout → Better Stack warning (Sentry SDK) |
+| Host | Same task: disk use from `shutil.disk_usage`, Postgres DB size, `numbackends` | Disk > 80%, connections > 50 → Better Stack warning (Sentry SDK) |
+| Money | Nightly: ledger vs balance check; OpenRouter month-to-date spend vs `OPENROUTER_MONTHLY_BUDGET_USD` | Any mismatch → Better Stack error (Sentry SDK); spend > 80% → warning, 100% → vision disabled, audits run degraded |
+| OOM | `docker inspect --format '{{.State.OOMKilled}}'` in the same task via the Docker socket proxy, or check `dmesg` weekly | Any OOM kill → Better Stack warning (Sentry SDK) with the container name |
 
 ### 4.8 Implementation order for the agent
 
@@ -2247,7 +2248,7 @@ Engine limits per audit: at most 25 photos, downscaled to a 1,600 px long edge b
 
 ### Disputes, refunds and invoice idempotency
 
-- `charge.dispute.created` → Sentry alert and email, recorded in a `payment_issue` table. Stripe's BLIK docs give 12 calendar days to submit evidence, so this alert pages, not just logs.
+- `charge.dispute.created` → Better Stack alert and email, recorded in a `payment_issue` table. Stripe's BLIK docs give 12 calendar days to submit evidence, so this alert pages, not just logs.
 - `charge.refunded` on a pass → the pass's `usage_period` ends now. Any refund → a corrective invoice (*faktura korygująca*) through Fakturownia to KSeF; your accountant confirms the exact treatment.
 - Fakturownia retries cannot duplicate. Its API documents an `oid` field and `oid_unique: "yes"`, which refuses a second invoice with the same `oid`. The task sends the Stripe invoice id as `oid`. On a duplicate-oid refusal (an earlier attempt succeeded but its response was lost), the task looks the invoice up instead of creating one. Fakturownia's README says invoices can be searched by `oid` but does not document the filter parameter — confirm it on the trial account.
 
@@ -2298,7 +2299,8 @@ All opened 11 Oct 2026.
 - [Vercel fair use guidelines](https://vercel.com/docs/limits/fair-use-guidelines) — Hobby is non-commercial
 - [Cloudflare Containers pricing](https://developers.cloudflare.com/containers/pricing/)
 - [Cloudflare R2 pricing](https://developers.cloudflare.com/r2/pricing/)
-- [Sentry pricing](https://sentry.io/pricing/)
+- [Better Stack pricing](https://betterstack.com/pricing) (chosen, ADR 0009); [Sentry SDK ingestion](https://betterstack.com/docs/errors/collecting-errors/sentry-sdk/)
+- [Sentry pricing](https://sentry.io/pricing/) (original choice)
 - [Umami pricing](https://umami.is/pricing)
 - [Resend pricing](https://resend.com/pricing)
 - [Stripe pricing, Poland](https://stripe.com/en-pl/pricing)

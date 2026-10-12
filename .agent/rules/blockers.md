@@ -5,7 +5,7 @@ the moment they hit one.
 
 ## When to stop
 Stop work on the affected part, write the blocker, tell the owner, and move to an unblocked ticket (or end the run) when:
-- a tool, service or account is not set up: Sentry, Umami, Stripe (keys, BLIK activation, webhook), Google OAuth, Resend,
+- a tool, service or account is not set up: Better Stack, Umami, Stripe (keys, BLIK activation, webhook), Google OAuth, Resend,
   Cloudflare R2/DNS, Fakturownia, OpenRouter, the VPS, a domain;
 - a required env value is missing or an `.env.example` name cannot be verified (agents may not read `.env*`);
 - a step needs a repo setting, ruleset, secret, token scope, paid plan or `.claude/settings.json` change;

@@ -26,6 +26,15 @@ The two last checklist items map to rules: **Legal / GDPR** (`rules/legal-tags.m
 - Golden `DealAnalysis` snapshots unchanged, or every diff explained under the section it affects.
 - New dependency: name it and say why in the PR body (`agents.md` §4).
 
+## Check locally before you push (saves CI time)
+
+Run the pipeline on your machine first: `make ci-fast` (about a minute: commit messages, lint, types, unit tests) while working,
+and **`make ci` before every push** (everything GitHub runs: lint, types, ty, tests with coverage, invariants and their required
+names, migrations + squawk, semgrep, pip-audit, gitleaks, actionlint + zizmor). `make ci-full` adds the Docker smoke test.
+Fix failures locally; do not push to find out. A stage reported SKIPPED (for example Docker not running) did not run: say so in
+the PR instead of claiming it passed. `make hooks` installs a pre-push hook that runs `make ci-fast` automatically.
+When CI and `make ci` disagree, fix the script (`scripts/ci_local.sh`) in the same PR.
+
 ## Authoring
 
 1. Target `staging`, never `main`. Open as draft until the local checks (`make lint types test`) pass.

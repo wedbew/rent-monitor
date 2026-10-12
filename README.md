@@ -11,7 +11,11 @@ make sync        # uv sync --all-packages --group dev
 make test        # uv run pytest -m "not e2e" -q
 make lint        # ruff check + format check
 make types       # pyright
-make check       # lint + types + test (run before pushing)
+make check       # lint + types + test
+make ci-fast     # the GitHub pipeline locally, fast (commits, lint, types, unit tests; ~1 min)
+make ci          # everything CI runs: tests+coverage, invariants, migrations+squawk, semgrep, audit, gitleaks, actionlint (run before every push)
+make ci-full     # make ci + the Docker smoke test
+make hooks       # install git hooks incl. a pre-push that runs make ci-fast
 cp .env.example .env   # names only; fill values locally, never commit .env
 make up          # the WHOLE app in Docker: Postgres 17, bootstrap (migrations, queue schema, seed), API on :8000, worker
 make smoke       # build, start, check /api/health, /readyz, worker and seed, then stop
@@ -31,7 +35,7 @@ set `POSTGRES_PORT` / `API_PORT` if 5432 / 8000 are taken; values come from `.en
 
 ## Stack
 
-Python ≥ 3.12 (uv workspace), FastAPI, Pydantic v2, structlog. SQLAlchemy 2.0 async + psycopg 3 + Alembic (ADR 0007), Procrastinate 3.x. Planned per blueprint: Stripe (card + BLIK), Caddy, Postgres 17.
+Python ≥ 3.12 (uv workspace), FastAPI, Pydantic v2, structlog. SQLAlchemy 2.0 async + psycopg 3 + Alembic (ADR 0007), Procrastinate 3.x. Planned per blueprint: Stripe (card + BLIK), Caddy, Postgres 17, Better Stack monitoring (errors via the Sentry SDK, uptime, heartbeats; ADR 0009).
 
 ## Status
 
@@ -46,7 +50,7 @@ Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton (RM
 | [`CONTEXT.md`](CONTEXT.md) | Orientation and POC porting map |
 | [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) | Known limits register |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
-| [`docs/adr/`](docs/adr) | Architecture decision records (0001 greenfield … 0007 pins) |
+| [`docs/adr/`](docs/adr) | Architecture decision records (0001 greenfield … 0009 Better Stack) |
 | [`docs/ENGINE-SPEC.md`](docs/ENGINE-SPEC.md) | Engine rules, approved with amendments (B-007 resolved) |
 | [`docs/RUNBOOK-GDPR.md`](docs/RUNBOOK-GDPR.md) | Retention, erasure, export, restore re-erasure |
 | [`docs/BLOCKERS.md`](docs/BLOCKERS.md) | Owner-only blockers agents stop on |
