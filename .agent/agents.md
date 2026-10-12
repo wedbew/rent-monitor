@@ -53,6 +53,9 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
 
 ## 4. Security boundaries
 - Never read, print, commit or paste real values from `.env`. `.env.example` is readable and kept current by agents.
+- Never read OAuth client secrets (`client_secret*.json`, gitignored), `.env`, keys or CLI credential files. Stripe CLI: **test mode only**,
+  never `--live`. OVH CLI: ask before any command that buys, renews, resizes, reinstalls or deletes. Never `git add -A` over an
+  untracked file you did not create; add files by name.
 - Never run anything against production (VPS, live Stripe, production DB). Database tools point at the local
   Compose Postgres or Testcontainers. Stripe tools use the sandbox only.
 - Tenant isolation: every tenant-owned query goes through a repository that takes a `Principal`. Foreign

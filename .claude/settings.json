@@ -8,6 +8,10 @@
       "Read(./.env.staging)",
       "Read(./.env.test)",
       "Read(./**/*.key)",
+      "Read(./**/client_secret*.json)",
+      "Read(./**/*.apps.googleusercontent.com.json)",
+      "Read(./**/service-account*.json)",
+      "Bash(stripe*--live*)",
       "Bash(git push --force*)",
       "Bash(git push origin main*)",
       "Bash(git push origin staging*)",
@@ -21,7 +25,8 @@
       "Edit(./migrations/**)",
       "Write(./migrations/**)",
       "Edit(./.github/workflows/**)",
-      "Edit(./.agent/agents.md)"
+      "Edit(./.agent/agents.md)",
+      "Bash(ovh*)"
     ]
   },
   "hooks": {
