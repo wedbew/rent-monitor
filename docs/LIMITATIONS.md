@@ -86,7 +86,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Target:** before launch (PRE-DEPLOYMENT §4 DPA, §6 monitoring); B-001
 
 ### L-010 — Umami events go to a host the blueprint CSP does not allow
-- **Status:** active
+- **Status:** deferred (decided: allow `https://gateway.umami.is` in `connect-src`, owner 2026-10-12; applied with the Caddy config when the frontend exists)
 - **Discovered:** 2026-10-12
 - **Affects:** blueprint Caddy `Content-Security-Policy` (`connect-src`), the SPA analytics loader (Phase 2), B-002
 - **Evidence:** confirmed (the script served at `https://cloud.umami.is/script.js` on 2026-10-12 posts to `https://gateway.umami.is/api/send`; the blueprint `connect-src` lists only `https://cloud.umami.is`); whether the script host ever changes is unverified
