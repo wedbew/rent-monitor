@@ -72,6 +72,7 @@ tmp/
 # --- Owner-only infrastructure notes (hostnames, prices, renewals); public repo ---
 /docs/INFRASTRUCTURE.md
 /deploy/README.md
+/docs/STRIPE-INTEGRATION.md
 
 # --- OAuth client secrets and CLI credentials: never commit (the repo is public) ---
 client_secret*.json
