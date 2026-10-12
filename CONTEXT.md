@@ -178,7 +178,7 @@ Roadmap milestones, issue dependencies, gates and owner deadlines are in `docs/R
 not permission to copy POC or GUS-PoC artifacts.
 
 **Design exploration (12 Oct 2026, maintainer request):** `design/` contains proposed UX principles, a documentation-state review,
-and responsive interactive home, analyses-list and separate city-context prototypes with fictional fixtures. `design/v1/` holds the warm editorial direction; `design/v2/` adds a monochrome architectural alternative with new tokens and restrained motion. Neither is selected for production. This is a Phase 2 design artifact, not a production SPA;
+and responsive interactive home, analyses-list and separate city-context prototypes with fictional fixtures. `design/v1/` holds the warm editorial direction; `design/v2/` adds a monochrome architectural alternative with new tokens, restrained motion, and a dedicated analysis-page scaffold/UX contract (full analytic rendering deferred). Neither is selected for production. This is a Phase 2 design artifact, not a production SPA;
 `frontend/` and backend contracts are unchanged.
 
 ## 9. Open decisions (owner: you)

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>RentMonitor — Rynek w Twoim mieście</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="main-view.css">
+  <script src="motion.js" defer></script>
+  <script src="market.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Przejdź do treści</a>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z M9 20v-7h6v7"/></symbol>
+    <symbol id="i-files" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6Z M15 3v5h4 M9 12h7 M9 16h5"/></symbol>
+    <symbol id="i-market" viewBox="0 0 24 24"><path d="M3 20h18 M5 16v-5 M11 16V7 M17 16V3"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15 M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="m9 15 6-6 M7 14l-2 2a4 4 0 0 0 5 5l4-4 M10 7l4-4a4 4 0 0 1 5 5l-2 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m12 3 10 18H2Z M12 9v5 M12 17v1"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5 M12 17v1"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12 M6 18 18 6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10v7 M12 6v1"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Nawigacja aplikacji">
+      <a class="brand" href="main-view.html" aria-label="RentMonitor — pulpit">RENT<span>MONITOR</span><i aria-hidden="true"></i></a>
+      <p class="nav-caption">TWOJA PRZESTRZEŃ</p>
+      <nav class="primary-nav" aria-label="Nawigacja aplikacji"><a class="nav-item" href="main-view.html"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg><span>Pulpit</span></a><a class="nav-item" href="analyses.html"><svg class="icon" aria-hidden="true"><use href="#i-files"/></svg><span>Moje analizy</span></a><a class="nav-item active" href="market.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-market"/></svg><span>Rynek</span></a></nav>
+      <div class="sidebar-bottom"><button class="nav-item" data-action="help"><svg class="icon" aria-hidden="true"><use href="#i-help"/></svg><span>Jak to działa?</span></button><button class="account-button" data-action="account" aria-label="Moje konto"><span class="account-avatar">AK</span><span class="account-details"><strong>Anna Kowalska</strong><span id="credit-label">2 analizy do wykorzystania</span></span></button></div>
+    </aside>
+    <div class="workspace">
+      <header class="context-bar"><span>Rynek</span><span class="context-caption">Twoja przestrzeń do dobrych decyzji</span></header>
+      <header class="mobile-header"><a class="brand" href="main-view.html" aria-label="RentMonitor — pulpit">RENT<span>MONITOR</span><i aria-hidden="true"></i></a><button id="navigation-toggle" class="secondary" aria-label="Otwórz menu nawigacji" aria-haspopup="dialog">Menu</button></header>
+      <main id="main" class="market-page">
+        <a class="text-link" href="main-view.html">← Wróć do pulpitu</a>
+        <div class="greeting"><div><p class="eyebrow">LOKALNY RYNEK</p><h1>Najpierw poznaj okolicę.</h1></div></div>
+        <p class="market-lead">Zobacz poziom najmu w wybranym mieście.<br>To dobry punkt wyjścia do oceny konkretnego mieszkania.</p>
+        <section class="city-picker" aria-label="Wybór lokalnego rynku">
+          <label class="input-label" for="city-select">Wybierz miasto</label>
+          <select id="city-select"><option value="poznan">Poznań</option><option value="warszawa">Warszawa</option><option value="wroclaw">Wrocław</option></select>
+          <p>Przykładowy zakres: 2 pokoje · 35–50 m²</p>
+        </section>
+        <section id="city-content" class="market-content" aria-live="polite" aria-label="Podsumowanie rynku"></section>
+        <section class="market-next"><h2>Masz już konkretne mieszkanie?</h2><p>Miasto daje kontekst. Link do ogłoszenia pozwala przyjrzeć się tej jednej ofercie.</p><a class="primary" href="main-view.html#analysis-form">Sprawdź mieszkanie<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a></section>
+        <footer class="product-footer"><span>Każda dobra decyzja zaczyna się od zrozumienia.</span><button class="text-link" data-action="help">Potrzebujesz wskazówki?</button></footer>
+      </main>
+      <div class="preview-bar"><span><b>Projekt V2</b> · Dane przykładowe, bez połączenia z usługą</span><span>Widok rynku · projekt wstępny</span></div>
+    </div>
+  </div>
+
+  <dialog id="navigation-dialog" class="drawer navigation-drawer" aria-labelledby="navigation-title"><div class="overlay-heading"><h2 id="navigation-title">Nawigacja</h2><button class="icon-button" data-close aria-label="Zamknij nawigację"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button></div><nav class="primary-nav" aria-label="Nawigacja mobilna"><a class="nav-item" href="main-view.html"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg><span>Pulpit</span></a><a class="nav-item" href="analyses.html"><svg class="icon" aria-hidden="true"><use href="#i-files"/></svg><span>Moje analizy</span></a><a class="nav-item active" href="market.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-market"/></svg><span>Rynek</span></a></nav></dialog>
+  <dialog id="general-dialog" class="modal" aria-labelledby="modal-title"><div class="overlay-heading"><span class="overline" id="modal-eyebrow"></span><button class="icon-button" data-close aria-label="Zamknij okno"><svg class="icon"><use href="#i-close"/></svg></button></div><div id="modal-content"></div></dialog>
+  <div class="sr-only" id="announcement" role="status" aria-live="polite"></div>
+<a class="version-link" href="../v1/market.html">Porównaj z V1 ↗</a>
+</body>
+</html>
