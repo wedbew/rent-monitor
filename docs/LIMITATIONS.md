@@ -94,6 +94,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none needed in Phase 1 (no frontend). Options: allow `https://gateway.umami.is` in `connect-src`, or proxy events through our own domain.
 - **Target:** #143 (`docs/ANALYTICS-SPEC.md` section 2 lays out both options); decide before the Caddy config (#15) and N-30 (#72)
 
+### L-014 — RPO 5 minutes and RTO 1 hour are targets, never measured
+- **Status:** active
+- **Discovered:** 2026-10-12
+- **Affects:** backups (WAL-G to R2, nightly dump), release gate 6 (#37), the privacy notice, PRE-DEPLOYMENT section 6
+- **Evidence:** estimate (blueprint §4.7 calls them "targets, unverified until the first timed point-in-time restore" and says WAL-G was not tested against R2; only a 55-byte upload and read-back to R2 is confirmed, B-005c)
+- **Description:** No WAL-G archive, base backup, lifecycle rule or restore has run against R2. Every statement of RPO or RTO is a target.
+- **Workaround:** none; say "target" wherever it is stated. The local logical drill (`scripts/backup_drill.sh`) covers only the dump path.
+- **Target:** gate 6 (#37), `docs/R2-SPEC.md` section 5; #15
+
 ## Resolved
 
 ### L-013 — Error events may carry stack-frame variables and unscrubbed free text
