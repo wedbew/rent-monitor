@@ -76,6 +76,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** Cache 90 days (geocoding) and 30 days (POIs); degrade to "no distances" on any failure. Self-hosting Nominatim/Overpass is the path for scale.
 - **Target:** frontend attribution (Phase 2); revisit before the batch lane (RM-16)
 
+### L-009 — Better Stack: free-tier limits and data region not verified for launch
+- **Status:** active
+- **Discovered:** 2026-10-12
+- **Affects:** `rm_core.observability` (error events and traces), uptime monitor, backup heartbeat; processor list
+- **Evidence:** confirmed (betterstack.com/pricing and the Sentry SDK ingestion docs, read 2026-10-12); data region unverified
+- **Description:** Monitoring moved from Sentry to Better Stack (ADR 0009). The free tier read on 2026-10-12 is 100k exceptions/month (90-day retention), 10 uptime monitors, 10 heartbeats, 3 GB logs/month (3-day retention). The docs do not say where error data is stored, so EU residency for scrubbed events is unconfirmed. Heartbeats have no "in progress" signal, so a backup that hangs is only caught when the 24 h heartbeat is missed.
+- **Workaround:** PII is scrubbed before sending (`scrub_event`); traces sampled at 5 %.
+- **Target:** before launch (PRE-DEPLOYMENT §4 DPA, §6 monitoring); B-001
+
 ## Resolved
 
 _None yet._

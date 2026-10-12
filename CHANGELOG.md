@@ -26,6 +26,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 - Workspace skeleton: `rm-core` (settings, `LegalTag` registry), `rm-contracts` (problem codes), `rm-api` (`GET /api/health`), `rm-worker` (empty), `.env.example` (RM-2)
 
 ### Changed
+- Monitoring moves from Sentry to **Better Stack** (ADR 0009): errors still go through the Sentry SDK, so `SENTRY_DSN` now takes the Better Stack Errors DSN; uptime and the backup heartbeat use Better Stack; `SENTRY_CRON_BACKUP_SLUG` and `SENTRY_CRON_CHECKIN_URL` are replaced by `BETTERSTACK_HEARTBEAT_BACKUP_URL`; **operator action:** create the Better Stack application, uptime monitor and heartbeat (B-001) (RM-112)
 - CI: semgrep `no-float-money` no longer flags every `float` annotation (timeouts, sample rates); it now catches money-named floats in annotations, parameters, `Mapped[float]` and `float(...)` calls, also covers `apps/`, and its rule tests run in the `security` workflow (RM-55)
 - Flat package layout: `packages/rm_core`, `packages/rm_contracts`, `services/rm_api`, `services/rm_worker` (folder = module, no `src/`, ADR 0008); no import or API change; run `uv sync --all-packages --group dev` again (RM-61, RM-63)
 - Engines are written from scratch; the POC is reference only (ADR 0001) (RM-2)

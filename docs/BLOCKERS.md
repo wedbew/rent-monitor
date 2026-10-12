@@ -22,7 +22,7 @@ Dependent tickets wait for these merges: auth (#12) builds on the ledger, audits
 
 | ID | What | Why deferred | Revisit when |
 |---|---|---|---|
-| B-001 | Sentry project and DSN (org `mb-web-dev`) | Code is ready and Sentry stays off while `SENTRY_DSN` is empty; owner connects it later. Agents keep issues tracked here | before launch; steps: create project `rentmonitor-api`, set `SENTRY_DSN`, cron + uptime monitors |
+| B-001 | Better Stack account and DSN (replaces Sentry, ADR 0009) | Code is ready (Sentry SDK) and error tracking stays off while `SENTRY_DSN` is empty; owner connects it later | before launch; steps: Better Stack → Errors → create application `rentmonitor-api` (platform Python) → copy the Sentry-SDK DSN into `SENTRY_DSN`; Uptime → monitor on `/api/health`; Heartbeats → 24 h heartbeat → `BETTERSTACK_HEARTBEAT_BACKUP_URL` |
 | B-002 | Umami analytics | Frontend only, and no domain yet | Phase 2 frontend |
 | B-003 | Stripe sandbox keys, webhook, BLIK activation (#39) | Implemented after the API endpoints work, together with Google auth | billing step (#14); request BLIK activation early, it has lead time |
 | B-004 | Google OAuth client id, Resend key and sending domain | Owner decision: set up at the very end, after everything works locally. Resend needs the domain (B-005); Google OAuth needs the final origins. Until then auth is built and tested with fakes and the magic link is logged in dev | Final step before deployment preparation, together with the domain |

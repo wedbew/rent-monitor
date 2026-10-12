@@ -35,7 +35,7 @@ Assume real, hostile, concurrent traffic from day one. A feature is not done unt
 - **Concurrency:** every state change is idempotent and race-safe (unique keys, `SELECT … FOR UPDATE`, advisory locks); each has a concurrency test, not only a happy path.
 - **Failure:** all failure modes map to a terminal state and a defined credit outcome (blueprint §2); crashes, OOM, deploy restarts and duplicate deliveries leave consistent data; graceful shutdown.
 - **Security:** authn/authz on every route, tenant-scoped repositories (404 not 403), CSRF/Origin checks, signature checks before parsing, no secrets or personal data in logs, least-privilege DB roles, dependency pinning, SSRF-safe URL handling for user-supplied refs.
-- **Operability:** structured logs with ids, metrics/health/readiness, Sentry on unexpected errors, config only via typed settings, migrations expand→contract and reversible in practice, runbook entry for anything an operator must do.
+- **Operability:** structured logs with ids, metrics/health/readiness, error tracking on unexpected errors (Better Stack via the Sentry SDK, ADR 0009), config only via typed settings, migrations expand→contract and reversible in practice, runbook entry for anything an operator must do.
 - **Quality gates:** typed (pyright strict for `packages/` and `services/`), tests offline and deterministic, coverage floor, named invariant tests, semgrep/ruff/gitleaks green.
 - **Legal/GDPR:** tagged per `rules/legal-tags.md` while you write it, not afterwards.
 

@@ -133,7 +133,7 @@ Ticket-level order and priority: §9.1.
 ### M9 — Closed beta on production (free, invite-only)
 - **Issues:** N-32, #35 (gate 4). **Entry:** M5, M7 and N-25/N-26 green; D-11 (beta size, cities).
 - **Exit:** ≥ 2 weeks of per-audit tokens/USD → allowance proposal (L-003 resolved or superseded); gate 4 memory evidence; N-11
-  accuracy report accepted by owner; no `UPSTREAM_SCHEMA_DRIFT` unresolved; Sentry error budget agreed.
+  accuracy report accepted by owner; no `UPSTREAM_SCHEMA_DRIFT` unresolved; Better Stack error budget agreed.
 
 ### M10 — Radar and screener, lane C (may follow launch if D-12 narrows scope)
 - **Issues:** #16 → #21. **Exit:** 727-city ranking with withheld partial cohorts (#48), screener approval queue behind `screener`
@@ -263,7 +263,7 @@ of the most urgent ticket that needs it).
 | 7 | W0 | D-06 | Frontend greenfield vs keep SPA | P0 | M0 | owner | owner | — |
 | 8 | W0 | D-04 | Free tier and initial allowance | P0 | M0 | owner | owner | — |
 | 9 | W0 | D-11 | Beta size, cities, duration | P0 | M0 | owner | owner | — |
-| 10 | W0 | #40 | Owner accounts (OAuth, Resend, Sentry, R2, DNS, Stripe Agent keys) | P1 | M0 | owner | owner | — |
+| 10 | W0 | #40 | Owner accounts (OAuth, Resend, Better Stack, R2, DNS, Stripe Agent keys) | P1 | M0 | owner | owner | — |
 | 11 | W0 | D-05 | Reuse gus-stats-poc BDL observations | P1 | M0 | owner | owner | — |
 | 12 | W0 | D-07 | Analyst / seller-questions / redesign scope | P1 | M0 | owner | owner | — |
 | 13 | W0 | D-08 | Deed data at launch (BDL / Cenogram) | P2 | M0 | owner | owner | — |
@@ -274,7 +274,7 @@ of the most urgent ticket that needs it).
 | 18 | W1 | N-01 | Listing model and extraction | P0 | M1 | A | agent+review | #43 |
 | 19 | W1 | #31 | ADRs incl. pins and D-10 | P2 | M0 | B | agent | D-02, D-10 |
 | 20 | W2 | #19 | Ledger, entitlements, flags | P0 | M2 | B | agent+review | #11 |
-| 21 | W2 | #18 | structlog, Sentry, Problem, health | P0 | M2 | B | agent | #11 |
+| 21 | W2 | #18 | structlog, Sentry SDK, Problem, health | P0 | M2 | B | agent | #11 |
 | 22 | W2 | N-02 | Ownership and VAT classifier | P0 | M1 | A | agent+review | N-01 |
 | 23 | W2 | N-03 | Geocoding and distances | P0 | M1 | A | agent | N-01, #11 |
 | 24 | W2 | N-04 | Rent anchors and hedonic model | P0 | M1 | A | agent+review | N-01 |

@@ -31,7 +31,7 @@ set `POSTGRES_PORT` / `API_PORT` if 5432 / 8000 are taken; values come from `.en
 
 ## Stack
 
-Python ≥ 3.12 (uv workspace), FastAPI, Pydantic v2, structlog. SQLAlchemy 2.0 async + psycopg 3 + Alembic (ADR 0007), Procrastinate 3.x. Planned per blueprint: Stripe (card + BLIK), Caddy, Postgres 17.
+Python ≥ 3.12 (uv workspace), FastAPI, Pydantic v2, structlog. SQLAlchemy 2.0 async + psycopg 3 + Alembic (ADR 0007), Procrastinate 3.x. Planned per blueprint: Stripe (card + BLIK), Caddy, Postgres 17, Better Stack monitoring (errors via the Sentry SDK, uptime, heartbeats; ADR 0009).
 
 ## Status
 
@@ -46,7 +46,7 @@ Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton (RM
 | [`CONTEXT.md`](CONTEXT.md) | Orientation and POC porting map |
 | [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) | Known limits register |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
-| [`docs/adr/`](docs/adr) | Architecture decision records (0001 greenfield … 0007 pins) |
+| [`docs/adr/`](docs/adr) | Architecture decision records (0001 greenfield … 0009 Better Stack) |
 | [`docs/ENGINE-SPEC.md`](docs/ENGINE-SPEC.md) | Engine rules, approved with amendments (B-007 resolved) |
 | [`docs/RUNBOOK-GDPR.md`](docs/RUNBOOK-GDPR.md) | Retention, erasure, export, restore re-erasure |
 | [`docs/BLOCKERS.md`](docs/BLOCKERS.md) | Owner-only blockers agents stop on |

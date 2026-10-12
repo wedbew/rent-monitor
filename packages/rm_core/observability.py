@@ -1,4 +1,7 @@
-"""Sentry initialisation. Off without a DSN; sends no personal data (scrubbed)."""
+"""Error tracking via the Sentry SDK, sent to Better Stack (ADR 0009).
+
+Off without a DSN; sends no personal data (scrubbed).
+"""
 
 from decimal import Decimal
 from typing import Any, cast
@@ -41,6 +44,7 @@ def _before_send(event: Event, _hint: Hint) -> Event | None:
     return cast("Event", scrub_event(cast("dict[str, Any]", event)))
 
 
+# GDPR[processor]: scrubbed error events and traces go to Better Stack via the Sentry SDK (ADR 0009)
 def init_sentry(settings: Settings) -> bool:
     if not settings.sentry_dsn:
         return False

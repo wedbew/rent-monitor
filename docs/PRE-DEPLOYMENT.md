@@ -42,7 +42,7 @@ blueprint §6; risks are blueprint §5; limits are `docs/LIMITATIONS.md`.
 ## 4. Legal, GDPR and tax (owner)
 - [ ] **Polish legal review of Otodom scraping and image analysis done** (L-001); decision recorded; kill-switch flags for `LEGAL[...]` features tested off and on.
 - [ ] `grep` inventory of `LEGAL[` / `GDPR[` tags reviewed with counsel; nothing uncertain is missing from `docs/LIMITATIONS.md`.
-- [ ] Privacy policy, terms, cookie/analytics notice (Umami), processor list (Google, Stripe, Resend, Fakturownia, OpenRouter, Sentry, OVH, Cloudflare), DPAs signed.
+- [ ] Privacy policy, terms, cookie/analytics notice (Umami), processor list (Google, Stripe, Resend, Fakturownia, OpenRouter, Better Stack, OVH, Cloudflare), DPAs signed; Better Stack data region checked (ADR 0009).
 - [ ] Retention jobs live and tested (sessions, login tokens, snapshots, `audit_event`, backups 14 d / 56 d); account deletion and data export work; backup-restore re-deletion procedure written.
 - [ ] VAT price presentation (net/gross) decided; accountant confirmed B2C/B2B treatment and KSeF timing (penalties from 2027-01-01).
 - [ ] Google OAuth consent screen moved from Testing to **In production**.
@@ -60,7 +60,7 @@ blueprint §6; risks are blueprint §5; limits are `docs/LIMITATIONS.md`.
 - [ ] Compose limits match the resource matrix; `memswap_limit` and `oom_score_adj` set; healthchecks green; restart policies verified by killing containers.
 - [ ] Images built in CI, tagged by SHA, scanned; deploy is `IMAGE_TAG=<sha> docker compose up -d` after a one-off migration.
 - [ ] Backups: nightly `pg_dump` and WAL-G to R2 running and encrypted, R2 lifecycle (14 d / 56 d) set, `age` private key offline, restore drill done and timed.
-- [ ] Monitoring: Sentry errors, uptime (`/api/health`) and cron check-in; queue, disk, connection, OOM and ledger-vs-balance alerts each verified by triggering once.
+- [ ] Monitoring (Better Stack, ADR 0009): errors via the Sentry SDK, uptime monitor on `/api/health`, backup heartbeat; queue, disk, connection, OOM and ledger-vs-balance alerts each verified by triggering once.
 - [ ] DNS and TLS on Cloudflare/Caddy; domain plus SPF/DKIM/DMARC for the Resend sending domain verified.
 - [ ] Runbook: deploy, rollback, restore, rotate secrets, disable a legal-tagged feature, handle a Stripe dispute (12-day evidence window).
 - [ ] Every `active` item in `docs/LIMITATIONS.md` is mitigated, accepted by the owner, or blocking.
