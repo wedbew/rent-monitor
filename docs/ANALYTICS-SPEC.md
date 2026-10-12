@@ -16,17 +16,17 @@ never written into a committed file, only the env name.
 - `data-exclude-search="true"` **and** `data-exclude-hash="true"` (*verified* attributes): see section 3, the magic-link token sits in the URL fragment and must never reach analytics.
 - No analytics script on the API or in any Phase 1 service.
 
-## 2. CSP and Caddy (decision needed, L-010)
+## 2. CSP and Caddy (decided: option 1, L-010)
 
 The script is loaded from `cloud.umami.is` but posts events to **`https://gateway.umami.is/api/send`** (*verified*).
 The blueprint CSP allows only `https://cloud.umami.is` in `connect-src`, so the browser would block every event.
 
 | Option | `connect-src` | Cost |
 |---|---|---|
-| 1. Allow the gateway (**recommended for launch**) | `'self' https://cloud.umami.is https://gateway.umami.is ...` | one more third-party host in the policy |
+| 1. Allow the gateway (**decided by the owner, 2026-10-12**) | `'self' https://cloud.umami.is https://gateway.umami.is ...` | one more third-party host in the policy |
 | 2. Proxy through our domain | `'self' ...` unchanged; a Caddy path forwards `/api/send` (set `data-host-url`, *verified* attribute) | one more route to maintain; survives most ad blockers |
 
-Until the maintainer chooses, neither the blueprint nor the Caddy config changes. The Caddy smoke test (#15) should
+The owner chose option 1. It is applied to the blueprint and the Caddy config together with the frontend (Phase 2); nothing changes now. The Caddy smoke test (#15) should
 assert that the served CSP contains the host of the chosen option.
 
 ## 3. Events
