@@ -58,6 +58,7 @@ Phase 1 (backend only). Blueprint §4.8 steps done: none. Workspace skeleton (RM
 | [`docs/R2-SPEC.md`](docs/R2-SPEC.md) | R2 buckets, tokens, WAL-G, restore drill, alerts (spec) |
 | [`docs/STRIPE-SPEC.md`](docs/STRIPE-SPEC.md) | Stripe catalog, Checkout, webhook contract, sandbox runbook, tests (spec) |
 | [`docs/RESEND-SPEC.md`](docs/RESEND-SPEC.md) | Transactional email: wiring, catalog, bounces, domain checklist (spec) |
+| [`docs/openapi.json`](docs/openapi.json) | Generated OpenAPI schema (`scripts/gen_openapi.py`); a test fails if it drifts from the app |
 | [`docs/RUNBOOK-GDPR.md`](docs/RUNBOOK-GDPR.md) | Retention, erasure, export, restore re-erasure |
 | [`design/`](design/README.md) | Phase 2 design direction: interactive prototype, principles, spec (#44 input) |
 | [`docs/BLOCKERS.md`](docs/BLOCKERS.md) | Owner-only blockers agents stop on |
