@@ -1,6 +1,6 @@
 # Google sign-in and session specification (RM-12, closes #130)
 
-Status: implemented in RM-12 and **awaiting owner review** (auth is a human-review area, `rules/pull-requests.md`).
+Status: implemented in RM-12; owner approved the merge on 2026-10-12 and decided D-13 (ADR 0010).
 Spec of record is blueprint §2 *Auth decision*; this file records what was built from it, where it differs, and the
 decisions only the owner can make. Confirmed = covered by a named test in `tests/`; inferred = reasoning, not yet
 exercised against live Google.
@@ -33,17 +33,20 @@ is served if a refresh fails. One fetch for any number of concurrent callers.
 
 - A Google user is keyed by `(provider='google', subject=sub)`, **never by email**. A returning `sub` whose email changed
   is still the same user.
-- A first Google sign-in with a verified email joins the existing user with that address (one user, two identities) or
-  creates one. An unverified email never links and never creates.
+- A first Google sign-in joins the existing user with that address, or creates one, **only when Google is authoritative for the
+  address** (D-13, ADR 0010): it ends in `@gmail.com`, or the token's `hd` claim equals the address's own domain (a Workspace
+  account). Any other address, even with `email_verified` true, is answered 401 `EMAIL_CONFIRMATION_REQUIRED`; nothing is
+  created or linked, and the SPA offers the magic link. An unverified email never links and never creates.
+- A returning `sub` is always let in, so a user linked while Google was authoritative is never locked out.
+- `googlemail.com` and other aliases are not treated as `@gmail.com`; matching is exact and case-insensitive.
 - Creation and linking are single atomic statements, so eight concurrent first sign-ins make one user, one identity and
   one credit grant.
 - The avatar URL is stored only if it is `https` and ≤ 500 characters.
 
-**Owner decision needed (D-13, not blocking):** a second Google `sub` that carries the same verified email also joins
-that user (blueprint behaviour, covered by tests). For addresses on non-Gmail domains, Google's guarantee about the
-address is weaker than for `@gmail.com`. Options: (a) keep the blueprint behaviour; (b) auto-link only when the token
-has no `hd` claim or the address is `@gmail.com`, otherwise require a magic-link confirmation first. Recommendation: (a)
-for launch, revisit if abuse appears. Not implemented as (b) because it changes the blueprint.
+**Why (D-13):** Google documents that it can vouch for an address only for `@gmail.com` and Workspace accounts. For other
+addresses `email_verified` does not prove control of the mailbox's domain, so linking on it would let someone who controls a
+Google account registered with a domain they own, or one the real owner lost, take over an account that holds credits and a
+subscription. The first draft of this section had the `hd` condition backwards.
 
 ## 4. Sessions (confirmed: `tests/integration/test_auth.py`)
 
@@ -85,6 +88,7 @@ once per user, across Google and email identities (idempotency key `signup:<user
 | Blueprint | Built | Why |
 |---|---|---|
 | `google.oauth2.id_token` over `requests` | `google.auth.jwt.decode` with certificates fetched by `httpx` | `requests` is banned in `services/` (CONTEXT G4) and blocks the event loop; also lets tests inject keys with no network |
+| Link a verified Google email to an existing user | link only when Google is authoritative for the address (ADR 0010) | Google documents that it vouches only for `@gmail.com` and Workspace (`hd`) addresses |
 | Rate-limit key `ml:email:<address>` | SHA-256 of `<scope>:<subject>` | the table would otherwise hold addresses and IPs; rows purged after one day |
 | Pool opened at API startup | Job queue opens on first use | startup must not hang when Postgres is down (`/readyz` reports it) |
 | Cookie name `__Host-rm_session` everywhere | prefix in production only | `__Host-` requires HTTPS; local development is plain http |
@@ -105,5 +109,5 @@ Register: L-011 (token in job arguments), L-012 (client IP behind the proxy).
 1. Google Cloud console: authorised JavaScript origins for the real domain and `http://localhost`; consent screen to
    "In production" one week before launch (blueprint §5). Details are in the owner's local handoff notes.
 2. A Resend key and a verified sending domain for real delivery (B-004, B-005); until then production refuses to send.
-3. Decide D-13 above.
+3. D-13 is decided (ADR 0010).
 4. Deploy: make uvicorn trust the proxy (L-012) before relying on the per-IP limit.

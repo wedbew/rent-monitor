@@ -55,6 +55,23 @@ class GoogleClaims(BaseModel):
     email_verified: bool
     name: str | None = Field(default=None, max_length=200)
     picture: str | None = Field(default=None, max_length=500)
+    hd: str | None = Field(default=None, max_length=255)  # hosted domain: set for Google Workspace accounts
+
+    @property
+    def authoritative(self) -> bool:
+        """Whether Google can vouch for ownership of this address (docs/adr/0010, owner decision D-13).
+
+        Google says it is authoritative only for `@gmail.com` addresses and for Workspace accounts (`hd`
+        claim). For any other
+        address `email_verified` does not prove the holder controls the mailbox's domain, so it must not
+        link to or create an
+        account. An `hd` that differs from the address's own domain is not trusted.
+        """
+        address = self.email.strip().lower()
+        domain = address.rpartition("@")[2]
+        if domain == "gmail.com":
+            return True
+        return self.hd is not None and self.hd.strip().lower() == domain
 
 
 class CertSource(Protocol):

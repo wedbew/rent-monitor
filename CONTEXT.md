@@ -195,7 +195,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 - [ ] Pro allowance (40 is a placeholder until COGS is measured); free-tier scope
 - [x] SQLAlchemy 2.0 and Stripe SDK pin at #14: ADR 0007 accepted (D-02)
 - [ ] Gemini and Claude auth in Actions; GitHub plan for private-repo rulesets
-- [ ] D-13 Google linking policy for non-Gmail addresses (`docs/GOOGLE-AUTH-SPEC.md` §3)
+- [x] D-13 Google links or creates accounts only for `@gmail.com` or a matching `hd`; others confirm by magic link (ADR 0010, RM-12)
 - [ ] Polish legal review of Otodom scraping before charging (blueprint §5, not legal advice)
 - [x] D-14 R2 backups in the EU jurisdiction (fixed at creation), `rentmonitor-backups`, WAL-G retention 14 days: decided (ADR 0011, RM-171)
 

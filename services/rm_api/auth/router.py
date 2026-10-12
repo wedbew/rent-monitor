@@ -13,7 +13,7 @@ from rm_core.ledger import ensure_credit_account
 from rm_core.ratelimit import hit
 from sqlalchemy import func, select, update
 
-from rm_api.auth.accounts import user_for_email, user_for_google
+from rm_api.auth.accounts import EmailConfirmationRequired, user_for_email, user_for_google
 from rm_api.auth.google import (
     GoogleEmailUnverified,
     GoogleUnavailable,
@@ -72,9 +72,20 @@ async def google_sign_in(
         ) from None
     except GoogleUnavailable:
         raise Problem(503, ProblemCode.NOT_READY, "Google sign-in is temporarily unavailable") from None
-    user = await user_for_google(
-        db, sub=claims.sub, email=claims.email, name=claims.name, picture=claims.picture
-    )
+    try:
+        user = await user_for_google(
+            db,
+            sub=claims.sub,
+            email=claims.email,
+            name=claims.name,
+            picture=claims.picture,
+            authoritative=claims.authoritative,
+        )
+    except EmailConfirmationRequired:
+        # D-13: Google cannot vouch for this address: nothing is created or linked; the SPA offers a link.
+        raise Problem.unauthorized(
+            ProblemCode.EMAIL_CONFIRMATION_REQUIRED, "Confirm this email address with a sign-in link first"
+        ) from None
     token = await create_session(
         db, user.id, user_agent=request.headers.get("user-agent"), ip=_ip(request), settings=settings
     )

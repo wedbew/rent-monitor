@@ -65,7 +65,7 @@ async def wait_until(check: Callable[[], Awaitable[bool]], within: float) -> flo
 
 
 def unique_email() -> str:
-    return f"user-{uuid4().hex[:12]}@example.test"
+    return f"user-{uuid4().hex[:12]}@gmail.com"  # Google is authoritative for gmail.com (D-13)
 
 
 def unique_ip() -> str:
@@ -770,3 +770,126 @@ async def test_the_email_queue_defers_a_job_by_task_name(
     assert row.task_name == "rm_worker.tasks.email.send_magic_link"
     assert row.queue_name == "ops"
     assert row.args["url"].endswith("#t=abc")
+
+
+# ---------- D-13: Google must be authoritative for the address (ADR 0010) ----------
+def other_domain_email() -> str:
+    return f"user-{uuid4().hex[:12]}@company.example"
+
+
+async def count_all(engine: AsyncEngine, email: str) -> tuple[int, int, int | None]:
+    async with engine.connect() as conn:
+        sessions = await conn.scalar(
+            text(
+                "SELECT count(*) FROM app.user_session s JOIN app.app_user u ON u.id = s.user_id "
+                "WHERE u.email = :e"
+            ),
+            {"e": email},
+        )
+    return await user_count(engine, email), int(sessions or 0), await credit_balance(engine, email)
+
+
+async def test_a_non_gmail_address_without_hd_creates_nothing_and_asks_for_the_magic_link(
+    http: AsyncClient, engine: AsyncEngine, make_google_token: MakeToken
+) -> None:
+    email = other_domain_email()
+    r = await http.post("/api/auth/google", json={"credential": make_google_token(email=email)})
+    assert r.status_code == 401
+    assert r.json()["code"] == "EMAIL_CONFIRMATION_REQUIRED"
+    assert "set-cookie" not in r.headers
+    assert await count_all(engine, email) == (0, 0, None)  # no user, no session, no credits
+
+
+async def test_a_non_gmail_address_never_links_to_an_existing_magic_link_account(
+    migrated_url: str, google_keys: GoogleKeys, engine: AsyncEngine, make_google_token: MakeToken
+) -> None:
+    queue, email = FakeQueue(), other_domain_email()
+    async with running(migrated_url, google_keys, queue) as application:
+        await (await magic_sign_in(application, queue, email)).aclose()
+        async with client_for(application) as g:
+            r = await g.post(
+                "/api/auth/google",
+                json={"credential": make_google_token(sub=f"s-{uuid4().hex}", email=email)},
+            )
+    assert r.status_code == 401
+    assert r.json()["code"] == "EMAIL_CONFIRMATION_REQUIRED"
+    assert await identities(engine, email) == [
+        ("email", email)
+    ]  # the attacker's Google identity did not attach
+
+
+async def test_a_workspace_account_whose_hd_matches_the_address_domain_is_trusted(
+    http: AsyncClient, engine: AsyncEngine, make_google_token: MakeToken
+) -> None:
+    email, sub = other_domain_email(), f"s-{uuid4().hex}"
+    r = await http.post(
+        "/api/auth/google",
+        json={"credential": make_google_token(sub=sub, email=email, extra={"hd": "company.example"})},
+    )
+    assert r.status_code == 200
+    assert await identities(engine, email) == [("google", sub)]
+    assert await credit_balance(engine, email) == 3
+
+
+async def test_a_workspace_account_links_to_an_existing_magic_link_user(
+    migrated_url: str, google_keys: GoogleKeys, engine: AsyncEngine, make_google_token: MakeToken
+) -> None:
+    queue, email, sub = FakeQueue(), other_domain_email(), f"s-{uuid4().hex}"
+    async with running(migrated_url, google_keys, queue) as application:
+        await (await magic_sign_in(application, queue, email)).aclose()
+        async with client_for(application) as g:
+            r = await g.post(
+                "/api/auth/google",
+                json={"credential": make_google_token(sub=sub, email=email, extra={"hd": "COMPANY.example"})},
+            )
+    assert r.status_code == 200
+    assert await user_count(engine, email) == 1
+    assert await identities(engine, email) == [("email", email), ("google", sub)]
+
+
+@pytest.mark.parametrize("hd", ["evil.example", "company.example.evil.test", "", "mail.company.example"])
+async def test_an_hd_that_differs_from_the_address_domain_is_not_trusted(
+    http: AsyncClient, engine: AsyncEngine, make_google_token: MakeToken, hd: str
+) -> None:
+    email = other_domain_email()
+    r = await http.post(
+        "/api/auth/google", json={"credential": make_google_token(email=email, extra={"hd": hd})}
+    )
+    assert r.status_code == 401
+    assert r.json()["code"] == "EMAIL_CONFIRMATION_REQUIRED"
+    assert await user_count(engine, email) == 0
+
+
+@pytest.mark.parametrize("domain", ["googlemail.com", "gmail.com.evil.test", "notgmail.com", "gmail.co"])
+async def test_only_exactly_gmail_com_counts_as_gmail(
+    http: AsyncClient, engine: AsyncEngine, make_google_token: MakeToken, domain: str
+) -> None:
+    email = f"user-{uuid4().hex[:10]}@{domain}"
+    r = await http.post("/api/auth/google", json={"credential": make_google_token(email=email)})
+    assert r.status_code == 401
+    assert await user_count(engine, email) == 0
+
+
+async def test_gmail_is_matched_case_insensitively(
+    http: AsyncClient, engine: AsyncEngine, make_google_token: MakeToken
+) -> None:
+    local = f"user-{uuid4().hex[:10]}"
+    r = await http.post(
+        "/api/auth/google", json={"credential": make_google_token(email=f"{local}@GMail.COM")}
+    )
+    assert r.status_code == 200
+    assert await user_count(engine, f"{local}@gmail.com") == 1
+
+
+async def test_a_returning_google_user_still_signs_in_when_a_later_token_has_no_hd(
+    http: AsyncClient, engine: AsyncEngine, make_google_token: MakeToken
+) -> None:
+    """Identity is the sub: once linked (while Google was authoritative), the user is never locked out."""
+    email, sub = other_domain_email(), f"s-{uuid4().hex}"
+    first = await http.post(
+        "/api/auth/google",
+        json={"credential": make_google_token(sub=sub, email=email, extra={"hd": "company.example"})},
+    )
+    again = await http.post("/api/auth/google", json={"credential": make_google_token(sub=sub, email=email)})
+    assert first.status_code == again.status_code == 200
+    assert first.json()["id"] == again.json()["id"]

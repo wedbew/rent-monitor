@@ -19,6 +19,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 MAX_AVATAR_URL = 500
 
 
+class EmailConfirmationRequired(Exception):
+    """Google cannot vouch for this address (not @gmail.com, no matching `hd`): confirm it with a magic link
+    first."""
+
+
 def safe_avatar(url: str | None) -> str | None:
     """Only keep an https picture URL; anything else (data:, javascript:, http:) is dropped."""
     if url and url.startswith("https://") and len(url) <= MAX_AVATAR_URL and " " not in url:
@@ -61,15 +66,28 @@ async def _link_identity(session: AsyncSession, user_id: str, provider: str, sub
 
 
 async def user_for_google(
-    session: AsyncSession, *, sub: str, email: str, name: str | None, picture: str | None
+    session: AsyncSession,
+    *,
+    sub: str,
+    email: str,
+    name: str | None,
+    picture: str | None,
+    authoritative: bool,
 ) -> User:
     """Returning Google user by `sub`; otherwise join an existing user with the same verified email, or
-    create one."""
+    create one.
+
+    The join or creation happens only when Google is authoritative for the address (D-13, ADR 0010). A
+    returning `sub`
+    is always let in: identity is the `sub`, never the address.
+    """
     owner = await session.scalar(
         select(AuthIdentity.user_id).where(AuthIdentity.provider == "google", AuthIdentity.subject == sub)
     )
     if owner is not None:
         return await session.get_one(User, owner)
+    if not authoritative:
+        raise EmailConfirmationRequired
     user = await _upsert_verified_user(session, email=email, name=name, avatar=safe_avatar(picture))
     owner = await _link_identity(session, user.id, "google", sub)
     return user if owner == user.id else await session.get_one(User, owner)

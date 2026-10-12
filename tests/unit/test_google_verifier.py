@@ -209,3 +209,28 @@ async def test_stale_certificates_are_served_when_a_refresh_fails() -> None:
     await certs.get()
     ok[0], now[0] = False, 120
     assert await certs.get() == {"k": "PEM"}  # last good set, not an outage
+
+
+# ---------- D-13: is Google authoritative for the address? ----------
+@pytest.mark.parametrize(
+    ("email", "hd", "expected"),
+    [
+        ("a@gmail.com", None, True),
+        ("a@GMAIL.com", None, True),
+        ("a@gmail.com", "other.example", True),  # a gmail address is gmail whatever hd says
+        ("a@company.example", "company.example", True),
+        ("a@company.example", "COMPANY.example ", True),
+        ("a@company.example", None, False),
+        ("a@company.example", "", False),
+        ("a@company.example", "evil.example", False),
+        ("a@sub.company.example", "company.example", False),
+        ("a@googlemail.com", None, False),
+        ("a@gmail.com.evil.test", None, False),
+    ],
+)
+async def test_google_is_authoritative_only_for_gmail_or_a_matching_workspace_domain(
+    google_keys: GoogleKeys, make_google_token: MakeToken, email: str, hd: str | None, expected: bool
+) -> None:
+    extra = {"hd": hd} if hd is not None else None
+    claims = await verifier(google_keys).verify(make_google_token(email=email, extra=extra))
+    assert claims.authoritative is expected
