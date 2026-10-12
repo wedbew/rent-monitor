@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-12 · by: RM-18/RM-112 (Better Stack handoff), RM-12 (auth / Resend), RM-125 (design direction)
+**Last updated:** 2026-10-12 · by: RM-144 (Umami handoff), RM-141 (R2), RM-137 (Better Stack)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -205,6 +205,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Architecture, schema, Stripe, auth, tests | `docs/BLUEPRINT.md` §2–§4 |
 | Google sign-in specification (to be written, #130) and the owner's local setup notes | `docs/GOOGLE-AUTH-SPEC.md` (planned); local handoff `docs/GOOGLE-AUTH-INTEGRATION.md` is gitignored |
 | Resend local configuration and mailer integration instructions | `docs/RESEND-INTEGRATION.md` (owner's local handoff, gitignored; RM-12) |
+| Umami analytics setup, verified script behaviour and the CSP finding | `docs/UMAMI-INTEGRATION.md` (owner's local handoff, gitignored; RM-143) |
 | Better Stack Errors DSN, Python logs and verified source setup | `docs/BETTERSTACK-INTEGRATION.md` (owner's local handoff, gitignored; RM-18/RM-112) |
 | CI, hooks, rulesets, MCP, skills | `docs/TOOLCHAIN.md` |
 | Risk register and release gates | `docs/BLUEPRINT.md` §5–§6 |

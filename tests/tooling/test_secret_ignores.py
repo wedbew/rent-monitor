@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[2]
         "docs/GOOGLE-AUTH-INTEGRATION.md",
         "docs/RESEND-INTEGRATION.md",
         "docs/BETTERSTACK-INTEGRATION.md",
+        "docs/UMAMI-INTEGRATION.md",
         "docs/INFRASTRUCTURE.md",
         "deploy/ssh.key",
     ],
