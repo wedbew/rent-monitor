@@ -16,6 +16,7 @@ from deal_analyzer.ownership import (
     classify_ownership,
     require_whole_ownership,
 )
+from deal_analyzer.rent import RentComparable, RentEstimate, estimate_rent
 from deal_analyzer.vision import (
     Applied,
     Condition,
@@ -47,6 +48,8 @@ __all__ = [
     "MaxBidResult",
     "OwnershipAssessment",
     "PhotoKind",
+    "RentComparable",
+    "RentEstimate",
     "RentInput",
     "RentNotADealError",
     "VisionOutput",
@@ -60,6 +63,7 @@ __all__ = [
     "classify_ownership",
     "compute_cash_flows",
     "estimate_capex",
+    "estimate_rent",
     "extract_listing",
     "grade_for",
     "hurdle_rate",
