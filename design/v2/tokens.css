@@ -1,0 +1,15 @@
+/* V2 / Precision — monochrome foundations, semantic signals and motion. */
+:root{
+  color-scheme:dark;
+  --canvas:#08090a;--surface:#111315;--surface-hover:#181b1e;--surface-raised:#1a1d20;
+  --ink:#f5f6f7;--muted:#a9aeb4;--subtle:#818891;--border:#353a40;--control-border:#7f8790;
+  --accent:#f5f6f7;--accent-ink:#0a0b0c;--accent-hover:#dce1e5;
+  --green:#b1d5bc;--green-fill:#17241d;--amber:#efcf98;--amber-fill:#2b2318;--error:#ffc0b4;
+  --font-ui:Arial,Helvetica,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-6:24px;--space-8:32px;--space-12:48px;--space-16:64px;
+  --radius:3px;--radius-overlay:6px;--content-width:1280px;
+  --analysis-surface:#14181c;--analysis-border:#46505a;--radius-card:8px;--sidebar-width:232px;
+  --motion-fast:160ms;--motion-ui:240ms;--motion-enter:560ms;--motion-overlay:320ms;
+  --ease-out:cubic-bezier(.16,1,.3,1);--ease-standard:cubic-bezier(.2,.65,.3,1);
+  --shadow:0 24px 90px #0009;
+}
