@@ -17,6 +17,7 @@ _None. On 2026-10-12 the owner approved merging every pending PR: auth (#147), w
 
 | ID | What | Owner action | Waits on it |
 |---|---|---|---|
+| B-016 | **Headless agent has no model credential.** Runs 38318725879 (2026-10-12 22:48Z), 38183301878 and 38182957497 ended with zero model usage and $0 cost; the log shows `claude_code_oauth_token: ""` and `ANTHROPIC_API_KEY: ""`: the repo secret `CLAUDE_CODE_OAUTH_TOKEN` is empty at run time (it is listed, last updated 2026-10-11T23:10Z) | In your terminal: `claude setup-token`, then `gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo wedbew/rent-monitor` and paste the token at the prompt (never into chat). Then label #106 `agent` (the canary retry) and read the run log | #6 (headless loop), the dispatcher (#189), every `agent`-labelled issue |
 
 ## Deferred (not blocking local work)
 

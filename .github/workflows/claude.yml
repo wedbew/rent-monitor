@@ -38,6 +38,23 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: preflight - secrets present (fail in seconds with the owner action, not after a silent 2 s error)
+        env:
+          OAUTH: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          BOT: ${{ secrets.AGENT_BOT_TOKEN }}
+          GH_TOKEN: ${{ secrets.AGENT_BOT_TOKEN }}
+          ISSUE: ${{ github.event.issue.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          missing=""
+          [ -n "$OAUTH" ] || missing="CLAUDE_CODE_OAUTH_TOKEN"
+          [ -n "$BOT" ] || missing="$missing AGENT_BOT_TOKEN"
+          if [ -n "$missing" ]; then
+            msg="Headless agent cannot start: empty secret(s):$missing. Owner action: run 'claude setup-token' in a terminal, then 'gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo ${{ github.repository }}' and paste it (docs/AUTONOMY.md). Run: $RUN_URL"
+            echo "::error::$msg"
+            if [ -n "$ISSUE" ] && [ -n "$BOT" ]; then gh issue comment "$ISSUE" --repo "${{ github.repository }}" --body "$msg" || true; fi
+            exit 1
+          fi
       - uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
