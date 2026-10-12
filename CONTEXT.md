@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-12 · by: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
+**Last updated:** 2026-10-13 · by: RM-177 (delivery audit); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -216,6 +216,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Headless agent (Actions), secrets | `docs/AUTONOMY.md` |
 | Backlog (blueprint → issues) | `docs/BACKLOG.md` |
 | Milestones, dependencies and launch gates | `docs/ROADMAP.md` |
+| Autonomous delivery evidence, bottlenecks and proposed faster workflow (recommendations only) | `docs/DELIVERY-AUDIT.md` (RM-177) |
 | Proposed Phase 2 UX principles and interactive design alternatives (fictional data; not production frontend) | `design/README.md`, `design/v1/`, `design/v2/design-principles.md`, `design/v2/main-view.html` |
 | Phase 2 design direction (prototype, principles, spec) | `design/README.md` (#44 input; no backend or rule change) |
 | Owner-only blockers | `docs/BLOCKERS.md`, `.agent/rules/blockers.md` |
