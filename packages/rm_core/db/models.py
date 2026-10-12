@@ -455,6 +455,29 @@ class HostThrottle(Base):
     breaker_reason: Mapped[str | None] = mapped_column(String(40))
 
 
+# ---------- Third-party lookup cache ----------
+class GeoCache(Base):
+    """Cached geocoding and points-of-interest answers (OpenStreetMap), keyed by a hash of the
+    normalised request.
+
+    LEGAL[third-party-data]: OpenStreetMap data is ODbL (attribution required); the Nominatim usage
+    policy requires caching
+    and at most 1 request per second. Rows hold map data only, never user data: the key is a hash of
+    coordinates or an
+    address string taken from a public listing. Retention: `expires_at` plus the nightly purge (RM-30
+    retention sweep).
+    """
+
+    __tablename__ = "geo_cache"
+    __table_args__ = (CheckConstraint("kind IN ('geocode','poi')", name="kind_vocab"),)
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)  # sha256 of the normalised request
+    kind: Mapped[str] = mapped_column(String(8))
+    payload: Mapped[dict[str, Any]]
+    fetched_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(index=True)
+
+
 # ---------- Feature flags ----------
 class FeatureFlag(Base):
     __tablename__ = "feature_flag"

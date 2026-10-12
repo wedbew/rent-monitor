@@ -29,6 +29,7 @@ from rm_core.db.models import (
     CreditLedger,
     ErasureLog,
     FeatureOverride,
+    GeoCache,
     ListingSnapshot,
     LoginToken,
     SavedListing,
@@ -61,6 +62,7 @@ class PurgeReport:
     snapshots_scrubbed: int = 0
     audit_events: int = 0
     erasure_log: int = 0
+    geo_cache: int = 0
 
 
 async def _until_drained(
@@ -152,7 +154,15 @@ async def purge_expired(sessionmaker: async_sessionmaker[AsyncSession], settings
             )
         ),
     )
-    return PurgeReport(sessions, tokens, snapshots_deleted, snapshots_scrubbed, events, erasure)
+    geo = await _until_drained(
+        sessionmaker,
+        lambda: delete(GeoCache).where(
+            GeoCache.key.in_(
+                select(GeoCache.key).where(GeoCache.expires_at < func.clock_timestamp()).limit(BATCH_SIZE)
+            )
+        ),
+    )
+    return PurgeReport(sessions, tokens, snapshots_deleted, snapshots_scrubbed, events, erasure, geo)
 
 
 # ---------- erasure ----------

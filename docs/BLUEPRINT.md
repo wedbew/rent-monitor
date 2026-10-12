@@ -740,6 +740,17 @@ class MarketSidecar(Base):
     )
 
 
+# ---------- OSM lookup cache (added by RM-86) ----------
+class GeoCache(Base):
+    """Cached Nominatim/Overpass answers keyed by sha256 of the normalised request; expires_at drives retention."""
+    __tablename__ = "geo_cache"; __table_args__ = APP
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(8))                 # geocode | poi
+    payload: Mapped[dict]
+    fetched_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(index=True)
+
+
 # ---------- Erasure accountability (added by RM-30) ----------
 class ErasureLog(Base):
     """sha256(user_id) of erased accounts, so a restore from an older backup can re-erase them."""
