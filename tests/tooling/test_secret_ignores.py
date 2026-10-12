@@ -21,6 +21,8 @@ ROOT = Path(__file__).resolve().parents[2]
         "service-account-prod.json",
         "ovh.conf",
         ".ovh.conf",
+        "docs/STRIPE-INTEGRATION.md",
+        "docs/INFRASTRUCTURE.md",
         "deploy/ssh.key",
     ],
 )
