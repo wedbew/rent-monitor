@@ -14,11 +14,11 @@ query strings, auth headers and user details except the id. The API initialises 
 | Requirement | Status |
 |---|---|
 | API and worker both call `init_sentry` at start; the worker tags each event with `job_id`, `queue` and `task` | worker missing (#25) |
-| **No stack-frame variables** (`include_local_variables=False`); drop frame `vars`, breadcrumb data and `extra` | **gap, L-013, #149** (confirmed: SDK default is True and `scrub_event` leaves them) |
-| Redact emails and `#t=` / `token=` / `credential=` values inside exception messages and breadcrumb messages | gap, #149 |
+| **No stack-frame variables** (`include_local_variables=False`); drop frame `vars`, breadcrumb data and `extra` | done in #149 (L-013 resolved; was confirmed: SDK default is True and the old `scrub_event` left them) |
+| Redact emails and `#t=` / `token=` / `credential=` values inside exception messages and breadcrumb messages | done in #149 |
 | Convention: never put personal data in an exception message; log ids, not values | in force (legal-tags rule) |
 | Events carry the user id only (a pseudonymous UUID, never email) and `request_id` | confirmed |
-| Fail closed: any scrubber exception drops the event rather than sending it | to add with #149 |
+| Fail closed: any scrubber exception drops the event rather than sending it | done in #149 |
 
 ## 2. Logs (structlog JSON -> Better Stack Telemetry)
 
@@ -84,8 +84,8 @@ vendor is *inferred* possible and unverified). Add Better Stack to the processor
 
 ## 7. Test plan
 
-- Scrubber unit tests: request, user, **frame vars, breadcrumbs, extra, exception and breadcrumb messages**, with emails,
-  `#t=` tokens, Google credentials and cookies; a scrubber exception drops the event.
+- Scrubber unit tests (exist since #149): request, user, **frame vars, breadcrumbs, extra, exception and breadcrumb
+  messages**, with emails, `#t=` tokens, Google credentials and cookies; a scrubber exception drops the event.
 - `init_sentry` is a no-op without a DSN and sets `include_local_variables=False` with one (extends the existing tests).
 - Worker start test: Sentry initialised once, job tags bound.
 - Heartbeat helper: pings success/fail with a fake transport, no-op when the URL is empty, never raises.

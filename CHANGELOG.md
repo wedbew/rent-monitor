@@ -4,6 +4,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Security
+- Error events no longer carry stack-frame variables, breadcrumb data, log params or emails, JWTs and token-like parameters in free text, and are dropped if scrubbing fails; must be in place before `SENTRY_DSN` is set (RM-149)
+
 ### Added
 - Setting `GOOGLE_CLIENT_SECRET` (typed secret, never logged; only needed for a server-side code flow, ID-token sign-in uses the client ID alone) added to `Settings` and `.env.example` (RM-123)
 - Local pipeline (RM-116): `scripts/ci_local.sh` and `make ci-fast | ci | ci-full` run the same checks as GitHub (commits, lint, types, ty, tests + coverage, invariants with the required-names check, migrations + squawk, semgrep, pip-audit, gitleaks, actionlint + zizmor, optional Docker smoke) before you push; `make hooks` installs commit-msg, formatting and pre-push hooks; `scripts/check_invariants.py` is kept identical to the CI list by a test; new dev dependency `defusedxml`
