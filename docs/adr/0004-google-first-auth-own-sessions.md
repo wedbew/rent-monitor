@@ -1,6 +1,6 @@
 # ADR 0004 — Google-first sign-in with own sessions in Postgres
 
-- **Status:** accepted (blueprint §2 "Auth decision") · **Date:** 2026-10-11 · **Ticket:** RM-31
+- **Status:** accepted; "never passwords" superseded by [ADR 0013](0013-email-password-auth.md) (2026-10-14) (blueprint §2 "Auth decision") · **Date:** 2026-10-11 · **Ticket:** RM-31
 
 ## Decision
 Sign-in is Google ID-token verification (`google-auth`) first, an email magic link second, and never passwords. Sessions are

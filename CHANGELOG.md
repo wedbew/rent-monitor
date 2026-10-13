@@ -8,6 +8,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 - `deploy/setup-server.sh`: the SSH key is read from `/tmp/deploy_key.pub` (an environment variable did not survive `sudo`, so no key was installed), the sshd drop-in is `00-rentmonitor.conf` so it overrides OVH's `50-cloud-init.conf` and password login really is disabled, and apt runs non-interactively; **operator action:** copy your public key to `/tmp/deploy_key.pub` before running it (RM-195)
 
 ### Added
+- Email + password sign-in specified (ADR 0013, supersedes ADR 0004's "no passwords"; blueprint §2, `GOOGLE-AUTH-SPEC.md` §5a, L-017): routes `/api/auth/password/{register,verify,resend,login,forgot,reset,change}`, Argon2id, policy, token lifetimes, throttles; contract schemas `rm_contracts.auth.Password*` and problem codes `INVALID_CREDENTIALS`, `PASSWORD_POLICY_VIOLATION`, `VERIFICATION_TOKEN_INVALID`, `PASSWORD_RESET_TOKEN_INVALID`, `CURRENT_PASSWORD_INVALID`; no routes yet, so `docs/openapi.json` is unchanged (RM-202)
 - `scripts/live_otodom_probe.py`: one owner-authorised live Otodom fetch that prints status and the ad's key shape without values; settled L-005 and a single-request L-002 on 2026-10-13 (RM-42)
 - `deploy/setup-server.sh`: idempotent VPS hardening (deploy user, 2 GB swap, UFW 22/80/443, fail2ban, Docker); operator runs it once on the host with `DEPLOY_SSH_PUBKEY` set, which also disables SSH password login (RM-15)
 

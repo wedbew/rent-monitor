@@ -78,6 +78,21 @@ subscription. The first draft of this section had the `hd` condition backwards.
   onboarding sender in production fails at once, so a dead link is never retried and the token does not linger). Live delivery is untested until the Resend key and domain are verified (B-004).
   In production the worker refuses to send without a key or from the Resend onboarding sender.
 
+## 5a. Email + password (ADR 0013, specification only)
+
+Passwords arrive as a third method; this file keeps describing what was built for Google and the magic link. Rules that touch
+Google sign-in:
+
+- **Never attach by email alone.** A password registration creates no user until its mailed token is consumed, and if an
+  account (Google or magic link) already holds the address by then, nothing is attached. A Google sign-in links to a
+  password-created user only under the ADR 0010 rule (Gmail or matching `hd`); otherwise it answers
+  `EMAIL_CONFIRMATION_REQUIRED` as before.
+- A Google-only user can add a password later through forgot-password (proves the mailbox) or `password/change` from a fresh
+  session. Sessions from all methods are the same `user_session` rows and are revoked together.
+- The signup grant (section 6) stays once per user, keyed `signup:<user_id>`, whichever method verified the address first.
+- Routes, token lifetimes, throttles, Argon2id parameters and error codes: `docs/adr/0013-email-password-auth.md`; schemas:
+  `rm_contracts.auth.Password*`.
+
 ## 6. Signup grant
 
 `ensure_credit_account(..., verified=True)` runs on every successful sign-in and grants `FREE_SIGNUP_CREDITS` (3) exactly

@@ -139,6 +139,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** Request written product assessment with representative reports, prepaid report-pack entitlements and data-rights information. Owner selected one-time packs on 2026-10-13, so recurring BLIK is outside the pilot. If Paddle rejects the offering, ordinary Stripe plus Polish invoicing remains a fallback requiring a separate decision.
 - **Target:** provider evaluation in [BILLING-ALTERNATIVES.md](BILLING-ALTERNATIVES.md); decision before replacing ADR 0005
 
+### L-017 — Password breach-corpus check is deferred; only a local denylist
+- **Status:** deferred
+- **Discovered:** 2026-10-14
+- **Affects:** email + password registration, reset and change (ADR 0013)
+- **Evidence:** inferred (design choice; nothing implemented)
+- **Description:** The password policy rejects the 10,000 most common passwords from a bundled list, the address's local part and the product name. It does not check passwords against a breach corpus, so a password leaked elsewhere but absent from the list is accepted. Argon2 parameters (19 MiB, 2 iterations, 1 lane) and the 2-hash concurrency cap are proposals and unmeasured on the VPS.
+- **Workaround:** Google and magic link remain available; per-address and per-IP throttles limit online guessing.
+- **Target:** ADR 0013 follow-up after slice 2 of #201; a k-anonymity range check would be a new external client (`GDPR[processor]` review first)
+
 ## Resolved
 
 ### L-013 — Error events may carry stack-frame variables and unscrubbed free text

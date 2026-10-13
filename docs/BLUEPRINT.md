@@ -21,8 +21,8 @@ Ship RentMonitor as a single 12 GB VPS running Docker Compose, with Postgres as 
 | Runtime | **Python only** on the server: FastAPI, Procrastinate workers, Postgres. Node exists only at build time to bundle the SPA | One language, one image, one migration tool, one test suite |
 | Topology | Option B: Caddy + FastAPI + 2 worker pools + Postgres 17 | One bill, one failure domain you control, no cold starts, no per-invocation pricing |
 | Frontend | Keep the existing Vite + React 19 SPA, served by Caddy on the same origin | Same-origin cookies, no CORS, no SSR runtime to host |
-| Sign-in | **Google first**: "Zaloguj się przez Google" button at the top of every auth screen plus One Tap on the landing page; email magic link as the secondary path; no passwords | One click for most users, nothing to reset or leak; Google-verified emails unlock the 3 free audits at once |
-| Auth engine | In FastAPI: Google ID-token verification with `google-auth`, own sessions in Postgres | No second runtime; FastAPI-Users is in maintenance mode and password-centric; cookies work with `EventSource` |
+| Sign-in | **Google first**: "Zaloguj się przez Google" button at the top of every auth screen plus One Tap on the landing page; email magic link and email + password as further paths (ADR 0013, owner decision 2026-10-14) | One click for most users; Google-verified or mailbox-verified emails unlock the 3 free audits |
+| Auth engine | In FastAPI: Google ID-token verification with `google-auth`, own sessions in Postgres | No second runtime; FastAPI-Users is in maintenance mode; cookies work with `EventSource` |
 | Payments | Pilot: **one-time Paddle packs of 1, 5 or 10 reports**, card + one-time PLN BLIK; no subscription | Owner direction 2026-10-13; see `PADDLE-INTEGRATION.md`. Provider/product acceptance and final pricing pending |
 | Job queue | Procrastinate (Postgres-backed, async) | arq is in maintenance-only mode; Celery + Redis costs a stateful service for no gain at this scale |
 | Progress | SSE fed by Postgres `LISTEN/NOTIFY` + an `audit_event` table for replay | Survives reconnects via `Last-Event-ID`; no broker |
@@ -169,7 +169,7 @@ FastAPI is stateless: every byte of state — sessions, audits, credits, jobs, p
 
 | Prefix | Owner | Auth | Purpose |
 | --- | --- | --- | --- |
-| `/api/auth/*` | FastAPI | public | Google ID-token sign-in, email magic link, sign-out, session list |
+| `/api/auth/*` | FastAPI | public | Google ID-token sign-in, email magic link, email + password (`/api/auth/password/*`, ADR 0013), sign-out, session list |
 | `/api/me` | FastAPI | session | Profile, plan, credit balance, feature flags; `GET /api/me/export` (access request, 5 per hour); `DELETE /api/me` (account erasure, confirmed by typing the address) |
 | `/api/audits` | FastAPI | session + entitlement | `POST` create (202), `GET` list, `GET /{id}`, `GET /{id}/events` (SSE), `POST /{id}/cancel` |
 | `/api/saved` | FastAPI | session | Save or unsave listings, notes; only listings the caller has audited can be saved (anything else is 404), at most 500 |
@@ -262,6 +262,12 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `EMAIL_CONFIRMATION_REQUIRED` | verified Google token for an address Google cannot vouch for (not `@gmail.com`, no matching `hd`) and no existing identity | 401 (the SPA offers the magic link) | confirm with a magic link | n/a |
 | `GOOGLE_EMAIL_UNVERIFIED` | valid Google token whose `email_verified` is false | 401 (the SPA offers the magic link) | none | n/a |
 | `MAGIC_LINK_INVALID` | magic-link token unknown, already used or expired | 401 | request a new link | n/a |
+| `INVALID_CREDENTIALS` | `password/login`: unknown address, wrong password or no password credential | 401 | none | n/a |
+| `EMAIL_NOT_VERIFIED` | `password/login` with the right password for a still-pending registration | 403 | resend the verification mail | n/a |
+| `PASSWORD_POLICY_VIOLATION` | new password too short, on the denylist, or containing the address or product name (`reasons` lists stable keys) | 422 | choose another password | n/a |
+| `VERIFICATION_TOKEN_INVALID` | `password/verify` token unknown, used, expired, or the address already has an account | 401 | request a new link or use forgot-password | n/a |
+| `PASSWORD_RESET_TOKEN_INVALID` | `password/reset` token unknown, used or expired | 401 | request a new link | n/a |
+| `CURRENT_PASSWORD_INVALID` | `password/change` with a wrong `current_password` | 403 | retype | n/a |
 | `RATE_LIMITED` | atomic per-address or per-IP counter exceeded | 429 with `Retry-After` | after the window | n/a |
 | `ADMIN_ONLY` | `require_admin` dependency: caller's role is not `admin` | 403 | none | n/a |
 | `CREDIT_BELOW_ZERO` | admin credit adjustment would make the balance negative | 409 | none | n/a |
@@ -284,7 +290,7 @@ One runtime. The Better Auth Node sidecar from the earlier draft is removed. Wit
 | --- | --- | --- |
 | Better Auth Node sidecar (previous draft) | Rejected | A second runtime, container, migration tool and schema owner for one feature |
 | Everything in Node | Rejected | The engine, workers and DCF math are Python and stay Python; Node would add a runtime, not remove one |
-| FastAPI-Users | Rejected | Maintenance mode, and built around passwords, which we no longer store |
+| FastAPI-Users | Rejected | Maintenance mode, and built around passwords; ADR 0013 adds passwords in our own code instead |
 | Managed provider (Clerk, Auth0) | Rejected | Another vendor on the login path; the user table leaves your Postgres |
 | **FastAPI + Google Identity Services + `google-auth`, own sessions** | **Chosen** | Google authenticates the person; FastAPI verifies Google's signed token and issues its own session |
 
@@ -293,7 +299,7 @@ Sign-in methods:
 1. **Google (primary).** The "Zaloguj się przez Google" button and One Tap both come from Google Identity Services (GIS) in the SPA. GIS hands the SPA a signed ID token (`credential`), which the SPA posts to `POST /api/auth/google`. No OAuth redirect and no client secret on the server.
 2. **Email magic link (secondary).** For users without Google: `POST /api/auth/email/start` emails a single-use link valid 30 minutes; `POST /api/auth/email/verify` signs in after the user presses "Kontynuuj" on the page the link opens, so mail scanners that prefetch links cannot use up the token. Using the link proves the address, so the 3 free audits unlock.
 
-**Hard call: no passwords.** Nothing to hash, reset or leak, and no reset flow to build. If a B2B customer demands passwords later, `pwdlib[argon2]` is an additive change.
+3. **Email + password (ADR 0013, supersedes ADR 0004's "no passwords"; owner decision 2026-10-14).** `POST /api/auth/password/{register,verify,resend,login,forgot,reset,change}`. Argon2id through `pwdlib[argon2]`; 10–128 characters and at most 256 bytes, local denylist, no composition rules; verification link 24 h, reset link 30 min, both single-use and stored as SHA-256. `register` creates no user: a pending registration becomes a user only when the mailed token is consumed, and never attaches to an existing account (no pre-hijacking, never attaching by email alone). `login` gives one `INVALID_CREDENTIALS` for unknown address, wrong password or no password, after a dummy hash. Reset and change revoke sessions. Throttles and the full contract are in ADR 0013; schemas are `rm_contracts.auth.Password*`. Specified, not yet implemented.
 
 How it protects FastAPI:
 
@@ -301,7 +307,7 @@ How it protects FastAPI:
 2. `current_principal` hashes the cookie, looks up `user_session` joined to `app_user` where `expires_at > now()`, extends the expiry at most once a day, and caches hits for 30 seconds in-process.
 3. Unsafe methods on `/api/*` must carry `Origin` equal to `PUBLIC_APP_URL`. That covers `POST /api/auth/google`, because the SPA uses GIS's JavaScript callback mode, not the `login_uri` form-post mode that needs Google's `g_csrf_token` double-submit check.
 4. Sign-out deletes the session row; "sign out everywhere" deletes all of the user's rows. Both send NOTIFY session\_revoked, which every API process receives on the SSE hub's existing LISTEN connection and uses to drop cached principals, so revocation is near-immediate. If that connection is down, revocation falls back to the 30-second cache TTL — a stated bound, not a hidden one.
-5. `/api/auth/email/start` is rate-limited to 5 per hour per address and 20 per hour per IP through one atomic Postgres upsert (INSERT … ON CONFLICT (key, window\_start) DO UPDATE SET n = n + 1 RETURNING n), so concurrent API processes cannot overshoot.
+5. `/api/auth/email/start` (the password routes have their own limits in ADR 0013) is rate-limited to 5 per hour per address and 20 per hour per IP through one atomic Postgres upsert (INSERT … ON CONFLICT (key, window\_start) DO UPDATE SET n = n + 1 RETURNING n), so concurrent API processes cannot overshoot.
 6. Unverified Google emails are rejected outright (the SPA offers the magic link instead), so every Google identity is verified. Account linking and creation additionally require that Google is **authoritative** for the address (ADR 0010, owner decision D-13): the address ends in `@gmail.com`, or the token carries an `hd` claim equal to the address's domain. A verified Google sign-in for any other address joins or creates nothing and is answered `EMAIL_CONFIRMATION_REQUIRED`; the user confirms the address with the magic link first. An unverified one never links, which blocks account takeover.
 7. Cookies work with `EventSource`, so SSE needs no token plumbing.
 
