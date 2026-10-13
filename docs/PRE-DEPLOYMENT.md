@@ -53,7 +53,7 @@ blueprint §6; risks are blueprint §5; limits are `docs/LIMITATIONS.md`.
 - [ ] CAPEX catalog uses sourced prices, not placeholders (L-007, B-015); `prices_are_placeholders` is false in every result.
 - [ ] OpenRouter monthly budget cap and kill-switch tested; tokens and USD logged per audit.
 - [ ] Free-tier scope decided and implemented (3 audits, radar top 20).
-- [ ] Datacenter-IP test from the production VPS: Otodom reachable, or proxy plan active (L-002).
+- [ ] Datacenter-IP test from the production VPS: Otodom reachable, or proxy plan active (L-002). Evidence so far: one request from the VPS-1 returned 200 on 2026-10-13; repeat from the final VPS and under audit load before ticking.
 
 ## 6. Infrastructure and operations
 - [ ] VPS ordered in **Poland**, Ubuntu 24.04 LTS, hardened per blueprint §4.4, 2 GB swap, `vm.swappiness=10`.
