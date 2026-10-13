@@ -130,6 +130,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none needed for a private beta; do not present results as market-grounded until rental importers and a rate source land.
 - **Target:** importers (#106 slice 2), rate source (N-12), vision/OCR integration, live evidence (level 3); docs/STATUS.md journey table
 
+### L-019 — Password storage is an owned risk; policy and blocklist are not yet validated
+- **Status:** active
+- **Discovered:** 2026-10-14
+- **Affects:** email/password sign-in (#203-#205), `user_credential`, `auth_token`
+- **Evidence:** inferred (specification only, `docs/PASSWORD-AUTH-SPEC.md`; no code yet)
+- **Description:** ADR 0013 reverses the "no passwords" decision. Argon2id parameters (19456 KiB, t=2, p=1) are the OWASP minimum, not measured on the 4 GB VPS-1 next to the audit worker. The common-password blocklist source and size are open. Real Resend delivery of verification and reset mail is unverified (B-004).
+- **Workaround:** none until implemented; parameters are settings, so they can be raised without a code change.
+- **Target:** #203 (parameters measured, blocklist chosen), #205; gate 7 session-revocation timing
+
 ### L-014 — RPO 5 minutes and RTO 1 hour are targets, never measured
 - **Status:** active
 - **Discovered:** 2026-10-12

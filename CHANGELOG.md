@@ -7,6 +7,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ### Fixed
 - `deploy/setup-server.sh`: the SSH key is read from `/tmp/deploy_key.pub` (an environment variable did not survive `sudo`, so no key was installed), the sshd drop-in is `00-rentmonitor.conf` so it overrides OVH's `50-cloud-init.conf` and password login really is disabled, and apt runs non-interactively; **operator action:** copy your public key to `/tmp/deploy_key.pub` before running it (RM-195)
 
+### Changed
+- **Auth direction (RM-202):** email/password sign-in is added next to Google and magic links by owner request; ADR 0013 supersedes the "never passwords" rule, `docs/PASSWORD-AUTH-SPEC.md` defines the routes, schemas (`rm_contracts.auth`) and problem codes `INVALID_CREDENTIALS`, `WEAK_PASSWORD`, `AUTH_TOKEN_INVALID`. No route exists yet (#203-#205)
+
 ### Added
 - `scripts/live_otodom_probe.py`: one owner-authorised live Otodom fetch that prints status and the ad's key shape without values; settled L-005 and a single-request L-002 on 2026-10-13 (RM-42)
 - `deploy/setup-server.sh`: idempotent VPS hardening (deploy user, 2 GB swap, UFW 22/80/443, fail2ban, Docker); operator runs it once on the host with `DEPLOY_SSH_PUBKEY` set, which also disables SSH password login (RM-15)
