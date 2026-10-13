@@ -17,8 +17,8 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Status:** active
 - **Discovered:** 2026-10-11
 - **Affects:** `UPSTREAM_BLOCKED` path, audit queue
-- **Evidence:** inferred (no test from OVH ranges)
-- **Description:** Unknown whether OVH VPS addresses are blocked.
+- **Evidence:** confirmed for one request (2026-10-13): one GET from the OVH VPS-1 IP through `curl_cffi` (`impersonate="chrome"`) returned HTTP 200 with `__NEXT_DATA__` and an ad with an id. Not confirmed under sustained or concurrent load, or over days.
+- **Description:** One request from an OVH address was not blocked. Blocking at audit volume, rate-limit behaviour and IP reputation over time are unmeasured; the page body also contains the word `captcha` on a normal 200 page, so that marker alone is not proof of a challenge.
 - **Workaround:** `UPSTREAM_BLOCKED` releases the credit; about $10/month headroom reserved for a proxy.
 - **Target:** Test from the VPS in week 1 (blueprint §5)
 
@@ -44,7 +44,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Status:** active
 - **Discovered:** 2026-10-11
 - **Affects:** `rm_worker.clients.otodom.classify`, `UPSTREAM_SCHEMA_DRIFT`, RM-28 contract test
-- **Evidence:** inferred (path `props.pageProps.ad` with a truthy `id` was confirmed only from reading the POC; never fetched live from this repo)
+- **Evidence:** confirmed for one sale listing (2026-10-13, owner-authorised, `scripts/live_otodom_probe.py` from a dev machine and from the VPS): HTTP 200, `__NEXT_DATA__` present, `props.pageProps.ad` an object with an integer `id`. One listing only; other listing types, rental ads and expired ads are unverified. `ad.characteristics` is a **list** of items, not a mapping, so the admin-fee (czynsz) extraction must scan it. A challenge marker (`captcha`) appears inside a normal 200 page, so the marker check is a hint, not a verdict.
 - **Description:** The client accepts a page whose `__NEXT_DATA__` holds `props.pageProps.ad.id`, the minimum the engine needs. Offline tests use hand-built pages. Page markup, challenge pages and the real ad shape can differ.
 - **Workaround:** Anything unexpected becomes `UPSTREAM_BLOCKED` or `UPSTREAM_SCHEMA_DRIFT` and releases the credit; nothing is guessed.
 - **Target:** RM-28 (nightly contract test against one live listing); L-002 test from the VPS
