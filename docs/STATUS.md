@@ -19,7 +19,7 @@ fakes) · **3** provider-verified (authorised sandbox/live evidence) · **4** la
 | Run the engine | 2 | `analyse_listing` runs in the worker; API result equals a direct engine run | CAPEX placeholders (L-007); accuracy unmeasured (#94); vision not called, so every success is `succeeded_degraded` |
 | Persist and retrieve the canonical result | 2 | `audit.result` + typed columns copied from the analysis; `GET /api/audits/{id}` echoes it | none offline |
 | Failure releases the reservation; duplicates do not double-charge; tenant isolation | 2 | Failures inside the pipeline release the charge (RENT, fractional, gone, blocked, drift, crash, slow fetch hitting the deadline, unconfigured worker); 6 simultaneous submits admit one; duplicate delivery settles once; foreign audit is 404. **Recovery (RM-186, `tests/integration/test_audit_recovery.py`, `test_engine_child.py`):** failed enqueue re-deferred then completed; queued past deadline and worker death (`running` past deadline) fail `TIMEOUT` and release; healthy slow run untouched; reconciler idempotent under 3 concurrent runs; worker finish vs reconciler raced 12 times settles exactly once; a hung or dying engine is killed (process group) and releases; cancellation kills the child | Memory cap (`RLIMIT_AS`) is tested on Linux CI only (skipped on macOS); stalled Procrastinate `doing` rows are not cleaned (L-017) |
-| Progress stream | 0 | `audit_event` table | #185 |
+| Progress stream | 2 | `GET /api/audits/{id}/events` (SSE): replay from `Last-Event-ID`, NOTIFY wake-up with a 15 s safety poll, terminal `done`/`error` written in the same transaction as the status and the credit settlement, finished audits without stored events synthesised, foreign audit 404 (RM-185, `tests/integration/test_audit_events.py`, 10 tests); real Postgres NOTIFY and worker, offline fakes | Stages `vision`/`ocr`/`anchors` are not emitted until those steps exist; open-ended stream behaviour (keep-alive, lost wake-up, disconnect) is tested on the generator, not over a real socket |
 
 **Journey level once #192 is merged: 2, offline** (RM-184, `tests/integration/test_audit_journey.py`, 18 tests; real API, Postgres, ledger,
 Procrastinate worker and engine; listing source and market context are named fakes). That is **not** live-provider validation
@@ -42,7 +42,7 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 
 | Issue | Class | Next step / blocker |
 |---|---|---|
-| #13 audits | U, P | #184 merged (#192, offline level 2); #186 recovery implemented offline (RM-186); #185 (SSE) next; #187 blocked on #106 and live-fetch authorisation |
+| #13 audits | U, P | #184 merged (#192, offline level 2); #186 recovery merged (#206); #185 SSE in review (RM-185); #187 blocked on #106 and live-fetch authorisation |
 | #14 billing | U, B | Re-scope to Paddle packs per `PADDLE-INTEGRATION.md`; consumption depends on #184, money-PR review and pack/ledger slices. Paddle sandbox evidence replaces the earlier Stripe B-003 dependency for this pilot; final prices/provider acceptance pending |
 | #15 ops | P | Compose done; Caddy, WAL-G, backups deferred (local-first strategy) |
 | #16, #21 market batch and routes | B | Wait for #106, #48, #49 |

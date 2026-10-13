@@ -40,6 +40,7 @@ from rm_core.db.models import Audit, AuditStatus, ListingSnapshot
 from rm_core.deadline import Deadline
 from rm_core.ledger import settle
 from rm_core.legal import LegalTag, tag_names
+from rm_core.progress import KIND_DONE, KIND_ERROR, emit, emit_stage
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -114,10 +115,21 @@ def _failure(exc: Exception) -> Outcome:
     return Outcome(AuditStatus.failed_internal, ProblemCode.INTERNAL)
 
 
-async def _analyse(services: AuditServices, otodom_id: str) -> Outcome:
+async def _progress(sm: async_sessionmaker[AsyncSession], audit_id: UUID, stage: str) -> None:
+    """A stage event for the live stream. Best effort: progress is a view, never a reason to fail an audit."""
+    try:
+        async with sm() as db, db.begin():
+            await emit_stage(db, audit_id, stage)
+    except Exception:
+        log.warning("audit.progress_failed", audit_id=str(audit_id), stage=stage, exc_info=True)
+
+
+async def _analyse(services: AuditServices, audit_id: UUID, otodom_id: str) -> Outcome:
     deadline = Deadline.after(services.timeout_s)
+    sm = services.sessionmaker
     try:
         async with asyncio.timeout(services.timeout_s):
+            await _progress(sm, audit_id, "fetch")
             snapshot_id = await get_snapshot(
                 services.sessionmaker, services.source, otodom_id, deadline=deadline
             )
@@ -125,6 +137,7 @@ async def _analyse(services: AuditServices, otodom_id: str) -> Outcome:
                 payload = await db.scalar(
                     select(ListingSnapshot.payload).where(ListingSnapshot.id == snapshot_id)
                 )
+            await _progress(sm, audit_id, "extract")
             listing = extract_listing(payload)  # RENT and malformed payloads stop here: no context, no vision
             require_whole_ownership(  # invariant 5, checked before any market work; the engine checks again
                 classify_ownership(
@@ -134,8 +147,10 @@ async def _analyse(services: AuditServices, otodom_id: str) -> Outcome:
                 ),
                 listing.otodom_id,
             )
+            await _progress(sm, audit_id, "context")
             rent = await services.context.rent_input(listing, deadline=deadline)
             risk_free = await services.context.risk_free_rate(deadline=deadline)
+            await _progress(sm, audit_id, "synthesize")
             analysis = await services.engine.run(
                 listing, rent=rent, risk_free=risk_free, timeout_s=deadline.remaining()
             )
@@ -181,7 +196,25 @@ async def _finish(sm: async_sessionmaker[AsyncSession], audit_id: UUID, out: Out
         if ended is None:
             return False
         await settle(db, audit_id, capture=out.status in CAPTURED)
+        await _terminal_event(db, audit_id, out)
         return True
+
+
+async def _terminal_event(db: AsyncSession, audit_id: UUID, out: Outcome) -> None:
+    """The last event of the stream, in the transaction that ends the audit: `done` for a captured result,
+    `error` for everything else. Ids and codes only (no listing text, no result)."""
+    if out.status in CAPTURED:
+        await emit_stage(db, audit_id, "persist")
+        done: dict[str, object] = {"status": out.status.value, "result_url": f"/api/audits/{audit_id}"}
+        if out.analysis is not None:
+            done["grade"] = out.analysis.valuation.grade
+        if out.error_code:
+            done["warning"] = out.error_code  # e.g. VISION_UNAVAILABLE on a degraded success
+        await emit(db, audit_id, kind=KIND_DONE, stage="persist", pct=100, payload=done)
+    else:
+        await emit(
+            db, audit_id, kind=KIND_ERROR, payload={"status": out.status.value, "code": out.error_code}
+        )
 
 
 async def execute_audit(services: AuditServices, audit_id: UUID) -> AuditStatus | None:
@@ -191,7 +224,7 @@ async def execute_audit(services: AuditServices, audit_id: UUID) -> AuditStatus 
     if otodom_id is None:
         bound.info("audit.skipped_not_queued")
         return None
-    out = await _analyse(services, otodom_id)
+    out = await _analyse(services, audit_id, otodom_id)
     if not await _finish(services.sessionmaker, audit_id, out):
         bound.warning("audit.finish_lost", status=out.status.value)
         return None

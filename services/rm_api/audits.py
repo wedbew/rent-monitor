@@ -13,7 +13,8 @@ from uuid import UUID, uuid4
 
 import structlog
 from deal_analyzer.analysis import ENGINE_VERSION, SCHEMA_VERSION
-from fastapi import APIRouter, Path, Query, Request
+from fastapi import APIRouter, Header, Path, Query, Request
+from fastapi.responses import StreamingResponse
 from rm_contracts.audits import (
     AuditAccepted,
     AuditCreate,
@@ -35,6 +36,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from rm_api.deps import PrincipalDep, SessionDep
 from rm_api.problems import Problem
 from rm_api.queue import AuditQueue
+from rm_api.sse import stream_events
 
 log = structlog.get_logger(__name__)
 router = APIRouter(prefix="/api/audits", tags=["audits"])
@@ -183,3 +185,40 @@ async def get_audit(audit_id: Annotated[UUID, Path()], db: SessionDep, principal
     if audit is None:
         raise Problem.not_found("Audit")  # unknown and foreign look the same
     return _out(audit)
+
+
+STREAM_GRACE_S = 120  # a stream may outlive the job deadline a little; the client then reconnects
+
+
+@router.get(
+    "/{audit_id}/events",
+    response_class=StreamingResponse,
+    responses={200: {"content": {"text/event-stream": {}}, "description": "progress, then done or error"}},
+)
+async def audit_events(
+    audit_id: Annotated[UUID, Path()],
+    request: Request,
+    db: SessionDep,
+    principal: PrincipalDep,
+    last_event_id: Annotated[str | None, Header(alias="Last-Event-ID", max_length=20)] = None,
+) -> StreamingResponse:
+    """Server-sent progress. Replays every event after `Last-Event-ID`, then streams live; the first terminal
+    event (`done` or `error`) ends the stream. Another tenant's or an unknown audit is a 404."""
+    owned = await db.scalar(select(Audit.id).where(Audit.id == audit_id, Audit.user_id == principal.user_id))
+    if owned is None:
+        raise Problem.not_found("Audit")
+    await db.close()  # the stream holds no pooled connection while it waits
+    cursor = int(last_event_id) if last_event_id is not None and last_event_id.isdecimal() else 0
+    settings = request.app.state.settings
+    return StreamingResponse(
+        stream_events(
+            request.app.state.sessionmaker,
+            request.app.state.progress_hub,
+            audit_id,
+            last_event_id=cursor,
+            max_seconds=settings.audit_job_timeout_s + STREAM_GRACE_S,
+            is_disconnected=request.is_disconnected,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
+    )

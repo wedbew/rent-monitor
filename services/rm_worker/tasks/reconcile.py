@@ -30,6 +30,7 @@ from rm_contracts.jobs import AUDIT_QUEUE, RUN_AUDIT_TASK
 from rm_core.db.models import Audit, AuditStatus
 from rm_core.db.session import make_engine, make_sessionmaker
 from rm_core.ledger import settle
+from rm_core.progress import KIND_ERROR, emit
 from rm_core.settings import get_settings
 from sqlalchemy import ColumnElement, and_, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -76,6 +77,12 @@ async def _fail(sm: async_sessionmaker[AsyncSession], audit_id: UUID, job_timeou
         if ended is None:
             return False
         await settle(db, audit_id, capture=False)
+        await emit(
+            db,
+            audit_id,
+            kind=KIND_ERROR,
+            payload={"status": AuditStatus.failed_internal.value, "code": WORKER_LOST},
+        )
         return True
 
 
