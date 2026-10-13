@@ -37,7 +37,7 @@ middleware). Responses never contain a password, a hash or a token.
 | `auth_token` | `token_hash` (SHA-256 hex) PK, `purpose` (`register`\|`reset`), `email`, `user_id` (reset only, nullable FK cascade), `password_hash` (register only), `expires_at`, `used_at`, `created_at`. One live row per (email, purpose); a new request marks the old one used. `GDPR[personal-data]` |
 | TTL | register 24 h, reset 30 min (settings). Purged one day after expiry or use (`GDPR[retention]`, extends the existing job) |
 | Logs and telemetry | never the password, hash or token; the existing Sentry scrubber already redacts token-like URL parts and emails |
-| Mail | through the existing injectable Resend client and queue; the queued job carries a **token that is removed from the job row after sending** (as `send_magic_link`, L-011), and a failed send retries without re-issuing the token |
+| Mail | through the existing injectable Resend client and queue; the queued job carries the link, so the plaintext token sits in the `ops` job row until the nightly `remove_old_jobs_ops` (24 h) removes it (as `send_magic_link`, L-011); a failed send retries with the same token |
 
 ## 4. Account linking and takeover rules
 
@@ -66,6 +66,7 @@ response time does not distinguish it. Rate-limit decisions use the existing ato
 |---|---|---|
 | `INVALID_CREDENTIALS` | 401 | any login failure, identical for wrong password, unknown address, no credential |
 | `WEAK_PASSWORD` | 422 | policy failure with `reason` |
+| `ACCOUNT_EXISTS` | 409 | a register link is used but the address already has an account (the person holds the mailbox, so telling them is safe) |
 | `AUTH_TOKEN_INVALID` | 401 | register or reset token unknown, used, expired or wrong purpose |
 | `RATE_LIMITED` | 429 | existing |
 

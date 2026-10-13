@@ -111,6 +111,55 @@ class LoginToken(Base):
     used_at: Mapped[datetime | None]
 
 
+class UserCredential(Base):
+    """Email/password credential (ADR 0013). One row per account that has a password.
+
+    GDPR[personal-data]: `password_hash` is an Argon2id PHC string, never the password. Retention: until
+    account deletion (cascade on `app_user`, so erasure removes it); replaced on reset or change.
+    """
+
+    __tablename__ = "user_credential"
+
+    user_id: Mapped[str] = mapped_column(Text, user_fk(), primary_key=True)
+    password_hash: Mapped[str] = mapped_column(Text, comment="GDPR[personal-data]: Argon2id PHC string")
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class AuthToken(Base):
+    """Single-use, purpose-bound link token for registration and password reset (ADR 0013).
+
+    GDPR[personal-data]: email, and for `register` the Argon2id hash of the chosen password. Only the SHA-256
+    of the token is stored. Retention: purged `RETENTION_LOGIN_TOKEN_DAYS` after expiry or use (RM-30).
+    Erasure: `user_id` cascades; pending registrations (no user yet) are deleted by address on erasure.
+    """
+
+    __tablename__ = "auth_token"
+    __table_args__ = (
+        CheckConstraint("purpose IN ('register','reset')", name="purpose_vocab"),
+        CheckConstraint("email = lower(email)", name="email_lowercase"),
+        CheckConstraint("(purpose = 'register') = (password_hash IS NOT NULL)", name="register_carries_hash"),
+        Index(
+            "uq_auth_token_live",
+            "email",
+            "purpose",
+            unique=True,
+            postgresql_where=text("used_at IS NULL"),
+        ),
+        Index("ix_auth_token_expires", "expires_at"),
+    )
+
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    purpose: Mapped[str] = mapped_column(String(16))
+    email: Mapped[str] = mapped_column(Text, comment="GDPR[personal-data]")
+    user_id: Mapped[str | None] = mapped_column(Text, user_fk())
+    password_hash: Mapped[str | None] = mapped_column(
+        Text, comment="GDPR[personal-data]: Argon2id PHC string"
+    )
+    expires_at: Mapped[datetime]
+    used_at: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
 # ---------- Plans, Stripe, subscriptions ----------
 class SubStatus(StrEnum):
     incomplete = "incomplete"

@@ -36,9 +36,13 @@ MakeToken = Callable[..., str]
 class FakeQueue:
     def __init__(self) -> None:
         self.sent: list[tuple[str, str]] = []
+        self.auth_mail: list[tuple[str, str, str | None]] = []
 
     async def send_magic_link(self, *, email: str, url: str) -> None:
         self.sent.append((email, url))
+
+    async def send_auth_mail(self, *, kind: str, email: str, url: str | None) -> None:
+        self.auth_mail.append((kind, email, url))
 
 
 class FakeCerts:

@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     session_cookie_name: str = "rm_session"  # production adds the `__Host-` prefix (cookie_name property)
     session_ttl_days: int = Field(default=30, ge=1)
     magic_link_ttl_minutes: int = Field(default=30, ge=1)
+    # Email/password sign-in (ADR 0013, docs/PASSWORD-AUTH-SPEC.md). Argon2id defaults are the OWASP minimum;
+    # raise them after measuring on the VPS (L-019). Hashes are rehashed on login when these change.
+    password_argon2_memory_kib: int = Field(default=19456, ge=8192, le=1048576)
+    password_argon2_time_cost: int = Field(default=2, ge=1, le=10)
+    password_argon2_parallelism: int = Field(default=1, ge=1, le=8)
+    password_hash_concurrency: int = Field(default=2, ge=1, le=8)  # simultaneous hashes per API process
+    register_token_ttl_hours: int = Field(default=24, ge=1)
+    reset_token_ttl_minutes: int = Field(default=30, ge=1)
 
     free_signup_credits: int = Field(default=3, ge=0)
     pro_monthly_audit_allowance: int = Field(default=40, ge=0)  # placeholder until COGS is measured

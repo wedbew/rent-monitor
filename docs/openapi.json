@@ -1,6 +1,13 @@
 {
   "components": {
     "schemas": {
+      "Accepted": {
+        "additionalProperties": false,
+        "description": "The body of every non-enumerating 202: identical whatever the address is.",
+        "properties": {},
+        "title": "Accepted",
+        "type": "object"
+      },
       "AccountDelete": {
         "additionalProperties": false,
         "description": "Account erasure must be confirmed by typing the account's own address (GDPR[erasure]).",
@@ -1376,6 +1383,63 @@
         "title": "PlanOut",
         "type": "object"
       },
+      "RegisterRequest": {
+        "additionalProperties": false,
+        "description": "GDPR[personal-data]: the address and a password that is hashed before it is stored.",
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "pattern": "^[^@\\s<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 10,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "RegisterRequest",
+        "type": "object"
+      },
+      "RegisterVerify": {
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "maxLength": 128,
+            "minLength": 20,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "RegisterVerify",
+        "type": "object"
+      },
+      "ResendRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "pattern": "^[^@\\s<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "ResendRequest",
+        "type": "object"
+      },
       "SavedOut": {
         "description": "GDPR[personal-data]: `note` is free text written by the user.",
         "properties": {
@@ -2287,6 +2351,130 @@
           }
         },
         "summary": "Google Sign In",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "operationId": "register_api_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Accepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/register/resend": {
+      "post": {
+        "description": "Re-mail a pending registration with a fresh token (the old link stops working). The password hash\nstays the one chosen at registration; an address with no pending registration gets nothing.",
+        "operationId": "register_resend_api_auth_register_resend_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Accepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register Resend",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/register/verify": {
+      "post": {
+        "operationId": "register_verify_api_auth_register_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterVerify"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register Verify",
         "tags": [
           "auth"
         ]

@@ -1,6 +1,7 @@
 """Names of background tasks the API defers by name (the API never imports the worker)."""
 
 SEND_MAGIC_LINK_TASK = "rm_worker.tasks.email.send_magic_link"
+SEND_AUTH_MAIL_TASK = "rm_worker.tasks.email.send_auth_mail"
 OPS_QUEUE = "ops"
 RUN_AUDIT_TASK = "rm_worker.tasks.audit.run_audit"
 AUDIT_QUEUE = "audit"

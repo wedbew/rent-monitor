@@ -17,6 +17,7 @@ from rm_core.settings import Settings, get_settings
 from rm_api.admin import router as admin_router
 from rm_api.audits import router as audits_router
 from rm_api.auth.google import GoogleCerts, GoogleVerifier
+from rm_api.auth.password import router as password_router
 from rm_api.auth.router import router as auth_router
 from rm_api.auth.sessions import REVOKED_CHANNEL, PrincipalCache
 from rm_api.billing_erasure import BillingEraser
@@ -122,7 +123,15 @@ def create_app(
 
 
 def _include_routers(app: FastAPI) -> None:
-    for router in (health_router, auth_router, me_router, saved_router, admin_router, audits_router):
+    for router in (
+        health_router,
+        auth_router,
+        password_router,
+        me_router,
+        saved_router,
+        admin_router,
+        audits_router,
+    ):
         app.include_router(router)
 
 
@@ -131,6 +140,9 @@ class _NoQueue:
     mail."""
 
     async def send_magic_link(self, *, email: str, url: str) -> None:
+        raise RuntimeError("no job queue configured")
+
+    async def send_auth_mail(self, *, kind: str, email: str, url: str | None) -> None:
         raise RuntimeError("no job queue configured")
 
     async def run_audit(self, audit_id: UUID) -> None:
