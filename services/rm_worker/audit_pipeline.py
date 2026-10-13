@@ -45,6 +45,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from rm_worker.clients.otodom import ListingGone, UpstreamBlocked, UpstreamSchemaDrift
+from rm_worker.context import ContextUnavailableError
 from rm_worker.engine_child import ChildEngine, EngineRunner
 from rm_worker.snapshot_service import ListingSource, get_snapshot
 
@@ -99,6 +100,7 @@ _FAILURES: tuple[tuple[type[Exception], AuditStatus, str], ...] = (
     (UpstreamBlocked, AuditStatus.failed_upstream, ProblemCode.UPSTREAM_BLOCKED),
     (UpstreamSchemaDrift, AuditStatus.failed_upstream, ProblemCode.UPSTREAM_SCHEMA_DRIFT),
     (ExtractionError, AuditStatus.failed_upstream, ProblemCode.UPSTREAM_SCHEMA_DRIFT),
+    (ContextUnavailableError, AuditStatus.failed_internal, ProblemCode.CONTEXT_UNAVAILABLE),
     (TimeoutError, AuditStatus.failed_internal, "TIMEOUT"),
 )
 _NEEDS_A_FIX = (UpstreamSchemaDrift, ExtractionError)
