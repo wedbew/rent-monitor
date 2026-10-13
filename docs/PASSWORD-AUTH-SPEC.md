@@ -1,7 +1,7 @@
 # Email and password authentication specification (RM-202, #201)
 
-Status: **specification, not yet implemented** (implementation: #203 registration and verification, #204 login, #205 recovery and
-change). Decision of record: [ADR 0013](adr/0013-email-password-auth.md). Product source: owner request on #201 and the design
+Status: **implemented** in RM-203 (registration and verification), RM-204 (login) and RM-205 (recovery and change); level 2 offline,
+real Resend delivery unverified (B-004). Decision of record: [ADR 0013](adr/0013-email-password-auth.md). Product source: owner request on #201 and the design
 prototype `design/v3/login.html` (its eight-character check is a demo, not a policy). Existing methods are unchanged: Google
 ([GOOGLE-AUTH-SPEC.md](GOOGLE-AUTH-SPEC.md), ADR 0010) and the email magic link.
 
