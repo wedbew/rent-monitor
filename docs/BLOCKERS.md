@@ -17,7 +17,7 @@ _None. On 2026-10-12 the owner approved merging every pending PR: auth (#147), w
 
 | ID | What | Owner action | Waits on it |
 |---|---|---|---|
-| B-016 | **Headless agent has no model credential.** Runs 38318725879 (2026-10-12 22:48Z), 38183301878 and 38182957497 ended with zero model usage and $0 cost; the log shows `claude_code_oauth_token: ""` and `ANTHROPIC_API_KEY: ""`: the repo secret `CLAUDE_CODE_OAUTH_TOKEN` is empty at run time (it is listed, last updated 2026-10-11T23:10Z) | In your terminal: `claude setup-token`, then `gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo wedbew/rent-monitor` and paste the token at the prompt (never into chat). Then label #106 `agent` (the canary retry) and read the run log | #6 (headless loop), the dispatcher (#189), every `agent`-labelled issue |
+| B-016 | **Headless agent: the API rejects the OAuth token.** Since 2026-10-13 the secret reaches the job (masked), but every run ends with `API Error: 401 OAuth access token is invalid` (`authentication_failed`, `apiKeySource: none`, 0 turns, $0). Established by the failure diagnostics in `claude.yml` on run 38378777564 (read-only canary); earlier runs (38318725879, 38183301878, 38182957497) had an empty secret | Generate a fresh token with `claude setup-token` on a machine logged in with the subscription that should pay, check it locally first: `CLAUDE_CODE_OAUTH_TOKEN="$(grep '^CLAUDE_CODE_OAUTH_TOKEN=' .env | cut -d= -f2-)" claude -p "reply ok"` must answer, then `gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo wedbew/rent-monitor` (no quotes or trailing spaces in the value). Re-run the canary: Actions, claude, *Run workflow* | #6 (headless loop), the dispatcher (#189), every `agent`-labelled issue |
 
 ## Deferred (not blocking local work)
 

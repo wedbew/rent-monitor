@@ -48,9 +48,17 @@ Manual run: Actions → dispatch → *Run workflow* (dry by default; tick *apply
 Idempotency: each dispatch or resume leaves a `<!-- rm-dispatch attempt=n -->` comment; attempts are capped at 2 per `/retry`.
 Everything the agent needs to continue is the checkpoint comment (`rules/delivery.md`).
 
+## Diagnosing a failed run
+
+The action hides its output. On failure `claude.yml` prints sanitised facts from the execution file (result, `error` / `errors` /
+`api_error_status`, the error text; no transcript, tool data or credentials) to the job summary and as an error annotation
+(`scripts/claude_failure_report.py`). Run the read-only canary any time from Actions, *claude*, *Run workflow*: Read tool only, 3 turns,
+no write access, no branch or PR; on success the one-sentence answer is shown in the summary.
+
 ## Canary log
 
 | Date | Issue | Result | Evidence |
 |---|---|---|---|
 | 2026-10-11 | #100 (labelled `agent`) | failed in ~2 s, 0 turns, $0 cost; no PR | run 38182957497: `is_error:true` before any model call, then `compare` 404 from the action's own change check |
 | 2026-10-12 22:48Z | #190 (labelled `agent`) | failed in 40 s, no model turn; no PR | run 38318725879: `claude_code_oauth_token: ""` and `ANTHROPIC_API_KEY: ""`, i.e. the OAuth secret is empty (B-016). The `claude.yml` preflight now fails fast and comments the owner action. Retry target: #106 |
+| 2026-10-13 09:47Z | read-only canary (`claude.yml` *Run workflow*, branch `rm-189-ci-dispatch`) | failed in ~2 s: `API Error: 401 OAuth access token is invalid` (`authentication_failed`, 0 turns, $0) | run 38378777564; the secret is present, the API rejects it (B-016). Earlier empty-secret runs fixed by re-setting the secret |
