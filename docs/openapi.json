@@ -2118,6 +2118,63 @@
         ]
       }
     },
+    "/api/audits/{audit_id}/events": {
+      "get": {
+        "description": "Server-sent progress. Replays every event after `Last-Event-ID`, then streams live; the first terminal\nevent (`done` or `error`) ends the stream. Another tenant's or an unknown audit is a 404.",
+        "operationId": "audit_events_api_audits__audit_id__events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "audit_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Audit Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Last-Event-ID",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 20,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {}
+            },
+            "description": "progress, then done or error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Audit Events",
+        "tags": [
+          "audits"
+        ]
+      }
+    },
     "/api/auth/email/start": {
       "post": {
         "description": "Always 204: the response never reveals whether the address has an account.",

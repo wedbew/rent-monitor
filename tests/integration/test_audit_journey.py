@@ -189,6 +189,13 @@ async def clean_up(engine: AsyncEngine, procrastinate_schema: None) -> AsyncIter
     await wipe_jobs()
     async with engine.begin() as conn:
         refs = list(REFS)
+        await conn.execute(  # progress events are shared global state too (another module counts them)
+            text(
+                "DELETE FROM app.audit_event WHERE audit_id IN"
+                " (SELECT id FROM app.audit WHERE otodom_id = ANY(:r))"
+            ),
+            {"r": refs},
+        )
         await conn.execute(
             text("UPDATE app.audit SET snapshot_id = NULL WHERE otodom_id = ANY(:r)"), {"r": refs}
         )

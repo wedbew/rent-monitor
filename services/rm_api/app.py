@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from rm_core.db.session import make_engine, make_sessionmaker
 from rm_core.logging import configure_logging
 from rm_core.observability import init_sentry
+from rm_core.progress import CHANNEL as PROGRESS_CHANNEL
 from rm_core.settings import Settings, get_settings
 
 from rm_api.admin import router as admin_router
@@ -27,10 +28,22 @@ from rm_api.origin import OriginCheckMiddleware
 from rm_api.problems import install_problem_handlers
 from rm_api.queue import AuditQueue, EmailQueue, ProcrastinateEmailQueue
 from rm_api.saved import router as saved_router
+from rm_api.sse import ProgressHub
 
 log = structlog.get_logger(__name__)
 HTTP_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
 HTTP_LIMITS = httpx.Limits(max_connections=20, max_keepalive_connections=10)
+
+
+def _start_listener(app: FastAPI, dsn: str) -> NotifyListener:
+    """The one LISTEN connection of this process: session revocation and audit progress wake-ups."""
+    listener = NotifyListener(dsn, [REVOKED_CHANNEL, PROGRESS_CHANNEL])
+    listener.subscribe(REVOKED_CHANNEL, app.state.principal_cache.on_notify)
+    listener.on_reconnect(app.state.principal_cache.clear)  # missed notifications: treat all as stale
+    listener.subscribe(PROGRESS_CHANNEL, app.state.progress_hub.on_notify)
+    listener.on_reconnect(app.state.progress_hub.wake_all)  # streams re-read from the table
+    listener.start()
+    return listener
 
 
 def create_app(
@@ -68,12 +81,7 @@ def create_app(
             )
         app.state.email_queue = email_queue or jobs or _NoQueue()
         app.state.audit_queue = audit_queue or jobs or _NoQueue()
-        listener: NotifyListener | None = None
-        if settings.psycopg_dsn:
-            listener = NotifyListener(settings.psycopg_dsn, [REVOKED_CHANNEL])
-            listener.subscribe(REVOKED_CHANNEL, app.state.principal_cache.on_notify)
-            listener.on_reconnect(app.state.principal_cache.clear)  # missed notifications: treat all as stale
-            listener.start()
+        listener = _start_listener(app, settings.psycopg_dsn) if settings.psycopg_dsn else None
         app.state.notify_listener = listener
         log.info("startup", env=settings.app_env, database=engine is not None)
         try:
@@ -101,6 +109,7 @@ def create_app(
     app.state.settings = settings
     app.state.principal_cache = PrincipalCache()
     app.state.notify_listener = None
+    app.state.progress_hub = ProgressHub()
     app.state.google_verifier = google_verifier
     app.state.email_queue = email_queue
     app.state.audit_queue = audit_queue
