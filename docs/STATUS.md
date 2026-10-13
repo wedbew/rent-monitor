@@ -15,7 +15,7 @@ fakes) · **3** provider-verified (authorised sandbox/live evidence) · **4** la
 | Parse and bound the listing reference | 1 | `rm_core.listing_ref` | Route that accepts it: S1 #184 |
 | Reserve credit, capture/release | 1 | `rm_core.ledger`, `tests/integration/test_ledger.py`, `test_concurrency.py` | Called by no audit path yet: S1 |
 | Queue the analysis | 0 | Only the email job is deferred (`rm_api.queue`) | `run_audit` task and deferral: S1 |
-| Acquire listing and context | 1 (parts) | Otodom client, snapshots, OSM/geo, OpenRouter client with fakes | Comparables store merged (#106 slice 1, level 1), importers that fill it still missing; real adapters wired (S4 #187); live shape unverified (L-005) |
+| Acquire listing and context | 1 (parts) | Otodom client, snapshots, OSM/geo, OpenRouter client with fakes | Comparables store merged (#106 slice 1, level 1), importers that fill it still missing; real adapters wired (S4 #187); live shape confirmed for one sale listing, 2026-10-13 (L-005) |
 | Run the engine | 1 | `apps/deal_analyzer.analyse_listing`, goldens, 7 invariants | CAPEX prices are placeholders (L-007); accuracy unmeasured (#94) |
 | Persist and retrieve the canonical result | 0 | `audit` table and typed columns exist | `GET /api/audits*`: S1 |
 | Failure releases the reservation; duplicates do not double-charge | 0 | `ledger.settle` is idempotent; one-active-per-listing index exists | Wired and proven end to end: S1; crash recovery: S3 #186 |
@@ -60,7 +60,7 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 ## Owner actions (exact, smallest first)
 
 1. Approve or comment on the money PR for #184 (head SHA recorded in `docs/BLOCKERS.md`) when it is up.
-2. Authorise **one** live Otodom listing fetch from a dev machine to settle L-005 (listing shape), and the datacenter-IP test on the VPS (#42).
+2. ~~Authorise one live Otodom fetch (L-005) and the datacenter-IP test (#42).~~ Done 2026-10-13: one sale listing returned 200 and parsed from the dev machine and from the OVH VPS-1. Single request each; sustained-load blocking is still unmeasured (L-002).
 3. Provide the labelled listing set for #94 and CAPEX prices or a data source (B-015, L-007).
 4. Stripe: grant sandbox access (B-003); request BLIK recurring activation (#39, has lead time).
 5. Decisions still open: Pro allowance and free-tier scope (#43), market-data bootstrap (CONTEXT §9), exit-value anchor (B-014).

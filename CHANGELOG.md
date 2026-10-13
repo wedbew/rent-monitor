@@ -4,6 +4,10 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+- `scripts/live_otodom_probe.py`: one owner-authorised live Otodom fetch that prints status and the ad's key shape without values; settled L-005 and a single-request L-002 on 2026-10-13 (RM-42)
+- `deploy/setup-server.sh`: idempotent VPS hardening (deploy user, 2 GB swap, UFW 22/80/443, fail2ban, Docker); operator runs it once on the host with `DEPLOY_SSH_PUBKEY` set, which also disables SSH password login (RM-15)
+
 ### Security
 - Error events no longer carry stack-frame variables, breadcrumb data, log params or emails, JWTs and token-like parameters in free text, and are dropped if scrubbing fails; must be in place before `SENTRY_DSN` is set (RM-149)
 
