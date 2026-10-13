@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="96" viewBox="0 0 360 96" role="img" aria-label="Renti — rounded floor-plan r logo">
+<g fill="none" stroke="#235b46" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+<rect x="14" y="16" width="60" height="60" rx="10"/>
+<path d="M34 73V34 M34 47c0-10 8-16 18-16h19"/>
+</g>
+<text x="98" y="72" fill="#182c28" font-family="Helvetica Neue,Arial,sans-serif" font-size="76" font-weight="600" letter-spacing="-2.8">renti</text>
+</svg>

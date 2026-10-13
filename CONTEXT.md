@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-13 · by: RM-106 (comparable-rent store); prior: RM-42 (live Otodom probe, L-005/L-002), RM-177 (delivery loop, STATUS.md); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
+**Last updated:** 2026-10-14 · by: RM-197 (design V3); prior: RM-106 (comparable-rent store), RM-42 (live Otodom probe, L-005/L-002), RM-177 (delivery loop, STATUS.md); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -173,7 +173,7 @@ rulesets for `main` and `staging` are active. Roadmap, gates and owner deadlines
 or GUS-PoC artifacts. Delivery process: `.agent/rules/delivery.md`, ADR 0012.
 
 **Design exploration (12 Oct 2026, maintainer request):** `design/` contains proposed UX principles, a documentation-state review,
-and responsive interactive home, analyses-list and separate city-context prototypes with fictional fixtures. `design/v1/` holds the warm editorial direction; `design/v2/` adds a monochrome architectural alternative with new tokens, restrained motion, and a dedicated analysis-page scaffold/UX contract (full analytic rendering deferred). Neither is selected for production. This is a Phase 2 design artifact, not a production SPA;
+and responsive interactive home, analyses-list and separate city-context prototypes with fictional fixtures. `design/v1/` holds the warm editorial direction; `design/v3/` (13 Oct) is a light-first alternative with an interactive login demo, report, market page and logo explorations; `design/v2/` adds a monochrome architectural alternative with new tokens, restrained motion, and a dedicated analysis-page scaffold/UX contract (full analytic rendering deferred). Neither is selected for production. This is a Phase 2 design artifact, not a production SPA;
 `frontend/` and backend contracts are unchanged.
 
 ## 9. Open decisions (owner: you)
@@ -213,7 +213,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Milestones, dependencies and launch gates | `docs/ROADMAP.md` |
 | Delivery state (journey, backlog map, owner actions) | `docs/STATUS.md` |
 | Autonomous delivery evidence, bottlenecks and proposed faster workflow (recommendations only) | `docs/DELIVERY-AUDIT.md` (RM-177) |
-| Proposed Phase 2 UX principles and interactive design alternatives (fictional data; not production frontend) | `design/README.md`, `design/v1/`, `design/v2/design-principles.md`, `design/v2/main-view.html` |
+| Proposed Phase 2 UX principles and interactive design alternatives (fictional data; not production frontend) | `design/README.md`, `design/v1/`, `design/v2/design-principles.md`, `design/v2/main-view.html`, `design/v3/README.md` |
 | Phase 2 design direction (prototype, principles, spec) | `design/README.md` (#44 input; no backend or rule change) |
 | Owner-only blockers | `docs/BLOCKERS.md`, `.agent/rules/blockers.md` |
 | Agent bot setup | `docs/AGENT-BOT.md`, `scripts/setup_agent_bot.sh` |
