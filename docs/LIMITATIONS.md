@@ -117,7 +117,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Discovered:** 2026-10-13
 - **Affects:** `POST /api/audits`, `rm_worker.audit_pipeline`, `rm_worker.audit_services`
 - **Evidence:** confirmed (`tests/integration/test_audit_journey.py` runs with `FakeSource` and `FakeContext`)
-- **Description:** The worker has no production listing source or market context configured, so a real deployment ends every audit `failed_internal` with the credit released. The vision stage is not called, so every success is `succeeded_degraded` (`vision_unavailable`). A worker killed mid-run leaves its audit `running` and charged until the reconciler exists; the analyst audit is refused (403). There is no progress stream.
+- **Description:** The worker has no production listing source or market context configured, so a real deployment ends every audit `failed_internal` with the credit released. The vision stage is not called, so every success is `succeeded_degraded` (`vision_unavailable`). A worker killed mid-run leaves its audit `running` and charged, and a failed defer after commit leaves it `queued` and charged, until the reconciler exists (#186). The deadline is `asyncio.timeout`, which interrupts awaits only: a blocking synchronous engine call is not interrupted (the killable child is also #186); the analyst audit is refused (403). There is no progress stream.
 - **Workaround:** none needed before launch; do not expose the route to real users until #186 and #187 land.
 - **Target:** #186 (reconciler, killable child), #187 (real adapters), #185 (SSE); docs/STATUS.md journey table
 

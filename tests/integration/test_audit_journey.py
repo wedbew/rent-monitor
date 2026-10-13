@@ -469,7 +469,7 @@ async def test_a_failed_audit_releases_its_credit(
         assert h.ctx.calls == []  # no market or vision work for a listing that is not a deal (invariant 1)
 
 
-async def test_a_timeout_ends_the_audit_and_releases_the_credit(
+async def test_a_slow_listing_fetch_hits_the_deadline_and_releases_the_credit(
     h: Harness, make_google_token: MakeToken
 ) -> None:
     c, me = await sign_in(h.app, make_google_token)

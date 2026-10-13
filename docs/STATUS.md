@@ -4,7 +4,7 @@
 Hourly facts (open PRs, checks, who holds which issue) come from GitHub: `gh issue list --label ready`,
 `uv run python scripts/delivery_metrics.py`. **Last verified:** 2026-10-13 against `staging` · by RM-184.
 
-Levels: **1** implemented (offline tests, merged) · **2** integrated (journey test through API, queue, Postgres, engine, with named
+Written for the state after the PR that edits it merges; until then `staging` shows the previous text. Levels: **1** implemented (offline tests, merged) · **2** integrated (journey test through API, queue, Postgres, engine, with named
 fakes) · **3** provider-verified (authorised sandbox/live evidence) · **4** launch-ready (release gates). A closed issue is level 1 at most.
 
 ## Journey (P0): sign in → submit sale listing → reserve credit → queue → context → engine → persist and retrieve
@@ -18,10 +18,10 @@ fakes) · **3** provider-verified (authorised sandbox/live evidence) · **4** la
 | Acquire listing and context | 1 | Pipeline takes injected `ListingSource` / `ContextProvider`; test uses `FakeSource`, `FakeContext`; Otodom client, snapshots, OSM clients exist | Rent comparables store (#106); real adapters (#187); live shape unverified (L-005) |
 | Run the engine | 2 | `analyse_listing` runs in the worker; API result equals a direct engine run | CAPEX placeholders (L-007); accuracy unmeasured (#94); vision not called, so every success is `succeeded_degraded` |
 | Persist and retrieve the canonical result | 2 | `audit.result` + typed columns copied from the analysis; `GET /api/audits/{id}` echoes it | none offline |
-| Failure releases the reservation; duplicates do not double-charge; tenant isolation | 2 | RENT, fractional, gone, blocked, drift, crash, timeout, unconfigured worker all release; 6 simultaneous submits admit one; duplicate job delivery settles once; foreign audit is 404 | Worker death mid-run (#186) |
+| Failure releases the reservation; duplicates do not double-charge; tenant isolation | 2 (narrow) | Covered: failures raised inside the async pipeline (RENT, fractional, gone, blocked, payload drift, crash, a slow listing fetch or context call hitting the deadline, unconfigured worker) release the charge; 6 simultaneous submits admit one; duplicate job delivery settles once; foreign audit is 404 | **Not covered:** the defer failing after commit (audit stays `queued`, credit reserved), worker death mid-run (stays `running`), and a blocking engine call (`asyncio.timeout` cannot interrupt synchronous code). All need #186 |
 | Progress stream | 0 | `audit_event` table | #185 |
 
-**Journey level today: 2, offline** (RM-184, `tests/integration/test_audit_journey.py`, 18 tests; real API, Postgres, ledger,
+**Journey level once #192 is merged: 2, offline** (RM-184, `tests/integration/test_audit_journey.py`, 18 tests; real API, Postgres, ledger,
 Procrastinate worker and engine; listing source and market context are named fakes). That is **not** live-provider validation
 and not production readiness (L-015). Level 3 needs the owner's authorisation for a live fetch and sourced market data.
 
@@ -42,7 +42,7 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 
 | Issue | Class | Next step / blocker |
 |---|---|---|
-| #13 audits | U, P | #184 done at level 2 (RM-184); next #185 (SSE) and #186 (reconciler) are **R**; #187 blocked on #106 and live-fetch authorisation |
+| #13 audits | U, P | #184 = PR #192 (offline level 2, awaiting approval); #185 (SSE) and #186 (recovery) become **R** only after #192 merges; #187 blocked on #106 and live-fetch authorisation |
 | #14 billing | U, B | Offline code can start after #184 (needs consumption path) and a money-PR approval; sandbox proof needs B-003. Slice it before `ready` |
 | #15 ops | P | Compose done; Caddy, WAL-G, backups deferred (local-first strategy) |
 | #16, #21 market batch and routes | B | Wait for #106, #48, #49 |
