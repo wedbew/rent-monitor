@@ -29,7 +29,7 @@ is not live-provider validation and not production readiness.
 | Area | Level | Note |
 |---|---|---|
 | Platform (settings, logging, problems, health, flags, admin, GDPR export/erase, retention) | 1 | Admin and privacy tools are outside the P0 path |
-| Billing (Stripe, BLIK, webhook, entitlements, VAT) | 0 | Spec only (`docs/STRIPE-SPEC.md`); sandbox access pending (B-003); `has_pro` logic exists |
+| Billing (Paddle pilot report packs, BLIK, webhook, credits, accounting) | 0 | Spec only (`docs/PADDLE-INTEGRATION.md`): owner selected one-time 1/5/10-report packs; final pricing, Paddle approval/sandbox and accountant review pending (L-015/L-016). Existing ledger/`has_pro` code is not a Paddle integration |
 | Ops (Compose, Caddy, WAL-G, backups, monitors) | 1 partial | Local Compose + smoke (health only, **not** a journey test); Caddy/WAL-G/backups not built |
 | Market data, radar, screener | 0 | #106, #48, #49, #16, #21 |
 | Frontend | 0 | Phase 2, needs explicit authorisation; design prototypes only |
@@ -42,11 +42,11 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 | Issue | Class | Next step / blocker |
 |---|---|---|
 | #13 audits | U, P | Slices #184 (**R**, P0), #185, #186 (after #184), #187 (blocked: #184, #106, live-fetch authorisation) |
-| #14 billing | U, B | Offline code can start after #184 (needs consumption path) and a money-PR approval; sandbox proof needs B-003. Slice it before `ready` |
+| #14 billing | U, B | Re-scope to Paddle packs per `PADDLE-INTEGRATION.md`; consumption depends on #184, money-PR review and pack/ledger slices. Paddle sandbox evidence replaces the earlier Stripe B-003 dependency for this pilot; final prices/provider acceptance pending |
 | #15 ops | P | Compose done; Caddy, WAL-G, backups deferred (local-first strategy) |
 | #16, #21 market batch and routes | B | Wait for #106, #48, #49 |
-| #25 worker-ops | P | Part 1 merged (#157); reconciler arrives with #186; subscription tasks with #14 |
-| #26, #27 invoices, disputes | B | Wait for #14; accountant (#41) for treatment |
+| #25 worker-ops | P | Part 1 merged (#157); reconciler arrives with #186; pilot payment/adjustment reconciliation with #14 replaces subscription tasks |
+| #26, #27 invoices, disputes | B | Re-scope to Paddle invoice access, settlement and pack reversals; wait for #14 and accountant (#41) |
 | #28 API contract | P | OpenAPI + drift done (#175); schemathesis after #184; nightly live contract test is owner-authorised only |
 | #32-#38 launch gates | B | Cannot run before their subjects exist; #38 is partly covered by auth tests (sign-out-everywhere, unverified link) but gate timing evidence is missing |
 | #44 frontend | U, B | Phase 2; owner authorisation required |
@@ -62,8 +62,8 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 1. Approve or comment on the money PR for #184 (head SHA recorded in `docs/BLOCKERS.md`) when it is up.
 2. ~~Authorise one live Otodom fetch (L-005) and the datacenter-IP test (#42).~~ Done 2026-10-13: one sale listing returned 200 and parsed from the dev machine and from the OVH VPS-1. Single request each; sustained-load blocking is still unmeasured (L-002).
 3. Provide the labelled listing set for #94 and CAPEX prices or a data source (B-015, L-007).
-4. Stripe: grant sandbox access (B-003); request BLIK recurring activation (#39, has lead time).
-5. Decisions still open: Pro allowance and free-tier scope (#43), market-data bootstrap (CONTEXT §9), exit-value anchor (B-014).
+4. Paddle pilot: confirm pack prices (recommended 10/40/70 PLN), obtain product/prepaid-report acceptance and sandbox access, and have the accountant review settlement/KSeF treatment. Stripe sandbox (B-003) and recurring-BLIK activation (#39) are no longer pilot dependencies; issue records need reconciliation.
+5. Decisions still open: pilot signup-report allowance and unused-report expiry (#43), market-data bootstrap (CONTEXT §9), exit-value anchor (B-014). Monthly Pro allowance is outside this pilot.
 6. Approve the workflow PR (CI docs-only filter, dispatcher). Then enable the dispatcher after the canary: `gh variable set ENABLE_DISPATCH --body true`.
 
 ## Autonomy
