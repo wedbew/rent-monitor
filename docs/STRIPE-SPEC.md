@@ -1,5 +1,12 @@
 # Stripe integration specification (closes #127)
 
+> Owner-requested research (2026-10-13): [BILLING-ALTERNATIVES.md](BILLING-ALTERNATIVES.md)
+> evaluates Paddle, Lemon Squeezy and other options to reduce customer-invoicing/KSeF integration work.
+> **Pilot direction selected by the owner, 2026-10-13:** one-time Paddle packs of 1/5/10 reports,
+> specified in [PADDLE-INTEGRATION.md](PADDLE-INTEGRATION.md). This file describes the earlier
+> subscription design and is not the pilot implementation contract. ADR replacement and detailed
+> blueprint reconciliation accompany implementation; Stripe integration has not been migrated in code.
+
 Status: specification, owner decisions recorded 2026-10-12 (D-02, D-03, retry window, refunds and disputes). It is the contract that billing (#14),
 the VAT invoice work (#26) and disputes/refunds (#27) are implemented from; blueprint §3 *Stripe webhook lifecycle*,
 *BLIK at launch* and *VAT invoices* stay the spec of record and are not repeated. *Confirmed* = in the blueprint with a source
