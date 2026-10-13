@@ -34,6 +34,7 @@ from rm_worker import audit_services
 from rm_worker.app import app as worker_app
 from rm_worker.audit_pipeline import AuditServices, execute_audit
 from rm_worker.clients.otodom import ListingGone, UpstreamBlocked
+from rm_worker.engine_child import EngineRunner
 from rm_worker.tasks import audit as audit_task  # also registers run_audit on the worker app
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
@@ -121,12 +122,15 @@ class Harness:
         self.app, self.engine, self.dsn, self.source, self.ctx = app, engine, dsn, source, ctx
         self.sm = async_sessionmaker(engine, expire_on_commit=False)
 
-    def services(self, *, timeout_s: float = 30.0) -> AuditServices:
-        return AuditServices(sessionmaker=self.sm, source=self.source, context=self.ctx, timeout_s=timeout_s)
+    def services(self, *, timeout_s: float = 30.0, engine: EngineRunner | None = None) -> AuditServices:
+        extra = {} if engine is None else {"engine": engine}
+        return AuditServices(
+            sessionmaker=self.sm, source=self.source, context=self.ctx, timeout_s=timeout_s, **extra
+        )
 
-    async def run_worker(self, *, timeout_s: float = 30.0) -> None:
+    async def run_worker(self, *, timeout_s: float = 30.0, engine: EngineRunner | None = None) -> None:
         """Process every todo job on the `audit` queue with the real Procrastinate worker, then return."""
-        audit_services.configure(self.services(timeout_s=timeout_s))
+        audit_services.configure(self.services(timeout_s=timeout_s, engine=engine))
         connector = procrastinate.PsycopgConnector(conninfo=self.dsn, min_size=1, max_size=3)
         try:
             with worker_app.replace_connector(connector) as app:

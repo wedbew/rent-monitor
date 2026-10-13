@@ -112,6 +112,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none needed locally. Before deploy set `--forwarded-allow-ips` to the Caddy container address and add a smoke check.
 - **Target:** #15 (ops); PRE-DEPLOYMENT §6
 
+### L-017 — Engine memory cap is Linux-only; stalled worker jobs are not cleaned
+- **Status:** active
+- **Discovered:** 2026-10-14
+- **Affects:** `rm_worker.engine_child`, `rm_worker.tasks.reconcile`, release gate 4 (memory)
+- **Evidence:** confirmed (code); the 1024 MB `AUDIT_CHILD_MEMORY_MB` value is an estimate until gate 4 measures peak audit memory
+- **Description:** The engine child lowers `RLIMIT_AS`, which Linux enforces and macOS does not; the cap test is skipped off Linux and runs in CI. Address-space limits also count mapped-but-unused memory, so the value needs the gate 4 measurement. When a worker is killed, its Procrastinate job row stays `doing`; the reconciler recovers the audit and credit from the `audit` row, but the stalled job row is only removed by the weekly retention job once finished states exist.
+- **Workaround:** none needed for correctness (the claim is idempotent, a re-run is a no-op); watch `monitor` queue lag.
+- **Target:** gate 4 (#34), #15
+
 ### L-015 — The audit journey is proven offline only; no live adapters, vision or crash recovery
 - **Status:** active
 - **Discovered:** 2026-10-13
