@@ -2,15 +2,21 @@
 
 import asyncio
 from typing import Protocol
+from uuid import UUID
 
 import procrastinate
-from rm_contracts.jobs import OPS_QUEUE, SEND_MAGIC_LINK_TASK
+from procrastinate import exceptions as procrastinate_exceptions
+from rm_contracts.jobs import AUDIT_QUEUE, OPS_QUEUE, RUN_AUDIT_TASK, SEND_MAGIC_LINK_TASK
 
 OPEN_TIMEOUT_S = 10.0
 
 
 class EmailQueue(Protocol):
     async def send_magic_link(self, *, email: str, url: str) -> None: ...
+
+
+class AuditQueue(Protocol):
+    async def run_audit(self, audit_id: UUID) -> None: ...
 
 
 class ProcrastinateEmailQueue:
@@ -39,6 +45,18 @@ class ProcrastinateEmailQueue:
         await self._app.configure_task(name=SEND_MAGIC_LINK_TASK, queue=OPS_QUEUE).defer_async(
             email=email, url=url
         )
+
+    async def run_audit(self, audit_id: UUID) -> None:
+        """Defer the audit job. The lock makes a repeated defer of one audit a no-op; if this call fails after
+        the audit row committed, the reconciler (#186) re-defers it."""
+        await self._ensure_open()
+        deferrer = self._app.configure_task(
+            name=RUN_AUDIT_TASK, queue=AUDIT_QUEUE, queueing_lock=f"audit:{audit_id}"
+        )
+        try:
+            await deferrer.defer_async(audit_id=str(audit_id))
+        except procrastinate_exceptions.AlreadyEnqueued:
+            return
 
     async def close(self) -> None:
         if self._open:

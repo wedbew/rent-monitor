@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from uuid import UUID
 
 import httpx
 import procrastinate
@@ -13,6 +14,7 @@ from rm_core.observability import init_sentry
 from rm_core.settings import Settings, get_settings
 
 from rm_api.admin import router as admin_router
+from rm_api.audits import router as audits_router
 from rm_api.auth.google import GoogleCerts, GoogleVerifier
 from rm_api.auth.router import router as auth_router
 from rm_api.auth.sessions import REVOKED_CHANNEL, PrincipalCache
@@ -23,7 +25,7 @@ from rm_api.middleware import RequestContextMiddleware
 from rm_api.notify import NotifyListener
 from rm_api.origin import OriginCheckMiddleware
 from rm_api.problems import install_problem_handlers
-from rm_api.queue import EmailQueue, ProcrastinateEmailQueue
+from rm_api.queue import AuditQueue, EmailQueue, ProcrastinateEmailQueue
 from rm_api.saved import router as saved_router
 
 log = structlog.get_logger(__name__)
@@ -35,10 +37,12 @@ def create_app(
     settings: Settings | None = None,
     *,
     email_queue: EmailQueue | None = None,
+    audit_queue: AuditQueue | None = None,
     google_verifier: GoogleVerifier | None = None,
     billing_eraser: BillingEraser | None = None,
 ) -> FastAPI:
-    """`email_queue` and `google_verifier` are test seams; production builds them in the lifespan."""
+    """`email_queue`, `audit_queue` and `google_verifier` are test seams; production builds them in the
+    lifespan."""
     settings = settings or get_settings()
     configure_logging(level=settings.log_level, json_logs=settings.log_json)
     init_sentry(settings)
@@ -63,6 +67,7 @@ def create_app(
                 )
             )
         app.state.email_queue = email_queue or jobs or _NoQueue()
+        app.state.audit_queue = audit_queue or jobs or _NoQueue()
         listener: NotifyListener | None = None
         if settings.psycopg_dsn:
             listener = NotifyListener(settings.psycopg_dsn, [REVOKED_CHANNEL])
@@ -98,6 +103,7 @@ def create_app(
     app.state.notify_listener = None
     app.state.google_verifier = google_verifier
     app.state.email_queue = email_queue
+    app.state.audit_queue = audit_queue
     app.state.billing_eraser = billing_eraser  # the real Stripe eraser arrives with billing (#14)
     app.add_middleware(OriginCheckMiddleware, allowed_origin=settings.public_origin)
     app.add_middleware(RequestContextMiddleware)
@@ -107,7 +113,7 @@ def create_app(
 
 
 def _include_routers(app: FastAPI) -> None:
-    for router in (health_router, auth_router, me_router, saved_router, admin_router):
+    for router in (health_router, auth_router, me_router, saved_router, admin_router, audits_router):
         app.include_router(router)
 
 
@@ -116,4 +122,7 @@ class _NoQueue:
     mail."""
 
     async def send_magic_link(self, *, email: str, url: str) -> None:
+        raise RuntimeError("no job queue configured")
+
+    async def run_audit(self, audit_id: UUID) -> None:
         raise RuntimeError("no job queue configured")

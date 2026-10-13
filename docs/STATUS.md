@@ -2,27 +2,28 @@
 
 **The one place that says what works.** Updated by implementation PRs (`.agent/rules/delivery.md`), not by status-only PRs.
 Hourly facts (open PRs, checks, who holds which issue) come from GitHub: `gh issue list --label ready`,
-`uv run python scripts/delivery_metrics.py`. **Last verified:** 2026-10-13 against `staging` · by RM-177.
+`uv run python scripts/delivery_metrics.py`. **Last verified:** 2026-10-13 against `staging` · by RM-184.
 
-Levels: **1** implemented (offline tests, merged) · **2** integrated (journey test through API, queue, Postgres, engine, with named
+Written for the state after the PR that edits it merges; until then `staging` shows the previous text. Levels: **1** implemented (offline tests, merged) · **2** integrated (journey test through API, queue, Postgres, engine, with named
 fakes) · **3** provider-verified (authorised sandbox/live evidence) · **4** launch-ready (release gates). A closed issue is level 1 at most.
 
 ## Journey (P0): sign in → submit sale listing → reserve credit → queue → context → engine → persist and retrieve
 
 | Step | Level | Evidence | Missing |
 |---|---|---|---|
-| Sign in (Google ID token, magic link, sessions) | 1 | `rm_api.auth`, `tests/integration/test_auth.py` (#147) | Real Google and Resend never exercised (B-004); level 3 open |
-| Parse and bound the listing reference | 1 | `rm_core.listing_ref` | Route that accepts it: S1 #184 |
-| Reserve credit, capture/release | 1 | `rm_core.ledger`, `tests/integration/test_ledger.py`, `test_concurrency.py` | Called by no audit path yet: S1 |
-| Queue the analysis | 0 | Only the email job is deferred (`rm_api.queue`) | `run_audit` task and deferral: S1 |
-| Acquire listing and context | 1 (parts) | Otodom client, snapshots, OSM/geo, OpenRouter client with fakes | Comparables store merged (#106 slice 1, level 1), importers that fill it still missing; real adapters wired (S4 #187); live shape confirmed for one sale listing, 2026-10-13 (L-005) |
-| Run the engine | 1 | `apps/deal_analyzer.analyse_listing`, goldens, 7 invariants | CAPEX prices are placeholders (L-007); accuracy unmeasured (#94) |
-| Persist and retrieve the canonical result | 0 | `audit` table and typed columns exist | `GET /api/audits*`: S1 |
-| Failure releases the reservation; duplicates do not double-charge | 0 | `ledger.settle` is idempotent; one-active-per-listing index exists | Wired and proven end to end: S1; crash recovery: S3 #186 |
-| Progress stream | 0 | `audit_event` table | S2 #185 |
+| Sign in (Google ID token, magic link, sessions) | 1 | `rm_api.auth`, `tests/integration/test_auth.py` (#147); used by the journey test | Real Google and Resend never exercised (B-004); level 3 open |
+| Parse and bound the listing reference | 2 | `rm_core.listing_ref` behind `POST /api/audits` (422 on SSRF-style refs) | none offline |
+| Reserve credit, capture/release | 2 | `rm_core.ledger` called by the route and the worker; `tests/integration/test_audit_journey.py` | Plan-allowance path through the audit route is unit-tested in `test_ledger.py` only |
+| Queue the analysis | 2 | `ProcrastinateEmailQueue.run_audit` defers `run_audit`; the test runs a real worker on the `audit` queue | Reconciler if the defer fails (#186) |
+| Acquire listing and context | 1 | Pipeline takes injected `ListingSource` / `ContextProvider`; test uses `FakeSource`, `FakeContext`; Otodom client, snapshots, OSM clients exist | Comparables store merged (#106 slice 1), importers that fill it still missing; real adapters (#187); live shape confirmed for one sale listing 2026-10-13 (L-005) |
+| Run the engine | 2 | `analyse_listing` runs in the worker; API result equals a direct engine run | CAPEX placeholders (L-007); accuracy unmeasured (#94); vision not called, so every success is `succeeded_degraded` |
+| Persist and retrieve the canonical result | 2 | `audit.result` + typed columns copied from the analysis; `GET /api/audits/{id}` echoes it | none offline |
+| Failure releases the reservation; duplicates do not double-charge; tenant isolation | 2 (narrow) | Covered: failures raised inside the async pipeline (RENT, fractional, gone, blocked, payload drift, crash, a slow listing fetch or context call hitting the deadline, unconfigured worker) release the charge; 6 simultaneous submits admit one; duplicate job delivery settles once; foreign audit is 404 | **Not covered:** the defer failing after commit (audit stays `queued`, credit reserved), worker death mid-run (stays `running`), and a blocking engine call (`asyncio.timeout` cannot interrupt synchronous code). All need #186 |
+| Progress stream | 0 | `audit_event` table | #185 |
 
-**Journey level today: 0** (no audit route, no audit task). Components are level 1. Target of S1: level 2 offline with fakes. That
-is not live-provider validation and not production readiness.
+**Journey level once #192 is merged: 2, offline** (RM-184, `tests/integration/test_audit_journey.py`, 18 tests; real API, Postgres, ledger,
+Procrastinate worker and engine; listing source and market context are named fakes). That is **not** live-provider validation
+and not production readiness (L-015). Level 3 needs the owner's authorisation for a live fetch and sourced market data.
 
 ## Other capability
 
@@ -41,7 +42,7 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 
 | Issue | Class | Next step / blocker |
 |---|---|---|
-| #13 audits | U, P | Slices #184 (**R**, P0), #185, #186 (after #184), #187 (blocked: #184, #106, live-fetch authorisation) |
+| #13 audits | U, P | #184 = PR #192 (offline level 2, awaiting approval); #185 (SSE) and #186 (recovery) become **R** only after #192 merges; #187 blocked on #106 and live-fetch authorisation |
 | #14 billing | U, B | Re-scope to Paddle packs per `PADDLE-INTEGRATION.md`; consumption depends on #184, money-PR review and pack/ledger slices. Paddle sandbox evidence replaces the earlier Stripe B-003 dependency for this pilot; final prices/provider acceptance pending |
 | #15 ops | P | Compose done; Caddy, WAL-G, backups deferred (local-first strategy) |
 | #16, #21 market batch and routes | B | Wait for #106, #48, #49 |
@@ -59,7 +60,7 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 
 ## Owner actions (exact, smallest first)
 
-1. Approve or comment on the money PR for #184 (head SHA recorded in `docs/BLOCKERS.md`) when it is up.
+1. Approve the money PR for #184 (ledger/quota paths) and the workflow PR #191; head SHAs go in `docs/BLOCKERS.md` *Approved*.
 2. ~~Authorise one live Otodom fetch (L-005) and the datacenter-IP test (#42).~~ Done 2026-10-13: one sale listing returned 200 and parsed from the dev machine and from the OVH VPS-1. Single request each; sustained-load blocking is still unmeasured (L-002).
 3. Provide the labelled listing set for #94 and CAPEX prices or a data source (B-015, L-007).
 4. Paddle pilot: confirm pack prices (recommended 10/40/70 PLN), obtain product/prepaid-report acceptance and sandbox access, and have the accountant review settlement/KSeF treatment. Stripe sandbox (B-003) and recurring-BLIK activation (#39) are no longer pilot dependencies; issue records need reconciliation.

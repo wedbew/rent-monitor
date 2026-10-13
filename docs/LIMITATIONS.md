@@ -112,6 +112,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none needed locally. Before deploy set `--forwarded-allow-ips` to the Caddy container address and add a smoke check.
 - **Target:** #15 (ops); PRE-DEPLOYMENT §6
 
+### L-015 — The audit journey is proven offline only; no live adapters, vision or crash recovery
+- **Status:** active
+- **Discovered:** 2026-10-13
+- **Affects:** `POST /api/audits`, `rm_worker.audit_pipeline`, `rm_worker.audit_services`
+- **Evidence:** confirmed (`tests/integration/test_audit_journey.py` runs with `FakeSource` and `FakeContext`)
+- **Description:** The worker has no production listing source or market context configured, so a real deployment ends every audit `failed_internal` with the credit released. The vision stage is not called, so every success is `succeeded_degraded` (`vision_unavailable`). A worker killed mid-run leaves its audit `running` and charged, and a failed defer after commit leaves it `queued` and charged, until the reconciler exists (#186). The deadline is `asyncio.timeout`, which interrupts awaits only: a blocking synchronous engine call is not interrupted (the killable child is also #186); the analyst audit is refused (403). There is no progress stream.
+- **Workaround:** none needed before launch; do not expose the route to real users until #186 and #187 land.
+- **Target:** #186 (reconciler, killable child), #187 (real adapters), #185 (SSE); docs/STATUS.md journey table
+
 ### L-014 — RPO 5 minutes and RTO 1 hour are targets, never measured
 - **Status:** active
 - **Discovered:** 2026-10-12
