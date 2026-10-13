@@ -265,6 +265,7 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `MAGIC_LINK_INVALID` | magic-link token unknown, already used or expired | 401 | request a new link | n/a |
 | `INVALID_CREDENTIALS` | password login failed for any reason (wrong password, unknown address, no password set) | 401 | none; throttled | n/a |
 | `WEAK_PASSWORD` | password fails the policy (`reason`: too_short, too_long, common, contains_email) | 422 | choose another | n/a |
+| `ACCOUNT_EXISTS` | a registration link was used but the address already has an account (nothing is attached; use "forgot password") | 409 | sign in or recover | n/a |
 | `AUTH_TOKEN_INVALID` | registration or reset token unknown, used, expired or wrong purpose | 401 | request a new link | n/a |
 | `RATE_LIMITED` | atomic per-address or per-IP counter exceeded | 429 with `Retry-After` | after the window | n/a |
 | `ADMIN_ONLY` | `require_admin` dependency: caller's role is not `admin` | 403 | none | n/a |

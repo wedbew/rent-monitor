@@ -6,13 +6,23 @@ from uuid import UUID
 
 import procrastinate
 from procrastinate import exceptions as procrastinate_exceptions
-from rm_contracts.jobs import AUDIT_QUEUE, OPS_QUEUE, RUN_AUDIT_TASK, SEND_MAGIC_LINK_TASK
+from rm_contracts.jobs import (
+    AUDIT_QUEUE,
+    OPS_QUEUE,
+    RUN_AUDIT_TASK,
+    SEND_AUTH_MAIL_TASK,
+    SEND_MAGIC_LINK_TASK,
+)
 
 OPEN_TIMEOUT_S = 10.0
 
 
 class EmailQueue(Protocol):
     async def send_magic_link(self, *, email: str, url: str) -> None: ...
+
+    async def send_auth_mail(self, *, kind: str, email: str, url: str | None) -> None:
+        """Password-auth mail: `register` (with a link), `account_exists` (no link)."""
+        ...
 
 
 class AuditQueue(Protocol):
@@ -44,6 +54,12 @@ class ProcrastinateEmailQueue:
         await self._ensure_open()
         await self._app.configure_task(name=SEND_MAGIC_LINK_TASK, queue=OPS_QUEUE).defer_async(
             email=email, url=url
+        )
+
+    async def send_auth_mail(self, *, kind: str, email: str, url: str | None) -> None:
+        await self._ensure_open()
+        await self._app.configure_task(name=SEND_AUTH_MAIL_TASK, queue=OPS_QUEUE).defer_async(
+            kind=kind, email=email, url=url
         )
 
     async def run_audit(self, audit_id: UUID) -> None:

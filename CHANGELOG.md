@@ -7,6 +7,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ### Fixed
 - `deploy/setup-server.sh`: the SSH key is read from `/tmp/deploy_key.pub` (an environment variable did not survive `sudo`, so no key was installed), the sshd drop-in is `00-rentmonitor.conf` so it overrides OVH's `50-cloud-init.conf` and password login really is disabled, and apt runs non-interactively; **operator action:** copy your public key to `/tmp/deploy_key.pub` before running it (RM-195)
 
+### Added
+- Email/password registration (RM-203): `POST /api/auth/register` (always 202), `/register/resend` (always 202), `/register/verify` (creates the verified account, its Argon2id credential and the signup credits, signs in; 409 `ACCOUNT_EXISTS` if the address already has an account, 401 `AUTH_TOKEN_INVALID` for a bad, used or expired link). Migration `0008` adds `user_credential` and `auth_token` (expand-only); new dependency `pwdlib[argon2]` (the Argon2id hasher the blueprint named); new settings `PASSWORD_ARGON2_*`, `PASSWORD_HASH_CONCURRENCY`, `REGISTER_TOKEN_TTL_HOURS`, `RESET_TOKEN_TTL_MINUTES`; mail job `send_auth_mail`. Operator action: run `make migrate`; expired auth tokens are purged by the existing retention job
+
 ### Changed
 - **Auth direction (RM-202):** email/password sign-in is added next to Google and magic links by owner request; ADR 0013 supersedes the "never passwords" rule, `docs/PASSWORD-AUTH-SPEC.md` defines the routes, schemas (`rm_contracts.auth`) and problem codes `INVALID_CREDENTIALS`, `WEAK_PASSWORD`, `AUTH_TOKEN_INVALID`. No route exists yet (#203-#205)
 

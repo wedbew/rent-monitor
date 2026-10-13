@@ -93,6 +93,21 @@ async def user_for_google(
     return user if owner == user.id else await session.get_one(User, owner)
 
 
+async def new_verified_user(session: AsyncSession, *, email: str) -> User | None:
+    """Create the account for a proven mailbox, or None if the address already has one. Never touches an
+    existing account: nothing (password, identity) is attached to it from here (ADR 0013, rule 2)."""
+    created = await session.scalar(
+        insert(User)
+        .values(email=email, email_verified_at=func.now())
+        .on_conflict_do_nothing(index_elements=[User.email])
+        .returning(User.id)
+    )
+    if created is None:
+        return None
+    await _link_identity(session, created, "email", email)
+    return await session.get_one(User, created, populate_existing=True)
+
+
 async def user_for_email(session: AsyncSession, *, email: str) -> User:
     """A used magic link proves the address: create or reuse the user and make sure the email identity
     exists."""
