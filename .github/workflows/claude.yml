@@ -6,24 +6,31 @@ on:
     types: [created]
   issues:
     types: [opened, assigned, labeled]
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "Read-only canary prompt (job `canary`: Read tool only, no write access, no branch or PR)"
+        type: string
+        default: "Read README.md and reply with exactly one sentence saying what this project is. Change nothing."
 
 permissions: {}
 
 concurrency:
-  group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: false
 
 jobs:
   claude:
     # Public repo: only trusted authors may trigger the agent (comment) or apply the `agent` label (needs triage/write).
     if: >-
+      github.event_name != 'workflow_dispatch' && (
       (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'agent') ||
       (github.event_name != 'issues' &&
         contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
         contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'issues' && github.event.action != 'labeled' &&
         contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association) &&
-        (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+        (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))))
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -56,6 +63,7 @@ jobs:
             exit 1
           fi
       - uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
+        id: claude
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # Machine-user token: PRs opened with the default GITHUB_TOKEN do not trigger CI, so required checks would never run.
@@ -65,3 +73,61 @@ jobs:
             --max-turns 40
             --allowedTools "Bash(uv:*),Bash(make:*),Bash(git:*),Bash(gh pr:*),Bash(gh issue:*),Bash(gh run:*),Edit,Write,Read,Glob,Grep"
             --append-system-prompt "Follow .agent/agents.md. Branch from staging, open PRs against staging, title type(RM-<issue>): subject."
+      - name: failure diagnostics (sanitised error facts from the execution file; never the transcript)
+        if: ${{ failure() }}
+        env:
+          EXEC: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          {
+            echo "### claude failure diagnostics"
+            echo '```'
+            python3 scripts/claude_failure_report.py "${EXEC:-/nonexistent}"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          first="$(python3 scripts/claude_failure_report.py "${EXEC:-/nonexistent}" | grep -E '^(result.text|.*\.errors)' | head -1)"
+          echo "::error title=claude failed::${first:-no error fields in the execution file}"
+
+  canary:
+    # Manual, read-only: proves the credential, model and action work end to end without touching the repository.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: preflight - secret present
+        env:
+          OAUTH: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "$OAUTH" ]; then echo "::error::CLAUDE_CODE_OAUTH_TOKEN is empty"; exit 1; fi
+      - uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
+        id: claude
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: ${{ inputs.prompt }}
+          claude_args: |
+            --max-turns 3
+            --allowedTools "Read"
+      - name: answer (sanitised, bounded)
+        if: ${{ success() }}
+        env:
+          EXEC: ${{ steps.claude.outputs.execution_file }}
+        run: python3 scripts/claude_failure_report.py --show-result "${EXEC:-/nonexistent}" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: failure diagnostics (sanitised error facts from the execution file; never the transcript)
+        if: ${{ failure() }}
+        env:
+          EXEC: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          {
+            echo "### claude canary failure diagnostics"
+            echo '```'
+            python3 scripts/claude_failure_report.py "${EXEC:-/nonexistent}"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          first="$(python3 scripts/claude_failure_report.py "${EXEC:-/nonexistent}" | grep -E '^(result.text|.*\.errors)' | head -1)"
+          echo "::error title=canary failed::${first:-no error fields in the execution file}"
