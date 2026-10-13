@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-13 · by: RM-177 (delivery loop, STATUS.md); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
+**Last updated:** 2026-10-13 · by: RM-42 (live Otodom probe, L-005/L-002); prior: RM-177 (delivery loop, STATUS.md); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -136,6 +136,7 @@ exclude `apps/agent-context` from the workspace. Each app gets its own `pyprojec
 | G9 | POC engine hits third parties directly: Otodom, OpenRouter, GUS BDL, Moniter, Nominatim, Overpass | Tests must be offline | Each goes behind an injectable client with timeouts; fakes in `tests/` |
 | G10 | POC `.env` exists in the POC repo | Must never be read or copied | Use names from the POC `config.py` (`OTODOM_BASE_URL`, `OTODOM_HTTP_BACKEND`, `GEO_*`, `NOMINATIM_*`, `OVERPASS_URL`, `VALUATION_EVIDENCE_DIR`, `MODEL_ARTIFACT_PATH`, `SNAPSHOT_CUTOFF`, `DEAL_ANALYZER_MC_DRAWS`) only to build `.env.example` |
 | G11 | `curl_cffi` in stream mode applies only a *low-speed* timeout, and closing a stream waits for the server to finish | A slow-drip server escaped every timeout and held the worker for the whole body | Hard `asyncio.timeout` around the request and cancel the stream task before `aclose()` (RM-22; tests in `test_otodom_transport.py`) |
+| G12 | A live listing (2026-10-13) has `ad.characteristics` as a **list**, not a mapping; the body also contains `captcha` on a normal 200 page | The admin-fee (czynsz) extraction cannot index by key; a marker match alone is not a block | Scan the list for the rent item (invariant 3 fixture); treat challenge markers only when `__NEXT_DATA__` is missing (L-005) |
 
 ## 6. Legal and GDPR hot-spots (where the POC did it; tag the new code that does the same)
 
