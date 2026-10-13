@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-13 · by: RM-184 (audit journey slice 1); prior: RM-106 (comparable-rent store), RM-42 (live Otodom probe, L-005/L-002), RM-177 (delivery loop, STATUS.md); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
+**Last updated:** 2026-10-14 · by: RM-184 (audit journey slice 1); prior: RM-199 (owner-selected Paddle report-pack pilot and integration specification); prior: billing alternatives research, RM-197 (design V3), RM-106 (comparable-rent store), RM-42 (live Otodom probe, L-005/L-002), RM-177 (delivery loop, STATUS.md); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -33,7 +33,7 @@ data, and returns a deterministic 10-year cash-flow valuation (`DealAnalysis`): 
 | Host | One OVH VPS-3 (6 vCore, 12 GB), Docker Compose, Caddy + FastAPI + Procrastinate workers + Postgres 17, **no Redis** |
 | Server runtime | **Python only.** Node exists only to build the SPA |
 | Auth | Google ID token first (`google-auth`), email magic link second, own sessions in Postgres, **no passwords** |
-| Billing | Stripe: card + BLIK subscription (100 zł/month), 30-day BLIK pass; credit ledger; VAT invoices via Fakturownia → KSeF |
+| Billing | Pilot direction: Paddle one-time 1/5/10-report packs, card + PLN BLIK; credit ledger. Integration spec only; product/accounting approval and final prices pending. Earlier Stripe subscription design retained as historical reference |
 | Free tier | 3 audits on verified sign-up, yield radar top 20 (proposed) |
 | Jobs / progress | Procrastinate queues; SSE via Postgres `LISTEN/NOTIFY` + `audit_event` replay |
 | Monitoring | **Better Stack** free tier (ADR 0009): errors and traces via the `sentry-sdk` client, uptime monitor, backup heartbeat; replaces Sentry |
@@ -173,7 +173,7 @@ rulesets for `main` and `staging` are active. Roadmap, gates and owner deadlines
 or GUS-PoC artifacts. Delivery process: `.agent/rules/delivery.md`, ADR 0012.
 
 **Design exploration (12 Oct 2026, maintainer request):** `design/` contains proposed UX principles, a documentation-state review,
-and responsive interactive home, analyses-list and separate city-context prototypes with fictional fixtures. `design/v1/` holds the warm editorial direction; `design/v2/` adds a monochrome architectural alternative with new tokens, restrained motion, and a dedicated analysis-page scaffold/UX contract (full analytic rendering deferred). Neither is selected for production. This is a Phase 2 design artifact, not a production SPA;
+and responsive interactive home, analyses-list and separate city-context prototypes with fictional fixtures. `design/v1/` holds the warm editorial direction; `design/v3/` (13 Oct) is a light-first alternative with an interactive login demo, report, market page and logo explorations; `design/v2/` adds a monochrome architectural alternative with new tokens, restrained motion, and a dedicated analysis-page scaffold/UX contract (full analytic rendering deferred). Neither is selected for production. This is a Phase 2 design artifact, not a production SPA;
 `frontend/` and backend contracts are unchanged.
 
 ## 9. Open decisions (owner: you)
@@ -187,6 +187,8 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 - [x] Engine specification approved with amendments: `docs/ENGINE-SPEC.md` (RM-73); tax constants flagged for the accountant
 - [ ] Which POC extras ship in Phase 1: redesign, seller-questions, analyst (§4.3)
 - [x] VAT presentation: 100 zł shown gross (81.30 net + 23 %), Stripe prices tax-inclusive (D-03); accountant to confirm VAT-payer status (#41)
+- [x] Pilot product direction: owner selected one-time Paddle packs of 1/5/10 reports, without subscriptions; [PADDLE-INTEGRATION.md](docs/PADDLE-INTEGRATION.md). Implementation and provider validation remain pending; supersede ADR 0005 with implementation.
+- [ ] Pack pricing: owner suggested 5/40/70 PLN; recommended 10/40/70 PLN to make bulk packs cheaper per report and cover Paddle's fixed fee. Also decide signup reports (currently 3) and unused-unit expiry. Product/accounting unknowns: L-015/L-016.
 - [ ] Pro allowance (40 is a placeholder until COGS is measured); free-tier scope
 - [x] SQLAlchemy 2.0 and Stripe SDK pin at #14: ADR 0007 accepted (D-02)
 - [ ] Gemini and Claude auth in Actions; GitHub plan for private-repo rulesets
@@ -202,6 +204,8 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Expensive-to-reverse decisions (runtime, queue, auth, billing, host, pins) | `docs/adr/0002`–`0009` |
 | Rules, invariants, git flow, PR template | `.agent/agents.md`, `.agent/rules/*.md`, `.github/pull_request_template.md` |
 | Architecture, schema, Stripe, auth, tests | `docs/BLUEPRINT.md` §2–§4 |
+| Billing alternatives, MoR costs, Polish invoicing/KSeF scope and proposed Paddle evaluation | `docs/BILLING-ALTERNATIVES.md` (research, not an accepted spec) |
+| Owner-selected pilot report packs, Paddle checkout/webhooks, credit provenance, refunds and implementation tests | `docs/PADDLE-INTEGRATION.md` (specification; no implementation evidence) |
 | Google sign-in and session specification, as built (RM-12) and the owner's local setup notes | `docs/GOOGLE-AUTH-SPEC.md`; local handoff `docs/GOOGLE-AUTH-INTEGRATION.md` is gitignored |
 | Resend local configuration and mailer integration instructions | `docs/RESEND-INTEGRATION.md` (owner's local handoff, gitignored; RM-12) |
 | Umami analytics setup, verified script behaviour and the CSP finding | `docs/UMAMI-INTEGRATION.md` (owner's local handoff, gitignored; RM-143) |
@@ -213,7 +217,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Milestones, dependencies and launch gates | `docs/ROADMAP.md` |
 | Delivery state (journey, backlog map, owner actions) | `docs/STATUS.md` |
 | Autonomous delivery evidence, bottlenecks and proposed faster workflow (recommendations only) | `docs/DELIVERY-AUDIT.md` (RM-177) |
-| Proposed Phase 2 UX principles and interactive design alternatives (fictional data; not production frontend) | `design/README.md`, `design/v1/`, `design/v2/design-principles.md`, `design/v2/main-view.html` |
+| Proposed Phase 2 UX principles and interactive design alternatives (fictional data; not production frontend) | `design/README.md`, `design/v1/`, `design/v2/design-principles.md`, `design/v2/main-view.html`, `design/v3/README.md` |
 | Phase 2 design direction (prototype, principles, spec) | `design/README.md` (#44 input; no backend or rule change) |
 | Owner-only blockers | `docs/BLOCKERS.md`, `.agent/rules/blockers.md` |
 | Agent bot setup | `docs/AGENT-BOT.md`, `scripts/setup_agent_bot.sh` |

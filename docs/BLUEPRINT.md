@@ -2,6 +2,13 @@
 
 Oct 11, 2026 · @Marcin B
 
+> **Pilot billing direction, owner 2026-10-13:** use one-time Paddle packs of 1, 5 and 10 reports,
+> without subscriptions or 30-day passes. [PADDLE-INTEGRATION.md](PADDLE-INTEGRATION.md) defines
+> the implementation design and recommended pricing (final prices pending). Older Stripe subscription,
+> pass, invoice-outbox and associated billing-gate sections below are historical for this pilot;
+> reconcile their detailed schemas/routes/tests in the implementation PR. Product approval and Polish
+> accounting/KSeF review remain required; other architecture and engine invariants are unchanged.
+
 ## Executive verdict
 
 Ship RentMonitor as a single 12 GB VPS running Docker Compose, with Postgres as the only stateful service — no Redis. Infrastructure lands at 52.20 zł net/month (≈ $13.38) against a $20 ceiling, dropping to 44.37 zł (≈ $11.37) once committed for 12 months. OpenRouter vision spend is cost of goods, not infrastructure, and is governed by the credit ledger.
@@ -16,10 +23,10 @@ Ship RentMonitor as a single 12 GB VPS running Docker Compose, with Postgres as 
 | Frontend | Keep the existing Vite + React 19 SPA, served by Caddy on the same origin | Same-origin cookies, no CORS, no SSR runtime to host |
 | Sign-in | **Google first**: "Zaloguj się przez Google" button at the top of every auth screen plus One Tap on the landing page; email magic link as the secondary path; no passwords | One click for most users, nothing to reset or leak; Google-verified emails unlock the 3 free audits at once |
 | Auth engine | In FastAPI: Google ID-token verification with `google-auth`, own sessions in Postgres | No second runtime; FastAPI-Users is in maintenance mode and password-centric; cookies work with `EventSource` |
-| Payments | **Card + BLIK from day one.** BLIK recurring mandates for the 100 zł/month subscription; a one-off BLIK "Pro 30 days" pass for customers whose bank does not support BLIK recurring | Stripe supports BLIK in Checkout subscription mode on API `2026-09-30.endive`, but only 9 banks support recurring BLIK |
+| Payments | Pilot: **one-time Paddle packs of 1, 5 or 10 reports**, card + one-time PLN BLIK; no subscription | Owner direction 2026-10-13; see `PADDLE-INTEGRATION.md`. Provider/product acceptance and final pricing pending |
 | Job queue | Procrastinate (Postgres-backed, async) | arq is in maintenance-only mode; Celery + Redis costs a stateful service for no gain at this scale |
 | Progress | SSE fed by Postgres `LISTEN/NOTIFY` + an `audit_event` table for replay | Survives reconnects via `Last-Event-ID`; no broker |
-| Billing ledger | Stripe Checkout + Customer Portal, allowance granted on `invoice.paid` (or on the paid pass), append-only credit ledger | Grants keyed by invoice id are idempotent by construction |
+| Billing ledger | Pilot: completed Paddle transaction grants report credits; append-only ledger with purchase provenance | Transaction-keyed idempotency; report packs replace monthly allowances and timed passes; see `PADDLE-INTEGRATION.md` |
 | Persistence | SQLAlchemy 2.0 (async, psycopg 3) + Alembic, one `app` schema; JSONB for `DealAnalysis` and sidecars, typed columns for what you filter on | One store for users, business data, documents and the queue |
 
 **Confirmed vs inferred.** Prices, quotas and library status below were read from vendor pages on 11 Oct 2026 and are linked in Sources. Memory caps, latency figures and per-audit cost are engineering estimates — each is labelled *estimate* and has a measurement step in the blueprint.

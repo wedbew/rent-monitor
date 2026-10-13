@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="renti-icon.svg" type="image/svg+xml">
+<meta name="color-scheme" content="light dark">
+<title>Zaloguj się — Renti</title>
+<link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="main-view.css"><link rel="stylesheet" href="v3.css"><link rel="stylesheet" href="login.css">
+<script src="theme.js"></script><script src="login.js" defer></script>
+</head>
+<body class="login-page">
+<a class="skip" href="#main">Przejdź do treści</a>
+<header class="login-header"><a class="brand" href="main-view.html" aria-label="Renti — pulpit"><svg class="renti-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 115 42" aria-hidden="true" focusable="false"><g fill="currentColor" fill-rule="evenodd"><path d="M3 36V12h6v4c2-3 5-5 10-5v7h-3c-4 0-7 3-7 8v10H3Z"/><path d="M46 26H28c.6 4 3 6 7 6 3 0 5-1 7-3l4 4c-3 3-7 4-11 4-8 0-13-5-13-13s5-13 12-13c8 0 12 5 12 13v2ZM28 21h12c-.5-3-2-5-6-5-3 0-5 2-6 5Z"/><path d="M52 36V12h6v3c2-3 5-4 8-4 7 0 10 4 10 11v14h-7V23c0-4-1-6-5-6s-6 3-6 7v12h-6Z"/><path d="M84 12V5h7v7h8v6h-8v9c0 3 1 4 4 4h4v6h-5c-7 0-10-3-10-10v-9h-5v-6h5Z"/><path d="M105 12h7v24h-7V12Z"/><path d="M105 2h3v6h-3zM110 2h2v6h-2z"/></g></svg></a><button class="theme-toggle theme-compact" type="button" aria-pressed="false">◐ <span>Tryb ciemny</span></button></header>
+<main id="main" class="login-main">
+<div class="login-frame">
+<section class="login-form-side" aria-labelledby="login-title">
+<p class="eyebrow">DOBRZE BYĆ U SIEBIE.</p>
+<h1 id="login-title">Witaj <span>ponownie.</span></h1>
+<p class="login-intro" id="login-intro">Wróć do mieszkań, które masz na oku.</p>
+<form id="login-form" novalidate>
+<label class="input-label" for="email">Adres e-mail</label>
+<input class="login-input" id="email" name="email" type="email" autocomplete="username" placeholder="ty@przyklad.pl" aria-describedby="login-error">
+<div class="password-label"><label class="input-label" for="password">Hasło</label><button class="text-link" type="button" id="forgot">Nie pamiętasz hasła?</button></div>
+<div class="password-entry"><input class="login-input" id="password" name="password" type="password" autocomplete="current-password" aria-describedby="login-error"><button id="show-password" type="button" aria-label="Pokaż hasło" aria-pressed="false">Pokaż</button></div>
+<p id="login-error" class="field-error" role="alert" hidden></p>
+<button class="primary login-submit" type="submit">Zaloguj się <span aria-hidden="true">→</span></button>
+</form>
+<div class="login-divider"><span>lub</span></div>
+<button class="google-button" id="google" type="button"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22 12.2c0-.7-.1-1.4-.2-2H12v4h5.6a5 5 0 0 1-2.1 3.2v2.7h3.4c2-1.8 3.1-4.5 3.1-7.9Z"/><path fill="#34A853" d="M12 22c2.8 0 5.2-.9 6.9-2.5l-3.4-2.7c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.9-4.2H2.6v2.8A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.1 13.6a6 6 0 0 1 0-3.2V7.6H2.6a10 10 0 0 0 0 8.8l3.5-2.8Z"/><path fill="#EA4335" d="M12 6.2c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 2.6 7.6l3.5 2.8C7 8 9.3 6.2 12 6.2Z"/></svg>Kontynuuj z Google</button>
+<p class="signup-line">Pierwszy raz tutaj? <button class="text-link" id="signup" type="button">Załóż konto →</button></p>
+<p class="login-demo" id="login-status" role="status">Podgląd projektu · dane logowania nie są wysyłane.<br><a href="main-view.html">Otwórz przykładowy pulpit bez logowania ↗</a></p>
+</section>
+<aside class="login-story" aria-label="Idea Renti">
+<img src="daylight-building.jpg" alt="" fetchpriority="high">
+<div class="story-top"><span>POLSKIE ADRESY.<br>NOWA PERSPEKTYWA.</span><span class="story-number">PL / RENTI</span></div>
+<div class="story-bottom"><span class="story-kicker">ZA KAŻDYM OKNEM JEST WIĘCEJ.</span><h2>Najpierw zrozum.<br>Potem zdecyduj.</h2><p>Najem, koszty i lokalny kontekst.<br>W jednej, uporządkowanej analizie.</p><div class="story-footer"><span>RENTI / PRZESTRZEŃ DECYZJI</span><span>↗</span></div></div>
+<span class="asset-caption">Autorska ilustracja AI · fikcyjny budynek</span>
+</aside>
+</div>
+<footer class="login-footer"><span>Dobry adres to świadoma decyzja.</span><a href="../v2/main-view.html">Porównaj z V2 ↗</a></footer>
+</main>
+<dialog id="recovery-dialog" class="modal" aria-labelledby="recovery-title"><div class="overlay-heading"><p class="eyebrow">ODZYSKAJ DOSTĘP</p><button class="icon-button" id="close-recovery" aria-label="Zamknij okno" type="button">×</button></div><h2 id="recovery-title">Zacznijmy od e-maila.</h2><p class="overlay-intro">Podaj adres powiązany z kontem. W aplikacji otrzymasz instrukcję zmiany hasła.</p><form id="recovery-form"><label class="input-label" for="recovery-email">Adres e-mail</label><input class="login-input" type="email" id="recovery-email" autocomplete="email" required><button class="primary login-submit" type="submit">Pokaż kolejny krok →</button></form><p class="login-demo" id="recovery-status" role="status">Podgląd — wiadomość nie zostanie wysłana.</p></dialog>
+</body></html>

@@ -2,8 +2,8 @@
 # First-boot host hardening for the OVH VPS (blueprint §4.4 "Production", step 1). Idempotent: safe to re-run.
 #
 # Run ON the server as a sudo-capable user (the OVH default `ubuntu`):
-#   scp deploy/setup-server.sh ubuntu@<ip>:/tmp/ && ssh -t ubuntu@<ip> \
-#     'DEPLOY_SSH_PUBKEY="ssh-ed25519 AAAA... you@laptop" sudo -E bash /tmp/setup-server.sh'
+#   scp deploy/setup-server.sh ~/.ssh/id_ed25519.pub ubuntu@<ip>:/tmp/ && ssh ubuntu@<ip> \
+#     'mv /tmp/id_ed25519.pub /tmp/deploy_key.pub && sudo bash /tmp/setup-server.sh'   # or DEPLOY_SSH_PUBKEY_FILE=...
 #
 # What it does: apt upgrade, `deploy` user (docker group, key login), 2 GB swap + vm.swappiness=10, UFW (22/80/443 only),
 # fail2ban, unattended security upgrades, Docker Engine + Compose plugin, SSH hardening.
@@ -20,6 +20,10 @@ SWAP_GB="${SWAP_GB:-2}"
 SSH_PORT="${SSH_PORT:-22}"
 APP_DIR="${APP_DIR:-/opt/rent-monitor}"
 DEPLOY_SSH_PUBKEY="${DEPLOY_SSH_PUBKEY:-}"
+DEPLOY_SSH_PUBKEY_FILE="${DEPLOY_SSH_PUBKEY_FILE:-/tmp/deploy_key.pub}"  # survives `sudo` env reset, unlike the variable
+if [[ -z "${DEPLOY_SSH_PUBKEY}" && -r "${DEPLOY_SSH_PUBKEY_FILE}" ]]; then
+  DEPLOY_SSH_PUBKEY="$(head -n1 "${DEPLOY_SSH_PUBKEY_FILE}")"
+fi
 
 log() { printf '\n==> %s\n' "$*"; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
@@ -32,12 +36,13 @@ die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 if [[ -n "${DEPLOY_SSH_PUBKEY}" && ! "${DEPLOY_SSH_PUBKEY}" =~ ^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp[0-9]+)\ [A-Za-z0-9+/=]+ ]]; then
   die "DEPLOY_SSH_PUBKEY is not a public key line"
 fi
-export DEBIAN_FRONTEND=noninteractive
+export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a NEEDRESTART_SUSPEND=1
+APT=(-y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
 
 log "Packages and security updates"
 apt-get update -y
-apt-get upgrade -y
-apt-get install -y --no-install-recommends \
+apt-get upgrade "${APT[@]}"
+apt-get install "${APT[@]}" --no-install-recommends \
   ca-certificates curl gnupg ufw fail2ban unattended-upgrades git make jq htop
 
 log "Unattended security upgrades"
@@ -84,7 +89,7 @@ if ! command -v docker >/dev/null 2>&1; then
   echo "deb [arch=${arch} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${codename} stable" \
     >/etc/apt/sources.list.d/docker.list
   apt-get update -y
-  apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  apt-get install "${APT[@]}" docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 fi
 usermod -aG docker "${DEPLOY_USER}"
 install -d -m 755 /etc/docker
@@ -119,8 +124,9 @@ systemctl enable --now fail2ban
 systemctl restart fail2ban
 
 log "SSH hardening"
+# sshd keeps the FIRST value it reads, files in lexical order: 00- must sort before OVH's 50-cloud-init.conf (PasswordAuthentication yes).
 if [[ -n "${DEPLOY_SSH_PUBKEY}" ]]; then
-  cat >/etc/ssh/sshd_config.d/99-rentmonitor.conf <<'EOF'
+  cat >/etc/ssh/sshd_config.d/00-rentmonitor.conf <<'EOF'
 PermitRootLogin no
 PasswordAuthentication no
 KbdInteractiveAuthentication no

@@ -130,6 +130,24 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none; say "target" wherever it is stated. The local logical drill (`scripts/backup_drill.sh`) covers only the dump path.
 - **Target:** gate 6 (#37), `docs/R2-SPEC.md` section 5; #15
 
+### L-015 — MoR settlement and Polish KSeF treatment need accountant review
+- **Status:** active
+- **Discovered:** 2026-10-13
+- **Affects:** proposed billing-provider selection, VAT invoices, blueprint §3 and release gate 1
+- **Evidence:** confirmed (Ministry of Finance KSeF scope and Paddle reverse-invoice documentation, linked in [BILLING-ALTERNATIVES.md](BILLING-ALTERNATIVES.md)); application to RentMonitor's entity and contract is unverified
+- **Description:** A MoR handles the customer sale, but RentMonitor's supplier/self-billing documents, VAT status, settlement reconciliation and applicable KSeF obligations have not been assessed. No evidence establishes a blanket KSeF exemption for RentMonitor or vendor KSeF submission. The current Fakturownia API → KSeF workflow also remains untested.
+- **Workaround:** Keep the accepted Stripe spec; treat MoR simplification as a proposal. Obtain sample customer and settlement documents and an accountant's assessment before changing the invoice pipeline.
+- **Target:** accountant review #41; provider decision and invoice release gate
+
+### L-016 — RentMonitor acceptance by a merchant of record is unverified
+- **Status:** active
+- **Discovered:** 2026-10-13
+- **Affects:** proposed Paddle/Lemon Squeezy onboarding and paid launch
+- **Evidence:** confirmed (Paddle AUP restricts investment advice; Lemon Squeezy restricts regulated real-estate services and unlicensed content); RentMonitor classification is unverified
+- **Description:** General SaaS support does not establish acceptance of yield/IRR/Max Bid reports and investment rankings. No provider has reviewed the actual product. Paddle supports one-time PLN BLIK but not BLIK subscriptions; Lemon Squeezy's published methods omit BLIK.
+- **Workaround:** Request written product assessment with representative reports, prepaid report-pack entitlements and data-rights information. Owner selected one-time packs on 2026-10-13, so recurring BLIK is outside the pilot. If Paddle rejects the offering, ordinary Stripe plus Polish invoicing remains a fallback requiring a separate decision.
+- **Target:** provider evaluation in [BILLING-ALTERNATIVES.md](BILLING-ALTERNATIVES.md); decision before replacing ADR 0005
+
 ## Resolved
 
 ### L-013 — Error events may carry stack-frame variables and unscrubbed free text
