@@ -1,15 +1,16 @@
 # RentMonitor design direction
 
-2026-10-12 · Design proposal, not a shipped application.
+2026-10-13 · Design proposal, not a shipped application.
 
 ## Design alternatives
 
 | Version | Direction | Start |
 |---|---|---|
 | V1 | Warm paper, terracotta, serif headings, rounded surfaces, navigation rail | [V1 home](v1/main-view.html) |
+| V3 | Light default + dark support, Polish architectural identity, forest-green actions, interactive login and fuller report | [V3 home](v3/main-view.html) · [login](v3/login.html) · [review and verification](v3/README.md) |
 | V2 | Dark monochrome, architectural imagery, bold sans-serif, precise edges, a viewport-height sidebar, bounded analysis cards and restrained motion | [V2 home](v2/main-view.html) · [principles and tokens](v2/design-principles.md) |
 
-Serve **both versions** with `python3 -m http.server 8766 --bind 127.0.0.1 --directory design`, then visit `/v1/main-view.html` or `/v2/main-view.html`. V2's footer links to the corresponding V1 page for comparison. V2 now opens each property on a separate report page; [its UX contract](v2/analysis-page-ux.md) defines progressive disclosure within the future full analysis. Neither version is selected as the production design yet. V2 adds an original AI-generated decorative hero image; provenance and the generation prompt are in its principles file. The following review history describes V1.
+Serve **all three versions** with `python3 -m http.server 8766 --bind 127.0.0.1 --directory design`, then visit `/v1/main-view.html`, `/v2/main-view.html` or `/v3/main-view.html`. V3 login is at `/v3/login.html`. V2's footer links to the corresponding V1 page for comparison. V2 now opens each property on a separate report page; [its UX contract](v2/analysis-page-ux.md) defines progressive disclosure within the future full analysis. Neither version is selected as the production design yet. V2 adds an original AI-generated decorative hero image; provenance and the generation prompt are in its principles file. The following review history describes V1.
 
 Start with [main-view.html](v1/main-view.html). It is a self-contained, responsive, interactive prototype of the signed-in home screen, written from scratch. Open it in a browser, or serve this directory locally with `python3 -m http.server 8765 --bind 127.0.0.1 --directory design/v1` from the repository root.
 

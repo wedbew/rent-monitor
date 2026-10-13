@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="96" viewBox="0 0 360 96" role="img" aria-label="Renti — architectural R logo">
+<g fill="none" stroke="#235b46" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+<rect x="14" y="16" width="60" height="60" rx="8"/>
+<path d="M32 73V31h19a9 9 0 0 1 9 9v0a9 9 0 0 1-9 9H32 M45 49l26 24"/>
+</g>
+<text x="98" y="72" fill="#182c28" font-family="Helvetica Neue,Arial,sans-serif" font-size="76" font-weight="600" letter-spacing="-2.8">renti</text>
+</svg>
