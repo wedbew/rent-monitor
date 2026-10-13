@@ -20,6 +20,9 @@ def test_documentation_only(files: list[str]) -> None:
         ["pyproject.toml"],
         ["docs/STATUS.md", "uv.lock"],
         ["migrations/versions/0007.py"],
+        ["tests/engine/golden/leszno_with_vision.md"],  # read by test_golden as expected output
+        ["apps/deal_analyzer/README.md"],
+        ["services/rm_api/NOTES.md", "README.md"],
     ],
 )
 def test_anything_else_runs_the_full_pipeline(files: list[str]) -> None:

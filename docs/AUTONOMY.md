@@ -32,16 +32,20 @@ A run is capped at 40 turns and 30 minutes; a ticket that does not finish leaves
 ## Dispatcher (opt-in, ADR 0012)
 
 `.github/workflows/dispatch.yml` runs `scripts/dispatch_next.py` every 30 minutes **only when the repo variable `ENABLE_DISPATCH` is
-`true`** (set it with `gh variable set ENABLE_DISPATCH --body true`; unset it to stop). It looks at open issues:
+`true`** (set it with `gh variable set ENABLE_DISPATCH --body true`; unset it to stop). States it distinguishes:
 
-- an issue labelled `agent` is in flight → nothing else starts (one at a time);
-- no activity on it (issue or its `rm-<n>-*`/`claude/issue-<n>-*` PR) for 60 minutes → one `@claude resume` comment, then a second,
-  then label `blocked` and a comment naming the owner action; the dispatcher never retries a `blocked` issue;
-- nothing in flight → the lowest `Priority: P0..P2`, then lowest number, issue labelled `ready` whose `Depends on:` issues are all closed
-  and that is not `blocked`, `umbrella`, `owner` or `in-progress` gets the `agent` label (which starts `claude.yml`).
+- **running**: a `claude` workflow run is active, or the PR's checks are pending: nothing happens;
+- **awaiting approval or merge**: an open PR with passing checks (found by branch `rm-<n>-*`, `claude/issue-<n>-*` or `RM-<n>` in the title,
+  labelled `agent` or not): never resumed, never blocked, and no other issue starts;
+- **failing**: PR checks failed and 60 minutes idle: one `@claude resume` comment, up to two, then `blocked`;
+- **stalled**: labelled `agent`, no PR, 60 minutes idle: same resume-then-`blocked` path with the owner action in the comment;
+- **free**: nothing in flight, the latest `ci` run on `staging` is not red and no run is active: the lowest `Priority: P0..P2`, then lowest
+  number, issue labelled `ready` whose `Depends on:` issues are all closed and that is not `blocked`, `umbrella`, `owner` or `in-progress`
+  gets the `agent` label (which starts `claude.yml`).
 
+A blocked issue is retried only when the owner comments `/retry` and removes `blocked`; attempts are counted after the latest `/retry`.
 Manual run: Actions → dispatch → *Run workflow* (dry by default; tick *apply* to act). Local dry run: `python3 scripts/dispatch_next.py`.
-Idempotency: each dispatch or resume leaves a `<!-- rm-dispatch attempt=n -->` comment; attempts are capped at 2.
+Idempotency: each dispatch or resume leaves a `<!-- rm-dispatch attempt=n -->` comment; attempts are capped at 2 per `/retry`.
 Everything the agent needs to continue is the checkpoint comment (`rules/delivery.md`).
 
 ## Canary log

@@ -1,7 +1,8 @@
 """Decide whether a change is documentation only, so CI can skip the code stages (ADR 0012).
 
 Prints `docs_only=true|false`. Conservative on purpose: any doubt (unknown base, git failure, empty diff) is
-`false`, and only Markdown, Cursor `.mdc` rule pointers and the `design/` prototypes count as documentation.
+`false`, and only Markdown outside the code directories, Cursor `.mdc` pointers and `design/` count as
+documentation.
 `docs/openapi.json`, workflows, scripts, configuration and anything tests read are code. Security, lint, the
 title check and the lockfile audit do not use this and always run.
 """
@@ -12,9 +13,23 @@ import sys
 ZERO = "0" * 40
 DOC_SUFFIXES = (".md", ".mdc")
 DOC_DIRS = ("design/",)
+# Markdown under these is an executable input (golden expected output, fixtures, packaged docs): it is code.
+CODE_DIRS = (
+    "tests/",
+    "apps/",
+    "packages/",
+    "services/",
+    "scripts/",
+    "migrations/",
+    "deploy/",
+    ".github/",
+    ".semgrep/",
+)
 
 
 def is_doc(path: str) -> bool:
+    if path.startswith(CODE_DIRS):
+        return False
     return path.endswith(DOC_SUFFIXES) or path.startswith(DOC_DIRS)
 
 
