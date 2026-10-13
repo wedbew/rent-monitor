@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     worker_audit_concurrency: int = Field(default=1, ge=1)
     worker_batch_concurrency: int = Field(default=1, ge=1)
     audit_job_timeout_s: int = Field(default=900, ge=1)
+    audit_child_memory_mb: int = Field(default=1024, ge=128)  # RLIMIT_AS of the engine child process (#186)
 
     openrouter_api_key: SecretStr = Field(  # blueprint §4.2 spells it OPEN_ROUTER_API_KEY
         default=SecretStr(""), validation_alias=AliasChoices("OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY")

@@ -14,11 +14,11 @@ fakes) · **3** provider-verified (authorised sandbox/live evidence) · **4** la
 | Sign in (Google ID token, magic link, sessions) | 1 | `rm_api.auth`, `tests/integration/test_auth.py` (#147); used by the journey test | Real Google and Resend never exercised (B-004); level 3 open |
 | Parse and bound the listing reference | 2 | `rm_core.listing_ref` behind `POST /api/audits` (422 on SSRF-style refs) | none offline |
 | Reserve credit, capture/release | 2 | `rm_core.ledger` called by the route and the worker; `tests/integration/test_audit_journey.py` | Plan-allowance path through the audit route is unit-tested in `test_ledger.py` only |
-| Queue the analysis | 2 | `ProcrastinateEmailQueue.run_audit` defers `run_audit`; the test runs a real worker on the `audit` queue | Reconciler if the defer fails (#186) |
+| Queue the analysis | 2 | `ProcrastinateEmailQueue.run_audit` defers `run_audit`; the test runs a real worker on the `audit` queue | Defer failure recovered by `reconcile_queued_audits` (RM-186, real Postgres + worker); proven offline only |
 | Acquire listing and context | 1 | Pipeline takes injected `ListingSource` / `ContextProvider`; test uses `FakeSource`, `FakeContext`; Otodom client, snapshots, OSM clients exist | Comparables store merged (#106 slice 1), importers that fill it still missing; real adapters (#187); live shape confirmed for one sale listing 2026-10-13 (L-005) |
 | Run the engine | 2 | `analyse_listing` runs in the worker; API result equals a direct engine run | CAPEX placeholders (L-007); accuracy unmeasured (#94); vision not called, so every success is `succeeded_degraded` |
 | Persist and retrieve the canonical result | 2 | `audit.result` + typed columns copied from the analysis; `GET /api/audits/{id}` echoes it | none offline |
-| Failure releases the reservation; duplicates do not double-charge; tenant isolation | 2 (narrow) | Covered: failures raised inside the async pipeline (RENT, fractional, gone, blocked, payload drift, crash, a slow listing fetch or context call hitting the deadline, unconfigured worker) release the charge; 6 simultaneous submits admit one; duplicate job delivery settles once; foreign audit is 404 | **Not covered:** the defer failing after commit (audit stays `queued`, credit reserved), worker death mid-run (stays `running`), and a blocking engine call (`asyncio.timeout` cannot interrupt synchronous code). All need #186 |
+| Failure releases the reservation; duplicates do not double-charge; tenant isolation | 2 | Failures inside the pipeline release the charge (RENT, fractional, gone, blocked, drift, crash, slow fetch hitting the deadline, unconfigured worker); 6 simultaneous submits admit one; duplicate delivery settles once; foreign audit is 404. **Recovery (RM-186, `tests/integration/test_audit_recovery.py`, `test_engine_child.py`):** failed enqueue re-deferred then completed; queued past deadline and worker death (`running` past deadline) fail `TIMEOUT` and release; healthy slow run untouched; reconciler idempotent under 3 concurrent runs; worker finish vs reconciler raced 12 times settles exactly once; a hung or dying engine is killed (process group) and releases; cancellation kills the child | Memory cap (`RLIMIT_AS`) is tested on Linux CI only (skipped on macOS); stalled Procrastinate `doing` rows are not cleaned (L-017) |
 | Progress stream | 0 | `audit_event` table | #185 |
 
 **Journey level once #192 is merged: 2, offline** (RM-184, `tests/integration/test_audit_journey.py`, 18 tests; real API, Postgres, ledger,
@@ -42,7 +42,7 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 
 | Issue | Class | Next step / blocker |
 |---|---|---|
-| #13 audits | U, P | #184 = PR #192 (offline level 2, awaiting approval); #185 (SSE) and #186 (recovery) become **R** only after #192 merges; #187 blocked on #106 and live-fetch authorisation |
+| #13 audits | U, P | #184 merged (#192, offline level 2); #186 recovery implemented offline (RM-186); #185 (SSE) next; #187 blocked on #106 and live-fetch authorisation |
 | #14 billing | U, B | Re-scope to Paddle packs per `PADDLE-INTEGRATION.md`; consumption depends on #184, money-PR review and pack/ledger slices. Paddle sandbox evidence replaces the earlier Stripe B-003 dependency for this pilot; final prices/provider acceptance pending |
 | #15 ops | P | Compose done; Caddy, WAL-G, backups deferred (local-first strategy) |
 | #16, #21 market batch and routes | B | Wait for #106, #48, #49 |

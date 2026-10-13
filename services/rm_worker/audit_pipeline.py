@@ -8,16 +8,16 @@ invariant 4); this module copies its output into typed columns and decides the c
 * idempotent: a second run of the same job finds the audit no longer `queued` and does nothing, and
   `ledger.settle` claims the charge atomically, so a duplicate delivery never settles twice.
 
-A worker killed between the claim and the final transaction leaves the audit `running`; recovering it is the
-reconciler's job (#186), not this module's.
+A worker killed between the claim and the final transaction leaves the audit `running`; the reconciler
+(`tasks/reconcile.py`, #186) fails it past its deadline and releases the charge. The engine runs in a killable
+child process (`engine_child.py`), so a hung or runaway engine cannot hold the slot.
 
 LEGAL[scraping]: the page is fetched via the injected source, shared across tenants for 6 h (RM-184).
 LEGAL[url-analysis]: only the strictly parsed short id stored on the audit row is ever fetched (RM-184).
 """
 
 import asyncio
-from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Protocol
 from uuid import UUID
@@ -31,7 +31,6 @@ from deal_analyzer import (
     Listing,
     RentInput,
     RentNotADealError,
-    analyse_listing,
     classify_ownership,
     extract_listing,
     require_whole_ownership,
@@ -45,6 +44,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from rm_worker.clients.otodom import ListingGone, UpstreamBlocked, UpstreamSchemaDrift
+from rm_worker.engine_child import ChildEngine, EngineRunner
 from rm_worker.snapshot_service import ListingSource, get_snapshot
 
 log = structlog.get_logger(__name__)
@@ -68,7 +68,7 @@ class AuditServices:
     source: ListingSource
     context: ContextProvider
     timeout_s: float = 900.0  # one deadline per audit (blueprint §6)
-    analyse: Callable[..., DealAnalysis] = analyse_listing
+    engine: EngineRunner = field(default_factory=ChildEngine)  # killable child process, memory capped (#186)
 
 
 @dataclass(frozen=True)
@@ -136,7 +136,9 @@ async def _analyse(services: AuditServices, otodom_id: str) -> Outcome:
             )
             rent = await services.context.rent_input(listing, deadline=deadline)
             risk_free = await services.context.risk_free_rate(deadline=deadline)
-            analysis = services.analyse(listing, rent=rent, risk_free=risk_free)
+            analysis = await services.engine.run(
+                listing, rent=rent, risk_free=risk_free, timeout_s=deadline.remaining()
+            )
     except Exception as exc:
         return _failure(exc)
     degraded = DEGRADING_WARNING in analysis.warnings
