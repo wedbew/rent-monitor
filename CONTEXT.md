@@ -5,7 +5,7 @@
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-13 · by: RM-42 (live Otodom probe, L-005/L-002); prior: RM-177 (delivery loop, STATUS.md); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
+**Last updated:** 2026-10-13 · by: RM-106 (comparable-rent store); prior: RM-42 (live Otodom probe, L-005/L-002), RM-177 (delivery loop, STATUS.md); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
