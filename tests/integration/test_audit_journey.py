@@ -128,9 +128,15 @@ class Harness:
             sessionmaker=self.sm, source=self.source, context=self.ctx, timeout_s=timeout_s, **extra
         )
 
-    async def run_worker(self, *, timeout_s: float = 30.0, engine: EngineRunner | None = None) -> None:
+    async def run_worker(
+        self,
+        *,
+        timeout_s: float = 30.0,
+        engine: EngineRunner | None = None,
+        services: AuditServices | None = None,
+    ) -> None:
         """Process every todo job on the `audit` queue with the real Procrastinate worker, then return."""
-        audit_services.configure(self.services(timeout_s=timeout_s, engine=engine))
+        audit_services.configure(services or self.services(timeout_s=timeout_s, engine=engine))
         connector = procrastinate.PsycopgConnector(conninfo=self.dsn, min_size=1, max_size=3)
         try:
             with worker_app.replace_connector(connector) as app:

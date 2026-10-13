@@ -121,14 +121,14 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none needed for correctness (the claim is idempotent, a re-run is a no-op); watch `monitor` queue lag.
 - **Target:** gate 4 (#34), #15
 
-### L-015 — The audit journey is proven offline only; no live adapters, vision or crash recovery
-- **Status:** active
+### L-018 — The audit journey is proven offline only; no live evidence, no vision, no rent data
+- **Status:** active (renumbered from a duplicate L-015, RM-187)
 - **Discovered:** 2026-10-13
-- **Affects:** `POST /api/audits`, `rm_worker.audit_pipeline`, `rm_worker.audit_services`
-- **Evidence:** confirmed (`tests/integration/test_audit_journey.py` runs with `FakeSource` and `FakeContext`)
-- **Description:** The worker has no production listing source or market context configured, so a real deployment ends every audit `failed_internal` with the credit released. The vision stage is not called, so every success is `succeeded_degraded` (`vision_unavailable`). A worker killed mid-run leaves its audit `running` and charged, and a failed defer after commit leaves it `queued` and charged, until the reconciler exists (#186). The deadline is `asyncio.timeout`, which interrupts awaits only: a blocking synchronous engine call is not interrupted (the killable child is also #186); the analyst audit is refused (403). There is no progress stream.
-- **Workaround:** none needed before launch; do not expose the route to real users until #186 and #187 land.
-- **Target:** #186 (reconciler, killable child), #187 (real adapters), #185 (SSE); docs/STATUS.md journey table
+- **Affects:** `POST /api/audits`, `rm_worker.audit_pipeline`, `rm_worker.context`, `rm_worker.listing_source`
+- **Evidence:** confirmed (`tests/integration/test_audit_journey.py`, `test_audit_context.py` run with a fake HTTP transport and hand-built rental rows)
+- **Description:** Crash recovery, the killable engine child and the SSE stream are built and tested offline (RM-185, RM-186). The real Otodom client and market context are wired behind `AUDIT_PROVIDERS=real` (RM-187) but have only run against a fake transport; one live fetch was confirmed for payload shape (L-005). The comparable-rent store is **empty until importers exist**, so a real audit gets the engine's refused rent (rent 0, warning `rent_refused_too_few_comparables`). The risk-free rate is an owner-supplied `RISK_FREE_RATE` (unset: `CONTEXT_UNAVAILABLE`). The vision and OCR stages are not called, so every success is `succeeded_degraded` (`VISION_UNAVAILABLE`). The analyst audit is refused (403).
+- **Workaround:** none needed for a private beta; do not present results as market-grounded until rental importers and a rate source land.
+- **Target:** importers (#106 slice 2), rate source (N-12), vision/OCR integration, live evidence (level 3); docs/STATUS.md journey table
 
 ### L-014 — RPO 5 minutes and RTO 1 hour are targets, never measured
 - **Status:** active

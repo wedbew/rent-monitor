@@ -252,6 +252,7 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `UPSTREAM_BLOCKED` | 403, 429, captcha or challenge HTML, missing `__NEXT_DATA__` | `failed_upstream` | tenacity: 4 attempts, exponential 2–60 s with jitter, honour `Retry-After`; then trip a 15-minute host circuit breaker | released |
 | `UPSTREAM_SCHEMA_DRIFT` | `_next/data` payload fails Pydantic | `failed_upstream` + Better Stack alert | none (needs a code fix) | released |
 | `VISION_UNAVAILABLE` | OpenRouter 5xx or timeout after retries | `succeeded_degraded`: CAPEX marked unknown, confidence lowered | 3 attempts | captured |
+| `CONTEXT_UNAVAILABLE` | a market input the engine cannot run without is not configured (risk-free rate) or the market-data store failed (RM-187) | `failed_internal` + Better Stack error | none until the input exists | released |
 | `INTERNAL` | anything else | `failed_internal` + Better Stack error | Procrastinate retry once | released |
 | `VALIDATION_ERROR` | request body, query or path fails Pydantic (`extra="forbid"`) | 422, field errors without echoing input | none | never reserved |
 | `NOT_FOUND` | unknown route, or a resource of another tenant (never 403) | 404 | none | never reserved |

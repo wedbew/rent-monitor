@@ -34,6 +34,14 @@ class Settings(BaseSettings):
     worker_audit_concurrency: int = Field(default=1, ge=1)
     worker_batch_concurrency: int = Field(default=1, ge=1)
     audit_job_timeout_s: int = Field(default=900, ge=1)
+    # `real` wires the Otodom client and the market-data store into the worker; `none` (default) fails every
+    # audit closed and releases the credit, so a half-configured host never pretends to analyse (#187).
+    audit_providers: Literal["none", "real"] = "none"
+    # LEGAL[scraping]: kill switch for fetching listing pages; off ends audits `UPSTREAM_BLOCKED` (RM-187).
+    legal_scraping_enabled: bool = True
+    # Owner input until the macro source exists (ENGINE-SPEC row 9, N-12): PL 10Y yield as a fraction, e.g.
+    # 0.055. Unset means audits end CONTEXT_UNAVAILABLE rather than run on an invented rate.
+    risk_free_rate: Decimal | None = Field(default=None, gt=0, lt=1)
     audit_child_memory_mb: int = Field(default=1024, ge=128)  # RLIMIT_AS of the engine child process (#186)
 
     openrouter_api_key: SecretStr = Field(  # blueprint §4.2 spells it OPEN_ROUTER_API_KEY
