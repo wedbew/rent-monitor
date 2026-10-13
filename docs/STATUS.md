@@ -15,7 +15,7 @@ fakes) · **3** provider-verified (authorised sandbox/live evidence) · **4** la
 | Parse and bound the listing reference | 2 | `rm_core.listing_ref` behind `POST /api/audits` (422 on SSRF-style refs) | none offline |
 | Reserve credit, capture/release | 2 | `rm_core.ledger` called by the route and the worker; `tests/integration/test_audit_journey.py` | Plan-allowance path through the audit route is unit-tested in `test_ledger.py` only |
 | Queue the analysis | 2 | `ProcrastinateEmailQueue.run_audit` defers `run_audit`; the test runs a real worker on the `audit` queue | Reconciler if the defer fails (#186) |
-| Acquire listing and context | 1 | Pipeline takes injected `ListingSource` / `ContextProvider`; test uses `FakeSource`, `FakeContext`; Otodom client, snapshots, OSM clients exist | Rent comparables store (#106); real adapters (#187); live shape unverified (L-005) |
+| Acquire listing and context | 1 | Pipeline takes injected `ListingSource` / `ContextProvider`; test uses `FakeSource`, `FakeContext`; Otodom client, snapshots, OSM clients exist | Comparables store merged (#106 slice 1), importers that fill it still missing; real adapters (#187); live shape confirmed for one sale listing 2026-10-13 (L-005) |
 | Run the engine | 2 | `analyse_listing` runs in the worker; API result equals a direct engine run | CAPEX placeholders (L-007); accuracy unmeasured (#94); vision not called, so every success is `succeeded_degraded` |
 | Persist and retrieve the canonical result | 2 | `audit.result` + typed columns copied from the analysis; `GET /api/audits/{id}` echoes it | none offline |
 | Failure releases the reservation; duplicates do not double-charge; tenant isolation | 2 (narrow) | Covered: failures raised inside the async pipeline (RENT, fractional, gone, blocked, payload drift, crash, a slow listing fetch or context call hitting the deadline, unconfigured worker) release the charge; 6 simultaneous submits admit one; duplicate job delivery settles once; foreign audit is 404 | **Not covered:** the defer failing after commit (audit stays `queued`, credit reserved), worker death mid-run (stays `running`), and a blocking engine call (`asyncio.timeout` cannot interrupt synchronous code). All need #186 |
@@ -53,7 +53,7 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 | #44 frontend | U, B | Phase 2; owner authorisation required |
 | #48, #49 market-data contracts | R (off P0 path) | Fresh-import design; no dependency on P0 |
 | #94 accuracy evaluation | B (owner) | Harness is **R** now; needs the owner's labelled listings |
-| #106 comparable-rent store | R | Depends on #87 (merged); slice into store + cache first, importers second (LEGAL tags) |
+| #106 comparable-rent store | P | Store + sha256 cache done (level 1, offline, real Postgres). Open: fresh importers for rental comparables (`LEGAL[scraping\|third-party-data]`) and the hedonic refinement; slice them before `ready` |
 | #39-#43 owner | owner | See *Owner actions* |
 | #12, #17, #19, #20, #22, #23, #24, #30, #82, #84-#93, #157, #167 | V or E | Closed; E for those touching Google, Resend, Otodom or OpenRouter live |
 | #6, #8, #9 headless autonomy | reopened as P | A headless run producing a merged PR is not yet demonstrated; see #177 |
@@ -61,7 +61,7 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 ## Owner actions (exact, smallest first)
 
 1. Approve the money PR for #184 (ledger/quota paths) and the workflow PR #191; head SHAs go in `docs/BLOCKERS.md` *Approved*.
-2. Authorise **one** live Otodom listing fetch from a dev machine to settle L-005 (listing shape), and the datacenter-IP test on the VPS (#42).
+2. ~~Authorise one live Otodom fetch (L-005) and the datacenter-IP test (#42).~~ Done 2026-10-13: one sale listing returned 200 and parsed from the dev machine and from the OVH VPS-1. Single request each; sustained-load blocking is still unmeasured (L-002).
 3. Provide the labelled listing set for #94 and CAPEX prices or a data source (B-015, L-007).
 4. Stripe: grant sandbox access (B-003); request BLIK recurring activation (#39, has lead time).
 5. Decisions still open: Pro allowance and free-tier scope (#43), market-data bootstrap (CONTEXT §9), exit-value anchor (B-014).
