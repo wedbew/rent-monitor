@@ -424,6 +424,27 @@ class MarketSidecar(Base):
     generated_at: Mapped[datetime]
 
 
+class RentComparableRow(Base):
+    """One asking rent used by `estimate_rent`; belongs to an `otodom_rental` sidecar and dies with it.
+
+    LEGAL[third-party-data]: rows derive from Otodom rental listings; no seller data or text is kept (RM-106).
+    Only `otodom_rental` sidecars may own rows: `rm_core.comparables` checks the sidecar kind on write and
+    filters on it on read, so a deed or sale-asking sidecar can never feed a rent estimate (invariant 2).
+    """
+
+    __tablename__ = "rent_comparable"
+    __table_args__ = (
+        CheckConstraint("monthly_rent_pln > 0", name="rent_positive"),
+        CheckConstraint("area_m2 > 0", name="area_positive"),
+        Index("ix_rent_comparable_sidecar", "sidecar_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    sidecar_id: Mapped[int] = mapped_column(ForeignKey("market_sidecar.id", ondelete="CASCADE"))
+    monthly_rent_pln: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    area_m2: Mapped[Decimal] = mapped_column(Numeric(8, 2))
+
+
 # ---------- Erasure accountability ----------
 class ErasureLog(Base):
     """Pseudonymous record that an account was erased, kept so a restore from an older backup can re-erase it.
