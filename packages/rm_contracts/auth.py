@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
 # Small and strict on purpose: one `@`, no whitespace or quoting, a dotted domain. Delivery is the real check.
 _LOCAL = r"[^@\s<>\"',;()\[\]\\]{1,64}"
@@ -25,6 +25,79 @@ class EmailStart(BaseModel):
 class EmailVerify(BaseModel):
     model_config = ConfigDict(extra="forbid")
     token: str = Field(min_length=20, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+# Password bounds (docs/PASSWORD-AUTH-SPEC.md section 2). NFKC normalisation, the blocklist and the "contains
+# your address" rule run in the route, because they need the account's address and the bundled list.
+PASSWORD_MIN_CHARS = 10
+PASSWORD_MAX_CHARS = 128
+PASSWORD_MAX_BYTES = 256
+URLSAFE_PATTERN = r"^[A-Za-z0-9_-]+$"
+
+
+def _bounded_password(value: str) -> str:
+    """Hard upper bound on hashing work; the policy itself is reported as `WEAK_PASSWORD` by the route."""
+    if len(value.encode()) > PASSWORD_MAX_BYTES:
+        msg = "password is too long"
+        raise ValueError(msg)
+    return value
+
+
+NewPassword = Annotated[
+    str,
+    Field(min_length=PASSWORD_MIN_CHARS, max_length=PASSWORD_MAX_CHARS),
+    AfterValidator(_bounded_password),
+]
+LoginPassword = Annotated[
+    str, Field(min_length=1, max_length=PASSWORD_MAX_CHARS), AfterValidator(_bounded_password)
+]
+
+
+class RegisterRequest(BaseModel):
+    """GDPR[personal-data]: the address and a password that is hashed before it is stored."""
+
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
+    email: Email
+    password: NewPassword
+
+
+class RegisterVerify(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    token: str = Field(min_length=20, max_length=128, pattern=URLSAFE_PATTERN)
+
+
+class ResendRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email: Email
+
+
+class LoginRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
+    email: Email
+    password: LoginPassword
+
+
+class ForgotRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email: Email
+
+
+class ResetRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
+    token: str = Field(min_length=20, max_length=128, pattern=URLSAFE_PATTERN)
+    password: NewPassword
+
+
+class ChangePasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
+    current_password: LoginPassword
+    new_password: NewPassword
+
+
+class Accepted(BaseModel):
+    """The body of every non-enumerating 202: identical whatever the address is."""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class MeOut(BaseModel):
