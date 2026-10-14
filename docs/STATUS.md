@@ -21,8 +21,7 @@ fakes) · **3** provider-verified (authorised sandbox/live evidence) · **4** la
 | Failure releases the reservation; duplicates do not double-charge; tenant isolation | 2 | Failures inside the pipeline release the charge (RENT, fractional, gone, blocked, drift, crash, slow fetch hitting the deadline, unconfigured worker); 6 simultaneous submits admit one; duplicate delivery settles once; foreign audit is 404. **Recovery (RM-186, `tests/integration/test_audit_recovery.py`, `test_engine_child.py`):** failed enqueue re-deferred then completed; queued past deadline and worker death (`running` past deadline) fail `TIMEOUT` and release; healthy slow run untouched; reconciler idempotent under 3 concurrent runs; worker finish vs reconciler raced 12 times settles exactly once; a hung or dying engine is killed (process group) and releases; cancellation kills the child | Memory cap (`RLIMIT_AS`) is tested on Linux CI only (skipped on macOS); stalled Procrastinate `doing` rows are not cleaned (L-017) |
 | Progress stream | 2 | `GET /api/audits/{id}/events` (SSE): replay from `Last-Event-ID`, NOTIFY wake-up with a 15 s safety poll, terminal `done`/`error` written in the same transaction as the status and the credit settlement, finished audits without stored events synthesised, foreign audit 404 (RM-185, `tests/integration/test_audit_events.py`, 10 tests); real Postgres NOTIFY and worker, offline fakes | Stages `vision`/`ocr`/`anchors` are not emitted until those steps exist; open-ended stream behaviour (keep-alive, lost wake-up, disconnect) is tested on the generator, not over a real socket |
 
-**Journey level once #192 is merged: 2, offline** (RM-184, `tests/integration/test_audit_journey.py`, 18 tests; real API, Postgres, ledger,
-Procrastinate worker and engine; listing source and market context are named fakes). That is **not** live-provider validation
+**Journey level: 2, offline** (RM-184 to RM-187: `tests/integration/test_audit_journey.py`, `test_audit_recovery.py`, `test_audit_events.py`, `test_audit_context.py`; real API, Postgres, ledger, Procrastinate worker, engine child and, with `AUDIT_PROVIDERS=real`, the Otodom client and market context behind a fake HTTP transport and hand-built rental rows). The same journey ran against the amd64 Compose stack on 2026-10-14 (`scripts/journey_check.py`, fake provider data, see `docs/DEPLOYMENTS.md`); **it has not run on the VPS (B-016).** That is **not** live-provider validation
 and not production readiness (L-018). Level 3 needs the owner's authorisation for a live fetch and sourced market data.
 
 ## Other capability
@@ -42,25 +41,26 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 
 | Issue | Class | Next step / blocker |
 |---|---|---|
-| #13 audits | U, P | #184 merged (#192, offline level 2); #186 recovery merged (#206); #185 SSE merged (#207); #187 adapters in review (RM-187), rental importers and vision/OCR are separate issues |
-| #14 billing | U, B | Re-scope to Paddle packs per `PADDLE-INTEGRATION.md`; consumption depends on #184, money-PR review and pack/ledger slices. Paddle sandbox evidence replaces the earlier Stripe B-003 dependency for this pilot; final prices/provider acceptance pending |
-| #15 ops | P | Compose done; Caddy, WAL-G, backups deferred (local-first strategy) |
+| #13 audits | U, P | #184, #185, #186, #187 merged (offline level 2). Open: rental importers #209, risk-free source #210, vision/OCR #211, live-provider evidence (owner), VPS journey (B-016) |
+| #14 billing | U, P | Paddle packs per `PADDLE-INTEGRATION.md`: P1-P5b merged offline (#215-#219, #229); P6 sandbox and acceptance #220 is owner-side. Nothing is sellable until the owner's prices, Paddle acceptance and the accountant |
+| #15 ops | P | Offline preparation merged (#224: worker lanes, VPS overlay, env check, journey check, logical backup, runbook). Open: deploy to the VPS (B-016), public profile, WAL-G and offsite backup, gates 4-6 |
 | #16, #21 market batch and routes | B | Wait for #106, #48, #49 |
-| #25 worker-ops | P | Part 1 merged (#157); reconciler arrives with #186; pilot payment/adjustment reconciliation with #14 replaces subscription tasks |
-| #26, #27 invoices, disputes | B | Re-scope to Paddle invoice access, settlement and pack reversals; wait for #14 and accountant (#41) |
+| #25 worker-ops | P | Part 1 merged (#157); audit reconciler merged (#206); billing sweep and reconciliation merged (#228, #230) |
+| #26, #27 invoices, disputes | P | Paddle invoice access (#231) and provider reversals (#230) merged offline; settlement and KSeF wait for the accountant (#41) |
 | #28 API contract | P | OpenAPI + drift done (#175); schemathesis after #184; nightly live contract test is owner-authorised only |
 | #32-#38 launch gates | B | Cannot run before their subjects exist; #38 is partly covered by auth tests (sign-out-everywhere, unverified link) but gate timing evidence is missing |
 | #44 frontend | U, B | Phase 2; owner authorisation required |
 | #48, #49 market-data contracts | R (off P0 path) | Fresh-import design; no dependency on P0 |
 | #94 accuracy evaluation | B (owner) | Harness is **R** now; needs the owner's labelled listings |
-| #106 comparable-rent store | P | Store + sha256 cache done (level 1, offline, real Postgres). Open: fresh importers for rental comparables (`LEGAL[scraping\|third-party-data]`) and the hedonic refinement; slice them before `ready` |
+| #106 comparable-rent store | P | Store + sha256 cache done (level 1, offline, real Postgres). Open: rental importers #209 (`LEGAL[scraping\|third-party-data]`), hedonic refinement |
 | #39-#43 owner | owner | See *Owner actions* |
 | #12, #17, #19, #20, #22, #23, #24, #30, #82, #84-#93, #157, #167 | V or E | Closed; E for those touching Google, Resend, Otodom or OpenRouter live |
 | #6, #8, #9 headless autonomy | reopened as P | A headless run producing a merged PR is not yet demonstrated; see #177 |
 
 ## Owner actions (exact, smallest first)
 
-1. Approve the money PR for #184 (ledger/quota paths) and the workflow PR #191; head SHAs go in `docs/BLOCKERS.md` *Approved*.
+1. ~~Approve the money PR for #184.~~ Done: the owner gave standing authorisation for backend work including auth, ledger and billing on 2026-10-14 (`docs/BLOCKERS.md` *Approved*). Still yours: the workflow PR #191.
+1a. **The VPS (B-016):** reboot it from the OVH Manager (VPS > Reboot) so SSH answers again; then the beta deployment runs from `docs/RUNBOOK-DEPLOY.md`.
 2. ~~Authorise one live Otodom fetch (L-005) and the datacenter-IP test (#42).~~ Done 2026-10-13: one sale listing returned 200 and parsed from the dev machine and from the OVH VPS-1. Single request each; sustained-load blocking is still unmeasured (L-002).
 3. Provide the labelled listing set for #94 and CAPEX prices or a data source (B-015, L-007).
 4. Paddle pilot: confirm pack prices (recommended 10/40/70 PLN), obtain product/prepaid-report acceptance and sandbox access, and have the accountant review settlement/KSeF treatment. Stripe sandbox (B-003) and recurring-BLIK activation (#39) are no longer pilot dependencies; issue records need reconciliation.
