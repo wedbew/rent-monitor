@@ -5,6 +5,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Fixed
+- `.env.example`: every comment now sits on its own line above the setting; a trailing `  # text` was kept as part of the value by loaders that do not strip inline comments (found while deploying to VPS-3). **Operator action:** if a host `.env` was copied from the old example, remove trailing comments from its values (RM-234)
 - `deploy/setup-server.sh`: the SSH key is read from `/tmp/deploy_key.pub` (an environment variable did not survive `sudo`, so no key was installed), the sshd drop-in is `00-rentmonitor.conf` so it overrides OVH's `50-cloud-init.conf` and password login really is disabled, and apt runs non-interactively; **operator action:** copy your public key to `/tmp/deploy_key.pub` before running it (RM-195)
 
 ### Added
