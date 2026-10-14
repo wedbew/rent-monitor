@@ -24,6 +24,14 @@ had `KEY=   # comment` placeholders that Compose read as values; they were blank
 a sourced risk-free rate, and the domain: `renti.tech` in OVH needs DNS records and a TLS certificate before the `public`
 profile (Caddy) may run, which is the owner's authorisation (`docs/RUNBOOK-DEPLOY.md` section 6).
 
+**Domain and TLS, 2026-10-14:** with the owner's authorisation, `renti.tech` (OVH zone) now points its apex and `www` `A`
+records at the VPS-3 IPv4 (TTL 300; they held OVH's parking address before) through the OVH CLI. Caddy (`--profile public`) obtained a
+Let's Encrypt certificate for `renti.tech` (valid to 2027-01-12, renewed automatically). `https://renti.tech/api/health` answers 200,
+`/readyz` and `/` answer 404, port 80 redirects to https. `PUBLIC_APP_URL=https://renti.tech` and `PUBLIC_HOST=renti.tech` are set on the
+host, and `check_env.py` (without `--private`) leaves one error: no `RESEND_API_KEY`. **Still not usable by people:** no Resend key and
+verified sender (the zone's SPF is OVH's own, so Resend's records still have to be added), no Google client, placeholder risk-free rate.
+The repository is still public (PRE-DEPLOYMENT section 0). The OVH API credentials used for this were pasted into a chat and must be revoked.
+
 Historical B-016 checks concern the old Prague VPS-1, `vps-ee6fa92e.vps.ovh.net`
 (`SERVER_V1_NAME`), shown Stopped in the owner's screenshot. Its SSH/KVM/reboot errors
 are not evidence about the current target.
