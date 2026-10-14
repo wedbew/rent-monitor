@@ -378,6 +378,25 @@
         "title": "ChargeStateName",
         "type": "string"
       },
+      "CheckoutRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "pack_code": {
+            "enum": [
+              "reports_1",
+              "reports_5",
+              "reports_10"
+            ],
+            "title": "Pack Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack_code"
+        ],
+        "title": "CheckoutRequest",
+        "type": "object"
+      },
       "CreditAdjust": {
         "additionalProperties": false,
         "description": "`idempotency_key` is chosen by the caller; repeating it never adjusts twice.",
@@ -1353,6 +1372,66 @@
         "title": "OverridePut",
         "type": "object"
       },
+      "PackOut": {
+        "properties": {
+          "catalog_version": {
+            "title": "Catalog Version",
+            "type": "integer"
+          },
+          "code": {
+            "enum": [
+              "reports_1",
+              "reports_5",
+              "reports_10"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "currency": {
+            "const": "PLN",
+            "default": "PLN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "gross_pln": {
+            "title": "Gross Pln",
+            "type": "string"
+          },
+          "reports": {
+            "title": "Reports",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "reports",
+          "gross_pln",
+          "catalog_version"
+        ],
+        "title": "PackOut",
+        "type": "object"
+      },
+      "PacksOut": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "packs": {
+            "items": {
+              "$ref": "#/components/schemas/PackOut"
+            },
+            "title": "Packs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "enabled",
+          "packs"
+        ],
+        "title": "PacksOut",
+        "type": "object"
+      },
       "PeriodOut": {
         "properties": {
           "allowance": {
@@ -1443,6 +1522,135 @@
           "period"
         ],
         "title": "PlanOut",
+        "type": "object"
+      },
+      "PurchaseOut": {
+        "description": "GDPR[personal-data]: returned to the buyer only. No raw provider payload, no binding token.",
+        "properties": {
+          "checkout_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkout Url"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "const": "PLN",
+            "default": "PLN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "granted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Granted At"
+          },
+          "gross_pln": {
+            "title": "Gross Pln",
+            "type": "string"
+          },
+          "pack_code": {
+            "enum": [
+              "reports_1",
+              "reports_5",
+              "reports_10"
+            ],
+            "title": "Pack Code",
+            "type": "string"
+          },
+          "purchase_id": {
+            "format": "uuid",
+            "title": "Purchase Id",
+            "type": "string"
+          },
+          "refunded_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refunded At"
+          },
+          "reports": {
+            "title": "Reports",
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "intent",
+              "creating",
+              "created",
+              "creation_unknown",
+              "failed",
+              "paid",
+              "granted",
+              "review",
+              "refunded"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "transaction_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Id"
+          }
+        },
+        "required": [
+          "purchase_id",
+          "pack_code",
+          "reports",
+          "gross_pln",
+          "state",
+          "transaction_id",
+          "checkout_url",
+          "created_at",
+          "granted_at",
+          "refunded_at"
+        ],
+        "title": "PurchaseOut",
+        "type": "object"
+      },
+      "PurchasesOut": {
+        "properties": {
+          "purchases": {
+            "items": {
+              "$ref": "#/components/schemas/PurchaseOut"
+            },
+            "title": "Purchases",
+            "type": "array"
+          }
+        },
+        "required": [
+          "purchases"
+        ],
+        "title": "PurchasesOut",
         "type": "object"
       },
       "RegisterRequest": {
@@ -2771,6 +2979,168 @@
         "summary": "Sign Out Everywhere",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/billing/checkout": {
+      "post": {
+        "operationId": "checkout_api_billing_checkout_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Checkout",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/billing/packs": {
+      "get": {
+        "operationId": "list_packs_api_billing_packs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacksOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Packs",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/billing/purchases": {
+      "get": {
+        "operationId": "list_purchases_api_billing_purchases_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchasesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Purchases",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/billing/purchases/{purchase_id}": {
+      "get": {
+        "operationId": "get_purchase_api_billing_purchases__purchase_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Purchase Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Purchase",
+        "tags": [
+          "billing"
         ]
       }
     },

@@ -42,13 +42,15 @@ class FakePaddle:
         if self.fail_create_before_store:
             raise PaddleAmbiguousError("timed out")
         price = self.prices[price_id]
+        txn_id = "txn_" + uuid4().hex[:20]
         txn = Transaction(
-            id="txn_" + uuid4().hex[:20],
+            id=txn_id,
             status="ready",
             currency_code=price.currency_code,
             items=(TransactionItem(price_id=price_id, product_id=price.product_id, quantity=1),),
             total_minor=price.amount_minor,
             custom_data=dict(custom_data),
+            checkout_url="https://checkout.test/pay?_ptxn=" + txn_id,
         )
         self.transactions[txn.id] = txn
         if self.fail_create_after_store:

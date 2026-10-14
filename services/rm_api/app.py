@@ -8,9 +8,12 @@ import httpx
 import procrastinate
 import structlog
 from fastapi import FastAPI
+from rm_core.billing import sync_catalog
+from rm_core.billing_catalog import Catalog, CatalogError, load_catalog
 from rm_core.db.session import make_engine, make_sessionmaker
 from rm_core.logging import configure_logging
 from rm_core.observability import init_sentry
+from rm_core.paddle import PaddleClient, PaddleError, build_paddle_client
 from rm_core.progress import CHANNEL as PROGRESS_CHANNEL
 from rm_core.settings import Settings, get_settings
 
@@ -20,6 +23,7 @@ from rm_api.auth.google import GoogleCerts, GoogleVerifier
 from rm_api.auth.password import router as password_router
 from rm_api.auth.router import router as auth_router
 from rm_api.auth.sessions import REVOKED_CHANNEL, PrincipalCache
+from rm_api.billing import router as billing_router
 from rm_api.billing_erasure import BillingEraser
 from rm_api.health import router as health_router
 from rm_api.me import router as me_router
@@ -34,6 +38,26 @@ from rm_api.sse import ProgressHub
 log = structlog.get_logger(__name__)
 HTTP_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
 HTTP_LIMITS = httpx.Limits(max_connections=20, max_keepalive_connections=10)
+
+
+async def _init_billing(
+    app: FastAPI, settings: Settings, client: PaddleClient | None, catalog: Catalog | None
+) -> None:
+    """Sales are off unless the owner-approved catalog loads and a client for the matching environment exists.
+    A broken catalog is logged loudly and leaves billing disabled; it never stops the API from starting."""
+    app.state.paddle, app.state.catalog = None, None
+    try:
+        catalog = catalog or load_catalog(settings)
+        client = client or build_paddle_client(settings)
+    except (CatalogError, PaddleError):
+        log.exception("billing_disabled")
+        return
+    if catalog is None or client is None or app.state.sessionmaker is None:
+        return
+    async with app.state.sessionmaker() as session, session.begin():
+        await sync_catalog(session, catalog)
+    app.state.paddle, app.state.catalog = client, catalog
+    log.info("billing_enabled", environment=catalog.environment, packs=len(catalog.packs))
 
 
 def _start_listener(app: FastAPI, dsn: str) -> NotifyListener:
@@ -54,6 +78,8 @@ def create_app(
     audit_queue: AuditQueue | None = None,
     google_verifier: GoogleVerifier | None = None,
     billing_eraser: BillingEraser | None = None,
+    paddle_client: PaddleClient | None = None,
+    catalog: Catalog | None = None,
 ) -> FastAPI:
     """`email_queue`, `audit_queue` and `google_verifier` are test seams; production builds them in the
     lifespan."""
@@ -84,6 +110,7 @@ def create_app(
         app.state.audit_queue = audit_queue or jobs or _NoQueue()
         listener = _start_listener(app, settings.psycopg_dsn) if settings.psycopg_dsn else None
         app.state.notify_listener = listener
+        await _init_billing(app, settings, paddle_client, catalog)
         log.info("startup", env=settings.app_env, database=engine is not None)
         try:
             yield
@@ -111,6 +138,8 @@ def create_app(
     app.state.principal_cache = PrincipalCache()
     app.state.notify_listener = None
     app.state.progress_hub = ProgressHub()
+    app.state.paddle = None
+    app.state.catalog = None
     app.state.google_verifier = google_verifier
     app.state.email_queue = email_queue
     app.state.audit_queue = audit_queue
@@ -127,6 +156,7 @@ def _include_routers(app: FastAPI) -> None:
         health_router,
         auth_router,
         password_router,
+        billing_router,
         me_router,
         saved_router,
         admin_router,
