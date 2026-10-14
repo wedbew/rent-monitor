@@ -85,7 +85,7 @@ async def test_a_queue_outage_does_not_change_the_answer(queue_and_app: tuple[Fa
     async def down(*, kind: str, email: str, url: str | None) -> None:
         raise ConnectionError("queue down")
 
-    queue.send_auth_mail = down  # type: ignore[method-assign]
+    queue.send_auth_mail = down
     known, unknown = await forgot(app, email), await forgot(app, email_of())
     assert (known.status_code, known.json()) == (unknown.status_code, unknown.json()) == (202, {})
 
