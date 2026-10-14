@@ -139,6 +139,14 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none until implemented; parameters are settings, so they can be raised without a code change.
 - **Target:** #203 (parameters measured, blocklist chosen), #205; gate 7 session-revocation timing
 
+### L-021 — The arm64 image does not start under Docker Desktop on the developer Mac
+- **Status:** active
+- **Discovered:** 2026-10-14
+- **Affects:** local `make up` / `make smoke` on Apple Silicon; not the x86_64 VPS
+- **Evidence:** confirmed (`python -c "import cryptography.exceptions"` exits 132, SIGILL, inside `rentmonitor-py:local` built for aarch64; `cryptography` 50.0.2 via `google-auth`; the same image built for linux/amd64 runs)
+- **Description:** On Docker Desktop 27.3.1 (aarch64 VM) the native `cryptography` wheel crashes on import, so the API container restarts forever. The VPS is x86_64 and CI is x86_64, so neither is affected, but local smoke tests need an x86_64 build.
+- **Workaround:** `DOCKER_DEFAULT_PLATFORM=linux/amd64 make smoke` (slower, emulated). Try a newer Docker Desktop or pinning `cryptography` if an arm64 image is ever needed.
+- **Target:** none until an arm64 deployment is wanted
 ### L-020 — Paddle API response shapes are read from documentation only
 - **Status:** active
 - **Discovered:** 2026-10-14

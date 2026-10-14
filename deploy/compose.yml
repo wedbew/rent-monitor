@@ -1,5 +1,5 @@
 # The whole app in Docker, for local development: Postgres 17, a one-shot bootstrap (migrations, queue schema, seed),
-# the API and a worker. Production hardening (Caddy, memory limits, WAL-G, backups) is added by RM-15.
+# the API and two workers (audit lane, ops lane). `compose.prod.yml` layers the VPS settings on top (RM-15).
 # Start: `make up`. Values come from ../.env (optional); database URLs are set here to point at the postgres service.
 name: rentmonitor
 
@@ -55,10 +55,18 @@ services:
       timeout: 5s
       retries: 12
 
-  worker:
+  # Two lanes so a long audit can never starve mail, the reconciler or the monitors (#15, blueprint §4.5).
+  worker-audit:
     <<: *app
-    command: ["procrastinate", "--app=rm_worker.app.app", "worker", "--queues=audit,batch,ops", "--concurrency=1"]
-    stop_grace_period: 60s
+    command: ["procrastinate", "--app=rm_worker.app.app", "worker", "--queues=audit", "--concurrency=1"]
+    stop_grace_period: 120s  # the engine child is killed on shutdown; an in-flight audit is recovered by the reconciler
+    depends_on:
+      bootstrap: { condition: service_completed_successfully }
+
+  worker-ops:
+    <<: *app
+    command: ["procrastinate", "--app=rm_worker.app.app", "worker", "--queues=ops,batch", "--concurrency=2"]
+    stop_grace_period: 30s
     depends_on:
       bootstrap: { condition: service_completed_successfully }
 

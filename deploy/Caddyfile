@@ -1,0 +1,38 @@
+# TLS reverse proxy for the API (public profile only). `SITE_ADDRESS` is the domain; Caddy gets and renews the
+# certificate itself. The SPA is Phase 2: until then only /api is served and everything else is 404.
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "same-origin"
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		-Server
+	}
+
+	# Internal probes are never public (the external monitor uses /api/health).
+	@internal path /healthz /readyz
+	respond @internal 404
+
+	# Server-sent events must not be buffered.
+	@sse path_regexp sse ^/api/audits/[0-9a-f-]+/events$
+	handle @sse {
+		reverse_proxy api:8000 {
+			flush_interval -1
+		}
+	}
+
+	handle /api/* {
+		request_body {
+			max_size 1MB
+		}
+		reverse_proxy api:8000
+	}
+
+	handle {
+		respond 404
+	}
+}

@@ -22,6 +22,7 @@ On 2026-10-12 the owner approved merging every earlier pending PR (auth #147, wo
 
 | ID | What | Owner action | Waits on it |
 |---|---|---|---|
+| B-016 | **SSH to the beta VPS (`vps-ee6fa92e.vps.ovh.net`) does not complete.** 2026-10-14, two attempts from the dev machine: TCP port 22 accepts the connection, the SSH banner never arrives (`Connection timed out during banner exchange`); ports 80 and 443 refuse. Not an authentication problem, so credentials do not matter. Not retried further (fail2ban/lockout risk). | **One action:** OVH Manager -> Bare Metal Cloud -> VPS -> the VPS -> Reboot, then tell the agent. If the banner still times out, open the KVM console, log in as the OVH default user and run `sudo systemctl restart ssh && sudo ss -tlnp \| grep :22` | The beta deployment, `docs/DEPLOYMENTS.md`, journey evidence on the host, #15 |
 
 ## Deferred (not blocking local work)
 
