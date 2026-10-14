@@ -92,6 +92,19 @@ def auth_message(kind: str, email: str, url: str | None, settings: Settings) -> 
             f"<p>Link działa jednorazowo przez {hours} godz. Jeśli to nie Ty, zignoruj tę wiadomość.</p>"
         )
         key = hashlib.sha256(f"register:{email}:{url}".encode()).hexdigest()
+    elif kind == "reset" and url:
+        minutes = settings.reset_token_ttl_minutes
+        subject = "Ustaw nowe hasło w RentMonitor"
+        text = (
+            f"Kliknij, aby ustawić nowe hasło do RentMonitor:\n\n{url}\n\n"
+            f"Link działa jednorazowo przez {minutes} minut. Jeśli to nie Ty, zignoruj tę wiadomość.\n"
+        )
+        html = (
+            "<p>Kliknij, aby ustawić nowe hasło do RentMonitor:</p>"
+            f'<p><a href="{escape(url, quote=True)}">Ustaw nowe hasło</a></p>'
+            f"<p>Link działa jednorazowo przez {minutes} minut. Jeśli to nie Ty, zignoruj tę wiadomość.</p>"
+        )
+        key = hashlib.sha256(f"reset:{email}:{url}".encode()).hexdigest()
     elif kind == "account_exists":
         subject = "Masz już konto w RentMonitor"
         text = (
