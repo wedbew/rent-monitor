@@ -58,7 +58,7 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
   untracked file you did not create; add files by name.
 - Never run anything against live Stripe or a production DB holding customer data. Database tools point at the local
   Compose Postgres or Testcontainers. Stripe tools use the sandbox only.
-- **OVH VPS-1 (test/beta host, `docs/INFRASTRUCTURE.md`): agents may deploy and operate it** (owner decision, 2026-10-14):
+- **OVH VPS-3 (`vps-d1af13a5.vps.ovh.net`, current test/beta host, `docs/INFRASTRUCTURE.md`): agents may deploy and operate it** (owner decision and target correction, 2026-10-14; the old VPS-1 is not the deployment target):
   SSH as the `deploy` user with the owner's key, copy files, run `docker compose` and `deploy/setup-server.sh`, read logs
   and health endpoints. Ask first before anything destructive or irreversible there (wiping volumes or the DB, reinstalling
   the OS, firewall/SSH changes that could lock out access, DNS changes). Never read `.env` on the server or print secrets;

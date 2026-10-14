@@ -21,6 +21,17 @@ On 2026-10-12 the owner approved merging every earlier pending PR (auth #147, wo
 
 ## Open (needs the owner)
 
+**Owner target correction, 2026-10-14:** `SERVER_NAME=vps-d1af13a5.vps.ovh.net` is the
+current VPS-3 in Frankfurt (6 vCore, 12 GB, 100 GB), shown Active in OVH Manager.
+`SERVER_V1_NAME=vps-ee6fa92e.vps.ovh.net` is the legacy 4 GB Prague VPS, shown Stopped.
+B-016 below is retained as historical evidence about that old host and is **superseded
+as a deployment blocker**. Do not reboot the old machine for the current deployment.
+Codex subsequently authenticated on the new host as `deploy` using the existing SSH key.
+Docker, Compose, 2 GiB swap and a clean `/opt/rent-monitor` checkout at `4127f79` exist;
+no Docker containers are running and no app image is listed. SSH is not a deployment
+blocker. Private configuration verification, updating the checkout and actual deployment
+with host journey evidence remain pending. Use `ssh deploy@vps-d1af13a5.vps.ovh.net`.
+
 | ID | What | Owner action | Waits on it |
 |---|---|---|---|
 | B-016 | **SSH to the beta VPS (`vps-ee6fa92e.vps.ovh.net`) does not complete.** 2026-10-14, two attempts from the dev machine: TCP port 22 accepts the connection, the SSH banner never arrives (`Connection timed out during banner exchange`); ports 80 and 443 refuse. Not an authentication problem, so credentials do not matter. Not retried further (fail2ban/lockout risk). | **One action:** OVH Manager -> Bare Metal Cloud -> VPS -> the VPS -> Reboot, then tell the agent. If the banner still times out, open the KVM console, log in as the OVH default user and run `sudo systemctl restart ssh && sudo ss -tlnp \| grep :22` | The beta deployment, `docs/DEPLOYMENTS.md`, journey evidence on the host, #15 |
