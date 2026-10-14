@@ -17,8 +17,10 @@ make ci          # everything CI runs: tests+coverage, invariants, migrations+sq
 make ci-full     # make ci + the Docker smoke test
 make hooks       # install git hooks incl. a pre-push that runs make ci-fast
 cp .env.example .env   # names only; fill values locally, never commit .env
-make up          # the WHOLE app in Docker: Postgres 17, bootstrap (migrations, queue schema, seed), API on :8000, worker
+make up          # the WHOLE app in Docker: Postgres 17, bootstrap (migrations, queue schema, seed), API on :8000, audit and ops workers
 make smoke       # build, start, check /api/health, /readyz, worker and seed, then stop
+make vps-config  # render the VPS-1 stack (compose.yml + compose.vps1.yml); deploy steps: docs/RUNBOOK-DEPLOY.md
+make backup      # logical pg_dump to backups/ (then: make restore-drill DUMP=backups/<file>)
 make down        # stop the containers (add -v via docker compose to drop the data volume)
 make dev         # only Postgres in Docker + bootstrap; run API/worker on the host with uv run
 make migrate     # alembic upgrade head against $DATABASE_URL (postgresql+psycopg://…)
@@ -52,6 +54,7 @@ it also separates "implemented" from "integrated" and "verified against a real p
 | [`CONTEXT.md`](CONTEXT.md) | Orientation and POC porting map |
 | [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) | Known limits register |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
+| [`docs/RUNBOOK-DEPLOY.md`](docs/RUNBOOK-DEPLOY.md), [`docs/DEPLOYMENTS.md`](docs/DEPLOYMENTS.md) | Private-beta deploy steps and the deployment log |
 | [`docs/adr/`](docs/adr) | Architecture decision records (0001 greenfield … 0009 Better Stack) |
 | [`docs/ENGINE-SPEC.md`](docs/ENGINE-SPEC.md) | Engine rules, approved with amendments (B-007 resolved) |
 | [`docs/GOOGLE-AUTH-SPEC.md`](docs/GOOGLE-AUTH-SPEC.md) | Google sign-in, sessions and magic link as built (RM-12, awaiting review) |

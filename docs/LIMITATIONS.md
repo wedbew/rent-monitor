@@ -175,6 +175,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** Request written product assessment with representative reports, prepaid report-pack entitlements and data-rights information. Owner selected one-time packs on 2026-10-13, so recurring BLIK is outside the pilot. If Paddle rejects the offering, ordinary Stripe plus Polish invoicing remains a fallback requiring a separate decision.
 - **Target:** provider evaluation in [BILLING-ALTERNATIVES.md](BILLING-ALTERNATIVES.md); decision before replacing ADR 0005
 
+### L-020 — VPS-1 overlay limits are estimates, not measured
+- **Status:** active
+- **Discovered:** 2026-10-14
+- **Affects:** `deploy/compose.vps1.yml`, release gate 4 (memory), connection budget
+- **Evidence:** estimate (limits sum to 3.2 GB of the 4 GB VPS-1; the blueprint resource matrix was written for VPS-3; compose rendering and container start were not run in the authoring session)
+- **Description:** Memory and CPU limits, `read_only` filesystems and the Postgres settings have not been exercised on the host or under audit load. A container may need a writable path the overlay does not provide, or the audit worker's 1280m limit may be too tight next to `AUDIT_CHILD_MEMORY_MB`.
+- **Workaround:** Runbook troubleshooting table; adjust limits from `docker stats` and `memory.peak` after the first VPS run.
+- **Target:** RM-224 first VPS run (B-016); release gate 4 on #15
+
 ## Resolved
 
 ### L-013 — Error events may carry stack-frame variables and unscrubbed free text

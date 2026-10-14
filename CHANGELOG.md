@@ -4,6 +4,12 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Changed
+- **Compose now runs two workers (RM-224):** `worker-audit` (queue `audit`, concurrency 1) and `worker-ops` (queues `ops`, `batch`, concurrency 2) replace the single `worker`. Operator action: `make up` recreates the stack; the old `worker` container is orphaned (`docker compose -f deploy/compose.yml up -d --remove-orphans`)
+
+### Added
+- Private-beta deployment preparation (RM-224, offline slice of #15): `deploy/compose.vps1.yml` (VPS-1 memory/CPU limits, read-only containers, dropped capabilities, Postgres unpublished), `scripts/check_env.py` (secret-safe env check), `scripts/journey_check.py` (deployed journey with credit-settlement check), `scripts/backup_db.sh` and `scripts/restore_drill.sh` (logical dump, optional `age` encryption, restore drill), `make vps-config|backup|restore-drill`, `docs/RUNBOOK-DEPLOY.md`, `docs/DEPLOYMENTS.md`. No new dependency. Not yet run on the VPS (B-016, L-020)
+
 ### Fixed
 - `deploy/setup-server.sh`: the SSH key is read from `/tmp/deploy_key.pub` (an environment variable did not survive `sudo`, so no key was installed), the sshd drop-in is `00-rentmonitor.conf` so it overrides OVH's `50-cloud-init.conf` and password login really is disabled, and apt runs non-interactively; **operator action:** copy your public key to `/tmp/deploy_key.pub` before running it (RM-195)
 

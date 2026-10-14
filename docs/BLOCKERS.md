@@ -22,6 +22,7 @@ On 2026-10-12 the owner approved merging every earlier pending PR (auth #147, wo
 
 | ID | What | Owner action | Waits on it |
 |---|---|---|---|
+| B-016 | Deploying to the OVH VPS-1 and recording journey, backup and restore evidence there (2026-10-14) | On the host: copy a production `.env` (never committed), run `scripts/check_env.py .env`, then follow `docs/RUNBOOK-DEPLOY.md` §2-§4 and add the result lines to `docs/DEPLOYMENTS.md`; or authorise an agent to do so | #15 (rest of RM-224's evidence), L-020, release gates 4-6 |
 
 ## Deferred (not blocking local work)
 

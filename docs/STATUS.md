@@ -31,7 +31,7 @@ and not production readiness (L-018). Level 3 needs the owner's authorisation fo
 |---|---|---|
 | Platform (settings, logging, problems, health, flags, admin, GDPR export/erase, retention) | 1 | Admin and privacy tools are outside the P0 path |
 | Billing (Paddle pilot report packs, BLIK, webhook, credits, accounting) | 0 | Foundation merged as RM-215 (catalog from owner-approved snapshots only, injectable Paddle client with fake, disabled by default; `tests/unit/test_paddle_catalog.py`). Schema, checkout, webhook, refunds: #216-#219. Spec (`docs/PADDLE-INTEGRATION.md`): owner selected one-time 1/5/10-report packs; final pricing, Paddle approval/sandbox and accountant review pending (L-015/L-016). Existing ledger/`has_pro` code is not a Paddle integration |
-| Ops (Compose, Caddy, WAL-G, backups, monitors) | 1 partial | Local Compose + smoke (health only, **not** a journey test); Caddy/WAL-G/backups not built |
+| Ops (Compose, Caddy, WAL-G, backups, monitors) | 1 partial | Local Compose with separate audit/ops workers + smoke (health only, **not** a journey test); VPS-1 overlay, `check_env.py`, `journey_check.py`, logical backup and restore scripts and `docs/RUNBOOK-DEPLOY.md` written with offline unit tests (RM-224); **not yet run on the VPS (B-016)**; Caddy/WAL-G/offsite backups not built |
 | Market data, radar, screener | 0 | #106, #48, #49, #16, #21 |
 | Frontend | 0 | Phase 2, needs explicit authorisation; design prototypes only |
 

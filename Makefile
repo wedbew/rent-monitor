@@ -1,4 +1,4 @@
-.PHONY: ci ci-fast ci-full hooks sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
+.PHONY: vps-config backup restore-drill cici-fast ci-full hooks sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
 
 sync:
 	uv sync --all-packages --group dev
@@ -64,7 +64,7 @@ backup-drill:
 
 # The whole app in containers (Postgres, bootstrap, API, worker).
 up:
-	$(COMPOSE) up -d --build --wait api worker
+	$(COMPOSE) up -d --build --wait api worker-audit worker-ops
 
 down:
 	$(COMPOSE) down
@@ -74,3 +74,14 @@ logs:
 
 smoke:
 	./scripts/smoke_docker.sh
+
+# Renders the VPS-1 stack (base + overlay) without starting it; fails on a syntax or interpolation error.
+vps-config:
+	docker compose -f deploy/compose.yml -f deploy/compose.vps1.yml config --quiet
+
+backup:
+	./scripts/backup_db.sh
+
+# Usage: make restore-drill DUMP=backups/rentmonitor-<stamp>.dump
+restore-drill:
+	./scripts/restore_drill.sh $(DUMP)
