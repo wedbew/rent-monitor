@@ -1,0 +1,88 @@
+# VPS-1 (4 GB) settings layered on compose.yml:
+#   docker compose -f deploy/compose.yml -f deploy/compose.prod.yml --env-file .env up -d
+# Private beta by default: nothing listens on a public interface except SSH. The API and Postgres bind 127.0.0.1;
+# reach the API through an SSH tunnel. Public exposure needs the `public` profile (Caddy, TLS) AND the launch checklist
+# (docs/PRE-DEPLOYMENT.md), so it is opt-in: `--profile public`.
+#
+# Memory matrix for 4 GB (2 GB swap, vm.swappiness=10 from setup-server.sh); limits are ceilings, not reservations:
+#   postgres 1.0 G, api 0.5 G, worker-audit 1.5 G (engine child capped at AUDIT_CHILD_MEMORY_MB inside it),
+#   worker-ops 0.25 G, caddy 0.06 G. Sum 3.31 G, leaving ~0.7 G for the host. Release gate 4 measures the real peak.
+name: rentmonitor
+
+x-hardening: &hardening
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: ["ALL"]
+  read_only: true
+  tmpfs: ["/tmp:size=64m"]
+
+services:
+  postgres:
+    image: postgres:17  # pinned by digest in the release PR once the image is chosen; never :latest
+    ports: !override
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    mem_limit: 1g
+    cpus: 1.5
+    shm_size: 256m
+    command: ["postgres", "-c", "max_connections=100", "-c", "shared_buffers=256MB", "-c", "work_mem=8MB", "-c", "log_min_duration_statement=500", "-c", "idle_in_transaction_session_timeout=60000"]
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+
+  bootstrap:
+    image: rentmonitor-py:${IMAGE_TAG:-local}
+    mem_limit: 512m
+    environment: &prod-env
+      APP_ENV: production
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rentmonitor}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-rentmonitor}
+      PROCRASTINATE_DSN: postgresql://${POSTGRES_USER:-rentmonitor}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-rentmonitor}
+    env_file:
+      - path: ../.env
+        required: true
+
+  api:
+    image: rentmonitor-py:${IMAGE_TAG:-local}
+    <<: *hardening
+    mem_limit: 512m
+    cpus: 1.0
+    command: ["uvicorn", "rm_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--workers", "2"]
+    environment: *prod-env
+    env_file:
+      - path: ../.env
+        required: true
+
+  worker-audit:
+    image: rentmonitor-py:${IMAGE_TAG:-local}
+    <<: *hardening
+    mem_limit: 1536m
+    memswap_limit: 2g
+    cpus: 1.5
+    environment: *prod-env
+    env_file:
+      - path: ../.env
+        required: true
+
+  worker-ops:
+    image: rentmonitor-py:${IMAGE_TAG:-local}
+    <<: *hardening
+    mem_limit: 256m
+    cpus: 0.5
+    environment: *prod-env
+    env_file:
+      - path: ../.env
+        required: true
+
+  caddy:
+    profiles: ["public"]
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    mem_limit: 64m
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    environment:
+      SITE_ADDRESS: ${PUBLIC_HOST:-localhost}  # `localhost` = Caddy's internal CA; set the real domain before going public (RUNBOOK §6)
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  caddy_data: {}

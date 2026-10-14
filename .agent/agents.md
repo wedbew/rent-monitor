@@ -56,8 +56,14 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
 - Never read OAuth client secrets (`client_secret*.json`, gitignored), `.env`, keys or CLI credential files. Stripe CLI: **test mode only**,
   never `--live`. OVH CLI: ask before any command that buys, renews, resizes, reinstalls or deletes. Never `git add -A` over an
   untracked file you did not create; add files by name.
-- Never run anything against production (VPS, live Stripe, production DB). Database tools point at the local
+- Never run anything against live Stripe or a production DB holding customer data. Database tools point at the local
   Compose Postgres or Testcontainers. Stripe tools use the sandbox only.
+- **OVH VPS-1 (test/beta host, `docs/INFRASTRUCTURE.md`): agents may deploy and operate it** (owner decision, 2026-10-14):
+  SSH as the `deploy` user with the owner's key, copy files, run `docker compose` and `deploy/setup-server.sh`, read logs
+  and health endpoints. Ask first before anything destructive or irreversible there (wiping volumes or the DB, reinstalling
+  the OS, firewall/SSH changes that could lock out access, DNS changes). Never read `.env` on the server or print secrets;
+  never put real customer data or live provider keys on it until `docs/PRE-DEPLOYMENT.md` §0 is done. Record each deploy
+  (date, commit, result) in `docs/STATUS.md`; deploy only from a commit merged to `staging`.
 - Tenant isolation: every tenant-owned query goes through a repository that takes a `Principal`. Foreign
   resources return **404, never 403**.
 - Stripe webhooks: verify the signature on the **raw body** before any parsing. Idempotency by event id.
