@@ -1,7 +1,8 @@
 """Nightly and periodic maintenance (blueprint §4.7; docs/OBSERVABILITY-SPEC.md sections 4 and 5), queue
 `ops`.
 
-- `ledger_check`: credit balance must equal the sum of the ledger for every account. Any mismatch is an
+- `ledger_check`: credit balance must equal the sum of the ledger and of the available units of the
+  credit lots (and a lot's reserved units the sum of its allocations) for every account. Any mismatch is an
 error event
   and a failed heartbeat; no mismatch pings the heartbeat. Read only, it never changes a balance.
 - `remove_old_jobs_ops` / `remove_old_jobs_other`: delete finished and failed Procrastinate jobs. The `ops`
@@ -15,7 +16,7 @@ import sentry_sdk
 import structlog
 from procrastinate import JobContext, builtin_tasks
 from rm_core.db.session import make_engine, make_sessionmaker
-from rm_core.ledger import ledger_mismatches
+from rm_core.ledger import ledger_mismatches, lot_mismatches
 from rm_core.settings import get_settings
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -35,7 +36,7 @@ async def run_ledger_check(
     sessionmaker: async_sessionmaker[AsyncSession], heartbeat: HeartbeatSink
 ) -> list[str]:
     async with sessionmaker() as session:
-        mismatched = await ledger_mismatches(session)
+        mismatched = sorted(set(await ledger_mismatches(session)) | set(await lot_mismatches(session)))
     if mismatched:
         # User ids are pseudonymous UUIDs; the Sentry message carries only the count.
         log.error("ledger_mismatch", count=len(mismatched), user_ids=mismatched[:MAX_IDS_LOGGED])

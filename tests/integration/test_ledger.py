@@ -27,6 +27,7 @@ from rm_core.ledger import (
     admin_adjust,
     ensure_credit_account,
     ledger_mismatches,
+    lock_owner,
     record_reservation,
     reserve,
     settle,
@@ -115,6 +116,7 @@ async def _submit_tx(
 
 async def _finish(sm: async_sessionmaker[AsyncSession], audit_id: UUID, *, capture: bool) -> bool:
     async with sm() as s, s.begin():
+        await lock_owner(s, audit_id)  # the owner's credit lock comes before the audit row (fixed lock order)
         # a terminal status is needed before a second audit for the same listing can be queued
         await s.execute(text("UPDATE app.audit SET status = 'succeeded' WHERE id = :a"), {"a": audit_id})
         return await settle(s, audit_id, capture=capture)

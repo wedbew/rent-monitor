@@ -296,6 +296,71 @@ class CreditLedger(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
+class LotSource(StrEnum):
+    signup = "signup"
+    admin = "admin"
+    purchase = "purchase"
+    migration = (
+        "migration"  # units that existed before lots did, or a balance changed outside the ledger service
+    )
+
+
+class ReportCreditLot(Base):
+    """Provenance of spendable report units (docs/PADDLE-INTEGRATION.md section 4): one lot per grant.
+
+    Not a second balance authority: `sum(available)` over a user's lots equals `credit_account.balance`
+    (frozen lots included) and `granted = available + reserved + consumed + revoked` always. Lets one pack be
+    refunded without touching signup grants or another pack. Rows cascade with the account (erasure).
+    """
+
+    __tablename__ = "report_credit_lot"
+    __table_args__ = (
+        CheckConstraint("granted > 0", name="granted_positive"),
+        CheckConstraint(
+            "available >= 0 AND reserved >= 0 AND consumed >= 0 AND revoked >= 0",
+            name="counters_non_negative",
+        ),
+        CheckConstraint("granted = available + reserved + consumed + revoked", name="counters_add_up"),
+        CheckConstraint("source IN ('signup','admin','purchase','migration')", name="source_vocab"),
+        Index("ix_lot_spend_order", "user_id", "created_at", "id", postgresql_where=text("available > 0")),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    user_id: Mapped[str] = mapped_column(Text, user_fk())
+    source: Mapped[str] = mapped_column(String(16))
+    grant_key: Mapped[str] = mapped_column(
+        String(120), unique=True, comment="the grant's ledger idempotency key"
+    )
+    purchase_id: Mapped[UUID | None] = mapped_column(
+        unique=True
+    )  # the FK arrives with billing_purchase (#217)
+    granted: Mapped[int]
+    available: Mapped[int]
+    reserved: Mapped[int] = mapped_column(default=0, server_default="0")
+    consumed: Mapped[int] = mapped_column(default=0, server_default="0")
+    revoked: Mapped[int] = mapped_column(default=0, server_default="0")
+    frozen: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class ReportCreditAllocation(Base):
+    """Which units of which lot an audit holds. Restored to the same lot on release."""
+
+    __tablename__ = "report_credit_allocation"
+    __table_args__ = (
+        UniqueConstraint("audit_id", "lot_id", name="uq_allocation_audit_lot"),
+        CheckConstraint("units > 0", name="units_positive"),
+        CheckConstraint("state IN ('reserved','captured','released','revoked')", name="state_vocab"),
+        Index("ix_allocation_lot_state", "lot_id", "state"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    audit_id: Mapped[UUID] = mapped_column(ForeignKey("audit.id", ondelete="CASCADE"))
+    lot_id: Mapped[int] = mapped_column(ForeignKey("report_credit_lot.id", ondelete="CASCADE"))
+    units: Mapped[int]
+    state: Mapped[str] = mapped_column(String(10))
+
+
 # ---------- Listings, audits, progress, saved ----------
 class AuditStatus(StrEnum):
     queued = "queued"

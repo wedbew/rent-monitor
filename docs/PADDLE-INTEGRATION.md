@@ -166,6 +166,8 @@ it cannot recreate the user or grant to an account matched by email.
 
 ## 4. Persistence and ledger changes
 
+> **Slice 2 built (RM-216):** `report_credit_lot` and `report_credit_allocation`, lot-aware `reserve`/`settle`, the fixed lock order and a lot check in the nightly job. `billing_pack`, `billing_purchase`, `billing_event`, `billing_adjustment` and `refund_revoke` arrive with #217-#219. A frozen lot stays in the balance but cannot be spent.
+
 Keep the existing `credit_account`/append-only `credit_ledger`; expose a public `grant_paid_reports`
 service using `CreditReason.topup`, not an admin adjustment or direct balance mutation. The pilot creates
 no Subscription or UsagePeriod. Report balances are integer units; money snapshots use Decimal/NUMERIC
