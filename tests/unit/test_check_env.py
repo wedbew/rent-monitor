@@ -15,7 +15,7 @@ GOOD = {
     "DATABASE_URL": f"postgresql+psycopg://rm:{SECRET}@postgres:5432/rm",
     "POSTGRES_PASSWORD": SECRET,
     "RESEND_API_KEY": "re_" + SECRET,
-    "MAIL_FROM": "RentMonitor <noreply@example.pl>",
+    "MAIL_FROM": "Renti <noreply@example.pl>",
     "GOOGLE_CLIENT_ID": "abc.apps.googleusercontent.com",
     "SENTRY_DSN": "https://k@o.ingest.example/1",
     "AUDIT_PROVIDERS": "real",
@@ -40,7 +40,7 @@ def test_a_complete_production_environment_has_no_errors() -> None:
         ({"POSTGRES_PASSWORD": "short"}, "POSTGRES_PASSWORD"),
         ({"DATABASE_URL": "postgresql+psycopg://rm:dev-only-change-me@postgres/rm"}, "DATABASE_URL"),
         ({"RESEND_API_KEY": ""}, "RESEND_API_KEY"),
-        ({"MAIL_FROM": "RentMonitor <onboarding@resend.dev>"}, "MAIL_FROM"),
+        ({"MAIL_FROM": "Renti <onboarding@resend.dev>"}, "MAIL_FROM"),
         ({"RISK_FREE_RATE": ""}, "RISK_FREE_RATE"),
         ({"GOOGLE_CLIENT_ID": "changeme"}, "GOOGLE_CLIENT_ID"),
         ({"BILLING_PROVIDER": "paddle"}, "BILLING_PROVIDER"),
@@ -78,7 +78,7 @@ def test_invalid_values_are_reported_by_name_and_type_never_by_value(
 
 
 def test_no_secret_value_is_ever_printed(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    broken = {**GOOD, "MAIL_FROM": "RentMonitor <onboarding@resend.dev>", "APP_ENV": "development"}
+    broken = {**GOOD, "MAIL_FROM": "Renti <onboarding@resend.dev>", "APP_ENV": "development"}
     env_file = tmp_path / ".env"
     env_file.write_text("\n".join(f"{k}={v}" for k, v in broken.items()) + "\n# comment\n")
     code = check_env.main(["--env-file", str(env_file)])

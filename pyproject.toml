@@ -1,7 +1,7 @@
 [project]
 name = "rentmonitor"
 version = "0.0.0"
-description = "RentMonitor SaaS workspace root (see docs/BLUEPRINT.md §4.1)"
+description = "Renti SaaS workspace root (see docs/BLUEPRINT.md §4.1)"
 requires-python = ">=3.12"
 dependencies = []
 

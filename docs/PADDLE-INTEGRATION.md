@@ -283,7 +283,7 @@ not Stripe event names. [Adjustment updates](https://developer.paddle.com/webhoo
 
 Paddle is the customer-facing seller/MoR. Let it collect billing details and issue customer documents;
 offer invoice access by retrieving `GET /transactions/{transaction_id}/invoice` after ownership checks,
-not by storing a permanently public invoice URL. Do not issue another RentMonitor customer invoice
+not by storing a permanently public invoice URL. Do not issue another Renti customer invoice
 for the same MoR sale. [Transaction invoice API](https://developer.paddle.com/api-reference/transactions/get-transaction-invoice/).
 
 No per-customer Fakturownia integration is proposed for the pilot, **conditional on accountant review**.

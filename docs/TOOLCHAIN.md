@@ -1,4 +1,4 @@
-# RentMonitor — Toolchain, Governance & Agent Setup Proposal
+# Renti — Toolchain, Governance & Agent Setup Proposal
 
 Oct 11, 2026 · @Marcin B
 
@@ -262,4 +262,4 @@ Pages opened on 11 Oct 2026. Package versions came from the PyPI JSON API; actio
 - [Stripe MCP](https://edge-docs.stripe.com/mcp): Agent-tagged keys required from 31 Oct 2026
 - [GitHub rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets): plan availability
 - [claude-plugins-official marketplace](https://github.com/anthropics/claude-plugins-official): plugin names verified from its `marketplace.json`
-- Your files: the RentMonitor README and the Architecture and Implementation Blueprint (11 Oct 2026)
+- Your files: the Renti README and the Architecture and Implementation Blueprint (11 Oct 2026)

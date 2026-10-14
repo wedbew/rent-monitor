@@ -12,7 +12,7 @@ import httpx
 import structlog
 from procrastinate import RetryStrategy
 from rm_contracts.jobs import OPS_QUEUE, SEND_AUTH_MAIL_TASK, SEND_MAGIC_LINK_TASK
-from rm_core.settings import Settings, get_settings
+from rm_core.settings import DEFAULT_APP_NAME, Settings, get_settings
 
 from rm_worker.app import app
 from rm_worker.clients.resend import (
@@ -28,15 +28,15 @@ from rm_worker.clients.resend import (
 log = structlog.get_logger(__name__)
 
 
-def magic_link_message(email: str, url: str, ttl_minutes: int) -> Message:
+def magic_link_message(email: str, url: str, ttl_minutes: int, app_name: str = DEFAULT_APP_NAME) -> Message:
     """Polish transactional mail; plain text and minimal HTML, no tracking pixels, one link."""
-    subject = "Twój link do logowania w RentMonitor"
+    subject = f"Twój link do logowania w {app_name}"
     text = (
-        f"Kliknij, aby zalogować się do RentMonitor:\n\n{url}\n\n"
+        f"Kliknij, aby zalogować się do {app_name}:\n\n{url}\n\n"
         f"Link działa jednorazowo przez {ttl_minutes} minut. Jeśli to nie Ty, zignoruj tę wiadomość.\n"
     )
     html = (
-        "<p>Kliknij, aby zalogować się do RentMonitor:</p>"
+        f"<p>Kliknij, aby zalogować się do {app_name}:</p>"
         f'<p><a href="{escape(url, quote=True)}">Zaloguj się</a></p>'
         f"<p>Link działa jednorazowo przez {ttl_minutes} minut. Jeśli to nie Ty, zignoruj tę wiadomość.</p>"
     )
@@ -56,7 +56,7 @@ def build_mailer(settings: Settings, http: httpx.AsyncClient) -> Mailer:
 
 
 async def deliver_magic_link(mailer: Mailer, settings: Settings, email: str, url: str) -> None:
-    await mailer.send(magic_link_message(email, url, settings.magic_link_ttl_minutes))
+    await mailer.send(magic_link_message(email, url, settings.magic_link_ttl_minutes, settings.app_name))
     if settings.app_env == "development" and isinstance(mailer, LogMailer):
         # Development convenience only (blueprint §4.6 manual auth check); production never reaches this line.
         log.info("magic_link_dev", url=url)
@@ -79,36 +79,37 @@ async def send_magic_link(email: str, url: str) -> None:
 
 def auth_message(kind: str, email: str, url: str | None, settings: Settings) -> Message:
     """Password-auth mail (ADR 0013): Polish, plain text plus minimal HTML, at most one link."""
+    app_name = settings.app_name
     if kind == "register" and url:
         hours = settings.register_token_ttl_hours
-        subject = "Potwierdź rejestrację w RentMonitor"
+        subject = f"Potwierdź rejestrację w {app_name}"
         text = (
-            f"Kliknij, aby potwierdzić adres e-mail i założyć konto w RentMonitor:\n\n{url}\n\n"
+            f"Kliknij, aby potwierdzić adres e-mail i założyć konto w {app_name}:\n\n{url}\n\n"
             f"Link działa jednorazowo przez {hours} godz. Jeśli to nie Ty, zignoruj tę wiadomość.\n"
         )
         html = (
-            "<p>Kliknij, aby potwierdzić adres e-mail i założyć konto w RentMonitor:</p>"
+            f"<p>Kliknij, aby potwierdzić adres e-mail i założyć konto w {app_name}:</p>"
             f'<p><a href="{escape(url, quote=True)}">Potwierdź rejestrację</a></p>'
             f"<p>Link działa jednorazowo przez {hours} godz. Jeśli to nie Ty, zignoruj tę wiadomość.</p>"
         )
         key = hashlib.sha256(f"register:{email}:{url}".encode()).hexdigest()
     elif kind == "reset" and url:
         minutes = settings.reset_token_ttl_minutes
-        subject = "Ustaw nowe hasło w RentMonitor"
+        subject = f"Ustaw nowe hasło w {app_name}"
         text = (
-            f"Kliknij, aby ustawić nowe hasło do RentMonitor:\n\n{url}\n\n"
+            f"Kliknij, aby ustawić nowe hasło do {app_name}:\n\n{url}\n\n"
             f"Link działa jednorazowo przez {minutes} minut. Jeśli to nie Ty, zignoruj tę wiadomość.\n"
         )
         html = (
-            "<p>Kliknij, aby ustawić nowe hasło do RentMonitor:</p>"
+            f"<p>Kliknij, aby ustawić nowe hasło do {app_name}:</p>"
             f'<p><a href="{escape(url, quote=True)}">Ustaw nowe hasło</a></p>'
             f"<p>Link działa jednorazowo przez {minutes} minut. Jeśli to nie Ty, zignoruj tę wiadomość.</p>"
         )
         key = hashlib.sha256(f"reset:{email}:{url}".encode()).hexdigest()
     elif kind == "account_exists":
-        subject = "Masz już konto w RentMonitor"
+        subject = f"Masz już konto w {app_name}"
         text = (
-            "Ktoś próbował założyć konto w RentMonitor na ten adres, ale konto już istnieje.\n"
+            f"Ktoś próbował założyć konto w {app_name} na ten adres, ale konto już istnieje.\n"
             "Zaloguj się albo użyj opcji „Nie pamiętam hasła”. Jeśli to nie Ty, zignoruj tę wiadomość.\n"
         )
         html = "".join(f"<p>{escape(line)}</p>" for line in text.strip().split("\n"))

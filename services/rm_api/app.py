@@ -126,7 +126,7 @@ def create_app(
             log.info("shutdown")
 
     app = FastAPI(
-        title="RentMonitor API",
+        title=f"{settings.app_name} API",
         lifespan=lifespan,
         docs_url=None if settings.app_env == "production" else "/api/docs",
         redoc_url=None,

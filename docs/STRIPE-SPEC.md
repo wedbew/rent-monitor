@@ -27,8 +27,8 @@ are in `docs/STRIPE-INTEGRATION.md` (gitignored); no key, id or webhook secret i
 
 | Product | Price | Mode | Env name | Purpose |
 |---|---|---|---|---|
-| RentMonitor Pro (monthly) | 100 PLN recurring, monthly | subscription | `STRIPE_PRICE_PRO_MONTHLY` | card or BLIK recurring, automatic renewal |
-| RentMonitor Pro 30 days | 100 PLN one-time | payment | `STRIPE_PRICE_PRO_PASS_30D` | BLIK or card pass for banks without recurring BLIK |
+| Renti Pro (monthly) | 100 PLN recurring, monthly | subscription | `STRIPE_PRICE_PRO_MONTHLY` | card or BLIK recurring, automatic renewal |
+| Renti Pro 30 days | 100 PLN one-time | payment | `STRIPE_PRICE_PRO_PASS_30D` | BLIK or card pass for banks without recurring BLIK |
 
 - **Tidy-up needed:** `.env.example` also has `STRIPE_PRICE_ID_PRO`, documented as "same as `STRIPE_PRICE_PRO_MONTHLY`". Two names for
   one value will drift; the spec keeps `STRIPE_PRICE_PRO_MONTHLY` and `make seed` stores it on the `pro` plan row, so

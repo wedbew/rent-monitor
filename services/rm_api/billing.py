@@ -196,7 +196,7 @@ async def get_invoice(
     principal: PrincipalDep,
 ) -> InvoiceOut:
     """The seller's document for this sale, obtained from Paddle on demand after the ownership check.
-    Paddle is the seller and issues it; RentMonitor issues no second customer invoice for the same sale."""
+    Paddle is the seller and issues it; the product issues no second customer invoice for the same sale."""
     client, _ = _enabled(request)
     purchase = await db.scalar(
         select(BillingPurchase).where(

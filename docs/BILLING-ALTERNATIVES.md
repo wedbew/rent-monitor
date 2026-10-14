@@ -14,7 +14,7 @@ treatment remain unverified; see L-015/L-016 in [LIMITATIONS.md](LIMITATIONS.md)
 
 ## Recommendation
 
-**Evaluate Paddle first.** For a small RentMonitor launch, paying more per sale is likely preferable to
+**Evaluate Paddle first.** For a small Renti launch, paying more per sale is likely preferable to
 building and operating customer invoicing and KSeF automation. Proposed offering: 100 PLN monthly card
 subscription plus a 100 PLN one-time 30-day pass payable by BLIK or card. Paddle documents BLIK for
 Polish buyers paying in PLN on one-time purchases, **not subscriptions**. This preserves a BLIK purchase
@@ -64,14 +64,14 @@ The Ministry of Finance states that mandatory issuance began 1 February 2026 for
 monthly invoice-documented sales up to 10,000 PLN gross runs through the end of 2026. Consumer
 invoices are outside mandatory issuance. Foreign issuers without a Polish establishment, or without
 an involved Polish fixed establishment, also have exclusions. Receiving invoices has a separate
-obligation from 1 February 2026. These are scope rules, not confirmation of RentMonitor's eligibility.
+obligation from 1 February 2026. These are scope rules, not confirmation of Renti's eligibility.
 [Ministry of Finance: mandatory KSeF scope](https://ksef.podatki.gov.pl/informacje-ogolne-ksef-20/zakres-obowiazkowego-ksef/).
 
 | Transaction | Ordinary Stripe | Merchant of record (MoR) |
 |---|---|---|
-| Customer buys software access | RentMonitor is the seller; payment processing does not transfer invoice responsibility | Customer buys from the MoR, which handles the customer sale |
-| Customer invoice and sales VAT | RentMonitor's workflow and accountant | MoR's customer billing and tax workflow |
-| RentMonitor records revenue and settlement | Stripe payout reconciliation plus own sales documents | Reconcile MoR settlement, fees, refunds and supplier/self-billing documents |
+| Customer buys software access | Renti is the seller; payment processing does not transfer invoice responsibility | Customer buys from the MoR, which handles the customer sale |
+| Customer invoice and sales VAT | Renti's workflow and accountant | MoR's customer billing and tax workflow |
+| Renti records revenue and settlement | Stripe payout reconciliation plus own sales documents | Reconcile MoR settlement, fees, refunds and supplier/self-billing documents |
 
 Paddle bundles customer billing and tax handling. Lemon Squeezy also describes itself as the entity
 selling to the customer and handling sales tax. This changes who issues the customer invoice; it does
@@ -79,9 +79,9 @@ not make the Polish business disappear.
 [Paddle pricing and included services](https://www.paddle.com/pricing),
 [Lemon Squeezy MoR model](https://www.lemonsqueezy.com/reporting/merchant-of-record).
 
-**Inference:** if the customer sale is genuinely made by a qualifying foreign MoR, RentMonitor should
+**Inference:** if the customer sale is genuinely made by a qualifying foreign MoR, Renti should
 not need its own per-customer Fakturownia → KSeF pipeline for that sale. This is not evidence that Paddle
-or Lemon Squeezy submits Polish KSeF invoices. Their contracting entity and RentMonitor's separate
+or Lemon Squeezy submits Polish KSeF invoices. Their contracting entity and Renti's separate
 supplier transaction must be assessed. Selling to a foreign customer alone is not a blanket KSeF exemption
 for a Polish issuer.
 
@@ -95,7 +95,7 @@ revenue or that the vendor's generic “no action needed” statement settles Po
 Under either approach, own accounting, income tax, applicable KSeF receipt duties and privacy obligations
 remain. The accountant must also validate VAT status, service classification and any cash-register
 treatment. Absence of a NIP is not sufficient proof that a buyer is a consumer; the existing classification
-shortcut needs review if RentMonitor remains the direct seller.
+shortcut needs review if Renti remains the direct seller.
 
 ## Comparison and economics
 
@@ -143,7 +143,7 @@ this reduces initial automation, not the underlying duties.
 
 Paddle's AUP restricts investment/financial advice and business or investment opportunities.
 Lemon Squeezy permits SaaS but restricts regulated real-estate services and content without appropriate
-IP rights. **Unverified:** whether either accepts RentMonitor's particular offering. Request written
+IP rights. **Unverified:** whether either accepts Renti's particular offering. Request written
 assessment using representative reports showing yield, IRR, Max Bid and rankings, plus the data sources
 and rights basis. Do not hide features or assume a disclaimer establishes eligibility.
 [Paddle AUP](https://www.paddle.com/help/start/intro-to-paddle/what-am-i-not-allowed-to-sell-on-paddle),

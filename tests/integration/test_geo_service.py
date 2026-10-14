@@ -30,7 +30,7 @@ def service(engine: AsyncEngine, handler) -> GeoService:
     sm = async_sessionmaker(engine, expire_on_commit=False)
     client = OsmClient(
         httpx.AsyncClient(transport=httpx.MockTransport(handler)),
-        "RentMonitor/1.0 (ops@example.test)",
+        "Renti/1.0 (ops@example.test)",
         Slots(),
         Slots(),
     )

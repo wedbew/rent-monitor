@@ -1,4 +1,4 @@
-# RentMonitor SaaS — Architecture & Implementation Blueprint
+# Renti SaaS — Architecture & Implementation Blueprint
 
 Oct 11, 2026 · @Marcin B
 
@@ -11,7 +11,7 @@ Oct 11, 2026 · @Marcin B
 
 ## Executive verdict
 
-Ship RentMonitor as a single 12 GB VPS running Docker Compose, with Postgres as the only stateful service — no Redis. Infrastructure lands at 52.20 zł net/month (≈ $13.38) against a $20 ceiling, dropping to 44.37 zł (≈ $11.37) once committed for 12 months. OpenRouter vision spend is cost of goods, not infrastructure, and is governed by the credit ledger.
+Ship Renti as a single 12 GB VPS running Docker Compose, with Postgres as the only stateful service — no Redis. Infrastructure lands at 52.20 zł net/month (≈ $13.38) against a $20 ceiling, dropping to 44.37 zł (≈ $11.37) once committed for 12 months. OpenRouter vision spend is cost of goods, not infrastructure, and is governed by the credit ledger.
 
 **Not launch-ready until the seven release gates in Section 6 pass.** The architecture holds; the remaining work is proving its guarantees under concurrency, load and a real restore.
 
@@ -442,7 +442,7 @@ Screen rules: `/login` and `/signup` are one screen — the Google button first,
 
 Google Cloud setup:
 
-1. OAuth consent screen: External, app name RentMonitor, support email, scopes `openid`, `email`, `profile` only.
+1. OAuth consent screen: External, app name Renti, support email, scopes `openid`, `email`, `profile` only.
 2. OAuth client, type Web application. Authorized JavaScript origins: `https://app.rentmonitor.pl` and `http://localhost`. No redirect URIs and no client secret are used.
 3. Move the app from Testing to In production before launch; in Testing only listed test users can sign in.
 4. The Caddy CSP in 4.3 already allows `accounts.google.com` for scripts, styles, frames and connections.
@@ -899,7 +899,7 @@ Confirmed in Stripe's docs (11 Oct 2026):
 
 Paywall disclosure, shown above the "Zapłać" button when BLIK is likely (Polish locale):
 
-> Subskrypcja RentMonitor Pro: 100 zł miesięcznie, pierwsza płatność dziś, kolejne automatycznie co miesiąc w tym samym dniu, bez ponownego kodu BLIK. Autoryzujesz płatności cykliczne BLIK w aplikacji banku; możesz je anulować w dowolnym momencie w ustawieniach konta. Obsługiwane banki: Alior, Credit Agricole, ING, Millennium, mBank, Nest Bank, PKO BP, Santander, banki SGB. Inny bank? Kup karnet Pro na 30 dni BLIK-iem.
+> Subskrypcja Renti Pro: 100 zł miesięcznie, pierwsza płatność dziś, kolejne automatycznie co miesiąc w tym samym dniu, bez ponownego kodu BLIK. Autoryzujesz płatności cykliczne BLIK w aplikacji banku; możesz je anulować w dowolnym momencie w ustawieniach konta. Obsługiwane banki: Alior, Credit Agricole, ING, Millennium, mBank, Nest Bank, PKO BP, Santander, banki SGB. Inny bank? Kup karnet Pro na 30 dni BLIK-iem.
 
 Schema and code changes for the pass:
 
@@ -1028,7 +1028,7 @@ MAGIC_LINK_TTL_MINUTES=30                          # corporate mail can delay de
 
 # --- Email (Resend) ---
 RESEND_API_KEY=re_xxx
-MAIL_FROM="RentMonitor <no-reply@rentmonitor.pl>"
+MAIL_FROM="Renti <no-reply@rentmonitor.pl>"
 
 # --- Stripe ---
 STRIPE_SECRET_KEY=sk_test_xxx
@@ -1048,7 +1048,7 @@ IMAGE_HOST_ALLOWLIST=olxcdn.com,otodom.pl           # photo hosts we may fetch f
 BDL_API_KEY=
 OTODOM_HTTP_BACKEND=curl_cffi
 OTODOM_MAX_RPS=1
-NOMINATIM_USER_AGENT="RentMonitor/1.0 (ops@rentmonitor.pl)"
+NOMINATIM_USER_AGENT="Renti/1.0 (ops@rentmonitor.pl)"
 
 # --- Workers ---
 WORKER_AUDIT_CONCURRENCY=1                          # raise to 2 only after the memory load test
