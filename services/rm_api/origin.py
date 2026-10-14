@@ -1,10 +1,9 @@
 """CSRF defence: unsafe methods on `/api/*` must carry `Origin` equal to `PUBLIC_APP_URL` (agents.md §4).
 
 Pure ASGI, like the request-context middleware. The SPA uses fetch with cookies, and browsers always send
-`Origin` on
-cross-site and same-site POSTs; a request without one is not from our SPA and is refused. Machine callers
-that cannot send
-an Origin (Stripe webhooks) are listed in `EXEMPT_PREFIXES` and must authenticate by signature instead.
+`Origin` on cross-site and same-site POSTs; a request without one is not from our SPA and is refused.
+Machine callers that cannot send an Origin (the Paddle webhook) are listed in `EXEMPT_PATHS`, by exact
+path, and must authenticate by signature instead.
 """
 
 import structlog
@@ -16,7 +15,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from rm_api.problems import problem_response
 
 UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
-EXEMPT_PREFIXES = ("/api/webhooks/",)
+EXEMPT_PATHS = frozenset({"/api/webhooks/paddle"})  # exactly the signed webhook, nothing under a prefix
 log = structlog.get_logger(__name__)
 
 
@@ -30,7 +29,7 @@ class OriginCheckMiddleware:
             await self.app(scope, receive, send)
             return
         path: str = scope["path"]
-        if not path.startswith("/api/") or path.startswith(EXEMPT_PREFIXES):
+        if not path.startswith("/api/") or path in EXEMPT_PATHS:
             await self.app(scope, receive, send)
             return
         origin = Headers(scope=scope).get("origin", "").rstrip("/").lower()

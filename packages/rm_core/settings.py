@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     paddle_environment: Literal["sandbox", "live"] = "sandbox"
     paddle_api_key: SecretStr = SecretStr("")
     paddle_webhook_secret: SecretStr = SecretStr("")
+    paddle_webhook_secret_previous: SecretStr = SecretStr("")  # during a secret rotation only
+    paddle_webhook_tolerance_s: int = Field(default=5, ge=1, le=300)  # Paddle SDK default
+    retention_billing_event_days: int = Field(default=90, ge=1)  # GDPR[retention]: technical event log
     paddle_client_token: str = ""  # public Paddle.js token for the Phase 2 checkout; never the API key
     paddle_price_reports_1: str = ""  # the environment's approved `pri_...` ids
     paddle_price_reports_5: str = ""

@@ -331,9 +331,7 @@ class ReportCreditLot(Base):
     grant_key: Mapped[str] = mapped_column(
         String(120), unique=True, comment="the grant's ledger idempotency key"
     )
-    purchase_id: Mapped[UUID | None] = mapped_column(
-        unique=True
-    )  # the FK arrives with billing_purchase (#217)
+    purchase_id: Mapped[UUID | None] = mapped_column(ForeignKey("billing_purchase.id"), unique=True)
     granted: Mapped[int]
     available: Mapped[int]
     reserved: Mapped[int] = mapped_column(default=0, server_default="0")
@@ -458,6 +456,37 @@ class BillingPurchase(Base):
     refunded_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class BillingEvent(Base):
+    """A verified Paddle notification, stored durably before any work is done (PADDLE-INTEGRATION.md §5).
+
+    Only what processing needs is kept (ids, type, status, our purchase reference): never buyer details.
+    Unique per environment and event id, so duplicates and replays are no-ops. Purged after
+    `RETENTION_BILLING_EVENT_DAYS` (GDPR[retention]).
+    """
+
+    __tablename__ = "billing_event"
+    __table_args__ = (
+        UniqueConstraint("environment", "event_id", name="uq_billing_event_env_event"),
+        CheckConstraint("status IN ('pending','processed','ignored','review','failed')", name="status_vocab"),
+        CheckConstraint("environment IN ('sandbox','live')", name="environment_vocab"),
+        Index("ix_billing_event_pending", "lease_until", postgresql_where=text("status = 'pending'")),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    environment: Mapped[str] = mapped_column(String(8))
+    event_id: Mapped[str] = mapped_column(String(64))
+    notification_id: Mapped[str | None] = mapped_column(String(64))
+    event_type: Mapped[str] = mapped_column(String(64))
+    occurred_at: Mapped[datetime | None]
+    received_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    payload: Mapped[dict[str, Any]] = mapped_column(default=dict, server_default=text("'{}'::jsonb"))
+    status: Mapped[str] = mapped_column(String(10), default="pending", server_default="pending")
+    attempts: Mapped[int] = mapped_column(default=0, server_default="0")
+    lease_until: Mapped[datetime | None]
+    error_code: Mapped[str | None] = mapped_column(String(40))
+    purchase_id: Mapped[UUID | None] = mapped_column(ForeignKey("billing_purchase.id", ondelete="SET NULL"))
 
 
 # ---------- Listings, audits, progress, saved ----------

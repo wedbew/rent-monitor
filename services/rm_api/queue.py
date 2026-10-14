@@ -9,6 +9,7 @@ from procrastinate import exceptions as procrastinate_exceptions
 from rm_contracts.jobs import (
     AUDIT_QUEUE,
     OPS_QUEUE,
+    PROCESS_BILLING_EVENTS_TASK,
     RUN_AUDIT_TASK,
     SEND_AUTH_MAIL_TASK,
     SEND_MAGIC_LINK_TASK,
@@ -22,6 +23,10 @@ class EmailQueue(Protocol):
 
     async def send_auth_mail(self, *, kind: str, email: str, url: str | None) -> None:
         """Password-auth mail: `register` (with a link), `account_exists` (no link)."""
+        ...
+
+    async def process_billing_events(self) -> None:
+        """Ask the ops worker to process pending billing events now (the sweeper is the guaranteed path)."""
         ...
 
 
@@ -61,6 +66,15 @@ class ProcrastinateEmailQueue:
         await self._app.configure_task(name=SEND_AUTH_MAIL_TASK, queue=OPS_QUEUE).defer_async(
             kind=kind, email=email, url=url
         )
+
+    async def process_billing_events(self) -> None:
+        await self._ensure_open()
+        try:  # a lock makes a burst of notifications one job; the sweeper covers anything missed
+            await self._app.configure_task(
+                name=PROCESS_BILLING_EVENTS_TASK, queue=OPS_QUEUE, queueing_lock="billing-events"
+            ).defer_async()
+        except procrastinate_exceptions.AlreadyEnqueued:
+            return
 
     async def run_audit(self, audit_id: UUID) -> None:
         """Defer the audit job. The lock makes a repeated defer of one audit a no-op; if this call fails after
