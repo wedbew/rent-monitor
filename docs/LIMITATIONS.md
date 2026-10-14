@@ -202,6 +202,35 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** Request written product assessment with representative reports, prepaid report-pack entitlements and data-rights information. Owner selected one-time packs on 2026-10-13, so recurring BLIK is outside the pilot. If Paddle rejects the offering, ordinary Stripe plus Polish invoicing remains a fallback requiring a separate decision.
 - **Target:** provider evaluation in [BILLING-ALTERNATIVES.md](BILLING-ALTERNATIVES.md); decision before replacing ADR 0005
 
+## Deferred
+
+### L-026 — Frontend collection and report typing need contract work
+- **Status:** deferred
+- **Discovered:** 2026-10-15
+- **Affects:** `services/rm_api/audits.py` list endpoint, `packages/rm_contracts/audits.py`, Phase 2 collection/report implementation
+- **Evidence:** confirmed in source: `GET /api/audits` returns an array with only `limit` (default 50, max 100), without cursor/total/search/filter parameters; `AuditOut.result` is `dict[str, Any] | None`.
+- **Description:** Complete-history pagination/search cannot be implemented honestly by slicing the current capped response. OpenAPI generation alone does not produce typed internal report sections from the opaque result object.
+- **Workaround:** Keep collection completeness explicit; design against separately labeled contract fixtures. Use a reviewed versioned report schema/adapter before rendering internal sections; do not bypass with unchecked casts.
+- **Target:** Phase 2 frontend/API interface work (blueprint §4.8 step 6); pagination/search contract and report-version typing with integration tests. See `design/v2/implementation-guide.md` §5.
+
+### L-025 — V2 manual analysis and creative tools are local design flows
+- **Status:** deferred
+- **Discovered:** 2026-10-15
+- **Affects:** `design/v2/new-analysis.html`, `interior.html`, `create-listing.html`, `app-pages.js`
+- **Evidence:** confirmed (prototype source): local form validation, object-URL image previews, factual description template, generic guidance and CSS brightness preview; no backend or AI requests.
+- **Description:** Manual/URL preflight does not run an analysis. Interior guidance and photo tips do not assess uploaded images. Listing text is a local template; image export, generation/enhancement and Otodom publication are absent. Form inputs, image previews and drafts have no persistence.
+- **Workaround:** Review these as Phase 2 interaction prototypes; labels state the example/integration boundaries. Only fictional reports are linked.
+- **Target:** Phase 2 UX and separately specified backend/provider integrations (blueprint §4.8 step 6); personal-data, image-processing and third-party publication review before integration.
+
+### L-024 — V2 analysis collection and market views are placeholders
+- **Status:** deferred
+- **Discovered:** 2026-10-15
+- **Affects:** `design/v2/analyses.html`, `design/v2/market.html`; Phase 2 UX handoff
+- **Evidence:** confirmed (owner design assessment and prototype source review): twelve in-memory analysis fixtures with search/status filters; no pagination or table-view switch; three fictional city/rent summaries. The owner confirms substantially more market data is available than this view includes; completeness was not audited in this change.
+- **Description:** The analysis cards are temporary, inadequately designed placeholders and will be replaced. The market view exists to avoid a blank page and omits the breadth of the project's market data. Neither view is an approved complete product design.
+- **Workaround:** Use the prototype for navigation/appearance review only; see `design/v2/README.md` for explicit scope.
+- **Target:** Phase 2 design (blueprint §4.8 step 6): replacement analysis cards, proper pagination, a table-view option and a fuller market information architecture.
+
 ## Resolved
 
 ### L-013 — Error events may carry stack-frame variables and unscrubbed free text

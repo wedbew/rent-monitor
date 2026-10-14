@@ -1,10 +1,12 @@
 <!doctype html>
-<html lang="pl">
+<html lang="pl" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <title>RentMonitor — Analiza mieszkania</title>
+  <meta name="color-scheme" content="light dark">
+  <title>renti.tech — Analiza mieszkania</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="theme.js"></script>
   <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="main-view.css">
   <script src="motion.js" defer></script>
@@ -17,6 +19,12 @@
     <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z M9 20v-7h6v7"/></symbol>
     <symbol id="i-files" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6Z M15 3v5h4 M9 12h7 M9 16h5"/></symbol>
     <symbol id="i-market" viewBox="0 0 24 24"><path d="M3 20h18 M5 16v-5 M11 16V7 M17 16V3"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.8 13.2A9 9 0 0 1 10.8 3.2a9 9 0 1 0 10 10Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2 M12 20v2 M2 12h2 M20 12h2 M5 5l1.5 1.5 M17.5 17.5 19 19 M5 19l1.5-1.5 M17.5 6.5 19 5"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h16 M4 17h16"/><circle cx="9" cy="7" r="3" fill="var(--canvas)"/><circle cx="15" cy="17" r="3" fill="var(--canvas)"/></symbol>
+    <symbol id="i-legal" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6Z M15 3v5h4 M9 12h7 M9 16h5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Z M9 12l2 2 4-4"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6 M10 7v6 M7 10h6"/></symbol><symbol id="i-interior" viewBox="0 0 24 24"><path d="M5 12V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5 M5 10H3v9h18v-9h-2v5H5Z M5 19v2 M19 19v2"/></symbol><symbol id="i-edit" viewBox="0 0 24 24"><path d="M13 4H4v17h16v-9 M10 14l1-4 8-8 3 3-8 8Z M17 4l3 3"/></symbol><symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3 M7 8l5-5 5 5 M4 15v6h16v-6"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15 M13 6l6 6-6 6"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24"><path d="m9 15 6-6 M7 14l-2 2a4 4 0 0 0 5 5l4-4 M10 7l4-4a4 4 0 0 1 5 5l-2 2"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
@@ -30,14 +38,14 @@
 
   <div class="app-shell">
     <aside class="sidebar" aria-label="Nawigacja aplikacji">
-      <a class="brand" href="main-view.html" aria-label="RentMonitor — pulpit">RENT<span>MONITOR</span><i aria-hidden="true"></i></a>
-      <p class="nav-caption">TWOJA PRZESTRZEŃ</p>
-      <nav class="primary-nav" aria-label="Nawigacja aplikacji"><a class="nav-item" href="main-view.html"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg><span>Pulpit</span></a><a class="nav-item active" href="analyses.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-files"/></svg><span>Moje analizy</span></a><a class="nav-item" href="market.html"><svg class="icon" aria-hidden="true"><use href="#i-market"/></svg><span>Rynek</span></a></nav>
-      <div class="sidebar-bottom"><button class="nav-item" data-action="help"><svg class="icon" aria-hidden="true"><use href="#i-help"/></svg><span>Jak to działa?</span></button><button class="account-button" data-action="account" aria-label="Moje konto"><span class="account-avatar">AK</span><span class="account-details"><strong>Anna Kowalska</strong><span id="credit-label">2 analizy do wykorzystania</span></span></button></div>
+      <a class="brand" href="main-view.html" aria-label="renti.tech — pulpit"><img class="brand-light" src="renti-logo.svg" width="330" height="80" alt="renti.tech"><img class="brand-dark" src="renti-logo-dark.svg" width="330" height="80" alt="renti.tech"></a>
+
+      <nav class="primary-nav" aria-label="Nawigacja aplikacji"><a class="nav-item" href="main-view.html"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg><span>Pulpit</span></a><a class="nav-item" href="new-analysis.html"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span>Nowa analiza</span></a><a class="nav-item active" href="analyses.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-files"/></svg><span>Moje analizy</span></a><a class="nav-item" href="market.html"><svg class="icon" aria-hidden="true"><use href="#i-market"/></svg><span>Rynek</span></a><a class="nav-item" href="interior.html"><svg class="icon" aria-hidden="true"><use href="#i-interior"/></svg><span>Architekt wnętrz</span></a><a class="nav-item" href="create-listing.html"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg><span>Stwórz ogłoszenie</span></a><a class="nav-item" href="settings.html"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg><span>Ustawienia</span></a></nav>
+      <div class="sidebar-bottom"><button type="button" class="theme-toggle nav-item" aria-pressed="false" aria-label="Tryb ciemny"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg><span>Tryb ciemny</span></button><button class="nav-item" data-action="help"><svg class="icon" aria-hidden="true"><use href="#i-help"/></svg><span>Jak to działa?</span></button><nav class="legal-nav" aria-label="Dokumenty"><a class="nav-item" href="terms.html"><svg class="icon" aria-hidden="true"><use href="#i-legal"/></svg><span>Regulamin</span></a><a class="nav-item" href="privacy.html"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg><span>Polityka prywatności</span></a></nav><button class="account-button" data-action="account" aria-label="Moje konto"><span class="account-avatar">AK</span><span class="account-details"><strong>Anna Kowalska</strong><span id="credit-label">2 analizy do wykorzystania</span></span></button></div>
     </aside>
     <div class="workspace">
       <header class="context-bar"><span>Analiza mieszkania</span><span class="context-caption">Twoja przestrzeń do dobrych decyzji</span></header>
-      <header class="mobile-header"><a class="brand" href="main-view.html" aria-label="RentMonitor — pulpit">RENT<span>MONITOR</span><i aria-hidden="true"></i></a><button id="navigation-toggle" class="secondary" aria-label="Otwórz menu nawigacji" aria-haspopup="dialog">Menu</button></header>
+      <header class="mobile-header"><a class="brand" href="main-view.html" aria-label="renti.tech — pulpit"><img class="brand-light" src="renti-logo.svg" width="330" height="80" alt="renti.tech"><img class="brand-dark" src="renti-logo-dark.svg" width="330" height="80" alt="renti.tech"></a><div class="mobile-actions"><button type="button" class="theme-toggle secondary" aria-pressed="false" aria-label="Tryb ciemny"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg><span>Tryb ciemny</span></button><button id="navigation-toggle" class="secondary" aria-label="Otwórz menu nawigacji" aria-haspopup="dialog">Menu</button></div></header>
       <main id="main" class="analysis-page">
         <a class="text-link" href="analyses.html">← Wróć do moich analiz</a>
         <div class="greeting"><div><p class="eyebrow">ANALIZA MIESZKANIA</p><h1 id="analysis-title">Analiza mieszkania</h1></div><span class="status" id="analysis-status"></span></div>
@@ -50,7 +58,7 @@
     </div>
   </div>
 
-  <dialog id="navigation-dialog" class="drawer navigation-drawer" aria-labelledby="navigation-title"><div class="overlay-heading"><h2 id="navigation-title">Nawigacja</h2><button class="icon-button" data-close aria-label="Zamknij nawigację"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button></div><nav class="primary-nav" aria-label="Nawigacja mobilna"><a class="nav-item" href="main-view.html"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg><span>Pulpit</span></a><a class="nav-item active" href="analyses.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-files"/></svg><span>Moje analizy</span></a><a class="nav-item" href="market.html"><svg class="icon" aria-hidden="true"><use href="#i-market"/></svg><span>Rynek</span></a></nav></dialog>
+  <dialog id="navigation-dialog" class="drawer navigation-drawer" aria-labelledby="navigation-title"><div class="overlay-heading"><h2 id="navigation-title">Nawigacja</h2><button class="icon-button" data-close aria-label="Zamknij nawigację"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button></div><nav class="primary-nav" aria-label="Nawigacja mobilna"><a class="nav-item" href="main-view.html"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg><span>Pulpit</span></a><a class="nav-item" href="new-analysis.html"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span>Nowa analiza</span></a><a class="nav-item active" href="analyses.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-files"/></svg><span>Moje analizy</span></a><a class="nav-item" href="market.html"><svg class="icon" aria-hidden="true"><use href="#i-market"/></svg><span>Rynek</span></a><a class="nav-item" href="interior.html"><svg class="icon" aria-hidden="true"><use href="#i-interior"/></svg><span>Architekt wnętrz</span></a><a class="nav-item" href="create-listing.html"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg><span>Stwórz ogłoszenie</span></a><a class="nav-item" href="settings.html"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg><span>Ustawienia</span></a><a class="nav-item" href="terms.html"><svg class="icon" aria-hidden="true"><use href="#i-legal"/></svg><span>Regulamin</span></a><a class="nav-item" href="privacy.html"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg><span>Polityka prywatności</span></a></nav></dialog>
   <dialog id="general-dialog" class="modal" aria-labelledby="modal-title"><div class="overlay-heading"><span class="overline" id="modal-eyebrow"></span><button class="icon-button" data-close aria-label="Zamknij okno"><svg class="icon"><use href="#i-close"/></svg></button></div><div id="modal-content"></div></dialog>
   <div class="sr-only" id="announcement" role="status" aria-live="polite"></div>
 <a class="version-link" href="../v1/analyses.html">Porównaj z V1 ↗</a>
