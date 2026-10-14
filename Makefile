@@ -1,4 +1,4 @@
-.PHONY: ci ci-fast ci-full hooks sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
+.PHONY: api-samples api-samples-clean ci ci-fast ci-full hooks sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
 
 sync:
 	uv sync --all-packages --group dev
@@ -74,3 +74,11 @@ logs:
 
 smoke:
 	./scripts/smoke_docker.sh
+
+# Run every API operation over loopback HTTP and keep the answers in data/api-samples/<UTC>/ (gitignored, 30 days).
+# Offline: fake providers, a throwaway database inside the Compose Postgres. See docs/FRONTEND-PLAN.md section 3.
+api-samples:
+	uv run python scripts/capture_api_samples.py
+
+api-samples-clean:
+	uv run python scripts/capture_api_samples.py --clean
