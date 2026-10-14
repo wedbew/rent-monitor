@@ -39,6 +39,7 @@ from rm_core.db.models import (
     AuditEvent,
     AuthIdentity,
     AuthToken,
+    BillingEvent,
     CreditAccount,
     CreditLedger,
     ErasureLog,
@@ -80,6 +81,7 @@ class PurgeReport:
     geo_cache: int = 0
     rate_limit: int = 0
     auth_tokens: int = 0
+    billing_events: int = 0
 
 
 async def _until_drained(
@@ -136,6 +138,21 @@ async def purge_expired(sessionmaker: async_sessionmaker[AsyncSession], settings
                 .limit(BATCH_SIZE)
             )
         ),
+    )
+    billing_events = (
+        await _until_drained(  # GDPR[retention]: the technical event log, not the accounting record
+            sessionmaker,
+            lambda: delete(BillingEvent).where(
+                BillingEvent.id.in_(
+                    select(BillingEvent.id)
+                    .where(
+                        BillingEvent.status != "pending",
+                        BillingEvent.received_at < _ago(settings.retention_billing_event_days),
+                    )
+                    .limit(BATCH_SIZE)
+                )
+            ),
+        )
     )
     referenced = exists().where(Audit.snapshot_id == ListingSnapshot.id)
     cutoff = _ago(settings.retention_snapshot_days)
@@ -206,7 +223,16 @@ async def purge_expired(sessionmaker: async_sessionmaker[AsyncSession], settings
         ),
     )
     return PurgeReport(
-        sessions, tokens, snapshots_deleted, snapshots_scrubbed, events, erasure, geo, limits, auth_tokens
+        sessions,
+        tokens,
+        snapshots_deleted,
+        snapshots_scrubbed,
+        events,
+        erasure,
+        geo,
+        limits,
+        auth_tokens,
+        billing_events,
     )
 
 

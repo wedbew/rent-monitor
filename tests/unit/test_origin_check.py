@@ -16,7 +16,7 @@ async def ok(request: Request) -> PlainTextResponse:
 def client() -> AsyncClient:
     routes = [
         Route(path, ok, methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
-        for path in ("/api/things", "/api/webhooks/stripe", "/healthz", "/other")
+        for path in ("/api/things", "/api/webhooks/paddle", "/api/webhooks/other", "/healthz", "/other")
     ]
     app = Starlette(routes=routes)
     app.add_middleware(OriginCheckMiddleware, allowed_origin="https://app.example.test/")
@@ -62,6 +62,12 @@ async def test_routes_outside_api_are_not_checked() -> None:
         assert (await c.post("/other")).status_code == 200
 
 
-async def test_webhooks_are_exempt_because_they_authenticate_by_signature() -> None:
+async def test_the_paddle_webhook_is_exempt_because_it_authenticates_by_signature() -> None:
     async with client() as c:
-        assert (await c.post("/api/webhooks/stripe")).status_code == 200
+        assert (await c.post("/api/webhooks/paddle")).status_code == 200
+
+
+async def test_only_that_exact_path_is_exempt_not_everything_under_webhooks() -> None:
+    async with client() as c:
+        assert (await c.post("/api/webhooks/other")).status_code == 403
+        assert (await c.post("/api/webhooks/paddle/extra")).status_code in {403, 404}

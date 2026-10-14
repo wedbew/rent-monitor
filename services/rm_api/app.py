@@ -25,6 +25,7 @@ from rm_api.auth.router import router as auth_router
 from rm_api.auth.sessions import REVOKED_CHANNEL, PrincipalCache
 from rm_api.billing import router as billing_router
 from rm_api.billing_erasure import BillingEraser
+from rm_api.billing_webhook import router as billing_webhook_router
 from rm_api.health import router as health_router
 from rm_api.me import router as me_router
 from rm_api.middleware import RequestContextMiddleware
@@ -157,6 +158,7 @@ def _include_routers(app: FastAPI) -> None:
         auth_router,
         password_router,
         billing_router,
+        billing_webhook_router,
         me_router,
         saved_router,
         admin_router,
@@ -173,6 +175,9 @@ class _NoQueue:
         raise RuntimeError("no job queue configured")
 
     async def send_auth_mail(self, *, kind: str, email: str, url: str | None) -> None:
+        raise RuntimeError("no job queue configured")
+
+    async def process_billing_events(self) -> None:
         raise RuntimeError("no job queue configured")
 
     async def run_audit(self, audit_id: UUID) -> None:

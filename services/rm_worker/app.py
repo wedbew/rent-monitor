@@ -19,5 +19,6 @@ app = procrastinate.App(
         "rm_worker.tasks.email",
         "rm_worker.tasks.audit",
         "rm_worker.tasks.reconcile",
+        "rm_worker.tasks.billing",
     ],
 )
