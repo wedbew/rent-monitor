@@ -64,7 +64,7 @@ backup-drill:
 
 # The whole app in containers (Postgres, bootstrap, API, worker).
 up:
-	$(COMPOSE) up -d --build --wait api worker
+	$(COMPOSE) up -d --build --wait api worker-audit worker-ops
 
 down:
 	$(COMPOSE) down
