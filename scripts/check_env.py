@@ -144,7 +144,9 @@ def _check_billing(settings: Settings, report: _Report) -> None:
 def check(env: Mapping[str, str], *, private: bool = False) -> list[Finding]:
     report = _Report()
     for name, value in env.items():
-        if value and _is_placeholder(value):
+        if value.lstrip().startswith("#"):
+            report.error(name, "the value is a copied comment (empty value with an inline comment)")
+        elif value and _is_placeholder(value):
             report.error(name, "still a placeholder")
     settings = _load_settings(env, report)
     if settings is None:

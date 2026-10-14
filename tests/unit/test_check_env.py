@@ -52,6 +52,13 @@ def test_the_mistakes_that_matter_are_errors(change: dict[str, str], expected: s
     assert expected in names(check_env.check(env))
 
 
+def test_a_copied_inline_comment_is_not_a_value() -> None:
+    """Compose reads `KEY=   # where to get it` as the value `# where to get it`: it must be refused."""
+    findings = check_env.check({**GOOD, "RESEND_API_KEY": "# private key from resend.com", "SENTRY_DSN": "#"})
+    assert {"RESEND_API_KEY", "SENTRY_DSN"} <= names(findings)
+    assert "resend.com" not in repr(findings)
+
+
 def test_a_private_beta_may_use_http_on_localhost_only() -> None:
     local = {**GOOD, "PUBLIC_APP_URL": "http://localhost:8000"}
     assert "PUBLIC_APP_URL" in names(check_env.check(local))
