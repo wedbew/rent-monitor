@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from rm_worker.audit_pipeline import AuditServices
 from rm_worker.clients.limiter import PgAdvisoryLimiter
 from rm_worker.clients.openrouter import OpenRouterClient
+from rm_worker.clients.openrouter_prices import PriceCatalog
 from rm_worker.context import MarketContext
 from rm_worker.engine_child import ChildEngine
 from rm_worker.importers.demand import ProcrastinateImportQueue
@@ -35,13 +36,15 @@ def build_vision(settings: Settings, sessionmaker: async_sessionmaker[AsyncSessi
     if not settings.legal_images_enabled or not key:
         log.info("vision_stage_off", images_enabled=settings.legal_images_enabled, key_set=bool(key))
         return None
+    http = httpx.AsyncClient()
     client = OpenRouterClient(
-        http=httpx.AsyncClient(),
+        http=http,
         api_key=key,
         budget=PostgresBudgetGate(sessionmaker, monthly_cap_usd=settings.openrouter_monthly_budget_usd),
         limiter=PgAdvisoryLimiter(make_engine(settings, pool_size=LIMITER_POOL, max_overflow=1)),
         estimate_usd=settings.openrouter_call_estimate_usd,
         base_url=settings.openrouter_base_url,
+        prices=PriceCatalog(http, settings.openrouter_base_url),
     )
     images = httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0), follow_redirects=False)
     return OpenRouterVision(

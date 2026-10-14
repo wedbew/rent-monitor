@@ -80,7 +80,7 @@ class Settings(BaseSettings):
     openrouter_monthly_budget_usd: Decimal = Field(default=Decimal("50"), ge=0)
     openrouter_call_estimate_usd: Decimal = Field(
         default=Decimal("0.02"), ge=0
-    )  # placeholder until L-003 is measured
+    )  # fallback hold only: the normal hold is priced from the OpenRouter catalog (RM-246)
     # Placeholder model until L-003 / #94 measure quality and cost; any OpenRouter vision model id works.
     openrouter_vision_model: str = Field(default="google/gemini-2.5-flash-lite", min_length=1, max_length=120)
     nominatim_user_agent: str = (
