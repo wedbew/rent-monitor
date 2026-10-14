@@ -50,6 +50,8 @@ below safe.
 
 ```bash
 $C exec -T api python scripts/journey_check.py --base-url http://localhost:8000   # prints one JSON object
+# One REAL listing through the deployed stack (one Otodom request; numbers and codes only, throwaway user removed):
+#   cat scripts/live_audit_check.py | ssh <host> "... $C exec -T api sh -c 'cat > /tmp/l.py && PYTHONPATH=/app/scripts python /tmp/l.py --listing <otodom url>'"
 ```
 
 Expected: `"ok": true`, events `progress... done`, `"result_matches_engine": true`, `"cleaned_up": true`. Evidence class **fake

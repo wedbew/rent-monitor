@@ -48,6 +48,7 @@ from rm_worker.clients.otodom import ListingGone, UpstreamBlocked, UpstreamSchem
 from rm_worker.context import ContextUnavailableError
 from rm_worker.engine_child import ChildEngine, EngineRunner
 from rm_worker.snapshot_service import ListingSource, get_snapshot
+from rm_worker.vision_stage import VisionAssessment, VisionProvider
 
 log = structlog.get_logger(__name__)
 CAPTURED = frozenset({AuditStatus.succeeded, AuditStatus.succeeded_degraded})
@@ -71,6 +72,9 @@ class AuditServices:
     context: ContextProvider
     timeout_s: float = 900.0  # one deadline per audit (blueprint §6)
     engine: EngineRunner = field(default_factory=ChildEngine)  # killable child process, memory capped (#186)
+    vision: VisionProvider | None = (
+        None  # photos and floor plans; None = stage off, audits end degraded (#211)
+    )
 
 
 @dataclass(frozen=True)
@@ -126,6 +130,21 @@ async def _progress(sm: async_sessionmaker[AsyncSession], audit_id: UUID, stage:
         log.warning("audit.progress_failed", audit_id=str(audit_id), stage=stage, exc_info=True)
 
 
+async def _vision(
+    services: AuditServices, listing: Listing, audit_id: UUID, deadline: Deadline
+) -> VisionAssessment | None:
+    """Stages `vision` then `ocr` (CONTEXT section 7). The provider never raises for a missing result: no
+    assessment means a degraded audit, not a failed one. LEGAL[images], GDPR[processor]: see vision_stage."""
+    if services.vision is None:
+        return None
+    sm = services.sessionmaker
+    await _progress(sm, audit_id, "vision")
+    assessment = await services.vision.assess(listing, audit_id=audit_id, deadline=deadline)
+    if assessment is not None and listing.floor_plan_urls:
+        await _progress(sm, audit_id, "ocr")
+    return assessment
+
+
 async def _analyse(services: AuditServices, audit_id: UUID, otodom_id: str) -> Outcome:
     deadline = Deadline.after(services.timeout_s)
     sm = services.sessionmaker
@@ -152,9 +171,16 @@ async def _analyse(services: AuditServices, audit_id: UUID, otodom_id: str) -> O
             await _progress(sm, audit_id, "context")
             rent = await services.context.rent_input(listing, deadline=deadline)
             risk_free = await services.context.risk_free_rate(deadline=deadline)
+            assessment = await _vision(services, listing, audit_id, deadline)
             await _progress(sm, audit_id, "synthesize")
             analysis = await services.engine.run(
-                listing, rent=rent, risk_free=risk_free, timeout_s=deadline.remaining()
+                listing,
+                rent=rent,
+                risk_free=risk_free,
+                timeout_s=deadline.remaining(),
+                vision=assessment.output if assessment else None,
+                model=assessment.model if assessment else "none",
+                prompt_version=assessment.prompt_version if assessment else "none",
             )
     except Exception as exc:
         return _failure(exc)

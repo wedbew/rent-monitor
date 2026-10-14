@@ -34,8 +34,9 @@ from rm_worker import audit_services
 from rm_worker.app import app as worker_app
 from rm_worker.audit_pipeline import AuditServices, execute_audit
 from rm_worker.clients.otodom import ListingGone, UpstreamBlocked
-from rm_worker.engine_child import EngineRunner
+from rm_worker.engine_child import ChildEngine, EngineRunner
 from rm_worker.tasks import audit as audit_task  # also registers run_audit on the worker app
+from rm_worker.vision_stage import VisionProvider
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from test_auth import FakeCerts, FakeQueue, client_for
@@ -122,10 +123,20 @@ class Harness:
         self.app, self.engine, self.dsn, self.source, self.ctx = app, engine, dsn, source, ctx
         self.sm = async_sessionmaker(engine, expire_on_commit=False)
 
-    def services(self, *, timeout_s: float = 30.0, engine: EngineRunner | None = None) -> AuditServices:
-        extra = {} if engine is None else {"engine": engine}
+    def services(
+        self,
+        *,
+        timeout_s: float = 30.0,
+        engine: EngineRunner | None = None,
+        vision: VisionProvider | None = None,
+    ) -> AuditServices:
         return AuditServices(
-            sessionmaker=self.sm, source=self.source, context=self.ctx, timeout_s=timeout_s, **extra
+            sessionmaker=self.sm,
+            source=self.source,
+            context=self.ctx,
+            timeout_s=timeout_s,
+            engine=engine if engine is not None else ChildEngine(),
+            vision=vision,
         )
 
     async def run_worker(

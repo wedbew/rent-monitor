@@ -26,6 +26,7 @@ from typing import Any, Protocol
 
 import structlog
 from deal_analyzer import DealAnalysis, FractionalOwnershipError, Listing, RentInput
+from deal_analyzer.vision import VisionOutput
 
 log = structlog.get_logger(__name__)
 DEFAULT_TARGET = "deal_analyzer:analyse_listing"
@@ -40,7 +41,15 @@ class EngineChildError(RuntimeError):
 
 class EngineRunner(Protocol):
     async def run(
-        self, listing: Listing, *, rent: RentInput, risk_free: Decimal, timeout_s: float
+        self,
+        listing: Listing,
+        *,
+        rent: RentInput,
+        risk_free: Decimal,
+        timeout_s: float,
+        vision: VisionOutput | None = None,
+        model: str = "none",
+        prompt_version: str = "none",
     ) -> DealAnalysis: ...
 
 
@@ -52,12 +61,22 @@ class ChildEngine:
         self._target = target
 
     async def run(
-        self, listing: Listing, *, rent: RentInput, risk_free: Decimal, timeout_s: float
+        self,
+        listing: Listing,
+        *,
+        rent: RentInput,
+        risk_free: Decimal,
+        timeout_s: float,
+        vision: VisionOutput | None = None,
+        model: str = "none",
+        prompt_version: str = "none",
     ) -> DealAnalysis:
-        # Three single-line documents (compact JSON has no raw newline): strict models parse JSON, not dicts.
-        request = b"\n".join(
-            [listing.model_dump_json().encode(), rent.model_dump_json().encode(), str(risk_free).encode()]
-        )
+        # Single-line documents (compact JSON has no raw newline): strict models parse JSON, not dicts.
+        # Three lines without vision; with it, the vision answer, model id and prompt version follow.
+        lines = [listing.model_dump_json().encode(), rent.model_dump_json().encode(), str(risk_free).encode()]
+        if vision is not None:
+            lines += [vision.model_dump_json().encode(), model.encode(), prompt_version.encode()]
+        request = b"\n".join(lines)
         proc = await asyncio.create_subprocess_exec(
             sys.executable,
             "-m",
@@ -142,11 +161,19 @@ def _main(argv: list[str]) -> int:
     )  # stdout is the result channel: stray prints must not corrupt it
     _limit_memory(memory_bytes)
     function = _resolve(target)
-    listing_json, rent_json, risk_free = sys.stdin.buffer.read().split(b"\n")
+    listing_json, rent_json, risk_free, *extra = sys.stdin.buffer.read().split(b"\n")
     listing = Listing.model_validate_json(listing_json)
     rent = RentInput.model_validate_json(rent_json)
+    options: dict[str, Any] = {}
+    if extra:
+        vision_json, model, prompt_version = extra
+        options = {
+            "vision": VisionOutput.model_validate_json(vision_json),
+            "model": model.decode(),
+            "prompt_version": prompt_version.decode(),
+        }
     try:
-        analysis = function(listing, rent=rent, risk_free=Decimal(risk_free.decode()))
+        analysis = function(listing, rent=rent, risk_free=Decimal(risk_free.decode()), **options)
     except FractionalOwnershipError as exc:
         result.write(
             json.dumps(

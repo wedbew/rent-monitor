@@ -41,7 +41,7 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 
 | Issue | Class | Next step / blocker |
 |---|---|---|
-| #13 audits | U, P | #184, #185, #186, #187 merged (offline level 2). Open: rental importer live run and city list #209, risk-free source #210, vision/OCR #211, live-provider evidence (owner), journey on the current VPS-3 |
+| #13 audits | U, P | #184, #185, #186, #187 merged (offline level 2). Open: rental importer live run and city list #209, risk-free source #210, vision/OCR live run #211 (stage built offline, RM-244, level 1: L-023), live-provider evidence (owner), journey on the current VPS-3 |
 | #14 billing | U, P | Paddle packs per `PADDLE-INTEGRATION.md`: P1-P5b merged offline (#215-#219, #229); P6 sandbox and acceptance #220 is owner-side. Nothing is sellable until the owner's prices, Paddle acceptance and the accountant |
 | #15 ops | P | Offline preparation merged (#223: worker lanes, VPS overlay, env check, journey check, logical backup, runbook). Open: private env verification and deployment to the current VPS-3, public profile, WAL-G and offsite backup, gates 4-6 |
 | #16, #21 market batch and routes | B | Wait for #106, #48, #49 |

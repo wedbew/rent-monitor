@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     # audit closed and releases the credit, so a half-configured host never pretends to analyse (#187).
     audit_providers: Literal["none", "real"] = "none"
     # LEGAL[scraping]: kill switch for fetching listing pages; off ends audits `UPSTREAM_BLOCKED` (RM-187).
+    legal_images_enabled: bool = True  # LEGAL[images] kill switch: false skips vision/OCR (degraded audits)
     legal_scraping_enabled: bool = True
     # Owner input until the macro source exists (ENGINE-SPEC row 9, N-12): PL 10Y yield as a fraction, e.g.
     # 0.055. Unset means audits end CONTEXT_UNAVAILABLE rather than run on an invented rate.
@@ -80,6 +81,8 @@ class Settings(BaseSettings):
     openrouter_call_estimate_usd: Decimal = Field(
         default=Decimal("0.02"), ge=0
     )  # placeholder until L-003 is measured
+    # Placeholder model until L-003 / #94 measure quality and cost; any OpenRouter vision model id works.
+    openrouter_vision_model: str = Field(default="google/gemini-2.5-flash-lite", min_length=1, max_length=120)
     nominatim_user_agent: str = (
         f"{DEFAULT_APP_NAME}/1.0 (set-an-ops-contact)"  # OSM policy: identify yourself with a contact
     )
