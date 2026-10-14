@@ -48,17 +48,20 @@ Proposed SPA paths below are **UI route proposals**, not existing server endpoin
 
 | Destination / reference | Proposed route | Reuse from V2 | Design/integration work remaining |
 |---|---|---|---|
-| [Pulpit](main-view.html) | `/app` | App-wide orientation, tool entry points, recent activity | Real activity/credit contracts, loading/empty/error states; never fabricate creative-project history |
+| [Pulpit](main-view.html) | `/app` | App-wide orientation, tool entry points, recent activity | Credit balance, flags and Otodom breaker state already come from `GET /api/me`; recent activity from `GET /api/audits`. Loading/empty/error states; never fabricate creative-project history |
 | [Nowa analiza](new-analysis.html) | `/app/analyses/new` | URL/manual tabs, field grouping, photo previews | Live URL journey; separate manual-input/upload contract before enabling that route |
 | [Moje analizy](analyses.html) | `/app/analyses` | Navigation, search/filter intent, visible status | **Replace inadequate placeholder cards**, add proper pagination and a table-view option; design with large collections |
 | [Report](analysis.html?id=p1) | `/app/analyses/:auditId` | Dedicated report destination and disclosure principles | Full canonical report rendering, pending/terminal states and schema compatibility; scaffold is not a complete report |
-| [Rynek](market.html) | `/app/market` | Separate market destination; provenance concepts | **Placeholder to avoid a blank page**; substantially more market data exists than it displays; inventory that data and redesign |
+| [Rynek](market.html) | `/app/market` | Separate market destination; provenance concepts | **Placeholder to avoid a blank page**; more market data exists in Postgres than it displays, but **no `/api/market/*` route exists yet** (#21). Inventory the data once the routes exist, then redesign |
 | [Architekt wnętrz](interior.html) | `/app/interior` | Room/style/goal workflow | Generic example plan only; project, media, AI, render/export and persistence contracts are pending |
 | [Stwórz ogłoszenie](create-listing.html) | `/app/listings/new` | Non-chat assistance, facts → draft → photo tips | Local template and brightness preview only; AI assessment, enhancement/export and provider publishing are pending |
-| [Ustawienia](settings.html) | `/app/settings` | Shell/destination | Placeholder; build real settings only against explicit contracts |
+| [Ustawienia](settings.html) | `/app/settings` | Shell/destination | Contracts already exist: sessions list, sign-out everywhere, password change, data export, account deletion (#278) |
+| Sign-in / sign-up (no V2 page) | `/login`, `/signup`, `/password/forgot` | Shell, form patterns | Required; the API's emails link to the fixed routes `/login/email#t=`, `/signup/verify#t=` and `/password/reset#t=` (#271) |
+| Credits and purchases (no V2 page) | `/app/credits`, `/pay`, `/app/credits/success` | Shell, collection patterns | Paddle packs, checkout, purchase polling and invoices (`PADDLE-INTEGRATION.md` §5, #277) |
+| Saved listings (no V2 page) | inside Moje analizy and the report | Collection patterns | `/api/saved` with notes (#276) |
 | [Regulamin](terms.html), [privacy](privacy.html) | `/terms`, `/privacy` | Reachability and document layout | Placeholder content is not operative legal copy; approved documents/versioning needed before launch |
 
-See limitations [L-024 and L-025](../../docs/LIMITATIONS.md). A placeholder can establish navigation, spacing, color, typography and interaction principles while its content/design still needs replacement. “V2 selected” does not mean every placeholder is approved.
+See limitations [L-024 and L-025](../../docs/LIMITATIONS.md). The delivery plan with one issue per slice is [`docs/FRONTEND-PLAN.md`](../../docs/FRONTEND-PLAN.md) (verified against the code on 2026-10-15). A placeholder can establish navigation, spacing, color, typography and interaction principles while its content/design still needs replacement. “V2 selected” does not mean every placeholder is approved.
 
 ## 4. Architecture to implement
 
@@ -133,7 +136,9 @@ Confirmed contracts and gaps from code inspection, not assumptions based on mock
 - `packages/rm_contracts/audits.py` defines URL/id `AuditCreate` with `listing_ref`, `lang` and `analyst`. It does **not** accept the manual form or arbitrary images. Do not POST extra fields and hope the server accepts them.
 - `GET /api/audits` in `services/rm_api/audits.py` currently returns an array with only `limit` (default 50, maximum 100). It does **not** provide a cursor/page, total count or collection-wide search/filter contract. A frontend cannot honestly paginate the complete history using this alone.
 - Report `result` is currently an opaque object in `AuditOut`; generating OpenAPI types will not magically type its internal sections. Agree a versioned report schema/adapter and test unknown or unsupported versions. Do not use unchecked casts as a report schema.
-- Progress uses `GET /api/audits/{audit_id}/events`. Some blueprint route descriptions are broader than implemented code; for example, do not display cancellation as working until its route is confirmed.
+- Progress uses `GET /api/audits/{audit_id}/events`. Some blueprint route descriptions are broader than implemented code: `POST /api/audits/{id}/cancel` does not exist, so show no cancel action.
+- Errors are `application/problem+json`, but `docs/openapi.json` does not describe them yet (no problem schema; 422 is advertised as FastAPI's `HTTPValidationError`). Fix the schema before relying on generated error types ([L-027](../../docs/LIMITATIONS.md), #264).
+- `GET /api/me` already returns `credit_balance`, `flags` and the Otodom breaker state (`upstream`); use it rather than asking for a new contract.
 - Manual analyses, interior projects, creative media and AI listing assistance need explicit backend capabilities. Keep separate typed mock handlers until those exist. Do not invent `/api/interior` or upload endpoints in production code.
 - Consult actual billing contracts and [Paddle pilot specification](../../docs/PADDLE-INTEGRATION.md); do not implement obsolete subscription/pass screens from historical blueprint prose.
 
@@ -193,7 +198,7 @@ Keep analytics/errors free of raw listing URLs, descriptions, images, notes and 
 
 ## 8. Delivery order and definition of done
 
-Use the [delivery checklist](implementation-checklist.md) to turn this handoff into small issues:
+**Data first:** no UI slice starts before the API smoke test has run over every endpoint and stored response samples in the gitignored `data/` directory (#263); fixtures are derived from those samples, and every data view renders at least 5 different examples. Every page, popup and clickable element has an e2e test enforced by an interaction-coverage gate (#269). The issue-level plan is [`docs/FRONTEND-PLAN.md`](../../docs/FRONTEND-PLAN.md); the default narrative below maps onto it:
 
 1. Foundation/toolchain and typed mocked client; component examples.
 2. Theme, navigation and responsive app shell.

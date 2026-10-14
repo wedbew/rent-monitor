@@ -20,7 +20,7 @@ Ship Renti as a single 12 GB VPS running Docker Compose, with Postgres as the on
 | Host | One OVHcloud VPS-3 (6 vCore, 12 GB, 100 GB NVMe), Poland location, 52.20 zł net/month without commitment; commit to 12 months (44.37 zł) in the Black Friday window | Most RAM per złoty of the options checked, monthly exit, daily backup included. Splitting Postgres and the app across two cheaper VPS costs more for the same 6 vCore / 12 GB (Section 1) |
 | Runtime | **Python only** on the server: FastAPI, Procrastinate workers, Postgres. Node exists only at build time to bundle the SPA | One language, one image, one migration tool, one test suite |
 | Topology | Option B: Caddy + FastAPI + 2 worker pools + Postgres 17 | One bill, one failure domain you control, no cold starts, no per-invocation pricing |
-| Frontend | Keep the existing Vite + React 19 SPA, served by Caddy on the same origin | Same-origin cookies, no CORS, no SSR runtime to host |
+| Frontend | A new Vite + React 19 SPA (none exists yet; built from scratch per ADR 0001 after the API smoke test, `FRONTEND-PLAN.md`), served by Caddy on the same origin | Same-origin cookies, no CORS, no SSR runtime to host |
 | Sign-in | **Google first**: "Zaloguj się przez Google" button at the top of every auth screen plus One Tap on the landing page; email magic link as the secondary path; email and password added by owner request (ADR 0013) | One click for most users, nothing to reset or leak; Google-verified emails unlock the 3 free audits at once |
 | Auth engine | In FastAPI: Google ID-token verification with `google-auth`, own sessions in Postgres | No second runtime; FastAPI-Users is in maintenance mode and password-centric; cookies work with `EventSource` |
 | Payments | Pilot: **one-time Paddle packs of 1, 5 or 10 reports**, card + one-time PLN BLIK; no subscription | Owner direction 2026-10-13; see `PADDLE-INTEGRATION.md`. Provider/product acceptance and final pricing pending |
@@ -185,7 +185,10 @@ FastAPI is stateless: every byte of state — sessions, audits, credits, jobs, p
 - The SPA talks only to `/api/*` on its own origin. Caddy serves `index.html` for every non-API path.
 - Types are generated, not hand-written: FastAPI's OpenAPI schema → `openapi-typescript` → `openapi-fetch` client, wrapped in TanStack Query. A Pydantic change that the UI does not handle fails `tsc` in CI.
 - **Delete `frontend/src/lib/cashflow.ts` and `appreciation.ts`.** The API returns every number; a null renders as an explicit "not computed" state. This enforces the deterministic-math invariant at the boundary (audit P0.3).
-- Progress uses `EventSource` on `/api/audits/{id}/events`; if the stream drops, the browser reconnects with `Last-Event-ID` and the server replays from `audit_event`.
+- Progress uses `EventSource` on `/api/audits/{id}/events`; if the stream drops, the browser reconnects with `Last-Event-ID` and the server replays from `audit_event`. A *new* `EventSource` (remount, reload) cannot set that header: it replays from the start and the SPA dedupes by event id, then re-reads `GET /api/audits/{id}`.
+- **Data first (owner decision, 2026-10-15).** No UI slice starts until an API smoke test has exercised every OpenAPI operation and stored response samples in the gitignored `data/api-samples/` (#263). Committed UI fixtures are sanitised derivations of those samples, validated against OpenAPI; every data view renders at least 5 distinct examples. Errors are typed from a `Problem` schema in OpenAPI (#264); the report is typed from a published, versioned `DealAnalysis` JSON Schema (#266).
+- **Every page, popup and clickable element has an e2e test** (Playwright), enforced by an interaction registry, an inventory test and a coverage reporter; mocked-API lanes run on every PR, a journey lane against the Compose stack (`FRONTEND-PLAN.md` §4, #269).
+- Fixed SPA routes the API depends on: the email links `/login/email#t=`, `/signup/verify#t=`, `/password/reset#t=` (fragment read once, then removed), and Paddle's default payment-link page `/pay` (`PADDLE-INTEGRATION.md` §5). The theme bootstrap is an external script, so the CSP needs no inline allowance.
 
 ### Listing-analysis contract
 
@@ -986,8 +989,8 @@ rentmonitor/
 ├── services/
 │   ├── rm_api/                   # main.py, deps.py, problems.py, sse.py, auth/, routers/, billing/
 │   └── rm_worker/                # app.py, progress.py, tasks/audit.py, tasks/market.py, tasks/maintenance.py
-├── frontend/                     # existing Vite SPA; server/plugin.ts and server/redesign.ts deleted
-│   └── src/api/{schema.d.ts (generated), client.ts}
+├── frontend/                     # new Vite SPA (Phase 2), flat layout: api/, ui/, shell/, features/, e2e/ (FRONTEND-PLAN.md)
+│   └── api/{schema.generated.ts, report.generated.ts, client.ts}
 ├── migrations/                   # Alembic, schema "app" only
 ├── scripts/{import_agent_context.py, import_legacy_reports.py, seed.py, gen_openapi.py}
 ├── tests/                        # cross-service integration tests + fixtures/
@@ -1210,11 +1213,11 @@ Local development (Docker Desktop or Linux):
 ```bash
 # 0. Toolchain
 curl -LsSf https://astral.sh/uv/install.sh | sh
-# Node 22 LTS, only to build the frontend
+# Node active LTS pinned in frontend/.node-version, only to build the frontend; pnpm via packageManager
 
 # 1. Dependencies
 uv sync --all-packages --group dev
-npm ci --prefix frontend
+pnpm --dir frontend install --frozen-lockfile
 cp .env.example .env    # fill test keys; APP_ENV=development
 
 # 2. Data plane
@@ -1230,8 +1233,9 @@ uv run python scripts/import_agent_context.py apps/agent-context/reports   # sid
 uv run python scripts/import_legacy_reports.py apps/deal_analyzer/reports/final --owner admin@rentmonitor.pl
 
 # 5. Generate the typed frontend client
-uv run python scripts/gen_openapi.py > frontend/openapi.json
-npx --prefix frontend openapi-typescript openapi.json -o src/api/schema.d.ts
+uv run python scripts/gen_openapi.py                # writes docs/openapi.json
+pnpm --dir frontend generate:api                     # -> frontend/api/schema.generated.ts (pinned openapi-typescript)
+make api-samples                                     # smoke every endpoint; samples -> data/api-samples/ (gitignored)
 
 # 6. Everything else
 docker compose -f deploy/compose.yml -f deploy/compose.dev.yml up -d --build
@@ -1993,6 +1997,8 @@ Run the worker in-process for integration tests with `await app.run_worker_async
 | `test_invariant_admin_fee_is_opex` | A fixture with `characteristics.rent = 600` shows 600 PLN/month in OPEX and 0 in income |
 | `test_invariant_deterministic_math` | Same snapshot + same vision stub → byte-identical `returns` block across two runs; LLM adjustment outside ±15% is clamped |
 | `test_no_frontend_finance` | CI step fails if `frontend/src/lib/cashflow.ts` or `appreciation.ts` exist |
+| `test_every_operation_has_a_scenario` | Every OpenAPI operation has a smoke scenario for success and each documented error status (#263) |
+| frontend interaction coverage | Playwright inventory fails on any unregistered or nameless interactive element; the reporter fails on any registered element no test exercised (#269) |
 | `test_quota_race` | 10 concurrent `POST /api/audits` with 3 credits → exactly 3 × 202 and 7 × 402; balance 0; `SUM(delta)` equals balance |
 | `test_duplicate_active_audit` | Second submit of the same listing while queued → 409 with the first `audit_id` |
 | `test_failed_audit_releases` | `UPSTREAM_BLOCKED` fake → credit back, ledger has `reserve` + `release` |
@@ -2021,7 +2027,8 @@ Run the worker in-process for integration tests with `await app.run_worker_async
 ```bash
 uv run pytest -m "not e2e" -q                         # unit + integration, offline
 uv run pytest -m invariant -q                         # the four invariants alone
-npx --prefix frontend tsc --noEmit                    # catches API contract drift
+pnpm --dir frontend check                            # API drift, tsc, lint, unit, build
+pnpm --dir frontend test:e2e                         # every page, popup and clickable element
 ```
 
 **Manual auth check** (in development the mailer logs the magic link instead of sending it; check Google sign-in in the browser with your own account against `http://localhost`):
@@ -2176,7 +2183,7 @@ Record the drill's wall-clock time; if it exceeds 30 minutes, the 1-hour RTO is 
 3. **Auth** (Python only): Google ID-token sign-in and One Tap first, then email magic link; sessions, `current_principal`, Origin check, signup grant. Tenant-isolation, Google-token and magic-link tests.
 4. **Audits**: submit route, worker task, SSE hub, reconciler. Quota race, release and SSE resume tests. Delete `frontend/server/*.ts`.
 5. **Billing**: Checkout (card + BLIK recurring), the 30-day BLIK pass, Portal, webhook, entitlements, grace. All webhook and pass tests plus a test-clock run. Request BLIK recurring activation from Stripe on day one of this step. Add the Fakturownia invoice task and confirm on a trial account that API-created invoices reach KSeF.
-6. **Frontend**: generated client, TanStack Query hooks, progress view on SSE, paywall on 402, removal of TS finance code.
+6. **Frontend** (Phase 2, plan and issues in `FRONTEND-PLAN.md`): first the API smoke test with samples in `data/` and the contract fixes (problem schema, audit paging, report schema); then generated client and sample-derived fixtures, the e2e coverage gate, shell, auth pages, URL analysis with SSE progress, report, collection, saved, Paddle packs (paywall on 402), settings, public pages, Caddy/CSP deploy, release hardening. No TS finance code.
 7. **Ops**: compose, Caddy, backups, monitors, WAL-G archiving to R2, restore drill (a point-in-time restore) executed once and timed.
 8. **Market and screener**: city refresh and ranking as `worker-batch` periodic tasks; screener approval queue behind the `screener` flag.
 

@@ -104,6 +104,12 @@ For critical adapters/state machines, establish meaningful coverage and branch c
 
 Chromium is the fast PR lane. Add representative Firefox/WebKit coverage for release/nightly and browser-sensitive changes; headless WebKit is not a replacement for checking a real iOS viewport/keyboard/file picker. Use component accessibility checks and route-level axe checks, plus manual verification. A green accessibility scan is not a compliance certificate.
 
+### Every page, popup and clickable element has an e2e test
+
+This is a gate, not a review habit (owner direction 2026-10-15; design in [`docs/FRONTEND-PLAN.md`](../../docs/FRONTEND-PLAN.md) §4, issue #269): an interaction registry lists every interactive element and popup per route; an inventory test fails on any visible interactive element that is unregistered or has no accessible name; a coverage reporter fails when a registered element is not exercised by a test that asserts its outcome. Mocked-API tests run on every PR; the journey lane runs against the Compose stack. The pytest `e2e` marker means "talks to Stripe test mode" and is not used for browser tests.
+
+Fixtures come from real API samples: the smoke capture (#263) writes them to the gitignored `data/api-samples/`, and a sanitiser turns them into committed fixtures (#268). Each data view has at least 5 distinct scenarios.
+
 ## 7. CI and hooks
 
 Proposed frontend jobs, added without weakening existing Python/security/invariant jobs:

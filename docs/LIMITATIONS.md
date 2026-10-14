@@ -202,6 +202,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** Request written product assessment with representative reports, prepaid report-pack entitlements and data-rights information. Owner selected one-time packs on 2026-10-13, so recurring BLIK is outside the pilot. If Paddle rejects the offering, ordinary Stripe plus Polish invoicing remains a fallback requiring a separate decision.
 - **Target:** provider evaluation in [BILLING-ALTERNATIVES.md](BILLING-ALTERNATIVES.md); decision before replacing ADR 0005
 
+### L-027 — OpenAPI does not describe the problem+json error responses
+- **Status:** active
+- **Discovered:** 2026-10-15
+- **Affects:** `docs/openapi.json`, `services/rm_api/problems.py`, generated frontend types
+- **Evidence:** confirmed in source: the API answers errors as `application/problem+json` (validation errors converted at `problems.py:138`), but the OpenAPI components contain no problem schema and operations advertise FastAPI's `HTTPValidationError` for 422.
+- **Description:** A client generated from the schema gets wrong types for every error body, including 422, and cannot see which statuses or `code`s an operation returns.
+- **Workaround:** None in production code; the frontend must not start before the schema is fixed.
+- **Target:** #264 (FE-A1), before #268 (FE-02); plan in `docs/FRONTEND-PLAN.md`.
+
 ## Deferred
 
 ### L-026 — Frontend collection and report typing need contract work
@@ -229,7 +238,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Evidence:** confirmed (owner design assessment and prototype source review): twelve in-memory analysis fixtures with search/status filters; no pagination or table-view switch; three fictional city/rent summaries. The owner confirms substantially more market data is available than this view includes; completeness was not audited in this change.
 - **Description:** The analysis cards are temporary, inadequately designed placeholders and will be replaced. The market view exists to avoid a blank page and omits the breadth of the project's market data. Neither view is an approved complete product design.
 - **Workaround:** Use the prototype for navigation/appearance review only; see `design/v2/README.md` for explicit scope.
-- **Target:** Phase 2 design (blueprint §4.8 step 6): replacement analysis cards, proper pagination, a table-view option and a fuller market information architecture.
+- **Target:** Phase 2 design (blueprint §4.8 step 6): replacement analysis cards, proper pagination, a table-view option and a fuller market information architecture. 2026-10-15 (#262): the market data lives in Postgres only; no `/api/market/*` route exists yet (#21), so the Rynek redesign (#282) waits on it; collection paging is #265.
 
 ## Resolved
 
