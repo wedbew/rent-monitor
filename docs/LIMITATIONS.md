@@ -28,6 +28,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Affects:** `PRO_MONTHLY_AUDIT_ALLOWANCE` (40, placeholder), pricing, release gate 4
 - **Evidence:** estimate
 - **Description:** No measured tokens/USD per audit; the Pro allowance has no cost basis yet.
+- **Measured (2026-10-14, first live call, RM-246):** 11 photos, 3258 prompt and 175 completion tokens, USD 0.0003958 on `google/gemini-2.5-flash-lite`; one data point, one model, no floor plans. The budget hold is now priced from the OpenRouter catalog (about USD 0.0025 for that call) and the real cost replaces it.
 - **Workaround:** Tokens and USD of every call are logged in `app.ai_usage` (RM-24) and spend is capped monthly with a kill switch (`OPENROUTER_MONTHLY_BUDGET_USD`, 0 = off). Measurement itself still needs real traffic.
 - **Target:** Set allowance after two weeks of measured COGS
 
@@ -53,7 +54,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Status:** active
 - **Discovered:** 2026-10-11
 - **Affects:** `rm_worker.images` (host allow-list), `OpenRouterClient` budget estimate, release gate 4
-- **Evidence:** inferred (default hosts `olxcdn.com`, `otodom.pl` were not verified against a live listing; the per-call estimate of 0.02 USD is a placeholder)
+- **Evidence:** inferred (`olxcdn.com` confirmed against one live listing on 2026-10-14: all 12 photos were served from `ireland.apollo.olxcdn.com`; floor-plan hosts unverified; the per-call budget hold is now priced from the OpenRouter catalog, RM-246)
 - **Description:** Photos are fetched only from allow-listed https host suffixes; if Otodom serves images from another host they are skipped (the audit then runs with fewer photos, or degraded). Redirects are never followed, so a CDN that redirects to another host is skipped too. The reservation estimate per OpenRouter call is not measured.
 - **Workaround:** Set `IMAGE_HOST_ALLOWLIST` and `OPENROUTER_CALL_ESTIMATE_USD` from the first live run; skipped images are logged (`image_skipped`) without URLs.
 - **Target:** Verify with the contract test (RM-28) and measured COGS (L-003, RM-24)

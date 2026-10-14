@@ -17,8 +17,10 @@ from rm_worker.clients.openrouter import (
     VisionRequest,
     VisionUnavailable,
     build_payload,
+    estimate_cost,
     parse_completion,
 )
+from rm_worker.clients.openrouter_prices import ModelPrice
 from rm_worker.images import PreparedImage
 
 IMG = PreparedImage("https://olxcdn.com/a.jpg", b"\xff\xd8jpegbytes", 10, 10, 1)
@@ -314,3 +316,39 @@ async def test_an_expired_deadline_makes_no_call() -> None:
         await client.complete(REQ, deadline=Deadline.after(0))
     assert calls == []
     assert gate.ticket.released is True
+
+
+# ---- the hold comes from the price catalog (RM-246) ----
+class Prices:
+    def __init__(self, price: "ModelPrice | None") -> None:
+        self._price = price
+
+    async def price(self, model: str) -> "ModelPrice | None":
+        return self._price
+
+
+async def test_the_budget_hold_is_priced_from_the_catalog_and_settles_at_the_real_cost() -> None:
+    client, gate, _, _ = make(ok)
+    client.prices = Prices(ModelPrice(Decimal("0.0000001"), Decimal("0.0000004"), Decimal("0.0000001")))
+    await client.complete(REQ, deadline=Deadline.after(30))
+    (hold,) = gate.estimates
+    assert Decimal("0.0003") < hold < Decimal("0.01")  # not the flat 0.02
+    assert hold == estimate_cost(REQ, client.prices._price)  # type: ignore[attr-defined]
+    assert gate.ticket.settled == Decimal("0.00014")  # the provider's real cost replaces the hold
+
+
+async def test_without_a_catalog_price_the_flat_fallback_is_held() -> None:
+    client, gate, _, _ = make(ok)
+    client.prices = Prices(None)
+    await client.complete(REQ, deadline=Deadline.after(30))
+    assert gate.estimates == [Decimal("0.02")]
+
+
+async def test_when_the_provider_reports_no_cost_the_priced_hold_is_what_is_recorded() -> None:
+    body_no_cost = {**OK_BODY, "usage": {"prompt_tokens": 120, "completion_tokens": 30}}
+    client, gate, _, _ = make(lambda r: httpx.Response(200, content=json.dumps(body_no_cost).encode()))
+    client.prices = Prices(ModelPrice(Decimal("0.0000001"), Decimal("0.0000004"), Decimal(0)))
+    await client.complete(REQ, deadline=Deadline.after(30))
+    assert gate.ticket.settled == gate.estimates[0]
+    assert gate.ticket.usage is not None
+    assert gate.ticket.usage.estimated is True

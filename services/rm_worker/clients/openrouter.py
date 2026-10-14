@@ -13,7 +13,7 @@ import random
 from collections.abc import Awaitable, Callable, Sequence
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass, field
-from decimal import Decimal
+from decimal import ROUND_UP, Decimal
 from typing import Any, Protocol
 from uuid import UUID
 
@@ -24,6 +24,7 @@ from rm_contracts.problems import ProblemCode
 from rm_core.ai_budget import CallUsage
 from rm_core.deadline import Deadline
 
+from rm_worker.clients.openrouter_prices import ModelPrice
 from rm_worker.images import PreparedImage
 
 REQUEST_TIMEOUT_S = 120.0
@@ -83,6 +84,27 @@ class InFlightLimiter(Protocol):
     def slot(self, max_wait_s: float) -> AbstractAsyncContextManager[None]:
         """Hold a box-wide in-flight slot; raise `VisionUnavailable` if none frees within `max_wait_s`."""
         ...
+
+
+class PriceSource(Protocol):
+    async def price(self, model: str) -> ModelPrice | None: ...
+
+
+IMAGE_TOKENS_CEILING = (
+    1500  # tokens one downscaled photo may cost on any mainstream vision model (measured ~290)
+)
+TEXT_TOKENS_BASE = 1000  # prompt and system text
+MICRO_USD = Decimal("0.000001")  # the budget columns have six decimals
+
+
+def estimate_cost(req: VisionRequest, price: ModelPrice) -> Decimal:
+    """A ceiling for one call: input at the catalog price, output at its hard `max_tokens` cap."""
+    images = len(req.images)
+    input_tokens = (
+        TEXT_TOKENS_BASE + (len(req.prompt) + len(req.system or "")) // 3 + images * IMAGE_TOKENS_CEILING
+    )
+    total = input_tokens * price.prompt + images * price.image + req.max_tokens * price.completion
+    return total.quantize(MICRO_USD, rounding=ROUND_UP)
 
 
 class _Message(BaseModel):
@@ -164,15 +186,17 @@ class OpenRouterClient:
     api_key: str
     budget: BudgetGate
     limiter: InFlightLimiter
-    estimate_usd: Decimal
+    estimate_usd: Decimal  # fallback hold when the price catalog has no price for the model
     base_url: str = "https://openrouter.ai/api/v1"
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep
     rng: random.Random = field(default_factory=random.Random)
+    prices: PriceSource | None = None
 
     async def complete(self, req: VisionRequest, *, deadline: Deadline) -> VisionResult:
         if not self.api_key:
             raise VisionDisabled("OPENROUTER_API_KEY is not configured")
-        ticket = await self.budget.reserve(self.estimate_usd)
+        estimate = await self._estimate(req)
+        ticket = await self.budget.reserve(estimate)
         if ticket is None:
             raise VisionDisabled("AI budget exhausted")
         try:
@@ -182,7 +206,7 @@ class OpenRouterClient:
             await ticket.release()
             raise
         await ticket.settle(
-            result.cost_usd if result.cost_usd is not None else self.estimate_usd,
+            result.cost_usd if result.cost_usd is not None else estimate,
             CallUsage(
                 model=result.model or req.model,
                 prompt_tokens=result.prompt_tokens,
@@ -200,6 +224,10 @@ class OpenRouterClient:
             cost_usd=str(result.cost_usd) if result.cost_usd is not None else "unreported",
         )
         return result
+
+    async def _estimate(self, req: VisionRequest) -> Decimal:
+        price = await self.prices.price(req.model) if self.prices is not None else None
+        return estimate_cost(req, price) if price is not None else self.estimate_usd
 
     async def _with_retries(self, req: VisionRequest, deadline: Deadline) -> VisionResult:
         payload = build_payload(req)
