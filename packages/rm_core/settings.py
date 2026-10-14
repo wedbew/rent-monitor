@@ -7,10 +7,15 @@ from typing import Literal
 from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+DEFAULT_APP_NAME = "Renti"  # the product name users see; override with APP_NAME
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    app_name: str = Field(
+        default=DEFAULT_APP_NAME, min_length=1, max_length=40
+    )  # shown in mail and the API docs
     app_env: Literal["development", "test", "production"] = "development"
     public_app_url: str = "http://localhost"
     log_level: str = "INFO"
@@ -76,7 +81,7 @@ class Settings(BaseSettings):
         default=Decimal("0.02"), ge=0
     )  # placeholder until L-003 is measured
     nominatim_user_agent: str = (
-        "RentMonitor/1.0 (set-an-ops-contact)"  # OSM policy: identify yourself with a contact
+        f"{DEFAULT_APP_NAME}/1.0 (set-an-ops-contact)"  # OSM policy: identify yourself with a contact
     )
     image_host_allowlist: str = (
         "olxcdn.com,otodom.pl"  # comma-separated host suffixes photos may be fetched from
@@ -90,7 +95,7 @@ class Settings(BaseSettings):
 
     resend_api_key: SecretStr = SecretStr("")  # empty: development logs the magic link instead of sending it
     mail_from: str = (
-        "RentMonitor <onboarding@resend.dev>"  # local test sender; production needs a verified domain
+        f"{DEFAULT_APP_NAME} <onboarding@resend.dev>"  # local test sender; production needs a verified domain
     )
 
     # Better Stack heartbeat URLs carry their own secret; empty means that monitor is off

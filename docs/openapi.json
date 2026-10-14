@@ -2114,7 +2114,7 @@
     }
   },
   "info": {
-    "title": "RentMonitor API",
+    "title": "Renti API",
     "version": "0.1.0"
   },
   "openapi": "3.1.0",
@@ -3346,7 +3346,7 @@
     },
     "/api/billing/purchases/{purchase_id}/invoice": {
       "get": {
-        "description": "The seller's document for this sale, obtained from Paddle on demand after the ownership check.\nPaddle is the seller and issues it; RentMonitor issues no second customer invoice for the same sale.",
+        "description": "The seller's document for this sale, obtained from Paddle on demand after the ownership check.\nPaddle is the seller and issues it; the product issues no second customer invoice for the same sale.",
         "operationId": "get_invoice_api_billing_purchases__purchase_id__invoice_get",
         "parameters": [
           {

@@ -16,7 +16,7 @@ from rm_worker.clients.osm import (
     parse_pois,
 )
 
-UA = "RentMonitor/1.0 (ops@example.test)"
+UA = "Renti/1.0 (ops@example.test)"
 
 
 @dataclass
@@ -69,7 +69,7 @@ async def test_geocode_returns_exact_decimals_and_identifies_itself() -> None:
     assert nom.hosts == ["nominatim.openstreetmap.org"]  # one shared 1 req/s slot per call
 
 
-@pytest.mark.parametrize("ua", ["", "   ", "RentMonitor/1.0 (set-an-ops-contact)"])
+@pytest.mark.parametrize("ua", ["", "   ", "Renti/1.0 (set-an-ops-contact)"])
 async def test_the_placeholder_or_empty_user_agent_is_refused_without_any_request(ua: str) -> None:
     calls = []
     client, nom, _, _ = make(lambda r: calls.append(r) or hit(), ua=ua)

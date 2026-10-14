@@ -1,4 +1,4 @@
-# RentMonitor — Project Context
+# Renti — Project Context
 
 > Orientation for humans and agents. Read this first, then `.agent/agents.md` (rules) and the section of
 > `docs/BLUEPRINT.md` your ticket names. This file **summarises and links**; it does not replace them.
@@ -23,7 +23,7 @@ Python, nor run its tests. Items marked *(inferred)* are conclusions to verify w
 
 ## 1. What we are building
 
-RentMonitor is a paid SaaS for Polish residential **buy-to-let investors**. A user pastes an Otodom **SALE** listing URL;
+Renti is a paid SaaS for Polish residential **buy-to-let investors**. A user pastes an Otodom **SALE** listing URL;
 the system fetches it, reads the photos and floor plans with a vision LLM, anchors rent and price against market
 data, and returns a deterministic 10-year cash-flow valuation (`DealAnalysis`): yield, IRR, MOIC, CAGR, tax, CAPEX,
 **Max Bid**, and a grade. A second surface, the **727-city yield radar** and a bargain **screener**, ranks markets.
