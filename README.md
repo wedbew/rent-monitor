@@ -49,6 +49,7 @@ it also separates "implemented" from "integrated" and "verified against a real p
 | [`docs/BLUEPRINT.md`](docs/BLUEPRINT.md) | Spec of record |
 | [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md) | CI, hooks, governance, agents |
 | [`docs/STATUS.md`](docs/STATUS.md) | Delivery state: journey, backlog map, owner actions |
+| [`docs/OTODOM-NIGHTLY-IMPORT.md`](docs/OTODOM-NIGHTLY-IMPORT.md) | Implementation guide: launch-city bootstrap, nightly new offers, immutable prices and 90-day archive |
 | [`CONTEXT.md`](CONTEXT.md) | Orientation and POC porting map |
 | [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) | Known limits register |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
