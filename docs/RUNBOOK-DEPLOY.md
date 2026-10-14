@@ -28,6 +28,12 @@ firewall changes without the owner's yes (`docs/BLOCKERS.md`, `.agent/agents.md`
 
 ## 1. Deploy a commit
 
+Every `docker compose` command needs `--env-file .env` (the compose files live in `deploy/`, so Compose would otherwise
+look for `deploy/.env`) and `IMAGE_TAG` (kept in `.env` on the host). `.env` must never carry `KEY=   # comment` lines:
+Compose reads the comment as the value; `.env.example` keeps comments on their own line and `check_env.py` refuses a value
+that starts with `#`. Run the checker inside the built image (the host has no `uv`):
+`dc run --rm --no-deps --entrypoint python api scripts/check_env.py --private`.
+
 ```bash
 cd /opt/rent-monitor && git fetch && git checkout <sha> && export IMAGE_TAG=$(git rev-parse --short HEAD)
 C="docker compose -f deploy/compose.yml -f deploy/compose.prod.yml"
