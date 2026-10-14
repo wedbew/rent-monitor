@@ -32,6 +32,7 @@ services:
     mem_limit: 512m
     environment: &prod-env
       APP_ENV: production
+      RELEASE: ${IMAGE_TAG:-local}  # error events carry the deployed image tag (Better Stack groups per release)
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rentmonitor}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-rentmonitor}
       PROCRASTINATE_DSN: postgresql://${POSTGRES_USER:-rentmonitor}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-rentmonitor}
     env_file:
