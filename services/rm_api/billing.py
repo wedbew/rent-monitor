@@ -14,7 +14,7 @@ from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, Header, Path, Query, Request, Response
-from rm_contracts.billing import CheckoutRequest, PackOut, PacksOut, PurchaseOut, PurchasesOut
+from rm_contracts.billing import CheckoutRequest, InvoiceOut, PackOut, PacksOut, PurchaseOut, PurchasesOut
 from rm_contracts.problems import ProblemCode
 from rm_core.billing import (
     IdempotencyConflictError,
@@ -26,7 +26,7 @@ from rm_core.billing import (
     recover_creation,
 )
 from rm_core.db.models import BillingPack, BillingPurchase, CreditAccount, PurchaseState
-from rm_core.paddle import PaddleClient
+from rm_core.paddle import PaddleClient, PaddleError
 from rm_core.ratelimit import hit
 from sqlalchemy import select
 
@@ -185,3 +185,41 @@ async def get_purchase(
     if purchase is None:
         raise Problem.not_found("Purchase")  # unknown and foreign look the same
     return _out(purchase)
+
+
+@router.get("/purchases/{purchase_id}/invoice", response_model=InvoiceOut)
+async def get_invoice(
+    purchase_id: Annotated[UUID, Path()],
+    request: Request,
+    response: Response,
+    db: SessionDep,
+    principal: PrincipalDep,
+) -> InvoiceOut:
+    """The seller's document for this sale, obtained from Paddle on demand after the ownership check.
+    Paddle is the seller and issues it; RentMonitor issues no second customer invoice for the same sale."""
+    client, _ = _enabled(request)
+    purchase = await db.scalar(
+        select(BillingPurchase).where(
+            BillingPurchase.id == purchase_id, BillingPurchase.user_id == principal.user_id
+        )
+    )
+    if purchase is None:
+        raise Problem.not_found("Purchase")
+    if purchase.provider_txn_id is None or purchase.state not in {
+        PurchaseState.granted,
+        PurchaseState.refunded,
+    }:
+        raise Problem(409, ProblemCode.PURCHASE_NOT_REFUNDABLE, "There is no invoice for this purchase yet")
+    decision = await hit(db, "invoice", principal.user_id, limit=10, window_s=60)
+    if not decision.allowed:
+        await db.commit()
+        raise Problem.rate_limited(decision.retry_after_s)
+    await db.commit()  # release the connection before the network call
+    try:
+        url = await client.get_invoice_url(purchase.provider_txn_id)
+    except PaddleError:
+        raise Problem(
+            502, ProblemCode.BILLING_PROVIDER_ERROR, "The invoice is not available right now"
+        ) from None
+    response.headers["Cache-Control"] = "no-store"  # the link is short-lived and personal
+    return InvoiceOut(url=url)

@@ -9,9 +9,11 @@ exposed.
 """
 
 from typing import Annotated, Literal
+from uuid import UUID
 
 import structlog
-from fastapi import APIRouter, Path, Query, Response
+from fastapi import APIRouter, Path, Query, Request, Response
+from rm_contracts.billing import RefundOut, RefundRequest
 from rm_contracts.me import (
     BillingHoldClear,
     BillingHoldOut,
@@ -26,6 +28,7 @@ from rm_contracts.me import (
     OverridePut,
 )
 from rm_contracts.problems import ProblemCode
+from rm_core.billing_refunds import NotRefundableError, request_refund
 from rm_core.db.models import CreditAccount, FeatureFlag, FeatureOverride, User
 from rm_core.ledger import admin_adjust, clear_billing_hold, lock_user
 from sqlalchemy import delete, func, select, text
@@ -192,6 +195,51 @@ async def clear_hold(
         "admin_action", admin=admin.user_id, action="billing_hold_clear", target=user_id, cleared=cleared
     )
     return BillingHoldOut(cleared=cleared)
+
+
+@router.post("/billing/purchases/{purchase_id}/refund", response_model=RefundOut)
+async def refund_purchase(
+    purchase_id: Annotated[UUID, Path()],
+    body: RefundRequest,
+    request: Request,
+    response: Response,
+    admin: AdminDep,
+) -> RefundOut:
+    """Ask Paddle to refund an **unused** pack in full. The lot is frozen and a durable intent written
+    first; a pack with spent or running units goes to manual review instead. The units are taken back only
+    when Paddle reports the refund approved. Repeating the call never creates a second refund."""
+    client = request.app.state.paddle
+    if client is None:
+        raise Problem(503, ProblemCode.BILLING_UNAVAILABLE, "Billing is not enabled")
+    try:
+        outcome = await request_refund(
+            request.app.state.sessionmaker, client, purchase_id, reason=body.reason
+        )
+    except NotRefundableError as exc:
+        raise Problem(
+            409,
+            ProblemCode.PURCHASE_NOT_REFUNDABLE,
+            "This purchase cannot be refunded here",
+            reason=exc.reason,
+        ) from None
+    log.info(
+        "admin_action",
+        admin=admin.user_id,
+        action="refund_request",
+        purchase=str(purchase_id),
+        outcome=outcome.status,
+    )
+    if outcome.status == "review":
+        raise Problem(
+            409, ProblemCode.REFUND_NEEDS_REVIEW, "Some units were already used: decide the refund manually"
+        )
+    if outcome.status == "failed":
+        raise Problem(
+            502, ProblemCode.BILLING_PROVIDER_ERROR, "The payment provider refused the refund request"
+        )
+    if outcome.status in {"requested", "unknown"}:
+        response.status_code = 202
+    return RefundOut.model_validate({"status": outcome.status, "adjustment_id": outcome.adjustment_id})
 
 
 @router.get("/jobs", response_model=JobsOut)
