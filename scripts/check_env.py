@@ -111,7 +111,7 @@ def _check_runtime(settings: Settings, env: Mapping[str, str], report: _Report, 
 def _check_mail_and_sign_in(settings: Settings, report: _Report) -> None:
     if not settings.resend_api_key.get_secret_value():
         report.error("RESEND_API_KEY", "not set: sign-in and recovery mail cannot be sent")
-    elif "onboarding@resend.dev" in settings.mail_from:
+    elif "onboarding@resend.dev" in settings.mail_sender:
         report.error("MAIL_FROM", "is the Resend onboarding sender; verify a domain first")
     if not settings.google_client_id:
         report.warn("GOOGLE_CLIENT_ID", "not set: Google sign-in is unavailable")

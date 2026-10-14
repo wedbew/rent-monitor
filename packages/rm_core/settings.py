@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_env: Literal["development", "test", "production"] = "development"
+    app_name: str = Field(default="Renti", min_length=1, max_length=40)  # user-facing product name (RM-238)
     public_app_url: str = "http://localhost"
     log_level: str = "INFO"
     log_json: bool = True
@@ -76,7 +77,7 @@ class Settings(BaseSettings):
         default=Decimal("0.02"), ge=0
     )  # placeholder until L-003 is measured
     nominatim_user_agent: str = (
-        "RentMonitor/1.0 (set-an-ops-contact)"  # OSM policy: identify yourself with a contact
+        ""  # empty: "<APP_NAME>/1.0 (set-an-ops-contact)"; OSM policy needs a real contact
     )
     image_host_allowlist: str = (
         "olxcdn.com,otodom.pl"  # comma-separated host suffixes photos may be fetched from
@@ -89,9 +90,9 @@ class Settings(BaseSettings):
     retention_audit_event_days: int = Field(default=30, ge=1)  # progress events; the audit result is kept
 
     resend_api_key: SecretStr = SecretStr("")  # empty: development logs the magic link instead of sending it
-    mail_from: str = (
-        "RentMonitor <onboarding@resend.dev>"  # local test sender; production needs a verified domain
-    )
+    # Empty: "<APP_NAME> <onboarding@resend.dev>", the local test sender; production needs a verified domain.
+    # A bare address gets the APP_NAME display name; "Name <address>" is used as written.
+    mail_from: str = ""
 
     # Better Stack heartbeat URLs carry their own secret; empty means that monitor is off
     # (docs/OBSERVABILITY-SPEC.md section 4).
@@ -103,6 +104,15 @@ class Settings(BaseSettings):
         default=Decimal("0.05"), ge=0, le=1
     )  # a probability; Decimal keeps floats out of settings
     release: str = ""  # image tag / git sha, set by the deploy
+
+    @property
+    def osm_user_agent(self) -> str:
+        return self.nominatim_user_agent.strip() or f"{self.app_name}/1.0 (set-an-ops-contact)"
+
+    @property
+    def mail_sender(self) -> str:
+        sender = self.mail_from.strip() or "onboarding@resend.dev"
+        return sender if "<" in sender else f"{self.app_name} <{sender}>"
 
     @property
     def cookie_name(self) -> str:

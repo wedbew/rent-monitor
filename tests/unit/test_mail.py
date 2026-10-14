@@ -28,6 +28,26 @@ def test_the_message_has_one_link_in_both_parts_and_no_tracking() -> None:
     assert m.to == "a@example.test"
 
 
+def test_the_product_name_comes_from_app_name() -> None:
+    m = magic_link_message("a@example.test", URL, 30, "Acme")
+    assert "Acme" in m.subject
+    assert "Acme" in m.text
+    assert "Acme" in m.html
+    assert "RentMonitor" not in m.subject + m.text + m.html
+    assert "Renti" in magic_link_message("a@example.test", URL, 30).subject
+
+
+def test_sender_and_osm_agent_follow_app_name() -> None:
+    s = Settings(_env_file=None, app_name="Acme", mail_from="", nominatim_user_agent="")  # type: ignore[call-arg]
+    assert s.mail_sender == "Acme <onboarding@resend.dev>"
+    assert s.osm_user_agent == "Acme/1.0 (set-an-ops-contact)"
+    s = Settings(_env_file=None, app_name="Acme", mail_from="no-reply@x.test")  # type: ignore[call-arg]
+    assert s.mail_sender == "Acme <no-reply@x.test>"
+    s = Settings(_env_file=None, mail_from="Other <no-reply@x.test>")  # type: ignore[call-arg]
+    assert s.mail_sender == "Other <no-reply@x.test>"
+    assert Settings(_env_file=None).app_name == "Renti"  # type: ignore[call-arg]
+
+
 def test_html_is_escaped() -> None:
     m = magic_link_message("a@example.test", 'https://x.test/"><script>alert(1)</script>', 30)
     assert "<script>" not in m.html

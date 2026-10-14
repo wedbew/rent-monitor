@@ -4,6 +4,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Changed
+- The product is called Renti: new `APP_NAME` setting (default `Renti`) drives the mail text, the sender display name, the API title and the OSM user agent; `MAIL_FROM` and `NOMINATIM_USER_AGENT` now default to empty and derive from it (a full `Name <address>` value is still used as written). Package names, directories and identifiers are unchanged (RM-238)
+
 ### Fixed
 - `deploy/setup-server.sh`: the SSH key is read from `/tmp/deploy_key.pub` (an environment variable did not survive `sudo`, so no key was installed), the sshd drop-in is `00-rentmonitor.conf` so it overrides OVH's `50-cloud-init.conf` and password login really is disabled, and apt runs non-interactively; **operator action:** copy your public key to `/tmp/deploy_key.pub` before running it (RM-195)
 

@@ -1,4 +1,4 @@
-# RentMonitor
+# Renti (RentMonitor)
 
 Paid SaaS for Polish buy-to-let investors: paste an Otodom sale listing, get a deterministic 10-year deal valuation.
 Single VPS, Docker Compose, Caddy + FastAPI + Procrastinate workers + Postgres 17, Python-only server.
