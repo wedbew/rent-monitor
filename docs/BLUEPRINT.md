@@ -175,7 +175,7 @@ FastAPI is stateless: every byte of state — sessions, audits, credits, jobs, p
 | `/api/saved` | FastAPI | session | Save or unsave listings, notes; only listings the caller has audited can be saved (anything else is 404), at most 500 |
 | `/api/market/*` | FastAPI | session; free tier sees top 20 | 727-city yield radar, city sidecars by grain |
 | `/api/screener/*` | FastAPI | Pro feature flag | Discovery runs, approval queue, batch generate |
-| `/api/billing/checkout`, `/api/billing/portal` | FastAPI | session | Create Stripe Checkout or Portal session, return URL |
+| `/api/billing/checkout`, `/api/billing/portal` | FastAPI | session | Create Stripe Checkout or Portal session, return URL. **Pilot (ADR 0005 successor in progress):** `GET /api/billing/packs`, `POST /api/billing/checkout` (pack code + `Idempotency-Key`), `GET /api/billing/purchases[/{id}]`, Paddle packs per `PADDLE-INTEGRATION.md` §3 (RM-217); no portal |
 | `/api/billing/webhook` | FastAPI | Stripe signature | Webhook state machine (Section 3) |
 | `/api/admin/*` | FastAPI | `user.role = 'admin'` | Flags, overrides, credit adjustments (idempotent by a caller-chosen UUID), job inspection (metadata only, never arguments) |
 | `/healthz`, `/readyz` | FastAPI | internal only (Caddy blocks external) | Liveness; readiness checks DB and queue. A separate public \`/api/health\` (no DB) serves the uptime monitor |
@@ -254,6 +254,9 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `VISION_UNAVAILABLE` | OpenRouter 5xx or timeout after retries | `succeeded_degraded`: CAPEX marked unknown, confidence lowered | 3 attempts | captured |
 | `CONTEXT_UNAVAILABLE` | a market input the engine cannot run without is not configured (risk-free rate) or the market-data store failed (RM-187) | `failed_internal` + Better Stack error | none until the input exists | released |
 | `INTERNAL` | anything else | `failed_internal` + Better Stack error | Procrastinate retry once | released |
+| `BILLING_UNAVAILABLE` | billing is switched off or no approved catalog is loaded (the default) | 503 | none | n/a |
+| `IDEMPOTENCY_CONFLICT` | an `Idempotency-Key` was reused for a different pack | 409 | use a new key | n/a |
+| `BILLING_PROVIDER_ERROR` | the payment provider refused to start a purchase | 502 | try again with a new key | n/a |
 | `VALIDATION_ERROR` | request body, query or path fails Pydantic (`extra="forbid"`) | 422, field errors without echoing input | none | never reserved |
 | `NOT_FOUND` | unknown route, or a resource of another tenant (never 403) | 404 | none | never reserved |
 | `HTTP_ERROR` | other transport errors (405, 413, …) | as raised | none | never reserved |

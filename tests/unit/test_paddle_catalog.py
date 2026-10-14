@@ -211,7 +211,14 @@ async def test_creation_sends_exactly_one_item_of_quantity_one_with_only_our_ref
     await client_with(httpx.MockTransport(handler)).create_transaction(
         price_id="pri_one", custom_data={"purchase": "p1"}
     )
-    assert bodies == [{"items": [{"price_id": "pri_one", "quantity": 1}], "custom_data": {"purchase": "p1"}}]
+    assert bodies == [
+        {
+            "items": [{"price_id": "pri_one", "quantity": 1}],
+            "collection_mode": "automatic",
+            "currency_code": "PLN",
+            "custom_data": {"purchase": "p1"},
+        }
+    ]
 
 
 @pytest.mark.parametrize(

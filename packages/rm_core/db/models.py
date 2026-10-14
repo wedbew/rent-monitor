@@ -361,6 +361,105 @@ class ReportCreditAllocation(Base):
     state: Mapped[str] = mapped_column(String(10))
 
 
+class BillingPack(Base):
+    """One approved, immutable catalog version of a report pack (docs/PADDLE-INTEGRATION.md section 4).
+
+    A price or id change is a new `catalog_version`; sold versions are kept so historical payments can be
+    recognised. At most one active version per pack and environment.
+    """
+
+    __tablename__ = "billing_pack"
+    __table_args__ = (
+        CheckConstraint("code IN ('reports_1','reports_5','reports_10')", name="code_vocab"),
+        CheckConstraint(
+            "reports = CASE code WHEN 'reports_1' THEN 1 WHEN 'reports_5' THEN 5 ELSE 10 END",
+            name="reports_match_code",
+        ),
+        CheckConstraint("amount_minor > 0 AND currency = 'PLN'", name="price_positive_pln"),
+        CheckConstraint("environment IN ('sandbox','live')", name="environment_vocab"),
+        UniqueConstraint("environment", "price_id", name="uq_billing_pack_env_price"),
+        Index(
+            "uq_billing_pack_active",
+            "code",
+            "environment",
+            unique=True,
+            postgresql_where=text("active"),
+        ),
+    )
+
+    code: Mapped[str] = mapped_column(String(16), primary_key=True)
+    catalog_version: Mapped[int] = mapped_column(primary_key=True)
+    environment: Mapped[str] = mapped_column(String(8), primary_key=True)
+    reports: Mapped[int]
+    price_id: Mapped[str] = mapped_column(String(64))
+    amount_minor: Mapped[int] = mapped_column(comment="approved gross price in grosze")
+    currency: Mapped[str] = mapped_column(String(3), default="PLN", server_default="PLN")
+    active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class PurchaseState(StrEnum):
+    intent = "intent"
+    creating = "creating"
+    created = "created"
+    creation_unknown = "creation_unknown"
+    failed = "failed"
+    paid = "paid"
+    granted = "granted"
+    review = "review"
+    refunded = "refunded"
+
+
+class BillingPurchase(Base):
+    """One intent to buy a pack, from checkout creation to grant and refund (PADDLE-INTEGRATION.md §3-§6).
+
+    GDPR[personal-data]: `user_id` (nullable, SET NULL on account erasure so the accounting record survives),
+    `owner_ref` (sha256 of the user id, kept for accounting) and the provider's customer id. No buyer name,
+    address or NIP is stored here: Paddle's checkout collects them.
+    """
+
+    __tablename__ = "billing_purchase"
+    __table_args__ = (
+        CheckConstraint(
+            "state IN ('intent','creating','created','creation_unknown','failed','paid','granted','review',"
+            "'refunded')",
+            name="state_vocab",
+        ),
+        UniqueConstraint("user_id", "request_key", name="uq_purchase_user_request"),
+        UniqueConstraint("environment", "provider_txn_id", name="uq_purchase_env_txn"),
+        Index("ix_purchase_user_created", "user_id", text("created_at DESC")),
+        Index("ix_purchase_pending", "state", "lease_until"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4, server_default=_UUID_DEFAULT)
+    user_id: Mapped[str | None] = mapped_column(
+        Text, ForeignKey("app_user.id", ondelete="SET NULL"), comment="GDPR[personal-data]"
+    )
+    owner_ref: Mapped[str] = mapped_column(String(64), comment="GDPR[personal-data]: sha256 of the user id")
+    request_key: Mapped[UUID]
+    environment: Mapped[str] = mapped_column(String(8))
+    pack_code: Mapped[str] = mapped_column(String(16))
+    catalog_version: Mapped[int]
+    reports: Mapped[int]
+    amount_minor: Mapped[int]
+    currency: Mapped[str] = mapped_column(String(3), default="PLN", server_default="PLN")
+    price_id: Mapped[str] = mapped_column(String(64))
+    binding_hash: Mapped[str] = mapped_column(String(64))
+    state: Mapped[str] = mapped_column(String(20), default="intent", server_default="intent")
+    provider_txn_id: Mapped[str | None] = mapped_column(String(64))
+    checkout_url: Mapped[str | None] = mapped_column(Text)
+    customer_id: Mapped[str | None] = mapped_column(String(64), comment="GDPR[personal-data]")
+    provider_status: Mapped[str | None] = mapped_column(String(32))
+    grant_ledger_id: Mapped[int | None] = mapped_column(ForeignKey("credit_ledger.id"), unique=True)
+    error_code: Mapped[str | None] = mapped_column(String(40))
+    lease_until: Mapped[datetime | None]
+    paid_at: Mapped[datetime | None]
+    granted_at: Mapped[datetime | None]
+    refunded_at: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
 # ---------- Listings, audits, progress, saved ----------
 class AuditStatus(StrEnum):
     queued = "queued"

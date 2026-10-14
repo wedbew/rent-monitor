@@ -73,6 +73,7 @@ class Transaction(_Model):
     subscription_id: str | None = None
     custom_data: Mapping[str, Any] | None = None
     invoice_id: str | None = None
+    checkout_url: str | None = None
 
 
 class Adjustment(_Model):
@@ -137,6 +138,10 @@ class _RawItem(_Model):
     quantity: int = 0
 
 
+class _RawCheckout(_Model):
+    url: str | None = None
+
+
 class _RawTransaction(_Model):
     id: str
     status: str
@@ -149,6 +154,7 @@ class _RawTransaction(_Model):
     subscription_id: str | None = None
     custom_data: dict[str, object] | None = None
     invoice_id: str | None = None
+    checkout: _RawCheckout | None = None
 
 
 class _RawAdjustment(_Model):
@@ -185,6 +191,7 @@ def _transaction(raw: _RawTransaction) -> Transaction:
         subscription_id=raw.subscription_id,
         custom_data=raw.custom_data,
         invoice_id=raw.invoice_id,
+        checkout_url=raw.checkout.url if raw.checkout else None,
     )
 
 
@@ -307,7 +314,12 @@ class HttpPaddleClient:
         return [cls._validate(model, row) for row in cast("list[object]", data)]
 
     async def create_transaction(self, *, price_id: str, custom_data: Mapping[str, str]) -> Transaction:
-        body = {"items": [{"price_id": price_id, "quantity": 1}], "custom_data": dict(custom_data)}
+        body = {
+            "items": [{"price_id": price_id, "quantity": 1}],
+            "collection_mode": "automatic",
+            "currency_code": "PLN",
+            "custom_data": dict(custom_data),
+        }
         data = await self._call("POST", "/transactions", read=False, json=body)
         return _transaction(self._validate(_RawTransaction, data))
 
