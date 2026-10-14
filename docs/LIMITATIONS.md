@@ -54,7 +54,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Discovered:** 2026-10-11
 - **Affects:** `rm_worker.images` (host allow-list), `OpenRouterClient` budget estimate, release gate 4
 - **Evidence:** inferred (default hosts `olxcdn.com`, `otodom.pl` were not verified against a live listing; the per-call estimate of 0.02 USD is a placeholder)
-- **Description:** Photos are fetched only from allow-listed https host suffixes; if Otodom serves images from another host they are skipped (the audit then runs with fewer photos, or degraded). Redirects are never followed, so a CDN that redirects to another host is skipped too. The reservation estimate per OpenRouter call is not measured.
+- **Description:** The advert fields holding photo and floor plan URLs (`images`, `floorPlan`, with `large`/`medium`/`url`/`src`/`small` sizes) are inferred, not read from a live page (RM-244); a missing field yields no images and a degraded audit. Photos are fetched only from allow-listed https host suffixes; if Otodom serves images from another host they are skipped (the audit then runs with fewer photos, or degraded). Redirects are never followed, so a CDN that redirects to another host is skipped too. The reservation estimate per OpenRouter call is not measured.
 - **Workaround:** Set `IMAGE_HOST_ALLOWLIST` and `OPENROUTER_CALL_ESTIMATE_USD` from the first live run; skipped images are logged (`image_skipped`) without URLs.
 - **Target:** Verify with the contract test (RM-28) and measured COGS (L-003, RM-24)
 

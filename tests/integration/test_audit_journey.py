@@ -123,7 +123,7 @@ class Harness:
         self.sm = async_sessionmaker(engine, expire_on_commit=False)
 
     def services(self, *, timeout_s: float = 30.0, engine: EngineRunner | None = None) -> AuditServices:
-        extra = {} if engine is None else {"engine": engine}
+        extra: dict[str, Any] = {} if engine is None else {"engine": engine}
         return AuditServices(
             sessionmaker=self.sm, source=self.source, context=self.ctx, timeout_s=timeout_s, **extra
         )

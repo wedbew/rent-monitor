@@ -12,7 +12,13 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
-from deal_analyzer import FractionalOwnershipError, RentInput, analyse_listing, extract_listing
+from deal_analyzer import (
+    FractionalOwnershipError,
+    RentInput,
+    analyse_listing,
+    extract_listing,
+    parse_vision_output,
+)
 from rm_worker.engine_child import ChildEngine, EngineChildError
 from test_audit_journey import sale_ad
 
@@ -62,6 +68,27 @@ async def test_the_child_returns_exactly_what_the_in_process_engine_returns() ->
     from_child = await run(ChildEngine())
     assert from_child == in_process  # byte-identical money: Decimal both ways (invariant 4)
     assert from_child.model_dump_json() == in_process.model_dump_json()  # type: ignore[attr-defined]
+
+
+async def test_a_vision_answer_crosses_the_process_boundary_unchanged() -> None:
+    vision = parse_vision_output('{"condition": "refresh", "capex_adjustment": 0.4, "notes": "ok"}')
+    listing = extract_listing(sale_ad())
+    in_process = analyse_listing(
+        listing, rent=RENT, risk_free=RISK_FREE, vision=vision, model="vendor/v1", prompt_version="vision-1"
+    )
+    from_child = await ChildEngine().run(
+        listing,
+        rent=RENT,
+        risk_free=RISK_FREE,
+        timeout_s=30,
+        vision=vision,
+        model="vendor/v1",
+        prompt_version="vision-1",
+    )
+    assert from_child.model_dump_json() == in_process.model_dump_json()
+    assert from_child.vision is not None
+    assert from_child.vision.capex is not None
+    assert from_child.vision.capex.clamped  # 0.4 -> 0.15 (invariant 4)
 
 
 async def test_a_hung_engine_is_killed_at_the_deadline(child_env: Path) -> None:

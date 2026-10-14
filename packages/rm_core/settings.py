@@ -77,6 +77,12 @@ class Settings(BaseSettings):
     )
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     openrouter_monthly_budget_usd: Decimal = Field(default=Decimal("50"), ge=0)
+    # LEGAL[images]: kill switch for downloading listing photos and sending them to the vision model; off =
+    # audits run without vision (`succeeded_degraded`) and no image leaves the host (RM-244).
+    legal_images_enabled: bool = True
+    openrouter_vision_model: str = Field(  # placeholder until the first live run picks one (L-003, L-006)
+        default="google/gemini-2.5-flash", min_length=1, max_length=120
+    )
     openrouter_call_estimate_usd: Decimal = Field(
         default=Decimal("0.02"), ge=0
     )  # placeholder until L-003 is measured

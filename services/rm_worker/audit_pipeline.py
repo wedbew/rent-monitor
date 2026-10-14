@@ -40,7 +40,7 @@ from rm_core.db.models import Audit, AuditStatus, ListingSnapshot
 from rm_core.deadline import Deadline
 from rm_core.ledger import lock_owner, settle
 from rm_core.legal import LegalTag, tag_names
-from rm_core.progress import KIND_DONE, KIND_ERROR, emit, emit_stage
+from rm_core.progress import KIND_DONE, KIND_ERROR, KIND_PROGRESS, STAGE_PCT, emit, emit_stage
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -48,6 +48,7 @@ from rm_worker.clients.otodom import ListingGone, UpstreamBlocked, UpstreamSchem
 from rm_worker.context import ContextUnavailableError
 from rm_worker.engine_child import ChildEngine, EngineRunner
 from rm_worker.snapshot_service import ListingSource, get_snapshot
+from rm_worker.vision_stage import VisionAssessment, VisionAssessor
 
 log = structlog.get_logger(__name__)
 CAPTURED = frozenset({AuditStatus.succeeded, AuditStatus.succeeded_degraded})
@@ -71,6 +72,7 @@ class AuditServices:
     context: ContextProvider
     timeout_s: float = 900.0  # one deadline per audit (blueprint §6)
     engine: EngineRunner = field(default_factory=ChildEngine)  # killable child process, memory capped (#186)
+    vision: VisionAssessor | None = None  # None: no vision, every audit is `succeeded_degraded` (#244)
 
 
 @dataclass(frozen=True)
@@ -117,13 +119,49 @@ def _failure(exc: Exception) -> Outcome:
     return Outcome(AuditStatus.failed_internal, ProblemCode.INTERNAL)
 
 
-async def _progress(sm: async_sessionmaker[AsyncSession], audit_id: UUID, stage: str) -> None:
-    """A stage event for the live stream. Best effort: progress is a view, never a reason to fail an audit."""
+async def _progress(
+    sm: async_sessionmaker[AsyncSession],
+    audit_id: UUID,
+    stage: str,
+    message: str = "",
+    legal_tags: list[str] | None = None,
+) -> None:
+    """A stage event for the live stream. Best effort: progress is a view, never a reason to fail an audit.
+    Tagged stages carry their `legal_tags` in the event payload (names only, `rules/legal-tags.md`)."""
     try:
         async with sm() as db, db.begin():
-            await emit_stage(db, audit_id, stage)
+            if legal_tags:
+                await emit(
+                    db,
+                    audit_id,
+                    kind=KIND_PROGRESS,
+                    stage=stage,
+                    pct=STAGE_PCT[stage],
+                    payload={"message": message, "legal_tags": legal_tags},
+                )
+            else:
+                await emit_stage(db, audit_id, stage, message)
     except Exception:
         log.warning("audit.progress_failed", audit_id=str(audit_id), stage=stage, exc_info=True)
+
+
+async def _assess(
+    services: AuditServices, audit_id: UUID, ad: object, deadline: Deadline
+) -> VisionAssessment | None:
+    """Vision and OCR. Raises nothing but cancellation: any problem is a degraded audit, not a failed one."""
+    if services.vision is None:
+        return None
+    sm = services.sessionmaker
+    tags = tag_names(LegalTag.images, LegalTag.processor)
+
+    async def progress(stage: str, message: str) -> None:
+        await _progress(sm, audit_id, stage, message, tags)
+
+    try:
+        return await services.vision.assess(ad, audit_id=audit_id, deadline=deadline, progress=progress)
+    except Exception:
+        log.error("audit.vision_crashed", audit_id=str(audit_id), exc_info=True)
+        return None
 
 
 async def _analyse(services: AuditServices, audit_id: UUID, otodom_id: str) -> Outcome:
@@ -152,10 +190,22 @@ async def _analyse(services: AuditServices, audit_id: UUID, otodom_id: str) -> O
             await _progress(sm, audit_id, "context")
             rent = await services.context.rent_input(listing, deadline=deadline)
             risk_free = await services.context.risk_free_rate(deadline=deadline)
+            assessment = await _assess(services, audit_id, payload, deadline)
             await _progress(sm, audit_id, "synthesize")
-            analysis = await services.engine.run(
-                listing, rent=rent, risk_free=risk_free, timeout_s=deadline.remaining()
-            )
+            if assessment is None:
+                analysis = await services.engine.run(
+                    listing, rent=rent, risk_free=risk_free, timeout_s=deadline.remaining()
+                )
+            else:
+                analysis = await services.engine.run(
+                    listing,
+                    rent=rent,
+                    risk_free=risk_free,
+                    timeout_s=deadline.remaining(),
+                    vision=assessment.output,
+                    model=assessment.model,
+                    prompt_version=assessment.prompt_version,
+                )
     except Exception as exc:
         return _failure(exc)
     degraded = DEGRADING_WARNING in analysis.warnings
