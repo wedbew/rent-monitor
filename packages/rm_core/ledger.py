@@ -204,6 +204,29 @@ async def _grant(
     return True
 
 
+async def grant_paid_reports(
+    session: AsyncSession, user_id: str, units: int, *, key: str, purchase_id: UUID
+) -> tuple[bool, int]:
+    """Credit a verified purchase (docs/PADDLE-INTEGRATION.md section 4): a `topup` ledger row, the balance
+    and a lot linked to the purchase, in the caller's transaction. Idempotent by `key` (one grant per
+    provider transaction): returns (granted now, ledger id)."""
+    await session.execute(
+        insert(CreditAccount)
+        .values(user_id=user_id, balance=0)
+        .on_conflict_do_nothing(index_elements=["user_id"])
+    )
+    granted = await _grant(
+        session, user_id, units, reason=CreditReason.topup, key=key, note=f"purchase {purchase_id}"
+    )
+    if granted:
+        await session.execute(
+            update(ReportCreditLot).where(ReportCreditLot.grant_key == key).values(purchase_id=purchase_id)
+        )
+    ledger_id = await session.scalar(select(CreditLedger.id).where(CreditLedger.idempotency_key == key))
+    assert ledger_id is not None  # the row exists: inserted now or by the earlier grant  # noqa: S101
+    return granted, ledger_id
+
+
 async def admin_adjust(session: AsyncSession, user_id: str, delta: int, *, key: str, note: str) -> bool:
     """Operator credit change (idempotent by `key`). The balance can never go below zero (CHECK
     constraint)."""
