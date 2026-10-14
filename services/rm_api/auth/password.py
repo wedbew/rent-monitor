@@ -1,5 +1,5 @@
-"""Email and password registration (ADR 0013, docs/PASSWORD-AUTH-SPEC.md sections 1 to 5): `register`,
-`register/verify`, `register/resend`. Login is #204, recovery and change are #205.
+"""Email and password registration and login (ADR 0013, docs/PASSWORD-AUTH-SPEC.md sections 1 to 5):
+`register`, `register/verify`, `register/resend` (RM-203) and `login` (RM-204). Recovery and change are #205.
 
 No account exists until the mailed link is used. Registration stores a pending, single-use, purpose-bound
 token (SHA-256 at rest) with the Argon2id hash of the chosen password; the link creates the verified account,
@@ -15,7 +15,14 @@ from datetime import UTC, datetime, timedelta
 
 import structlog
 from fastapi import APIRouter, Request, Response
-from rm_contracts.auth import Accepted, MeOut, RegisterRequest, RegisterVerify, ResendRequest
+from rm_contracts.auth import (
+    Accepted,
+    LoginRequest,
+    MeOut,
+    RegisterRequest,
+    RegisterVerify,
+    ResendRequest,
+)
 from rm_contracts.problems import ProblemCode
 from rm_core.db.models import AuthToken, User, UserCredential
 from rm_core.ledger import ensure_credit_account
@@ -36,6 +43,9 @@ log = structlog.get_logger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 PURPOSE_REGISTER = "register"
+LOGIN_WINDOW_S = 900
+LOGIN_PER_EMAIL = 10  # per 15 minutes (spec section 5)
+LOGIN_PER_IP = 50
 REGISTER_PER_EMAIL = 5  # per hour (spec section 5)
 REGISTER_PER_IP = 20
 VERIFY_PER_IP = 30
@@ -50,13 +60,20 @@ def _hasher(request: Request) -> PasswordHasher:
 
 
 async def _throttle(
-    db: AsyncSession, request: Request, scope: str, email: str | None, *, per_email: int, per_ip: int
+    db: AsyncSession,
+    request: Request,
+    scope: str,
+    email: str | None,
+    *,
+    per_email: int,
+    per_ip: int,
+    window_s: int = HOUR_S,
 ) -> None:
     checks = [(f"{scope}:ip", _ip(request), per_ip)]
     if email is not None:
         checks.append((f"{scope}:email", email, per_email))
     for key, subject, limit in checks:
-        decision = await hit(db, key, subject, limit=limit, window_s=HOUR_S)
+        decision = await hit(db, key, subject, limit=limit, window_s=window_s)
         if not decision.allowed:
             await db.commit()  # the count must survive the refusal
             raise Problem.rate_limited(decision.retry_after_s)
@@ -180,4 +197,51 @@ async def register_verify(
     await ensure_credit_account(db, user.id, verified=True, signup_credits=settings.free_signup_credits)
     set_session_cookie(response, token, settings)
     log.info("sign_in", method="password_register", user_id=user.id)
+    return _me(user)
+
+
+def _invalid_credentials() -> Problem:
+    return Problem.unauthorized(ProblemCode.INVALID_CREDENTIALS, "Invalid email or password")
+
+
+@router.post("/login", response_model=MeOut)
+async def login(
+    body: LoginRequest, request: Request, response: Response, db: SessionDep, settings: SettingsDep
+) -> MeOut:
+    """One generic failure for every cause (wrong password, unknown address, an account with no password), and
+    a real hash check even for an unknown address, so neither the body nor the response time says which. A
+    throttle is not a lockout: past the limit the answer is 429, and the right password works again once the
+    window has passed."""
+    email = body.email.strip().lower()
+    await _throttle(
+        db, request, "login", email, per_email=LOGIN_PER_EMAIL, per_ip=LOGIN_PER_IP, window_s=LOGIN_WINDOW_S
+    )
+    await db.commit()  # keep the attempt count whatever follows
+    hasher = _hasher(request)
+    found = (
+        await db.execute(
+            select(User, UserCredential.password_hash)
+            .join(UserCredential, UserCredential.user_id == User.id)
+            .where(User.email == email)
+        )
+    ).one_or_none()
+    if found is None:
+        await hasher.verify_dummy(body.password)
+        raise _invalid_credentials()
+    user, stored = found
+    matches, replacement = await hasher.verify(body.password, stored)
+    if not matches:
+        raise _invalid_credentials()
+    if replacement is not None:  # parameters were raised since this hash was made: store the stronger one
+        await db.execute(
+            update(UserCredential)
+            .where(UserCredential.user_id == user.id, UserCredential.password_hash == stored)
+            .values(password_hash=replacement, updated_at=func.now())
+        )
+    token = await create_session(
+        db, user.id, user_agent=request.headers.get("user-agent"), ip=_ip(request), settings=settings
+    )
+    await ensure_credit_account(db, user.id, verified=True, signup_credits=settings.free_signup_credits)
+    set_session_cookie(response, token, settings)
+    log.info("sign_in", method="password", user_id=user.id)
     return _me(user)
