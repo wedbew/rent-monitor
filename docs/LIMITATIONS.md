@@ -139,6 +139,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none until implemented; parameters are settings, so they can be raised without a code change.
 - **Target:** #203 (parameters measured, blocklist chosen), #205; gate 7 session-revocation timing
 
+### L-020 — Paddle API response shapes are read from documentation only
+- **Status:** active
+- **Discovered:** 2026-10-14
+- **Affects:** `rm_core.paddle` (transaction totals, price and adjustment parsing), billing slices #217-#219
+- **Evidence:** inferred (Paddle developer documentation via Context7; no sandbox call has been made, B-003 style blocker for Paddle sandbox access)
+- **Description:** The client reads `data.details.totals.total` (falling back to `data.totals.total`), `unit_price.amount` as a string of minor units and `billing_cycle: null` for one-time prices. Documentation examples are not consistent about where totals sit, and webhook payloads are not modelled yet. Any difference found in the sandbox changes parsing, not the design.
+- **Workaround:** sales stay disabled (`BILLING_PROVIDER=disabled`); `verify_catalog` must pass against the sandbox before enabling.
+- **Target:** #220 (sandbox evidence), `test_paddle_pack_checkout_sandbox`
+
 ### L-014 — RPO 5 minutes and RTO 1 hour are targets, never measured
 - **Status:** active
 - **Discovered:** 2026-10-12

@@ -50,6 +50,18 @@ class Settings(BaseSettings):
     # Owner input until the macro source exists (ENGINE-SPEC row 9, N-12): PL 10Y yield as a fraction, e.g.
     # 0.055. Unset means audits end CONTEXT_UNAVAILABLE rather than run on an invented rate.
     risk_free_rate: Decimal | None = Field(default=None, gt=0, lt=1)
+    # Paddle report packs (docs/PADDLE-INTEGRATION.md). `disabled` needs no credentials and is the default.
+    billing_provider: Literal["disabled", "paddle"] = "disabled"
+    paddle_environment: Literal["sandbox", "live"] = "sandbox"
+    paddle_api_key: SecretStr = SecretStr("")
+    paddle_webhook_secret: SecretStr = SecretStr("")
+    paddle_client_token: str = ""  # public Paddle.js token for the Phase 2 checkout; never the API key
+    paddle_price_reports_1: str = ""  # the environment's approved `pri_...` ids
+    paddle_price_reports_5: str = ""
+    paddle_price_reports_10: str = ""
+    # Owner-approved gross amounts in PLN minor units, e.g. "reports_1=1000,reports_5=4000,reports_10=7000".
+    # No default: prices are the owner's decision, and sales stay off until all three are approved here.
+    paddle_approved_amounts: str = ""
     audit_child_memory_mb: int = Field(default=1024, ge=128)  # RLIMIT_AS of the engine child process (#186)
 
     openrouter_api_key: SecretStr = Field(  # blueprint §4.2 spells it OPEN_ROUTER_API_KEY
