@@ -7,6 +7,8 @@ with counsel. `LEGAL_SCRAPING_ENABLED=false` stops it without a deploy.
 LEGAL[third-party-data]: only a rent and an area per offer are kept; the sidecar payload holds aggregates.
 No listing id, title, seller, agency, phone or photo is stored (GDPR: nothing personal reaches the database).
 Invariant 2 (asking is not deed): rows belong to `otodom_rental` sidecars (price_basis 'rent') only.
+Invariant 3 (admin fee is OPEX, never income): in search results `rentPrice` is the czynsz (admin fee) and
+`totalPrice` is the advertised rent; only `totalPrice` is read (found by the first live import, RM-242).
 Safety: a thin or failed import never replaces data, so a city keeps its last good month.
 """
 
@@ -93,7 +95,7 @@ def parse_offers(search_ads: dict[str, Any]) -> tuple[list[tuple[int, StoredComp
             continue
         if item.get("estate") != "FLAT" or item.get("transaction") != "RENT" or item.get("hidePrice"):
             continue
-        offer_id, price = item.get("id"), _obj(item.get("rentPrice"))
+        offer_id, price = item.get("id"), _obj(item.get("totalPrice"))  # NOT rentPrice: that is the admin fee
         if isinstance(offer_id, bool) or not isinstance(offer_id, int) or price is None:
             continue
         if price.get("currency") != "PLN":

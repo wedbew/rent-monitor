@@ -26,7 +26,8 @@ def offer(offer_id: int = 1, rent: object = 3000, area: object = 50, **over: obj
         "transaction": "RENT",
         "hidePrice": False,
         "areaInSquareMeters": area,
-        "rentPrice": {"value": rent, "currency": "PLN"},
+        "totalPrice": {"value": rent, "currency": "PLN"},
+        "rentPrice": {"value": 700, "currency": "PLN"},  # the admin fee (czynsz): never a comparable rent
         "title": "x",
     }
     return base | over
@@ -65,8 +66,9 @@ def test_valid_offers_are_kept_with_decimal_money() -> None:
         offer(rent=100),  # below the plausibility floor
         offer(rent=3000, area=401),  # above the area bound
         offer(offer_id=True),
-        offer(rentPrice={"value": 3000, "currency": "EUR"}),
-        offer(rentPrice="3000"),
+        offer(totalPrice={"value": 3000, "currency": "EUR"}),
+        offer(totalPrice="3000"),
+        offer(totalPrice=None),
         "not an object",
         None,
     ],
@@ -167,3 +169,14 @@ async def test_unsafe_location_or_page_is_refused_before_any_request(location: s
     with pytest.raises(ValueError, match="invalid"):
         await client.fetch_rental_search(location, page_no, deadline=Deadline.after(30))
     assert transport.urls == []
+
+
+@pytest.mark.invariant
+def test_invariant_admin_fee_is_never_a_comparable_rent() -> None:
+    """Invariant 3: in search results `rentPrice` is the czynsz and `totalPrice` the advertised rent."""
+    found, _ = parse_offers(
+        {"items": [offer(1, rent=2000, area=42, rentPrice={"value": 700, "currency": "PLN"})]}
+    )
+    assert [str(c.monthly_rent_pln) for _, c in found] == ["2000"]
+    only_fee = offer(2, area=42, totalPrice=None, rentPrice={"value": 700, "currency": "PLN"})
+    assert parse_offers({"items": [only_fee]})[0] == []  # a fee alone must never become a rent
