@@ -1,6 +1,7 @@
-# Deploy runbook: private beta on the OVH VPS-1
+# Deploy runbook: private beta on the OVH VPS-3 (Frankfurt)
 
-Scope: one host (4 GB), Docker Compose, **private beta**: the API and Postgres listen on `127.0.0.1` only and are reached
+Scope: one host, the Frankfurt VPS-3 `vps-d1af13a5` (the Prague VPS-1 is stopped and not a target; first-deploy verification
+checklist: `docs/CLAUDE-DEPLOY-HANDOFF-2026-10-14.md`), Docker Compose, **private beta**: the API and Postgres listen on `127.0.0.1` only and are reached
 through an SSH tunnel. Public exposure (Caddy, TLS, DNS) is a separate, opt-in step that needs `docs/PRE-DEPLOYMENT.md` to be
 ticked first. Files: `deploy/compose.yml` (base), `deploy/compose.prod.yml` (VPS limits and hardening),
 `deploy/Caddyfile` (public profile), `scripts/check_env.py`, `scripts/journey_check.py`, `scripts/backup_db.sh`,
@@ -68,7 +69,7 @@ is readable, keeps 7 days. Restore drill, against a scratch database, never the 
 count matches. **Limits (L-014):** no offsite copy yet (R2 upload is credentialed and wired later), no WAL-G point-in-time
 recovery, so the RPO is the cron interval and no RTO has been measured on this host; release gate 6 stays open.
 
-## 5. Resource limits (VPS-1, 4 GB)
+## 5. Resource limits (the 4 GB values from the VPS-1 sizing; not yet raised for the VPS-3, a decision for #15)
 
 `compose.prod.yml`: postgres 1 G, api 512 M, worker-audit 1.5 G (the engine child is capped inside it by
 `AUDIT_CHILD_MEMORY_MB`), worker-ops 256 M, caddy 64 M; containers drop all capabilities, run read-only with a 64 MB `/tmp`

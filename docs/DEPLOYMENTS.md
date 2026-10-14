@@ -4,11 +4,18 @@ One row per deployment of a merged `staging` commit to a host. Evidence class ma
 listing and comparables, real API/queue/worker/Postgres/engine) is not **real provider** evidence (an owner-authorised live
 run). See `docs/RUNBOOK-DEPLOY.md`.
 
-## OVH VPS-1 (private beta)
+## OVH VPS-3, Frankfurt, `vps-d1af13a5` (private beta target)
+
+Owner correction, 2026-10-14: this is the beta target. Verification checklist: `docs/CLAUDE-DEPLOY-HANDOFF-2026-10-14.md`.
 
 | Date | Commit | Result | Journey evidence |
 |---|---|---|---|
-| none yet | | SSH to the host times out in the banner exchange; see `docs/BLOCKERS.md` B-016 | |
+| none yet | | not deployed; the deployment itself is tracked on #15 | |
+
+## OVH VPS-1, Prague, `vps-ee6fa92e` (stopped, not a target)
+
+SSH never completed on this host (`docs/BLOCKERS.md` B-016, which concerns it only). One Otodom request returned 200 from its
+IP on 2026-10-13 (L-002, L-005).
 
 ## Local Docker (developer machine, not the beta host)
 
