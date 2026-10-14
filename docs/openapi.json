@@ -345,6 +345,36 @@
         "title": "AuditSummary",
         "type": "object"
       },
+      "BillingHoldClear": {
+        "additionalProperties": false,
+        "description": "Staff resolved a billing review; the note is the record of why (logged with the admin's id).",
+        "properties": {
+          "note": {
+            "maxLength": 300,
+            "minLength": 10,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "note"
+        ],
+        "title": "BillingHoldClear",
+        "type": "object"
+      },
+      "BillingHoldOut": {
+        "properties": {
+          "cleared": {
+            "title": "Cleared",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cleared"
+        ],
+        "title": "BillingHoldOut",
+        "type": "object"
+      },
       "ChangePasswordRequest": {
         "additionalProperties": false,
         "properties": {
@@ -2340,6 +2370,61 @@
           }
         },
         "summary": "Inspect Jobs",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/users/{user_id}/billing-hold/clear": {
+      "post": {
+        "description": "End a billing review (units were consumed before a purchase was reversed). The note and the admin are\nlogged; reports already made stay readable, and nothing is claimed back.",
+        "operationId": "clear_hold_api_admin_users__user_id__billing_hold_clear_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingHoldClear"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingHoldOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Clear Hold",
         "tags": [
           "admin"
         ]

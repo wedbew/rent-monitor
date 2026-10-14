@@ -26,7 +26,7 @@ from rm_contracts.audits import (
 from rm_contracts.problems import ProblemCode
 from rm_core.db.models import Audit, AuditStatus, ChargeSource, ChargeState, Listing
 from rm_core.entitlements import load_entitlements
-from rm_core.ledger import record_reservation, reserve
+from rm_core.ledger import BillingHoldError, record_reservation, reserve
 from rm_core.listing_ref import InvalidListingRefError, parse_listing_ref
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
@@ -114,7 +114,12 @@ async def create_audit(
 
     audit_id = uuid4()
     ent = await load_entitlements(db, principal.user_id)
-    reservation = await reserve(db, principal.user_id, FEATURE, ent, audit_id=audit_id)
+    try:
+        reservation = await reserve(db, principal.user_id, FEATURE, ent, audit_id=audit_id)
+    except BillingHoldError:
+        raise Problem(
+            403, ProblemCode.BILLING_HOLD, "Your account is on a billing review; contact support"
+        ) from None
     if reservation is None:
         raise Problem(402, ProblemCode.QUOTA_EXHAUSTED, "No analyses left", upgrade_url="/billing")
 

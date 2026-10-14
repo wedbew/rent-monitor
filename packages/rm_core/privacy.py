@@ -40,6 +40,7 @@ from rm_core.db.models import (
     AuthIdentity,
     AuthToken,
     BillingEvent,
+    BillingPurchase,
     CreditAccount,
     CreditLedger,
     ErasureLog,
@@ -249,6 +250,11 @@ async def delete_account(session: AsyncSession, user_id: str) -> ErasureReport:
         select(StripeCustomer.stripe_customer_id).where(StripeCustomer.user_id == user_id)
     )
     email = await session.scalar(select(User.email).where(User.id == user_id))
+    # The purchase is an accounting record that outlives the account (its `user_id` becomes NULL), but the
+    # ledger rows it points at are erased with the account: drop that one reference first (GDPR[erasure]).
+    await session.execute(
+        update(BillingPurchase).where(BillingPurchase.user_id == user_id).values(grant_ledger_id=None)
+    )
     # FK cascade removes every tenant-owned row; RETURNING tells us whether this call really deleted the user.
     deleted_id = await session.scalar(delete(User).where(User.id == user_id).returning(User.id))
     if deleted_id is None:

@@ -25,19 +25,33 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from rm_core.billing import BINDING_KEY, RECOVERY_KEY, expire_stale_claims, hash_binding, recover_creation
-from rm_core.db.models import BillingEvent, BillingPurchase, PurchaseState
-from rm_core.ledger import grant_paid_reports, lock_user
+from rm_core.db.models import (
+    BillingAdjustment,
+    BillingEvent,
+    BillingPurchase,
+    PurchaseState,
+    ReportCreditLot,
+)
+from rm_core.ledger import grant_paid_reports, lock_user, restore_purchase, reverse_purchase
 from rm_core.paddle import Adjustment, PaddleClient, PaddleError, Transaction
 
 log = structlog.get_logger(__name__)
 LEASE = timedelta(seconds=60)
 MAX_ATTEMPTS = 8
 MAX_BACKOFF_S = 900
+REVERSAL_WATCH = timedelta(
+    days=60
+)  # how long after a grant a missed refund or chargeback is still looked for
+REVERSAL_RECHECK = timedelta(minutes=15)
 TRANSACTION_EVENTS = frozenset(
     {"transaction.completed", "transaction.updated", "transaction.payment_failed", "transaction.canceled"}
 )
 ADJUSTMENT_EVENTS = frozenset({"adjustment.created", "adjustment.updated"})
 REVERSING_ACTIONS = frozenset({"refund", "chargeback", "chargeback_warning", "credit"})
+CASH_REVERSALS = frozenset({"refund", "chargeback"})  # they take money back and count toward a full reversal
+REVERSAL_UNDONE = frozenset({"chargeback_reverse"})
+WARNINGS = frozenset({"chargeback_warning"})
+OPEN_STATUSES = frozenset({"pending_approval", "pending"})
 
 
 @dataclass(frozen=True)
@@ -271,6 +285,136 @@ async def apply_transaction(
     return await _settle_completed(sm, client, purchase, txn), purchase.id
 
 
+async def _record_adjustments(
+    sm: async_sessionmaker[AsyncSession], purchase_id: UUID, environment: str, adjustments: list[Adjustment]
+) -> None:
+    async with sm() as session, session.begin():
+        for a in adjustments:
+            await session.execute(
+                insert(BillingAdjustment)
+                .values(
+                    environment=environment,
+                    adjustment_id=a.id,
+                    purchase_id=purchase_id,
+                    action=a.action,
+                    type=a.type,
+                    status=a.status,
+                    total_minor=a.total_minor,
+                )
+                .on_conflict_do_update(
+                    constraint="uq_billing_adjustment_env_id",
+                    set_={"status": a.status, "total_minor": a.total_minor, "updated_at": func.now()},
+                )
+            )
+
+
+def net_reversed(adjustments: list[Adjustment]) -> tuple[int, bool, bool]:
+    """(approved cash reversed minus approved reversals-of-reversals, any open request, any chargeback
+    warning). Recomputed from the whole current set each time, so replays and ordering cannot double count."""
+    taken = sum(
+        a.total_minor or 0 for a in adjustments if a.action in CASH_REVERSALS and a.status == "approved"
+    )
+    undone = sum(
+        a.total_minor or 0 for a in adjustments if a.action in REVERSAL_UNDONE and a.status == "approved"
+    )
+    is_open = any(a.action in CASH_REVERSALS and a.status in OPEN_STATUSES for a in adjustments)
+    warned = any(a.action in WARNINGS and a.status != "rejected" for a in adjustments)
+    return max(0, taken - undone), is_open, warned
+
+
+def decide_effect(
+    state: str, error_code: str | None, amount: int, net: int, *, is_open: bool, warned: bool, has_owner: bool
+) -> str:
+    """The pure rule from the current net state: `reverse`, `freeze:<code>`, `restore`, `clear`, or `none`."""
+    refunded = state == PurchaseState.refunded
+    in_scope = state in (PurchaseState.granted, PurchaseState.refunded, PurchaseState.review)
+    contested = net > 0 or is_open or warned
+    code = "PARTIAL_REVERSAL" if net > 0 else "CHARGEBACK_WARNING" if warned else "REFUND_PENDING"
+    rules = (
+        (not in_scope, "none"),  # not granted yet: the grant itself looks at adjustments
+        (net >= amount and has_owner, "none" if refunded else "reverse"),
+        (
+            contested,
+            "none" if refunded else f"freeze:{code}",
+        ),  # part of a full reversal undone: wait for zero
+        (refunded and has_owner, "restore"),
+        (state == PurchaseState.review and error_code in FROZEN_CODES, "clear"),
+    )
+    return next((effect for applies, effect in rules if applies), "none")
+
+
+FROZEN_CODES = frozenset({"PARTIAL_REVERSAL", "CHARGEBACK_WARNING", "REFUND_PENDING"})
+
+
+async def _apply_net_effect(
+    sm: async_sessionmaker[AsyncSession], purchase_id: UUID, net: int, *, is_open: bool, warned: bool
+) -> str:
+    """One transaction under the fixed lock order: reverse, restore, freeze or clear, from the net state."""
+    async with sm() as session, session.begin():
+        owner = await session.scalar(select(BillingPurchase.user_id).where(BillingPurchase.id == purchase_id))
+        if owner is not None:
+            await lock_user(session, owner)
+        purchase = await session.scalar(
+            select(BillingPurchase).where(BillingPurchase.id == purchase_id).with_for_update()
+        )
+        assert purchase is not None  # noqa: S101
+        effect = decide_effect(
+            purchase.state,
+            purchase.error_code,
+            purchase.amount_minor,
+            net,
+            is_open=is_open,
+            warned=warned,
+            has_owner=owner is not None,
+        )
+        lot = await session.scalar(select(ReportCreditLot).where(ReportCreditLot.purchase_id == purchase_id))
+        if effect == "reverse":
+            await reverse_purchase(session, purchase_id)
+            purchase.state, purchase.refunded_at, purchase.error_code = (
+                PurchaseState.refunded,
+                func.now(),
+                None,
+            )
+        elif effect.startswith("freeze:"):
+            if lot is not None:
+                lot.frozen = True
+            purchase.state, purchase.error_code = PurchaseState.review, effect.split(":", 1)[1]
+        elif effect == "restore":
+            await restore_purchase(session, purchase_id)
+            purchase.state, purchase.refunded_at, purchase.error_code = PurchaseState.granted, None, None
+        elif effect == "clear":
+            if lot is not None and lot.reversed_at is None:
+                lot.frozen = False
+            purchase.state, purchase.error_code = PurchaseState.granted, None
+        return {"reverse": "reversed", "restore": "restored", "clear": "cleared", "none": "unchanged"}.get(
+            effect, "review"
+        )
+
+
+async def apply_reversals(
+    sm: async_sessionmaker[AsyncSession], client: PaddleClient, transaction_id: str, *, environment: str
+) -> tuple[str, UUID | None]:
+    """Apply refunds, chargebacks and their reversals as Paddle reports them now (docs/PADDLE-INTEGRATION.md
+    section 6). Returns (outcome, purchase id)."""
+    async with sm() as session:
+        purchase = await session.scalar(
+            select(BillingPurchase).where(
+                BillingPurchase.provider_txn_id == transaction_id, BillingPurchase.environment == environment
+            )
+        )
+    if purchase is None:
+        return "unknown", None
+    adjustments = await client.list_adjustments(transaction_id)
+    await _record_adjustments(sm, purchase.id, environment, adjustments)
+    net, is_open, warned = net_reversed(adjustments)
+    outcome = await _apply_net_effect(sm, purchase.id, net, is_open=is_open, warned=warned)
+    if outcome in {"review", "reversed"} and (warned or outcome == "review"):
+        sentry_sdk.capture_message(
+            f"billing reversal needs attention: purchase {purchase.id} -> {outcome}", level="warning"
+        )
+    return outcome, purchase.id
+
+
 async def process_event(sm: async_sessionmaker[AsyncSession], client: PaddleClient, event_pk: int) -> str:
     """Process one leased event. Transient failures keep it pending with a backoff; exhausting the attempts
     fails it loudly. Never raises for an expected business outcome."""
@@ -278,17 +422,20 @@ async def process_event(sm: async_sessionmaker[AsyncSession], client: PaddleClie
         event = await session.get(BillingEvent, event_pk)
     if event is None or event.status != "pending":
         return "skipped"
-    if event.event_type in ADJUSTMENT_EVENTS:
-        # Reversals are applied by the refund slice (#219); until then they are surfaced, never ignored.
-        await _finish_event(sm, event_pk, "review", error_code="ADJUSTMENT_UNHANDLED")
-        return "review"
-    if event.event_type not in TRANSACTION_EVENTS or not event.payload.get("transaction_id"):
+    known = event.event_type in TRANSACTION_EVENTS or event.event_type in ADJUSTMENT_EVENTS
+    if not known or not event.payload.get("transaction_id"):
         await _finish_event(sm, event_pk, "ignored")
         return "ignored"
+    transaction_id = str(event.payload["transaction_id"])
     try:
-        outcome, purchase_id = await apply_transaction(
-            sm, client, str(event.payload["transaction_id"]), environment=event.environment
-        )
+        if event.event_type in ADJUSTMENT_EVENTS:
+            outcome, purchase_id = await apply_reversals(
+                sm, client, transaction_id, environment=event.environment
+            )
+        else:
+            outcome, purchase_id = await apply_transaction(
+                sm, client, transaction_id, environment=event.environment
+            )
     except PaddleError:
         if event.attempts >= MAX_ATTEMPTS:
             sentry_sdk.capture_message(
@@ -343,6 +490,30 @@ async def reconcile_purchases(
                 )
             )
         ).all()
+    async with sm() as session:
+        settled = (
+            await session.scalars(
+                select(BillingPurchase).where(
+                    BillingPurchase.state.in_(
+                        (PurchaseState.granted, PurchaseState.refunded, PurchaseState.review)
+                    ),
+                    BillingPurchase.provider_txn_id.is_not(None),
+                    BillingPurchase.granted_at > func.now() - REVERSAL_WATCH,
+                    BillingPurchase.updated_at < func.now() - REVERSAL_RECHECK,
+                )
+            )
+        ).all()
+    for purchase in settled:  # a reversal whose notification never came; rechecked every REVERSAL_RECHECK
+        if purchase.provider_txn_id is None:
+            continue
+        try:
+            outcome, _ = await apply_reversals(
+                sm, client, purchase.provider_txn_id, environment=purchase.environment
+            )
+        except PaddleError:
+            outcome = "error"
+        await _mark(sm, purchase.id)  # bumps updated_at: the next check is one interval away
+        done[f"reversal:{outcome}"] = done.get(f"reversal:{outcome}", 0) + 1
     for purchase in unknown:
         await recover_creation(sm, client, purchase)
     for purchase in waiting:
