@@ -17,8 +17,8 @@ make ci          # everything CI runs: tests+coverage, invariants, migrations+sq
 make ci-full     # make ci + the Docker smoke test
 make hooks       # install git hooks incl. a pre-push that runs make ci-fast
 cp .env.example .env   # names only; fill values locally, never commit .env
-make up          # the WHOLE app in Docker: Postgres 17, bootstrap (migrations, queue schema, seed), API on :8000, worker
-make smoke       # build, start, check /api/health, /readyz, worker and seed, then stop
+make up          # the WHOLE app in Docker: Postgres 17, bootstrap (migrations, queue schema, seed), API on :8000, audit and ops workers
+make smoke       # build, start, check /api/health, /readyz, both workers and seed, then stop (Apple Silicon: DOCKER_DEFAULT_PLATFORM=linux/amd64, L-021)
 make down        # stop the containers (add -v via docker compose to drop the data volume)
 make dev         # only Postgres in Docker + bootstrap; run API/worker on the host with uv run
 make migrate     # alembic upgrade head against $DATABASE_URL (postgresql+psycopg://…)
@@ -35,12 +35,12 @@ set `POSTGRES_PORT` / `API_PORT` if 5432 / 8000 are taken; values come from `.en
 
 ## Stack
 
-Python ≥ 3.12 (uv workspace), FastAPI, Pydantic v2, structlog. SQLAlchemy 2.0 async + psycopg 3 + Alembic (ADR 0007), Procrastinate 3.x. Planned per blueprint: Stripe (card + BLIK), Caddy, Postgres 17, Better Stack monitoring (errors via the Sentry SDK, uptime, heartbeats; ADR 0009).
+Python ≥ 3.12 (uv workspace), FastAPI, Pydantic v2, structlog. SQLAlchemy 2.0 async + psycopg 3 + Alembic (ADR 0007), Procrastinate 3.x. Billing pilot: Paddle one-time report packs (`docs/PADDLE-INTEGRATION.md`, off by default). Planned per blueprint: Caddy, Postgres 17, Better Stack monitoring (errors via the Sentry SDK, uptime, heartbeats; ADR 0009).
 
 ## Status
 
 Phase 1 (backend only). The authoritative, dated delivery state, with evidence per journey step, is [`docs/STATUS.md`](docs/STATUS.md);
-it also separates "implemented" from "integrated" and "verified against a real provider". Open decisions: [`CONTEXT.md`](CONTEXT.md) §9.
+it also separates "implemented" from "integrated" and "verified against a real provider". Deployment: [`docs/RUNBOOK-DEPLOY.md`](docs/RUNBOOK-DEPLOY.md) and [`docs/DEPLOYMENTS.md`](docs/DEPLOYMENTS.md). Open decisions: [`CONTEXT.md`](CONTEXT.md) §9.
 
 ## Project docs
 
