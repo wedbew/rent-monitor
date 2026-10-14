@@ -208,6 +208,7 @@
     "heating": "urban",
     "kind": "SALE",
     "latitude": "52.2297",
+    "location_id": null,
     "longitude": "21.0122",
     "modified_at": "2026-10-01T08:30:00Z",
     "otodom_id": "90000004",

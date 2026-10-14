@@ -7,6 +7,7 @@ LEGAL[url-analysis]: only the short id parsed from the user's reference is ever 
 """
 
 from datetime import timedelta
+from typing import Any
 
 from rm_core.deadline import Deadline
 from rm_core.settings import Settings
@@ -39,6 +40,28 @@ class GatedListingSource:
         if not self._enabled:
             raise ScrapingDisabledError
         return await self._inner.fetch_listing(short_id, deadline=deadline, priority=priority)
+
+
+class GatedSearchSource:
+    """Search pages behind the same kill switch as listings (counsel can stop all Otodom fetches at once)."""
+
+    def __init__(self, inner: OtodomClient, *, enabled: bool) -> None:
+        self._inner, self._enabled = inner, enabled
+
+    async def fetch_rental_search(
+        self, location_id: str, page: int, *, deadline: Deadline, priority: Priority = "batch"
+    ) -> dict[str, Any]:
+        if not self._enabled:
+            raise ScrapingDisabledError
+        return await self._inner.fetch_rental_search(location_id, page, deadline=deadline, priority=priority)
+
+
+def build_search_source(
+    sessionmaker: async_sessionmaker[AsyncSession], settings: Settings
+) -> GatedSearchSource:
+    policy = PostgresHostPolicy(sessionmaker, REQUEST_INTERVAL)
+    client = OtodomClient(transport=CurlCffiTransport(), slots=policy, breaker=policy)
+    return GatedSearchSource(client, enabled=settings.legal_scraping_enabled)
 
 
 def build_listing_source(sessionmaker: async_sessionmaker[AsyncSession], settings: Settings) -> ListingSource:

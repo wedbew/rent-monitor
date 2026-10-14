@@ -126,7 +126,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Discovered:** 2026-10-13
 - **Affects:** `POST /api/audits`, `rm_worker.audit_pipeline`, `rm_worker.context`, `rm_worker.listing_source`
 - **Evidence:** confirmed (`tests/integration/test_audit_journey.py`, `test_audit_context.py` run with a fake HTTP transport and hand-built rental rows)
-- **Description:** Crash recovery, the killable engine child and the SSE stream are built and tested offline (RM-185, RM-186). The real Otodom client and market context are wired behind `AUDIT_PROVIDERS=real` (RM-187) but have only run against a fake transport; one live fetch was confirmed for payload shape (L-005). The comparable-rent store is **empty until importers exist**, so a real audit gets the engine's refused rent (rent 0, warning `rent_refused_too_few_comparables`). The risk-free rate is an owner-supplied `RISK_FREE_RATE` (unset: `CONTEXT_UNAVAILABLE`). The vision and OCR stages are not called, so every success is `succeeded_degraded` (`VISION_UNAVAILABLE`). The analyst audit is refused (403).
+- **Description:** Crash recovery, the killable engine child and the SSE stream are built and tested offline (RM-185, RM-186). The real Otodom client and market context are wired behind `AUDIT_PROVIDERS=real` (RM-187) but have only run against a fake transport; one live fetch was confirmed for payload shape (L-005). The comparable-rent store is filled on demand by the rental importer (RM-240, L-022); the first audit in a city still gets the engine's refused rent (rent 0, warning `rent_refused_too_few_comparables`). The risk-free rate is an owner-supplied `RISK_FREE_RATE` (unset: `CONTEXT_UNAVAILABLE`). The vision and OCR stages are not called, so every success is `succeeded_degraded` (`VISION_UNAVAILABLE`). The analyst audit is refused (403).
 - **Workaround:** none needed for a private beta; do not present results as market-grounded until rental importers and a rate source land.
 - **Target:** importers (#106 slice 2), rate source (N-12), vision/OCR integration, live evidence (level 3); docs/STATUS.md journey table
 
@@ -155,6 +155,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Description:** The client reads `data.details.totals.total` (falling back to `data.totals.total`), `unit_price.amount` as a string of minor units and `billing_cycle: null` for one-time prices. Documentation examples are not consistent about where totals sit, and webhook payloads are not modelled yet. Any difference found in the sandbox changes parsing, not the design.
 - **Workaround:** sales stay disabled (`BILLING_PROVIDER=disabled`); `verify_catalog` must pass against the sandbox before enabling.
 - **Target:** #220 (sandbox evidence), `test_paddle_pack_checkout_sandbox`
+
+### L-022 — Rental comparables are a sample of Otodom's first result pages, imported on demand
+- **Status:** active
+- **Discovered:** 2026-10-14
+- **Affects:** `rm_worker.importers.otodom_rental`, `MarketContext.rent_input`, rent estimate quality
+- **Evidence:** confirmed for the page shape (a live rent search for one city returned 200 with 36 offers a page under `pageProps.data.searchAds`, 2026-10-14); inferred for sampling bias and for sustained-load behaviour (L-002)
+- **Description:** each city and month imports at most the first 5 pages (about 180 offers) in Otodom's default order, so promoted offers may be over-represented and big cities are under-sampled. Rents are asking rents without the admin fee; only offers priced in PLN with a visible price are kept. A city is imported only after an audit asks for it, so the first audit in a new city gets the refused rent and the next one is grounded. A month with fewer than 10 usable offers is skipped and the previous month stays.
+- **Workaround:** none needed for a beta; a city list can be pre-imported by deferring `import_rental_city`.
+- **Target:** #209 (city list, coverage policy #49), accuracy evaluation #94
 
 ### L-014 — RPO 5 minutes and RTO 1 hour are targets, never measured
 - **Status:** active

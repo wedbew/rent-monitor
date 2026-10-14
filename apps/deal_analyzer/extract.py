@@ -5,6 +5,7 @@ are rejected with a typed `ExtractionError`.
 Free-text analysis (ownership, VAT) lives in the classifiers (RM-85).
 """
 
+import re
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any, cast
@@ -23,6 +24,9 @@ AREA_RANGE = (Decimal("1"), Decimal("2000"))
 FEE_RANGE = (Decimal("0"), Decimal("1000000"))
 POLAND_LAT = (Decimal("49.0"), Decimal("55.0"))
 POLAND_LNG = (Decimal("14.0"), Decimal("24.5"))
+
+
+_LOCATION_ID = re.compile(r"[a-z0-9-]+(/[a-z0-9-]+){0,3}")
 
 
 def _obj(value: object) -> dict[str, Any] | None:
@@ -136,6 +140,19 @@ def _city(ad: dict[str, Any]) -> str | None:
     return _clip(city.get("name"), 120)
 
 
+def _location_id(ad: dict[str, Any]) -> str | None:
+    """Otodom's path for the listing's city, if it is a safe slug path (appended to a fixed search URL)."""
+    location = _obj(ad.get("location")) or {}
+    levels = _list((_obj(location.get("reverseGeocoding")) or {}).get("locations")) or []
+    for level in levels[:20]:
+        entry = _obj(level)
+        if entry is not None and entry.get("locationLevel") == "city_or_village":
+            value = entry.get("id")
+            if isinstance(value, str) and len(value) <= 160 and _LOCATION_ID.fullmatch(value):
+                return value
+    return None
+
+
 def _street(ad: dict[str, Any]) -> str | None:
     address = _obj((_obj(ad.get("location")) or {}).get("address")) or {}
     return _clip((_obj(address.get("street")) or {}).get("name"), 160)
@@ -235,6 +252,7 @@ def extract_listing(ad: object) -> Listing:
         kind="SALE",
         **structured,
         city=city,
+        location_id=_location_id(root),
         street=street,
         latitude=lat,
         longitude=lng,

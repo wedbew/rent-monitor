@@ -11,6 +11,7 @@ from rm_core.settings import Settings
 from rm_worker.audit_pipeline import AuditServices
 from rm_worker.context import MarketContext
 from rm_worker.engine_child import ChildEngine
+from rm_worker.importers.demand import ProcrastinateImportQueue
 from rm_worker.listing_source import build_listing_source
 
 POOL = 2  # audit concurrency is 1; the extra connection serves the slot/breaker short transactions
@@ -23,7 +24,9 @@ def build_audit_services(settings: Settings) -> AuditServices | None:
     return AuditServices(
         sessionmaker=sessionmaker,
         source=build_listing_source(sessionmaker, settings),
-        context=MarketContext(sessionmaker, risk_free=settings.risk_free_rate),
+        context=MarketContext(
+            sessionmaker, risk_free=settings.risk_free_rate, import_queue=ProcrastinateImportQueue()
+        ),
         timeout_s=float(settings.audit_job_timeout_s),
         engine=ChildEngine(memory_mb=settings.audit_child_memory_mb),
     )
