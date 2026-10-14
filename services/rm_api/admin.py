@@ -13,6 +13,8 @@ from typing import Annotated, Literal
 import structlog
 from fastapi import APIRouter, Path, Query, Response
 from rm_contracts.me import (
+    BillingHoldClear,
+    BillingHoldOut,
     CreditAdjust,
     CreditAdjustOut,
     FlagKey,
@@ -25,7 +27,7 @@ from rm_contracts.me import (
 )
 from rm_contracts.problems import ProblemCode
 from rm_core.db.models import CreditAccount, FeatureFlag, FeatureOverride, User
-from rm_core.ledger import admin_adjust
+from rm_core.ledger import admin_adjust, clear_billing_hold, lock_user
 from sqlalchemy import delete, func, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
@@ -171,6 +173,25 @@ async def adjust_credits(body: CreditAdjust, db: SessionDep, admin: AdminDep) ->
         applied=applied,
     )
     return CreditAdjustOut(applied=applied, balance=int(balance or 0))
+
+
+@router.post("/users/{user_id}/billing-hold/clear", response_model=BillingHoldOut)
+async def clear_hold(
+    user_id: Annotated[str, Path(min_length=1, max_length=64)],
+    body: BillingHoldClear,
+    db: SessionDep,
+    admin: AdminDep,
+) -> BillingHoldOut:
+    """End a billing review (units were consumed before a purchase was reversed). The note and the admin are
+    logged; reports already made stay readable, and nothing is claimed back."""
+    if await db.get(User, user_id) is None:
+        raise Problem.not_found("User")
+    await lock_user(db, user_id)
+    cleared = await clear_billing_hold(db, user_id)
+    log.info(
+        "admin_action", admin=admin.user_id, action="billing_hold_clear", target=user_id, cleared=cleared
+    )
+    return BillingHoldOut(cleared=cleared)
 
 
 @router.get("/jobs", response_model=JobsOut)

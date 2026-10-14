@@ -268,6 +268,8 @@ class CreditReason(StrEnum):
     topup = "topup"
     reserve = "reserve"
     release = "release"
+    refund_revoke = "refund_revoke"  # units taken back after a provider refund or chargeback
+    refund_restore = "refund_restore"  # units given back after a chargeback was reversed
 
 
 class CreditAccount(Base):
@@ -278,6 +280,9 @@ class CreditAccount(Base):
 
     user_id: Mapped[str] = mapped_column(Text, user_fk(), primary_key=True)
     balance: Mapped[int] = mapped_column(default=0, server_default="0")
+    # Set when units were already consumed by the time a purchase was reversed (PADDLE-INTEGRATION.md §6):
+    # new reservations and purchases are refused until staff resolve it. Existing reports stay readable.
+    billing_hold: Mapped[str | None] = mapped_column(String(40))
 
 
 class CreditLedger(Base):
@@ -338,6 +343,8 @@ class ReportCreditLot(Base):
     consumed: Mapped[int] = mapped_column(default=0, server_default="0")
     revoked: Mapped[int] = mapped_column(default=0, server_default="0")
     frozen: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    reversed_at: Mapped[datetime | None] = mapped_column(comment="set while a refund or chargeback stands")
+    reversal_epoch: Mapped[int] = mapped_column(default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
@@ -487,6 +494,31 @@ class BillingEvent(Base):
     lease_until: Mapped[datetime | None]
     error_code: Mapped[str | None] = mapped_column(String(40))
     purchase_id: Mapped[UUID | None] = mapped_column(ForeignKey("billing_purchase.id", ondelete="SET NULL"))
+
+
+class BillingAdjustment(Base):
+    """An adjustment (refund, chargeback, credit) as Paddle last reported it for one of our purchases.
+
+    The effect on units is recomputed from the current set of adjustments, never from a single event, with
+    unique ledger keys per reversal epoch (docs/PADDLE-INTEGRATION.md section 6).
+    """
+
+    __tablename__ = "billing_adjustment"
+    __table_args__ = (
+        UniqueConstraint("environment", "adjustment_id", name="uq_billing_adjustment_env_id"),
+        Index("ix_billing_adjustment_purchase", "purchase_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    environment: Mapped[str] = mapped_column(String(8))
+    adjustment_id: Mapped[str] = mapped_column(String(64))
+    purchase_id: Mapped[UUID] = mapped_column(ForeignKey("billing_purchase.id"))
+    action: Mapped[str] = mapped_column(String(32))
+    type: Mapped[str] = mapped_column(String(16))
+    status: Mapped[str] = mapped_column(String(24))
+    total_minor: Mapped[int | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
 # ---------- Listings, audits, progress, saved ----------

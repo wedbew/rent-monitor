@@ -147,6 +147,7 @@ async def rig(migrated_url: str, google_keys: GoogleKeys, engine: AsyncEngine) -
         yield Rig(app, paddle, queue, engine)
     async with engine.begin() as conn:
         await conn.execute(text("DELETE FROM app.billing_event"))
+        await conn.execute(text("DELETE FROM app.billing_adjustment"))
         await conn.execute(
             text("UPDATE app.report_credit_lot SET purchase_id = NULL WHERE purchase_id IS NOT NULL")
         )
@@ -497,16 +498,22 @@ async def test_a_partial_or_open_reversal_before_the_grant_goes_to_review(
     assert await rig.balance(me["id"]) == 0
 
 
-async def test_adjustment_events_are_surfaced_until_the_refund_slice_applies_them(
+async def test_an_adjustment_event_with_nothing_standing_changes_nothing(
     rig: Rig, make_google_token: MakeToken
 ) -> None:
-    c, _ = await sign_in(rig.app, make_google_token)
+    c, me = await sign_in(rig.app, make_google_token)
     out = await rig.buy(c)
-    await rig.deliver(out["transaction_id"], "adjustment.created")
+    rig.complete(out["transaction_id"])
+    await rig.deliver(out["transaction_id"])
+    await rig.sweep()
+    await rig.deliver(out["transaction_id"], "adjustment.created")  # no adjustment exists at Paddle
     await rig.sweep()
     async with rig.sm() as s:
         row = await s.scalar(select(BillingEvent).order_by(BillingEvent.id.desc()).limit(1))
-    assert (row.status, row.error_code) == ("review", "ADJUSTMENT_UNHANDLED")  # type: ignore[union-attr]
+    assert row is not None
+    assert (row.status, row.event_type) == ("processed", "adjustment.created")
+    assert (await rig.purchase(out["purchase_id"])).state == "granted"
+    assert await rig.balance(me["id"]) == 5
 
 
 async def test_a_payment_completing_after_the_account_was_deleted_never_recreates_it(

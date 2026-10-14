@@ -25,7 +25,7 @@ from rm_core.billing import (
     gross_pln,
     recover_creation,
 )
-from rm_core.db.models import BillingPack, BillingPurchase, PurchaseState
+from rm_core.db.models import BillingPack, BillingPurchase, CreditAccount, PurchaseState
 from rm_core.paddle import PaddleClient
 from rm_core.ratelimit import hit
 from sqlalchemy import select
@@ -111,6 +111,10 @@ async def checkout(
         if not decision.allowed:
             await db.commit()  # the count must survive the refusal
             raise Problem.rate_limited(decision.retry_after_s)
+    if await db.scalar(select(CreditAccount.billing_hold).where(CreditAccount.user_id == principal.user_id)):
+        raise Problem(  # no payments for units the account cannot use while a billing review is open
+            403, ProblemCode.BILLING_HOLD, "Your account is on a billing review; contact support"
+        )
     pack = await db.scalar(
         select(BillingPack).where(
             BillingPack.code == body.pack_code,

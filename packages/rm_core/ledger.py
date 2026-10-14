@@ -38,6 +38,11 @@ class UnknownFeatureError(KeyError):
     """The feature has no price: refuse rather than charge zero."""
 
 
+class BillingHoldError(Exception):
+    """The account has a billing hold (units were consumed before a purchase was reversed): no new
+    reservation until staff resolve it."""
+
+
 @dataclass(frozen=True)
 class Reservation:
     audit_id: UUID
@@ -258,6 +263,8 @@ async def reserve(
             return Reservation(audit_id, feature, ChargeSource.plan, period.id, cost)
     if account is None:
         return None
+    if account.billing_hold is not None:
+        raise BillingHoldError
     await _cover_balance(session, account)
     lots = await _lots(
         session, user_id, spendable=True
@@ -293,10 +300,12 @@ async def record_reservation(session: AsyncSession, res: Reservation, user_id: s
 
 async def _settle_allocations(
     session: AsyncSession, user_id: str, audit_id: UUID, *, capture: bool, cost: int
-) -> None:
+) -> list[tuple[ReportCreditLot, int]]:
     """Move the audit's held units: reserved -> consumed on capture, reserved -> available (same lot) on
     release. An audit with no allocations (reserved before lots existed, or inserted outside the service) is
-    healed: a release returns its units to a `migration` lot, a capture needs no lot change."""
+    healed: a release returns its units to a `migration` lot, a capture needs no lot change. Returns the
+    units a release put back on a lot that a refund or chargeback has since reversed (the caller revokes
+    them in the same transaction)."""
     held = (
         await session.scalars(
             select(ReportCreditAllocation)
@@ -317,17 +326,23 @@ async def _settle_allocations(
                 )
             )
             await session.flush()
-        return
+        return []
+    back_on_reversed: list[tuple[ReportCreditLot, int]] = []
     for allocation in held:
         lot = await session.get_one(ReportCreditLot, allocation.lot_id, with_for_update=True)
         lot.reserved -= allocation.units
         if capture:
             lot.consumed += allocation.units
             allocation.state = "captured"
+            if lot.reversed_at is not None:  # a report was completed on units that were refunded meanwhile
+                await _hold(session, user_id, "REFUND_CONSUMED")
         else:
             lot.available += allocation.units
             allocation.state = "released"
+            if lot.reversed_at is not None:
+                back_on_reversed.append((lot, allocation.units))
     await session.flush()
+    return back_on_reversed
 
 
 async def settle(session: AsyncSession, audit_id: UUID, *, capture: bool) -> bool:
@@ -351,8 +366,9 @@ async def settle(session: AsyncSession, audit_id: UUID, *, capture: bool) -> boo
         return False
     user_id, source, period_id, analyst = claimed
     cost = FEATURE_COST["deal_audit_analyst" if analyst else "deal_audit"]
+    reversed_back: list[tuple[ReportCreditLot, int]] = []
     if source is ChargeSource.credit:
-        await _settle_allocations(session, user_id, audit_id, capture=capture, cost=cost)
+        reversed_back = await _settle_allocations(session, user_id, audit_id, capture=capture, cost=cost)
     if capture:
         return True
     if source is ChargeSource.plan and period_id is not None:
@@ -363,7 +379,122 @@ async def settle(session: AsyncSession, audit_id: UUID, *, capture: bool) -> boo
         await _grant(
             session, user_id, cost, reason=CreditReason.release, key=f"release:{audit_id}", audit_id=audit_id
         )
+        for lot, units in reversed_back:  # released and revoked together: the refund wins
+            revoke_key = f"refund_revoke:{lot.purchase_id}:{lot.reversal_epoch}:{audit_id}"
+            await _revoke(session, lot, units, ledger_ref=revoke_key)
     return True
+
+
+async def _hold(session: AsyncSession, user_id: str, reason: str) -> None:
+    await session.execute(
+        update(CreditAccount)
+        .where(CreditAccount.user_id == user_id, CreditAccount.billing_hold.is_(None))
+        .values(billing_hold=reason)
+    )
+
+
+async def _entry(
+    session: AsyncSession, user_id: str, delta: int, reason: CreditReason, *, ledger_ref: str, note: str
+) -> bool:
+    """One append-only ledger row and the matching balance move, idempotent by reference (no lot handling)."""
+    inserted = await session.scalar(
+        insert(CreditLedger)
+        .values(user_id=user_id, delta=delta, reason=reason, idempotency_key=ledger_ref, note=note)
+        .on_conflict_do_nothing(index_elements=["idempotency_key"])
+        .returning(CreditLedger.id)
+    )
+    if inserted is None:
+        return False
+    await session.execute(
+        update(CreditAccount)
+        .where(CreditAccount.user_id == user_id)
+        .values(balance=CreditAccount.balance + delta)
+    )
+    return True
+
+
+async def _revoke(session: AsyncSession, lot: ReportCreditLot, units: int, *, ledger_ref: str) -> None:
+    """Take `units` of this lot's available units back: lot counters, the cached balance and an append-only
+    negative ledger entry together. The balance cannot go negative: the units are part of it."""
+    if units <= 0:
+        return
+    note = f"purchase {lot.purchase_id}"
+    if await _entry(
+        session, lot.user_id, -units, CreditReason.refund_revoke, ledger_ref=ledger_ref, note=note
+    ):
+        lot.available -= units
+        lot.revoked += units
+        await session.flush()
+
+
+@dataclass(frozen=True)
+class Reversal:
+    revoked: int  # available units taken back now
+    in_flight: int  # units held by running audits: revoked when each is released
+    consumed: int  # units already spent on completed reports: a billing hold, not a debt
+
+
+async def reverse_purchase(session: AsyncSession, purchase_id: UUID) -> Reversal | None:
+    """A refund or chargeback of this purchase stands: freeze its lot, take its available units back with an
+    append-only entry, leave in-flight audits to settle (their released units are revoked then), and put the
+    account on billing hold if units were already consumed. Idempotent per reversal epoch. Needs the user
+    lock (`lock_user`). None if the purchase has no lot (never granted)."""
+    lot = await session.scalar(
+        select(ReportCreditLot).where(ReportCreditLot.purchase_id == purchase_id).with_for_update()
+    )
+    if lot is None:
+        return None
+    if lot.reversed_at is not None:
+        return Reversal(0, lot.reserved, 0)
+    lot.reversed_at = func.now()
+    lot.reversal_epoch += 1
+    lot.frozen = True
+    taken = lot.available
+    await _revoke(
+        session, lot, taken, ledger_ref=f"refund_revoke:{purchase_id}:{lot.reversal_epoch}:available"
+    )
+    if lot.consumed:
+        await _hold(session, lot.user_id, "REFUND_CONSUMED")
+    await session.flush()
+    return Reversal(taken, lot.reserved, lot.consumed)
+
+
+async def restore_purchase(session: AsyncSession, purchase_id: UUID) -> int:
+    """A chargeback was reversed: give back exactly the units this reversal took, once, and unfreeze the
+    lot. Never re-grants the original pack. Needs the user lock. Returns the units restored."""
+    lot = await session.scalar(
+        select(ReportCreditLot).where(ReportCreditLot.purchase_id == purchase_id).with_for_update()
+    )
+    if lot is None or lot.reversed_at is None:
+        return 0
+    taken = await session.scalar(
+        select(func.coalesce(-func.sum(CreditLedger.delta), 0)).where(
+            CreditLedger.reason == CreditReason.refund_revoke,
+            CreditLedger.idempotency_key.like(f"refund_revoke:{purchase_id}:{lot.reversal_epoch}:%"),
+        )
+    )
+    units = min(int(taken or 0), lot.revoked)
+    restore_ref = f"refund_restore:{purchase_id}:{lot.reversal_epoch}"
+    note = f"purchase {purchase_id}"
+    if units and await _entry(
+        session, lot.user_id, units, CreditReason.refund_restore, ledger_ref=restore_ref, note=note
+    ):
+        lot.revoked -= units
+        lot.available += units
+    lot.reversed_at = None
+    lot.frozen = False
+    await session.flush()
+    return units
+
+
+async def clear_billing_hold(session: AsyncSession, user_id: str) -> bool:
+    """Staff resolved a billing review (the caller logs who and why). True if a hold was removed."""
+    result = await session.execute(
+        update(CreditAccount)
+        .where(CreditAccount.user_id == user_id, CreditAccount.billing_hold.is_not(None))
+        .values(billing_hold=None)
+    )
+    return bool(getattr(result, "rowcount", 0))
 
 
 async def ledger_mismatches(session: AsyncSession) -> list[str]:
