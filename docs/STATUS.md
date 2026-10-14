@@ -11,7 +11,7 @@ fakes) · **3** provider-verified (authorised sandbox/live evidence) · **4** la
 
 | Step | Level | Evidence | Missing |
 |---|---|---|---|
-| Sign in (Google ID token, magic link, sessions) | 1 | `rm_api.auth`, `tests/integration/test_auth.py` (#147); used by the journey test; email/password registration and verification (RM-203, `tests/integration/test_password_register.py`, 17 tests), login, recovery and change follow in #204, #205 | Real Google and Resend never exercised (B-004); level 3 open |
+| Sign in (Google ID token, magic link, sessions) | 1 | `rm_api.auth`, `tests/integration/test_auth.py` (#147); used by the journey test; email/password registration and verification (RM-203, `tests/integration/test_password_register.py`, 17 tests) and password login (RM-204, `tests/integration/test_password_login.py`, 9 tests); recovery and change follow in #205 | Real Google and Resend never exercised (B-004); level 3 open |
 | Parse and bound the listing reference | 2 | `rm_core.listing_ref` behind `POST /api/audits` (422 on SSRF-style refs) | none offline |
 | Reserve credit, capture/release | 2 | `rm_core.ledger` called by the route and the worker; `tests/integration/test_audit_journey.py` | Plan-allowance path through the audit route is unit-tested in `test_ledger.py` only |
 | Queue the analysis | 2 | `ProcrastinateEmailQueue.run_audit` defers `run_audit`; the test runs a real worker on the `audit` queue | Defer failure recovered by `reconcile_queued_audits` (RM-186, real Postgres + worker); proven offline only |
