@@ -12,6 +12,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 - The product is called **Renti**: mail subjects and bodies, the mail sender display name, the API title and the OSM user agent default now come from the `APP_NAME` setting (default `Renti`; new env name in `.env.example`). Operator action: set `MAIL_FROM` display name to `Renti <noreply@renti.tech>` on the host. Code identifiers, directories, cookie and container names (`rm_*`, `rentmonitor`) are unchanged; `design/`, `frontend/` and the agent rule files are not touched
 
 ### Fixed
+- Rental importer read Otodom's admin fee (`rentPrice`) as the rent; it now reads the advertised rent (`totalPrice`). A new invariant test keeps the fee out of the comparables. Operator action: re-run the import for any city imported with RM-240 (the month's sidecar is replaced, no manual cleanup) (RM-242)
 - `deploy/setup-server.sh`: the SSH key is read from `/tmp/deploy_key.pub` (an environment variable did not survive `sudo`, so no key was installed), the sshd drop-in is `00-rentmonitor.conf` so it overrides OVH's `50-cloud-init.conf` and password login really is disabled, and apt runs non-interactively; **operator action:** copy your public key to `/tmp/deploy_key.pub` before running it (RM-195)
 
 ### Fixed

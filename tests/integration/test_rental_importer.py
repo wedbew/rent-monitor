@@ -39,7 +39,8 @@ def offers(first_id: int, count: int, *, ppm2: int = 60, area: int = 48) -> list
             "transaction": "RENT",
             "hidePrice": False,
             "areaInSquareMeters": area + n % 5,
-            "rentPrice": {"value": (area + n % 5) * (ppm2 + n % 4), "currency": "PLN"},
+            "totalPrice": {"value": (area + n % 5) * (ppm2 + n % 4), "currency": "PLN"},
+            "rentPrice": {"value": 650, "currency": "PLN"},  # admin fee, must be ignored
             "title": "Mieszkanie",
             "agency": {"name": "Seller Name", "phone": "+48000000000"},
         }
