@@ -111,7 +111,7 @@ Target WCAG 2.2 AA and verify the actual implementation, not just the component 
 
 ## Component catalog as an implementation tool
 
-Use Storybook for a small living catalog, with mocked network states where relevant. This gives Claude a reliable place to inspect variants before building a page. Each shared component/pattern should show realistic Polish labels and long values, not just “Button” and lorem ipsum.
+Start the catalog with the first shared primitives (#270), not in the foundation scaffold. Use Storybook for a small living catalog, with mocked network states where relevant. This gives Claude a reliable place to inspect variants before building a page. Each shared component/pattern should show realistic Polish labels and long values, not just “Button” and lorem ipsum.
 
 Minimum examples: default, keyboard focus, disabled/busy, invalid/error, empty/loading and dark theme as applicable. Add RTL only if language scope requires it, but do not hardcode avoidable directional assumptions. Include a narrow viewport and 200% zoom review of dense patterns.
 

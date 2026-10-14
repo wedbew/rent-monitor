@@ -63,6 +63,7 @@ it also separates "implemented" from "integrated" and "verified against a real p
 | [`docs/RESEND-SPEC.md`](docs/RESEND-SPEC.md) | Transactional email: wiring, catalog, bounces, domain checklist (spec) |
 | [`docs/openapi.json`](docs/openapi.json) | Generated OpenAPI schema (`scripts/gen_openapi.py`); a test fails if it drifts from the app |
 | [`docs/RUNBOOK-GDPR.md`](docs/RUNBOOK-GDPR.md) | Retention, erasure, export, restore re-erasure |
+| [`docs/FRONTEND-PLAN.md`](docs/FRONTEND-PLAN.md) | Phase 2 frontend plan: V2 handoff verification, API smoke and samples first, e2e coverage gate, issues #263-#286 |
 | [`design/`](design/README.md) | Phase 2 design direction: interactive prototype, principles, spec (#44 input) |
 | [`docs/BLOCKERS.md`](docs/BLOCKERS.md) | Owner-only blockers agents stop on |
 | [`docs/BACKLOG.md`](docs/BACKLOG.md) | Blueprint → issue traceability |
