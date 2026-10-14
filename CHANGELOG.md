@@ -4,6 +4,10 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+- Rental-comparables importer: `import_rental_city` (queue `batch`, retried with backoff) reads up to 5 Otodom flat-for-rent result pages for a city and stores one `otodom_rental` sidecar per city and month with a rent and an area per offer (no seller, id or text kept). An audit that finds no rents for the current month queues the import (one job per city and month); that audit still gets the honest refused rent. A thin or blocked import never replaces the previous month. Search fetches obey `LEGAL_SCRAPING_ENABLED`, the 1 req/s host slot and the circuit breaker. Operator action: none; the `worker-ops` lane already serves `batch` (RM-240)
+- `Listing.location_id`: Otodom's city path, validated as a slug path, used to find a city's rental results (RM-240)
+
 ### Changed
 - The product is called **Renti**: mail subjects and bodies, the mail sender display name, the API title and the OSM user agent default now come from the `APP_NAME` setting (default `Renti`; new env name in `.env.example`). Operator action: set `MAIL_FROM` display name to `Renti <noreply@renti.tech>` on the host. Code identifiers, directories, cookie and container names (`rm_*`, `rentmonitor`) are unchanged; `design/`, `frontend/` and the agent rule files are not touched
 

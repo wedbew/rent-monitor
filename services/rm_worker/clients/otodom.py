@@ -1,7 +1,8 @@
 """Otodom listing fetcher: injectable transport, 1 req/s shared slots, bounded retries, circuit breaker.
 
 LEGAL[scraping]: fetches Otodom listing pages with browser TLS impersonation; ToS exposure (RM-22).
-LEGAL[url-analysis]: only ever requests a URL built from a validated short id, never a user-supplied URL.
+LEGAL[url-analysis]: only ever requests a URL built from a validated short id or location slug path, never a
+user-supplied URL.
 GDPR[personal-data]: the returned ad may contain seller names or phones; stored as a snapshot (RM-30).
 Tests inject a fake transport; nothing here is exercised against the live site in CI.
 """
@@ -34,6 +35,8 @@ _NEXT_DATA = re.compile(
 )
 _CHALLENGE_MARKERS = ("captcha", "cf-challenge", "just a moment", "datadome", "access denied")
 Priority = Literal["interactive", "batch"]
+LOCATION_PATH = re.compile(r"[a-z0-9-]+(/[a-z0-9-]+){0,3}")
+MAX_SEARCH_PAGE = 50
 
 
 class FetchError(Exception):
@@ -102,8 +105,8 @@ def parse_retry_after(value: str | None, now: datetime | None = None) -> float |
     return max(0.0, (when - (now or datetime.now(UTC))).total_seconds())
 
 
-def classify(raw: RawResponse) -> dict[str, Any]:
-    """Return the `ad` object or raise the typed error for this response."""
+def _check_status(raw: RawResponse) -> float | None:
+    """Raise the typed error for a non-200 response; otherwise return the Retry-After hint, if any."""
     if raw.status in {404, 410}:
         raise ListingGone(f"HTTP {raw.status}")
     retry_after = parse_retry_after(raw.headers.get("retry-after"))
@@ -113,8 +116,10 @@ def classify(raw: RawResponse) -> dict[str, Any]:
         raise UpstreamBlocked(f"HTTP {raw.status}", retry_after_s=retry_after)
     if raw.status != 200:
         raise UpstreamBlocked(f"unexpected HTTP {raw.status}", retry_after_s=retry_after)
-    if "/oferta/" not in urlsplit(raw.final_url).path:
-        raise ListingGone("redirected away from the listing")  # expired listings redirect to a search page
+    return retry_after
+
+
+def _page_props(raw: RawResponse, retry_after: float | None) -> dict[str, Any]:
     text = raw.body.decode("utf-8", errors="replace")
     match = _NEXT_DATA.search(text)
     if not match:
@@ -123,13 +128,37 @@ def classify(raw: RawResponse) -> dict[str, Any]:
         raise UpstreamBlocked(f"missing __NEXT_DATA__{suffix}", retry_after_s=retry_after)
     try:
         envelope: Any = json.loads(match.group("json"))
-        ad: Any = envelope["props"]["pageProps"]["ad"]
+        props: Any = envelope["props"]["pageProps"]
     except (ValueError, KeyError, TypeError) as exc:
-        raise UpstreamSchemaDrift("listing payload has no props.pageProps.ad") from exc
-    ad_obj = cast("dict[str, Any]", ad)
-    if not isinstance(ad, dict) or not ad_obj.get("id"):
+        raise UpstreamSchemaDrift("page has no props.pageProps") from exc
+    if not isinstance(props, dict):
+        raise UpstreamSchemaDrift("props.pageProps is not an object")
+    return cast("dict[str, Any]", props)
+
+
+def classify(raw: RawResponse) -> dict[str, Any]:
+    """Return the `ad` object or raise the typed error for this response."""
+    retry_after = _check_status(raw)
+    if "/oferta/" not in urlsplit(raw.final_url).path:
+        raise ListingGone("redirected away from the listing")  # expired listings redirect to a search page
+    props = _page_props(raw, retry_after)
+    ad: Any = props.get("ad")
+    if not isinstance(ad, dict) or not cast("dict[str, Any]", ad).get("id"):
         raise UpstreamSchemaDrift("listing ad is not an object with an id")
-    return ad_obj
+    return cast("dict[str, Any]", ad)
+
+
+def classify_search(raw: RawResponse) -> dict[str, Any]:
+    """Return `pageProps.data.searchAds` of a search results page or raise the typed error."""
+    retry_after = _check_status(raw)
+    if "/wyniki/" not in urlsplit(raw.final_url).path:
+        raise UpstreamSchemaDrift("search was redirected away from the results page")
+    props = _page_props(raw, retry_after)
+    data: Any = props.get("data")
+    ads: Any = cast("dict[str, Any]", data).get("searchAds") if isinstance(data, dict) else None
+    if not isinstance(ads, dict):
+        raise UpstreamSchemaDrift("search page has no data.searchAds")
+    return cast("dict[str, Any]", ads)
 
 
 @dataclass
@@ -145,21 +174,39 @@ class OtodomClient:
         self, short_id: str, *, deadline: Deadline, priority: Priority = "interactive"
     ) -> FetchedListing:
         url = f"{self.base_url}/pl/oferta/{short_id}"
+        ad = await self._fetch(url, classify, deadline, priority)
+        return FetchedListing(otodom_id=short_id, url=url, ad=ad, content_sha256=content_hash(ad))
+
+    async def fetch_rental_search(
+        self, location_id: str, page: int, *, deadline: Deadline, priority: Priority = "batch"
+    ) -> dict[str, Any]:
+        """One page of flat-for-rent results for an Otodom location path (a validated slug path, never a
+        user-supplied URL). Same throttle, breaker and retry rules as listings."""
+        if not LOCATION_PATH.fullmatch(location_id) or not 1 <= page <= MAX_SEARCH_PAGE:
+            raise ValueError("invalid search location or page")
+        url = f"{self.base_url}/pl/wyniki/wynajem/mieszkanie/{location_id}?page={page}"
+        return await self._fetch(url, classify_search, deadline, priority)
+
+    async def _fetch(
+        self,
+        url: str,
+        parse: Callable[[RawResponse], dict[str, Any]],
+        deadline: Deadline,
+        priority: Priority,
+    ) -> dict[str, Any]:
         headers = {"accept": "text/html,application/xhtml+xml", "accept-language": "pl-PL,pl;q=0.9,en;q=0.5"}
         for attempt in range(1, MAX_ATTEMPTS + 1):
             await self._guard_breaker()
             await self._wait_for_slot(priority, deadline)
             try:
                 raw = await self.transport.get(url, headers=headers, total_s=deadline.cap(READ_TIMEOUT_S))
-                ad = classify(raw)
+                return parse(raw)
             except UpstreamBlocked as exc:
                 delay = self._delay(attempt, exc.retry_after_s)
                 if attempt == MAX_ATTEMPTS or not exc.retryable or delay >= deadline.remaining():
                     await self.breaker.trip(HOST, "upstream_blocked")
                     raise
                 await self.sleep(delay)
-                continue
-            return FetchedListing(otodom_id=short_id, url=url, ad=ad, content_sha256=content_hash(ad))
         raise AssertionError("unreachable")  # pragma: no cover
 
     def _delay(self, attempt: int, retry_after_s: float | None) -> float:

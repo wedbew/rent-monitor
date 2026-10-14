@@ -336,3 +336,32 @@ def test_hostile_values_in_known_slots_never_crash(key: str, value: object) -> N
         return
     with contextlib.suppress(ExtractionError, RentNotADealError):
         extract_listing(ad)
+
+
+def _with_city_path(city_id: object) -> Listing:
+    ad = make_ad()
+    ad["location"]["reverseGeocoding"] = {
+        "locations": [
+            {"locationLevel": "voivodeship", "name": "x", "id": "kujawsko--pomorskie"},
+            {"locationLevel": "city_or_village", "name": "Toruń", "id": city_id},
+        ]
+    }
+    return extract_listing(ad)
+
+
+def test_the_otodom_city_path_is_kept_for_the_market_importer() -> None:
+    assert _with_city_path("kujawsko--pomorskie/torun/torun/torun").location_id == (
+        "kujawsko--pomorskie/torun/torun/torun"
+    )
+
+
+@pytest.mark.parametrize(
+    "unsafe",
+    ["../../etc", "a b", "A/B", "x?y=1", "https://evil.test", "a/b/c/d/e", "", 5, None, "x" * 200],
+)
+def test_an_unsafe_city_path_is_dropped_not_trusted(unsafe: object) -> None:
+    assert _with_city_path(unsafe).location_id is None
+
+
+def test_a_listing_without_geocoding_has_no_city_path() -> None:
+    assert extract_listing(make_ad()).location_id is None
