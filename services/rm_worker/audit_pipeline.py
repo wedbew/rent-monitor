@@ -38,7 +38,7 @@ from deal_analyzer import (
 from rm_contracts.problems import ProblemCode
 from rm_core.db.models import Audit, AuditStatus, ListingSnapshot
 from rm_core.deadline import Deadline
-from rm_core.ledger import settle
+from rm_core.ledger import lock_owner, settle
 from rm_core.legal import LegalTag, tag_names
 from rm_core.progress import KIND_DONE, KIND_ERROR, emit, emit_stage
 from sqlalchemy import func, select, update
@@ -189,6 +189,9 @@ async def _finish(sm: async_sessionmaker[AsyncSession], audit_id: UUID, out: Out
             "schema_version": a.schema_version,
         }
     async with sm() as db, db.begin():
+        await lock_owner(
+            db, audit_id
+        )  # the owner's credit lock comes before the audit row (fixed lock order)
         ended = await db.scalar(
             update(Audit)
             .where(Audit.id == audit_id, Audit.status == AuditStatus.running)

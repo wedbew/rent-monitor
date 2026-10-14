@@ -29,7 +29,7 @@ from procrastinate import exceptions as procrastinate_exceptions
 from rm_contracts.jobs import AUDIT_QUEUE, RUN_AUDIT_TASK
 from rm_core.db.models import Audit, AuditStatus
 from rm_core.db.session import make_engine, make_sessionmaker
-from rm_core.ledger import settle
+from rm_core.ledger import lock_owner, settle
 from rm_core.progress import KIND_ERROR, emit
 from rm_core.settings import get_settings
 from sqlalchemy import ColumnElement, and_, func, or_, select, update
@@ -64,6 +64,9 @@ def _stale(job_timeout_s: float) -> ColumnElement[bool]:
 async def _fail(sm: async_sessionmaker[AsyncSession], audit_id: UUID, job_timeout_s: float) -> bool:
     """Fail one stale audit and release its charge, atomically. False if it was no longer stale."""
     async with sm() as db, db.begin():
+        await lock_owner(
+            db, audit_id
+        )  # the owner's credit lock comes before the audit row (fixed lock order)
         ended = await db.scalar(
             update(Audit)
             .where(Audit.id == audit_id, _stale(job_timeout_s))
