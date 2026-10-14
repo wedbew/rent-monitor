@@ -259,6 +259,8 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `BILLING_PROVIDER_ERROR` | the payment provider refused to start a purchase | 502 | try again with a new key | n/a |
 | `INVALID_WEBHOOK_SIGNATURE` | the Paddle notification is not signed by the configured secret, or its timestamp is outside the tolerance | 400 | Paddle retries | n/a |
 | `BILLING_HOLD` | units were already spent when a purchase was reversed: new reservations and purchases wait for staff | 403 | contact support | n/a |
+| `PURCHASE_NOT_REFUNDABLE` | a refund was asked for a purchase that is not granted (or has no owner or lot) | 409 | none | n/a |
+| `REFUND_NEEDS_REVIEW` | the pack has spent or running units, so support decides manually | 409 | none | n/a |
 | `VALIDATION_ERROR` | request body, query or path fails Pydantic (`extra="forbid"`) | 422, field errors without echoing input | none | never reserved |
 | `NOT_FOUND` | unknown route, or a resource of another tenant (never 403) | 404 | none | never reserved |
 | `HTTP_ERROR` | other transport errors (405, 413, …) | as raised | none | never reserved |

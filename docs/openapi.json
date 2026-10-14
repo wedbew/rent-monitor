@@ -1100,6 +1100,20 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "InvoiceOut": {
+        "description": "A link to the document Paddle issued for this sale. Short-lived: fetched on demand, never stored.",
+        "properties": {
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "InvoiceOut",
+        "type": "object"
+      },
       "JobOut": {
         "description": "Metadata only: job arguments are never returned (they can hold addresses and login tokens, L-011).",
         "properties": {
@@ -1683,6 +1697,53 @@
         "title": "PurchasesOut",
         "type": "object"
       },
+      "RefundOut": {
+        "properties": {
+          "adjustment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustment Id"
+          },
+          "status": {
+            "enum": [
+              "requested",
+              "exists",
+              "unknown"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "adjustment_id"
+        ],
+        "title": "RefundOut",
+        "type": "object"
+      },
+      "RefundRequest": {
+        "additionalProperties": false,
+        "description": "Support's reason, sent to Paddle with the request (never shown to the buyer by us).",
+        "properties": {
+          "reason": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "RefundRequest",
+        "type": "object"
+      },
       "RegisterRequest": {
         "additionalProperties": false,
         "description": "GDPR[personal-data]: the address and a password that is hashed before it is stored.",
@@ -2058,6 +2119,60 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/admin/billing/purchases/{purchase_id}/refund": {
+      "post": {
+        "description": "Ask Paddle to refund an **unused** pack in full. The lot is frozen and a durable intent written\nfirst; a pack with spent or running units goes to manual review instead. The units are taken back only\nwhen Paddle reports the refund approved. Repeating the call never creates a second refund.",
+        "operationId": "refund_purchase_api_admin_billing_purchases__purchase_id__refund_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Purchase Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refund Purchase",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/api/admin/credits/adjust": {
       "post": {
         "description": "Add or remove credits. Repeating the same `idempotency_key` changes nothing and reports `applied:\nfalse`.",
@@ -3224,6 +3339,50 @@
           }
         },
         "summary": "Get Purchase",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/billing/purchases/{purchase_id}/invoice": {
+      "get": {
+        "description": "The seller's document for this sale, obtained from Paddle on demand after the ownership check.\nPaddle is the seller and issues it; RentMonitor issues no second customer invoice for the same sale.",
+        "operationId": "get_invoice_api_billing_purchases__purchase_id__invoice_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Purchase Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Invoice",
         "tags": [
           "billing"
         ]

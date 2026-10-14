@@ -20,7 +20,7 @@ from uuid import UUID
 
 import sentry_sdk
 import structlog
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -289,6 +289,14 @@ async def _record_adjustments(
     sm: async_sessionmaker[AsyncSession], purchase_id: UUID, environment: str, adjustments: list[Adjustment]
 ) -> None:
     async with sm() as session, session.begin():
+        if any(a.action == "refund" for a in adjustments):
+            # a refund we asked for is now visible at Paddle: its local intent row has done its job
+            await session.execute(
+                delete(BillingAdjustment).where(
+                    BillingAdjustment.purchase_id == purchase_id,
+                    BillingAdjustment.adjustment_id.like("intent-%"),
+                )
+            )
         for a in adjustments:
             await session.execute(
                 insert(BillingAdjustment)
@@ -320,6 +328,20 @@ def net_reversed(adjustments: list[Adjustment]) -> tuple[int, bool, bool]:
     is_open = any(a.action in CASH_REVERSALS and a.status in OPEN_STATUSES for a in adjustments)
     warned = any(a.action in WARNINGS and a.status != "rejected" for a in adjustments)
     return max(0, taken - undone), is_open, warned
+
+
+async def _intent_open(session: AsyncSession, purchase_id: UUID) -> bool:
+    """A refund request of ours that has not yet been answered keeps the lot frozen."""
+    return (
+        await session.scalar(
+            select(BillingAdjustment.id)
+            .where(
+                BillingAdjustment.purchase_id == purchase_id,
+                BillingAdjustment.status.in_(("intent", "unknown")),
+            )
+            .limit(1)
+        )
+    ) is not None
 
 
 def decide_effect(
@@ -386,6 +408,16 @@ async def _apply_net_effect(
             if lot is not None and lot.reversed_at is None:
                 lot.frozen = False
             purchase.state, purchase.error_code = PurchaseState.granted, None
+        elif (
+            effect == "none"
+            and purchase.state == PurchaseState.granted
+            and lot is not None
+            and lot.frozen
+            and lot.reversed_at is None
+            and not (net > 0 or is_open or warned)
+            and not await _intent_open(session, purchase_id)
+        ):
+            lot.frozen = False  # a refund that support asked for was rejected: the pack is spendable again
         return {"reverse": "reversed", "restore": "restored", "clear": "cleared", "none": "unchanged"}.get(
             effect, "review"
         )

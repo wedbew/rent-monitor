@@ -6,10 +6,10 @@ the only inputs are the pack code and an idempotency key. Money is a `Decimal` s
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, StringConstraints
 
 PackCodeName = Literal["reports_1", "reports_5", "reports_10"]
 PurchaseStateName = Literal[
@@ -49,6 +49,24 @@ class PurchaseOut(BaseModel):
     created_at: datetime
     granted_at: datetime | None
     refunded_at: datetime | None
+
+
+class InvoiceOut(BaseModel):
+    """A link to the document Paddle issued for this sale. Short-lived: fetched on demand, never stored."""
+
+    url: str
+
+
+class RefundRequest(BaseModel):
+    """Support's reason, sent to Paddle with the request (never shown to the buyer by us)."""
+
+    model_config = ConfigDict(extra="forbid")
+    reason: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=200)]
+
+
+class RefundOut(BaseModel):
+    status: Literal["requested", "exists", "unknown"]
+    adjustment_id: str | None
 
 
 class PurchasesOut(BaseModel):

@@ -103,6 +103,10 @@ class PaddleClient(Protocol):
 
     async def create_full_refund(self, *, transaction_id: str, reason: str) -> Adjustment: ...
 
+    async def get_invoice_url(self, transaction_id: str) -> str:
+        """A short-lived link to the customer document Paddle issued for this sale."""
+        ...
+
 
 class _Money(_Model):
     amount: str = ""
@@ -155,6 +159,10 @@ class _RawTransaction(_Model):
     custom_data: dict[str, object] | None = None
     invoice_id: str | None = None
     checkout: _RawCheckout | None = None
+
+
+class _RawInvoice(_Model):
+    url: str
 
 
 class _RawAdjustment(_Model):
@@ -346,6 +354,10 @@ class HttpPaddleClient:
             "GET", "/adjustments", read=True, params={"transaction_id": transaction_id, "per_page": "50"}
         )
         return [_adjustment(r) for r in self._validate_list(_RawAdjustment, data)]
+
+    async def get_invoice_url(self, transaction_id: str) -> str:
+        data = await self._call("GET", f"/transactions/{transaction_id}/invoice", read=True)
+        return self._validate(_RawInvoice, data).url
 
     async def create_full_refund(self, *, transaction_id: str, reason: str) -> Adjustment:
         body = {"action": "refund", "type": "full", "transaction_id": transaction_id, "reason": reason[:200]}

@@ -17,6 +17,7 @@ On 2026-10-12 the owner approved merging every earlier pending PR (auth #147, wo
 
 | PR | Approved head SHA | By / when | Scope |
 |---|---|---|---|
+| standing authorisation | n/a (every PR below) | owner, in the agent session, 2026-10-14 | Implement, test, open and merge into `staging` backend work including auth, sessions, tenant isolation, credit ledger and billing once required checks pass and no review thread is open. Boundaries: no promotion to `main`, no bypass of branch protection, no weakened tests or security controls, no destructive database operations, no live payments or purchases, no lockout-risk SSH/firewall/DNS change. PRs #192, #206-#208, #212-#214, #222, #223, #221, #225, #226, #228, #230, #231 were merged under it |
 
 ## Open (needs the owner)
 

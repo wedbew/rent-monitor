@@ -22,6 +22,8 @@ class FakePaddle:
         self.calls: list[str] = []
         self.fail_create_after_store = False  # the create times out but the transaction exists (ambiguous)
         self.fail_create_before_store = False
+        self.fail_refund_before_store = False
+        self.fail_refund_after_store = False
 
     def add_price(
         self, price_id: str, *, amount_minor: int, currency: str = "PLN", one_time: bool = True
@@ -81,8 +83,16 @@ class FakePaddle:
         self.calls.append("list_adjustments")
         return [a for a in self.adjustments.values() if a.transaction_id == transaction_id]
 
+    async def get_invoice_url(self, transaction_id: str) -> str:
+        self.calls.append("get_invoice_url")
+        if transaction_id not in self.transactions:
+            raise PaddleError("404")
+        return f"https://invoices.test/{transaction_id}?sig=short-lived"
+
     async def create_full_refund(self, *, transaction_id: str, reason: str) -> Adjustment:
         self.calls.append("create_full_refund")
+        if self.fail_refund_before_store:
+            raise PaddleAmbiguousError("timed out")
         txn = self.transactions[transaction_id]
         adj = Adjustment(
             id="adj_" + uuid4().hex[:20],
@@ -94,4 +104,6 @@ class FakePaddle:
             total_minor=txn.total_minor,
         )
         self.adjustments[adj.id] = adj
+        if self.fail_refund_after_store:
+            raise PaddleAmbiguousError("timed out after the refund was created")
         return adj
