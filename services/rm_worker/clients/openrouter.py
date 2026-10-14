@@ -24,6 +24,7 @@ from rm_contracts.problems import ProblemCode
 from rm_core.ai_budget import CallUsage
 from rm_core.deadline import Deadline
 
+from rm_worker.clients.openrouter_catalog import ModelPrice
 from rm_worker.images import PreparedImage
 
 REQUEST_TIMEOUT_S = 120.0
@@ -76,6 +77,12 @@ class BudgetTicket(Protocol):
 class BudgetGate(Protocol):
     async def reserve(self, estimate_usd: Decimal) -> BudgetTicket | None:
         """Atomically reserve `estimate_usd`; None when the budget is exhausted (RM-24 implements this)."""
+        ...
+
+
+class PriceCatalog(Protocol):
+    async def price(self, model: str) -> ModelPrice | None:
+        """The model's catalog price, or None when unknown (the flat estimate is then used)."""
         ...
 
 
@@ -168,11 +175,23 @@ class OpenRouterClient:
     base_url: str = "https://openrouter.ai/api/v1"
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep
     rng: random.Random = field(default_factory=random.Random)
+    prices: PriceCatalog | None = None
+
+    async def _hold_usd(self, req: VisionRequest) -> Decimal:
+        """Catalog-priced ceiling for this call; the flat estimate when the catalog has no price."""
+        if self.prices is None:
+            return self.estimate_usd
+        price = await self.prices.price(req.model)
+        if price is None:
+            return self.estimate_usd
+        text_chars = len(req.prompt) + len(req.system or "")
+        return price.hold_usd(text_chars=text_chars, images=len(req.images), max_tokens=req.max_tokens)
 
     async def complete(self, req: VisionRequest, *, deadline: Deadline) -> VisionResult:
         if not self.api_key:
             raise VisionDisabled("OPENROUTER_API_KEY is not configured")
-        ticket = await self.budget.reserve(self.estimate_usd)
+        hold = await self._hold_usd(req)
+        ticket = await self.budget.reserve(hold)
         if ticket is None:
             raise VisionDisabled("AI budget exhausted")
         try:
@@ -182,7 +201,7 @@ class OpenRouterClient:
             await ticket.release()
             raise
         await ticket.settle(
-            result.cost_usd if result.cost_usd is not None else self.estimate_usd,
+            result.cost_usd if result.cost_usd is not None else hold,
             CallUsage(
                 model=result.model or req.model,
                 prompt_tokens=result.prompt_tokens,
