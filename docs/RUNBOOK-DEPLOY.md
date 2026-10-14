@@ -59,6 +59,11 @@ provider data** (planted listing and comparables): it proves API -> queue -> wor
 this host, not Otodom or market data. Record the JSON (it has no secrets) in `docs/DEPLOYMENTS.md`. Real-provider evidence is a
 separate, owner-authorised run (one listing, `STATUS.md` level 3).
 
+Error tracking (Better Stack, ADR 0009): put the Errors DSN in the host `.env` as `SENTRY_DSN` (owner-run, e.g.
+`scripts/push_env_to_host.sh SENTRY_DSN --restart`; never commit or print it). `compose.prod.yml` sets `RELEASE` to `IMAGE_TAG`,
+so every event carries the deployed short sha. Check `$C exec -T api printenv RELEASE` matches `$IMAGE_TAG`, then raise one test
+error and confirm it appears in Better Stack under that release. Until the DSN is set, tracking is off.
+
 Private access for people: `ssh -L 8000:127.0.0.1:8000 deploy@host`, then use `http://localhost:8000`.
 
 ## 3. Roll back
