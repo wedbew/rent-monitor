@@ -365,3 +365,54 @@ def test_an_unsafe_city_path_is_dropped_not_trusted(unsafe: object) -> None:
 
 def test_a_listing_without_geocoding_has_no_city_path() -> None:
     assert extract_listing(make_ad()).location_id is None
+
+
+def _with_images(images: object = None, plans: object = None) -> Listing:
+    ad = make_ad()
+    if images is not None:
+        ad["images"] = images
+    if plans is not None:
+        ad["floorPlans"] = plans
+    return extract_listing(ad)
+
+
+def test_photo_urls_prefer_the_large_size_and_keep_order_without_repeats() -> None:
+    listing = _with_images(
+        [
+            {"large": "https://cdn.test/a.jpg", "medium": "https://cdn.test/a-m.jpg"},
+            {"medium": "https://cdn.test/b-m.jpg"},
+            {"large": "https://cdn.test/a.jpg"},
+            {"large": "https://cdn.test/c.jpg", "isExterior": True},
+        ]
+    )
+    assert listing.photo_urls == (
+        "https://cdn.test/a.jpg",
+        "https://cdn.test/b-m.jpg",
+        "https://cdn.test/c.jpg",
+    )
+    assert listing.floor_plan_urls == ()
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        [{"large": "http://cdn.test/a.jpg"}],  # not https
+        [{"large": "javascript:alert(1)"}],
+        [{"large": 5}],
+        [{"large": "https://cdn.test/" + "x" * 600}],  # too long
+        ["not-a-url", None, 7, {"nothing": 1}],
+        "a string, not a list",
+        {"large": "https://cdn.test/a.jpg"},  # an object, not a list
+    ],
+)
+def test_unusable_image_entries_are_dropped_not_trusted(bad: object) -> None:
+    assert _with_images(bad).photo_urls == ()
+
+
+def test_floor_plans_accept_objects_and_plain_strings_and_the_count_is_bounded() -> None:
+    listing = _with_images(
+        [{"large": f"https://cdn.test/{n}.jpg"} for n in range(100)],
+        ["https://cdn.test/plan.png", {"url": "https://cdn.test/plan2.png"}],
+    )
+    assert len(listing.photo_urls) == 40
+    assert listing.floor_plan_urls == ("https://cdn.test/plan.png", "https://cdn.test/plan2.png")

@@ -126,7 +126,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Discovered:** 2026-10-13
 - **Affects:** `POST /api/audits`, `rm_worker.audit_pipeline`, `rm_worker.context`, `rm_worker.listing_source`
 - **Evidence:** confirmed (`tests/integration/test_audit_journey.py`, `test_audit_context.py` run with a fake HTTP transport and hand-built rental rows)
-- **Description:** Crash recovery, the killable engine child and the SSE stream are built and tested offline (RM-185, RM-186). The real Otodom client and market context are wired behind `AUDIT_PROVIDERS=real` (RM-187) but have only run against a fake transport; one live fetch was confirmed for payload shape (L-005). The comparable-rent store is filled on demand by the rental importer (RM-240, L-022); the first audit in a city still gets the engine's refused rent (rent 0, warning `rent_refused_too_few_comparables`). The risk-free rate is an owner-supplied `RISK_FREE_RATE` (unset: `CONTEXT_UNAVAILABLE`). The vision and OCR stages are not called, so every success is `succeeded_degraded` (`VISION_UNAVAILABLE`). The analyst audit is refused (403).
+- **Description:** Crash recovery, the killable engine child and the SSE stream are built and tested offline (RM-185, RM-186). The real Otodom client and market context are wired behind `AUDIT_PROVIDERS=real` (RM-187) but have only run against a fake transport; one live fetch was confirmed for payload shape (L-005). The comparable-rent store is filled on demand by the rental importer (RM-240, L-022); the first audit in a city still gets the engine's refused rent (rent 0, warning `rent_refused_too_few_comparables`). The risk-free rate is an owner-supplied `RISK_FREE_RATE` (unset: `CONTEXT_UNAVAILABLE`). The vision and OCR stages are wired (RM-244, L-023) but need an OpenRouter key on the host; without it every success is `succeeded_degraded` (`VISION_UNAVAILABLE`). The analyst audit is refused (403).
 - **Workaround:** none needed for a private beta; do not present results as market-grounded until rental importers and a rate source land.
 - **Target:** importers (#106 slice 2), rate source (N-12), vision/OCR integration, live evidence (level 3); docs/STATUS.md journey table
 
@@ -164,6 +164,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Description:** each city and month imports at most the first 5 pages (about 180 offers) in Otodom's default order, so promoted offers may be over-represented and big cities are under-sampled. Rents are the advertised `totalPrice` (Otodom lists the admin fee separately as `rentPrice`, which is never read: invariant 3; whether `totalPrice` excludes the fee is Otodom's convention, inferred); only offers priced in PLN with a visible price are kept. A city is imported only after an audit asks for it, so the first audit in a new city gets the refused rent and the next one is grounded. A month with fewer than 10 usable offers is skipped and the previous month stays.
 - **Workaround:** none needed for a beta; a city list can be pre-imported by deferring `import_rental_city`.
 - **Target:** #209 (city list, coverage policy #49), accuracy evaluation #94
+
+### L-023 — Vision quality and floor-plan advert shape are unverified
+- **Status:** active
+- **Discovered:** 2026-10-14
+- **Affects:** `rm_worker.vision_stage`, `OPENROUTER_VISION_MODEL`, `Listing.floor_plan_urls`, grade and Max Bid when vision is on
+- **Evidence:** confirmed for the photo shape (`images[].large` on `olxcdn.com`, one live listing, 2026-10-14); inferred for `floorPlans` (null on that listing; objects or strings are both accepted); estimate for model quality and cost
+- **Description:** the stage is proven offline with a fake host and a fake model. The default model is a cheap placeholder chosen from OpenRouter's public list, not from an accuracy test; the prompt (`vision-v1`) is unevaluated. Photos are taken in advert order (up to 25), exterior shots included. The engine clamps every proposed adjustment to +/-15 %, so a bad answer moves capex and rent by at most that, but a systematically wrong `condition` still changes the capex base. One call carries photos and plans, so OCR text and condition share one answer.
+- **Workaround:** `LEGAL_IMAGES_ENABLED=false` or an empty `OPEN_ROUTER_API_KEY` turns the stage off (audits end degraded); the monthly budget caps spend.
+- **Target:** #94 (accuracy on an owner-labelled set), L-003 (measured cost), #211 (live run)
 
 ### L-014 — RPO 5 minutes and RTO 1 hour are targets, never measured
 - **Status:** active

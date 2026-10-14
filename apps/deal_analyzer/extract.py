@@ -11,7 +11,7 @@ from decimal import Decimal
 from typing import Any, cast
 
 from deal_analyzer.errors import ExtractionCode, ExtractionError, RentNotADealError
-from deal_analyzer.listing import Listing
+from deal_analyzer.listing import MAX_MEDIA_URLS, Listing
 from deal_analyzer.numbers import parse_decimal, parse_int
 
 MAX_CHARACTERISTICS = 500
@@ -153,6 +153,23 @@ def _location_id(ad: dict[str, Any]) -> str | None:
     return None
 
 
+def _media_urls(value: object) -> tuple[str, ...]:
+    """Image URLs from an advert's `images` / `floorPlans`: the largest size offered, https only, bounded.
+
+    Entries are objects with `large`/`medium`/`url` or plain strings; anything else is ignored. The worker
+    re-validates every host before fetching (an allow-list), so this only shapes the data.
+    """
+    out: list[str] = []
+    for raw in (_list(value) or [])[:MAX_MEDIA_URLS]:
+        entry = _obj(raw)
+        candidate = (
+            raw if entry is None else next((entry[k] for k in ("large", "medium", "url") if k in entry), None)
+        )
+        if isinstance(candidate, str) and candidate.startswith("https://") and len(candidate) <= 500:
+            out.append(candidate)
+    return tuple(dict.fromkeys(out))
+
+
 def _street(ad: dict[str, Any]) -> str | None:
     address = _obj((_obj(ad.get("location")) or {}).get("address")) or {}
     return _clip((_obj(address.get("street")) or {}).get("name"), 160)
@@ -253,6 +270,8 @@ def extract_listing(ad: object) -> Listing:
         **structured,
         city=city,
         location_id=_location_id(root),
+        photo_urls=_media_urls(root.get("images")),
+        floor_plan_urls=_media_urls(root.get("floorPlans")),
         street=street,
         latitude=lat,
         longitude=lng,
