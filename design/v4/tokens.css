@@ -1,0 +1,63 @@
+:root {
+  /* Atmospheric Carbon Palette */
+  --canvas: #060709;
+  --canvas-subtle: #0A0C0F;
+  --surface: #0F1216;
+  --surface-raised: #15191F;
+  --surface-hover: #1B2028;
+  --analysis-surface: #0D1014;
+  
+  /* Specular & Structural Borders */
+  --border: #1E232B;
+  --border-subtle: #14181E;
+  --analysis-border: #262C36;
+  --control-border: #38414E;
+  --border-highlight: #525F73;
+
+  /* Typography & Ink */
+  --ink: #F4F6F8;
+  --muted: #949EA9;
+  --subtle: #636D79;
+
+  /* Brand & Primary Actions (renti.tech Emerald & Crisp White) */
+  --accent: #F4F6F8;
+  --accent-ink: #060709;
+  --accent-hover: #D8DEE6;
+  --brand-signal: #10B981;
+  --brand-glow: rgba(16, 185, 129, 0.14);
+
+  /* Semantic Financial Signals (WCAG AAA Dark Mode Tuned) */
+  --green: #34D399;
+  --green-fill: rgba(16, 185, 129, 0.11);
+  --green-border: rgba(52, 211, 153, 0.32);
+
+  --amber: #FBBF24;
+  --amber-fill: rgba(245, 158, 11, 0.12);
+  --amber-border: rgba(251, 191, 36, 0.35);
+
+  --error: #F87171;
+  --error-fill: rgba(239, 68, 68, 0.12);
+  --error-border: rgba(248, 113, 113, 0.35);
+
+  --cyan: #38BDF8;
+  --cyan-fill: rgba(56, 189, 248, 0.10);
+
+  /* Typography Stacks (Zero External Network Latency) */
+  --font-ui: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  /* Geometry & Layout */
+  --radius: 4px;
+  --radius-card: 8px;
+  --radius-overlay: 8px;
+  --sidebar-width: 244px;
+  --content-width: 1320px;
+  --shadow: 0 24px 48px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  /* Precision Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-fast: 140ms;
+  --motion-ui: 220ms;
+  --motion-enter: 520ms;
+  --motion-overlay: 300ms;
+}

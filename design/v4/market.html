@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>renti.tech — Radar Najmu (727 Miast Polski)</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="main-view.css">
+  <script src="motion.js" defer></script>
+  <script src="market.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Przejdź do treści</a>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z M9 20v-7h6v7"/></symbol>
+    <symbol id="i-files" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6Z M15 3v5h4 M9 12h7 M9 16h5"/></symbol>
+    <symbol id="i-market" viewBox="0 0 24 24"><path d="M3 20h18 M5 16v-5 M11 16V7 M17 16V3"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15 M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5 M12 17v1"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12 M6 18 18 6"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Nawigacja aplikacji">
+      <div>
+        <a class="brand" href="main-view.html">renti<span>.tech</span><i class="brand-dot"></i></a>
+        <span class="brand-sub">DEAL DESK · OS v3.2</span>
+      </div>
+      <p class="nav-caption">PRZESTRZEŃ INWESTORA</p>
+      <nav class="primary-nav">
+        <a class="nav-item" href="main-view.html"><svg class="icon"><use href="#i-home"/></svg><span>Pulpit (Deal Desk)</span></a>
+        <a class="nav-item" href="analyses.html"><svg class="icon"><use href="#i-files"/></svg><span>Moje analizy</span><span class="nav-badge">12</span></a>
+        <a class="nav-item active" href="market.html" aria-current="page"><svg class="icon"><use href="#i-market"/></svg><span>Radar 727 miast</span><span class="nav-badge">PL</span></a>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="nav-item" data-action="help"><svg class="icon"><use href="#i-help"/></svg><span>Metodologia i źródła</span></button>
+        <button class="account-button" data-action="account"><span class="account-avatar">AK</span><span class="account-details"><strong>Anna Kowalska</strong><span id="credit-label">2 analizy w limicie</span></span></button>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="context-bar">
+        <div class="context-crumbs"><span>renti.tech</span> <span>/</span> <strong>Radar Miejski (otodom-city-report)</strong></div>
+        <div class="context-telemetry"><span class="telemetry-tag">Pokrycie: 727 miast i gmin</span></div>
+      </header>
+
+      <header class="mobile-header">
+        <a class="brand" href="main-view.html">renti<span>.tech</span><i class="brand-dot"></i></a>
+        <button id="navigation-toggle" class="secondary">Menu</button>
+      </header>
+
+      <main id="main" class="market-page">
+        <div class="greeting">
+          <div>
+            <p class="eyebrow">OTODOM-CITY-REPORT & PRICE-INTEL</p>
+            <h1>Radar czynszów i rentowności.</h1>
+          </div>
+        </div>
+        <p class="market-lead">Porównaj orientacyjny poziom najmu dla właściciela oraz mediany GUS BDL w wybranym mieście przed analizą konkretnego ogłoszenia.</p>
+
+        <section class="market-controls-grid" aria-label="Wybór lokalnego rynku i metrażu">
+          <div>
+            <label class="input-label" for="city-select">Wybierz miasto z radaru (próbka 6 z 727)</label>
+            <select id="city-select">
+              <option value="poznan">Poznań (woj. wielkopolskie)</option>
+              <option value="warszawa">Warszawa (woj. mazowieckie)</option>
+              <option value="wroclaw">Wrocław (woj. dolnośląskie)</option>
+              <option value="gdansk">Gdańsk (woj. pomorskie)</option>
+              <option value="krakow">Kraków (woj. małopolskie)</option>
+              <option value="katowice">Katowice (woj. śląskie)</option>
+            </select>
+          </div>
+          <div>
+            <span class="input-label">Segment mieszkania</span>
+            <div class="tier-pills" role="group" aria-label="Segment metrażu">
+              <button type="button" class="tier-pill" data-tier="m1">Kawalerki (22–34 m²)</button>
+              <button type="button" class="tier-pill active" data-tier="m2">2 pokoje (35–50 m²)</button>
+              <button type="button" class="tier-pill" data-tier="m3">3 pokoje (51–68 m²)</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="city-content" class="market-content" aria-live="polite"></section>
+
+        <section class="market-invitation" style="margin-top:36px;">
+          <div>
+            <p class="eyebrow">OD KONTEKSTU DO OFERTY</p>
+            <h2>Masz już konkretne ogłoszenie z tego miasta?</h2>
+            <p>Miasto daje punkt odniesienia. Wklej link na pulpicie, aby policzyć Max Bid i sprawdzić rzut mieszkania.</p>
+          </div>
+          <a class="primary" href="main-view.html#analysis-form">Sprawdź mieszkanie<svg class="icon"><use href="#i-arrow"/></svg></a>
+        </section>
+
+        <footer class="product-footer">
+          <span>Dane ofertowe najmu (Otodom) oraz ceny transakcyjne (GUS BDL) nigdy nie są uśredniane razem.</span>
+          <button class="text-link" data-action="help">Jak zbieramy dane miejskie?</button>
+        </footer>
+      </main>
+
+      <div class="preview-bar">
+        <span><b>renti.tech V3</b> · Widok radaru miejskiego (`otodom-city-report`)</span>
+        <span>Dane przykładowe</span>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="general-dialog" class="modal" aria-labelledby="modal-title">
+    <div class="overlay-heading"><span class="overline" id="modal-eyebrow"></span><button class="icon-button" data-close><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <div id="modal-content"></div>
+  </dialog>
+  <div class="sr-only" id="announcement" role="status" aria-live="polite"></div>
+</body>
+</html>

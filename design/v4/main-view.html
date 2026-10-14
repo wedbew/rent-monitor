@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>renti.tech — Deal Desk & Radar Najmu (727 Miast)</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="main-view.css">
+  <script src="motion.js" defer></script>
+  <script src="main-view.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Przejdź do treści</a>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z M9 20v-7h6v7"/></symbol>
+    <symbol id="i-files" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6Z M15 3v5h4 M9 12h7 M9 16h5"/></symbol>
+    <symbol id="i-market" viewBox="0 0 24 24"><path d="M3 20h18 M5 16v-5 M11 16V7 M17 16V3"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15 M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="m9 15 6-6 M7 14l-2 2a4 4 0 0 0 5 5l4-4 M10 7l4-4a4 4 0 0 1 5 5l-2 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m12 3 10 18H2Z M12 9v5 M12 17v1"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5 M12 17v1"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12 M6 18 18 6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Nawigacja aplikacji">
+      <div>
+        <a class="brand" href="main-view.html" aria-label="renti.tech — pulpit">renti<span>.tech</span><i class="brand-dot" aria-hidden="true"></i></a>
+        <span class="brand-sub">DEAL DESK · OS v3.2</span>
+      </div>
+
+      <button class="cmd-trigger" type="button" data-action="cmd" aria-label="Otwórz szybkie wyszukiwanie">
+        <span>Szukaj miasta / oferty…</span>
+        <kbd>⌘K</kbd>
+      </button>
+
+      <p class="nav-caption">PRZESTRZEŃ INWESTORA</p>
+      <nav class="primary-nav" aria-label="Nawigacja aplikacji">
+        <button class="nav-item active" id="home-nav" aria-current="page">
+          <svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>
+          <span>Pulpit (Deal Desk)</span>
+        </button>
+        <a class="nav-item" href="analyses.html">
+          <svg class="icon" aria-hidden="true"><use href="#i-files"/></svg>
+          <span>Moje analizy</span>
+          <span class="nav-badge">12</span>
+        </a>
+        <a class="nav-item" href="market.html">
+          <svg class="icon" aria-hidden="true"><use href="#i-market"/></svg>
+          <span>Radar 727 miast</span>
+          <span class="nav-badge">PL</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="engine-pill">
+          <div class="engine-pill-head"><span class="pulse-dot"></span><span>SILNIKI ANALITYCZNE</span></div>
+          <div>GUS BDL · Cenogram · AI Vision</div>
+        </div>
+        <button class="nav-item" data-action="help">
+          <svg class="icon" aria-hidden="true"><use href="#i-help"/></svg>
+          <span>Metodologia i źródła</span>
+        </button>
+        <button class="account-button" data-action="account" aria-label="Moje konto">
+          <span class="account-avatar">AK</span>
+          <span class="account-details">
+            <strong>Anna Kowalska</strong>
+            <span id="credit-label">2 analizy w limicie</span>
+          </span>
+        </button>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="context-bar">
+        <div class="context-crumbs"><span>renti.tech</span> <span>/</span> <strong>Pulpit Inwestora</strong></div>
+        <div class="context-telemetry">
+          <span class="telemetry-tag"><span class="pulse-dot"></span>727 gmin w radarze</span>
+          <span>Inwariant: Ceny transakcyjne (GUS) ≠ Ofertowe</span>
+        </div>
+      </header>
+
+      <header class="mobile-header">
+        <a class="brand" href="main-view.html">renti<span>.tech</span><i class="brand-dot"></i></a>
+        <button id="navigation-toggle" class="secondary" aria-label="Otwórz menu nawigacji" aria-haspopup="dialog">Menu</button>
+      </header>
+
+      <main id="main">
+        <section class="hero" aria-labelledby="hero-title">
+          <div class="hero-grid">
+            <div class="hero-content">
+              <p class="hero-index"><span>01 // DEAL ANALYZER ENGINE</span></p>
+              <span class="overline">TWÓJ KOLEJNY KROK, ANNO</span>
+              <h1 id="hero-title">PRECYZYJNA WYCENA.<br>ŚWIADOMA DECYZJA.</h1>
+              <p class="hero-description">
+                Wklej link do ogłoszenia sprzedaży. Silnik <strong>renti.tech</strong> wyliczy potencjał najmu, rozpozna układ z rzutu (AI Vision OCR), zestawi ceny GUS BDL i wyznaczy <strong>Max Bid</strong> dla modelu 10-letniego DCF.
+              </p>
+              <form id="analysis-form" novalidate>
+                <label class="input-label" for="listing-url">
+                  <span>Link do ogłoszenia sprzedaży na Otodom</span>
+                  <span>OBSŁUGIWANE: OTODOM.PL/PL/OFERTA/*</span>
+                </label>
+                <div class="url-entry">
+                  <svg class="icon"><use href="#i-link"/></svg>
+                  <input id="listing-url" name="listing-url" type="url" autocomplete="off" inputmode="url" placeholder="https://www.otodom.pl/pl/oferta/mieszkanie-42m2-ID4CpHB" aria-describedby="url-help url-error">
+                  <button class="primary" type="submit">Sprawdź mieszkanie<svg class="icon"><use href="#i-arrow"/></svg></button>
+                </div>
+                <p id="url-error" class="field-error" role="alert" hidden></p>
+                <p class="form-foot" id="url-help">
+                  <span>1 analiza z Twojego limitu · koszt potwierdzisz przed startem</span>
+                  <button type="button" class="text-link" data-action="example">Otwórz pełny raport pokazowy (ID4CpHB)<svg class="icon small"><use href="#i-arrow"/></svg></button>
+                </p>
+              </form>
+            </div>
+
+            <aside class="hero-telemetry-card" aria-label="Architektura badania oferty">
+              <div class="telemetry-card-header">
+                <span>PIPELINE INSPEKCJI OFERTY</span>
+                <span>4 MODUŁY</span>
+              </div>
+              <div class="telemetry-pipelines">
+                <div class="pipeline-row">
+                  <div><strong>otodom-city-report</strong><small>Lokalny radar czynszów najmu</small></div>
+                  <span class="pipeline-tag">727 MIAST</span>
+                </div>
+                <div class="pipeline-row">
+                  <div><strong>price-intel (GUS + Cenogram)</strong><small>Transakcyjne vs ofertowe (bez mieszania)</small></div>
+                  <span class="pipeline-tag">SEPARACJA</span>
+                </div>
+                <div class="pipeline-row">
+                  <div><strong>AI Vision & Layout OCR</strong><small>Detekcja standardu, rzutu i CAPEX</small></div>
+                  <span class="pipeline-tag">OCR + VISION</span>
+                </div>
+                <div class="pipeline-row">
+                  <div><strong>10-Year DCF & Max Bid</strong><small>Model przepływów i cena graniczna</small></div>
+                  <span class="pipeline-tag">KANONICZNY</span>
+                </div>
+              </div>
+              <p class="image-caption">Tło architektoniczne AI · nie przedstawia analizowanego ogłoszenia</p>
+            </aside>
+          </div>
+        </section>
+
+        <div class="service-notice" id="service-notice" hidden>
+          <svg class="icon"><use href="#i-alert"/></svg>
+          <div>
+            <strong>Otodom jest chwilowo niedostępny.</strong>
+            <p>Możesz przeglądać wcześniejsze analizy. Zachowamy wpisany link, żeby łatwo spróbować ponownie bez utraty limitu.</p>
+          </div>
+        </div>
+
+        <section class="activity" id="activity" aria-label="Podsumowanie Twoich analiz">
+          <button class="activity-item" data-filter="ready">
+            <div>
+              <strong>08 <span>gotowych analiz</span></strong>
+              <small>Kompletny model najmu, kosztów i DCF</small>
+            </div>
+            <span class="activity-icon green"><svg class="icon"><use href="#i-check"/></svg></span>
+          </button>
+          <button class="activity-item" data-filter="attention">
+            <div>
+              <strong>03 <span>do wyjaśnienia</span></strong>
+              <small>Brak czynszu adm. lub niepełny rzut</small>
+            </div>
+            <span class="activity-icon amber"><svg class="icon"><use href="#i-alert"/></svg></span>
+          </button>
+          <button class="activity-item" data-filter="running">
+            <div>
+              <strong>01 <span>w trakcie analizy</span></strong>
+              <small>Pobieranie komparatorów i analiza zdjęć</small>
+            </div>
+            <span class="activity-icon neutral"><svg class="icon"><use href="#i-clock"/></svg></span>
+          </button>
+        </section>
+
+        <section class="recent" id="recent" aria-labelledby="recent-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">02 // TWOJE MIESZKANIA</p>
+              <h2 id="recent-title">Ostatnio badane oferty</h2>
+              <p id="recent-caption">Każda karta oddziela cenę ofertową od szacowanego przychodu właściciela i wskazuje braki danych.</p>
+            </div>
+            <a class="text-link" id="all-button" href="analyses.html">Wszystkie analizy (12)<svg class="icon"><use href="#i-arrow"/></svg></a>
+          </div>
+
+          <div id="filter-bar" class="filter-bar" hidden>
+            <span id="filter-label" class="mono"></span>
+            <button class="text-link" id="reset-filter">Pokaż 3 ostatnie</button>
+          </div>
+
+          <div class="property-grid" id="property-grid" aria-live="polite"></div>
+
+          <div class="empty-state" id="empty-state" hidden>
+            <span class="empty-symbol"><svg class="icon"><use href="#i-home"/></svg></span>
+            <h3>Twoje pierwsze mieszkanie czeka na sprawdzenie.</h3>
+            <p>Wklej link powyżej. Tutaj znajdziesz wynik i wrócisz do niego bez zużywania kolejnych analiz.</p>
+            <button class="secondary" data-action="example">Zobacz przykładową analizę<svg class="icon"><use href="#i-arrow"/></svg></button>
+          </div>
+        </section>
+
+        <section class="market-invitation" aria-labelledby="market-title">
+          <div>
+            <p class="eyebrow">03 // OTODOM-CITY-REPORT RADAR</p>
+            <h2 id="market-title">Jak wygląda rentowność najmu w 727 miastach Polski?</h2>
+            <p>Porównaj rozkład czynszów ofertowych i stawki za m² w swojej gminie, zanim złożysz ofertę zakupu.</p>
+          </div>
+          <a class="secondary" href="market.html">Otwórz radar rynkowy<svg class="icon"><use href="#i-arrow"/></svg></a>
+        </section>
+
+        <footer class="product-footer">
+          <span><strong>renti.tech</strong> · Analityka nieruchomości bez mieszania cen ofertowych z transakcyjnymi.</span>
+          <button class="text-link" data-action="help">Jak liczymy Max Bid i DCF?</button>
+        </footer>
+      </main>
+
+      <div class="preview-bar" aria-label="Kontrolki podglądu projektu">
+        <span><b>renti.tech V3</b> · Dane przykładowe (fixtures), bez połączenia z API</span>
+        <label for="preview-state">Stan widoku
+          <select id="preview-state">
+            <option value="returning">Powracający użytkownik</option>
+            <option value="empty">Pierwsza analiza</option>
+            <option value="loading">Ładowanie (Skeleton)</option>
+            <option value="unavailable">Otodom niedostępny</option>
+            <option value="no-credits">Brak analiz w limicie</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="navigation-dialog" class="drawer navigation-drawer" aria-labelledby="navigation-title">
+    <div class="overlay-heading">
+      <h2 id="navigation-title">Nawigacja</h2>
+      <button class="icon-button" data-close aria-label="Zamknij nawigację"><svg class="icon"><use href="#i-close"/></svg></button>
+    </div>
+    <nav class="primary-nav" aria-label="Nawigacja mobilna">
+      <a class="nav-item active" href="main-view.html" aria-current="page"><svg class="icon"><use href="#i-home"/></svg><span>Pulpit</span></a>
+      <a class="nav-item" href="analyses.html"><svg class="icon"><use href="#i-files"/></svg><span>Moje analizy</span></a>
+      <a class="nav-item" href="market.html"><svg class="icon"><use href="#i-market"/></svg><span>Radar 727 miast</span></a>
+    </nav>
+  </dialog>
+
+  <dialog id="general-dialog" class="modal" aria-labelledby="modal-title">
+    <div class="overlay-heading">
+      <span class="overline" id="modal-eyebrow"></span>
+      <button class="icon-button" data-close aria-label="Zamknij okno"><svg class="icon"><use href="#i-close"/></svg></button>
+    </div>
+    <div id="modal-content"></div>
+  </dialog>
+
+  <div class="sr-only" id="announcement" role="status" aria-live="polite"></div>
+</body>
+</html>
