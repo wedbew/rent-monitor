@@ -4,6 +4,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Changed
+- `deploy/Caddyfile`: `www.<PUBLIC_HOST>` permanently redirects to the apex, keeping path and query; Caddy obtains a certificate for both names. **Operator action:** the `www` DNS record must exist before restarting the `public` profile (RM-236)
+
 ### Fixed
 - `deploy/setup-server.sh`: the SSH key is read from `/tmp/deploy_key.pub` (an environment variable did not survive `sudo`, so no key was installed), the sshd drop-in is `00-rentmonitor.conf` so it overrides OVH's `50-cloud-init.conf` and password login really is disabled, and apt runs non-interactively; **operator action:** copy your public key to `/tmp/deploy_key.pub` before running it (RM-195)
 
