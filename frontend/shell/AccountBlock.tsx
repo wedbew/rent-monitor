@@ -1,11 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { api, unwrapEmpty } from "../api/client";
 import { formatReports } from "../api/format";
 import { Button } from "../ui/Button";
 import styles from "./AccountBlock.module.css";
-import { endSession, useMe } from "./session";
-import { sendSessionSignal } from "./sessionBus";
+import { signOut, useMe } from "./session";
 
 function initials(name: string | null, email: string): string {
   const source = (name ?? "").trim() || email;
@@ -15,21 +13,14 @@ function initials(name: string | null, email: string): string {
 
 /**
  * Who is signed in, how many reports they have (from the server, never counted here) and the way out. Signing out
- * ends the session in this tab whatever the request's outcome (on success the server clears the cookie; on a network
- * failure the next request answers 401), tells the other tabs, and the session boundary (RequireSession) then
- * leaves for the sign-in page, whether or not this block is still mounted (the mobile sheet closes with it).
+ * hides the person's data at once; the session boundary (RequireSession) then shows sign-in once the server
+ * confirmed it, or an "unconfirmed" notice with a retry when it could not (shell/session.tsx `signOut`).
  */
 // GDPR[personal-data]: shows the signed-in person's name or e-mail address and report balance, in memory only (RM-271)
 export function AccountBlock() {
   const me = useMe();
   const client = useQueryClient();
-  const signOut = useMutation({
-    mutationFn: async () => unwrapEmpty(await api.POST("/api/auth/signout")),
-    onSettled: () => {
-      endSession(client, { deliberate: true });
-      sendSessionSignal("signed-out");
-    },
-  });
+  const leave = useMutation({ mutationFn: () => signOut(client) });
   return (
     <div className={styles["account"]}>
       <div className={styles["who"]}>
@@ -41,7 +32,7 @@ export function AccountBlock() {
           <span>{formatReports(me.credit_balance)} na koncie</span>
         </span>
       </div>
-      <Button type="button" small fill busy={signOut.isPending} onClick={() => signOut.mutate()}>
+      <Button type="button" small fill busy={leave.isPending} onClick={() => leave.mutate()}>
         Wyloguj się
       </Button>
     </div>
