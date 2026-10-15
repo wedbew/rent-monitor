@@ -19,7 +19,9 @@ blueprint §6; risks are blueprint §5; limits are `docs/LIMITATIONS.md`.
 - [ ] Coverage floor met; pyright strict clean for `packages/` and `services/`; ruff, semgrep, gitleaks, zizmor, actionlint clean.
 - [ ] `tests/migrations` (pytest-alembic) and `squawk` pass; migrations are expand→contract; rollback/restore path documented.
 - [ ] Contract test against one live listing passes (schema-drift detector); the `UPSTREAM_SCHEMA_DRIFT` alert is verified.
-- [ ] `frontend/src/lib/cashflow.ts` and `appreciation.ts` do not exist.
+- [ ] The SPA computes no finance: the tested ESLint money guard (`frontend/eslint.money.mjs`) passes in the `frontend` job. (Replaces the old check that two `frontend/src/lib/*` files do not exist, which could not fail in the flat layout.)
+- [ ] No reachable placeholder screen: every row of `docs/STATUS.md` *Frontend: screens a user can reach that are not built* is built or its entry point removed (in particular `/terms` and `/privacy`, which sign-up says the person accepts).
+- [ ] `frontend`, `frontend-e2e` and `frontend-journey` are required checks on `main` and `staging` (B-019).
 
 ## 2. Release gates (blueprint §6): evidence required
 - [ ] 1 KSeF end to end on a Fakturownia trial (subscription, test-clock renewal, BLIK pass, card pass, no-NIP buyer, timeout, rejection, downtime).
