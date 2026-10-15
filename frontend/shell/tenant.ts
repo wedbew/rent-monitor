@@ -23,3 +23,22 @@ export function runTenantCleanups(): void {
     }
   }
 }
+
+/**
+ * Which session this tab is in. It moves on every purge (sign-out, expiry, a different person signing in), so work
+ * that started earlier can tell it is late: a creation that answers after the person left must not navigate, and a
+ * reconciliation must not read the next person's list as the previous one's.
+ */
+let generation = 0;
+
+export function sessionGeneration(): number {
+  return generation;
+}
+
+export function isCurrentSession(started: number): boolean {
+  return started === generation;
+}
+
+export function advanceSessionGeneration(): void {
+  generation += 1;
+}

@@ -1,6 +1,8 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { api, unwrap } from "../../../api/client";
+import { tenantKey } from "../../../api/query";
+import { useMe } from "../../../shell/session";
 import type { AuditPage, AuditSummary } from "../queries";
 import { apiQuery, type CollectionFilters } from "./filters";
 
@@ -12,13 +14,15 @@ export const PAGE_SIZE = 24;
  * Filters are part of the key, so a different filter is a different list (never a filtered view of another).
  */
 export function useAuditList(filters: CollectionFilters) {
+  const me = useMe();
   const query = useInfiniteQuery({
-    queryKey: ["audits", "list", filters.status, filters.grade, filters.q],
+    queryKey: tenantKey(me.id, "audits", "list", filters.status, filters.grade, filters.q),
     initialPageParam: null as string | null,
-    queryFn: async ({ pageParam }): Promise<AuditPage> =>
+    queryFn: async ({ pageParam, signal }): Promise<AuditPage> =>
       unwrap(
         await api.GET("/api/audits", {
           params: { query: apiQuery(filters, PAGE_SIZE, pageParam) },
+          signal,
         }),
       ),
     getNextPageParam: (last) => last.next_cursor ?? undefined,

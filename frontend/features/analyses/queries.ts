@@ -1,28 +1,31 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, unwrap } from "../../api/client";
+import { tenantKey } from "../../api/query";
 import type { components } from "../../api/schema.generated";
-import { refreshBalance } from "../../shell/session";
+import { refreshBalance, useMe } from "../../shell/session";
 
 export type AuditPage = components["schemas"]["AuditPage"];
 export type AuditSummary = components["schemas"]["AuditSummary"];
 
-/** Tenant data lives under `["audits", ...]`: sign-out empties the whole cache, so nothing outlives the person. */
-export const RECENT_AUDITS_KEY = ["audits", "recent"] as const;
+/** Tenant data lives under the signed-in person's key (api/query.ts `tenantKey`); a session change purges it. */
+export const recentAuditsKey = (userId: string, limit: number) =>
+  tenantKey(userId, "audits", "recent", limit);
 
 /** The newest analyses, for the dashboard. Fresh for 15 s: a running one should not look stale after a navigation. */
 export function useRecentAudits(limit = 5) {
+  const me = useMe();
   return useQuery({
-    queryKey: [...RECENT_AUDITS_KEY, limit],
-    queryFn: async (): Promise<AuditPage> =>
-      unwrap(await api.GET("/api/audits", { params: { query: { limit } } })),
+    queryKey: recentAuditsKey(me.id, limit),
+    queryFn: async ({ signal }): Promise<AuditPage> =>
+      unwrap(await api.GET("/api/audits", { params: { query: { limit } }, signal })),
     staleTime: 15_000,
   });
 }
 
 export type AuditOut = components["schemas"]["AuditOut"];
 
-export const auditKey = (auditId: string) => ["audits", "one", auditId] as const;
+export const auditKey = (userId: string, auditId: string) => tenantKey(userId, "audits", "one", auditId);
 
 /** While an analysis is active the API is asked again at least this often, whatever the stream does. */
 export const SAFETY_POLL_MS = 10_000;
@@ -38,12 +41,14 @@ const ACTIVE = new Set(["queued", "running"]);
  */
 export function useAudit(auditId: string, options: { fast: boolean }) {
   const client = useQueryClient();
+  const me = useMe();
+  const key = auditKey(me.id, auditId);
   return useQuery({
-    queryKey: auditKey(auditId),
-    queryFn: async (): Promise<AuditOut> => {
-      const before = client.getQueryData<AuditOut>(auditKey(auditId));
+    queryKey: key,
+    queryFn: async ({ signal }): Promise<AuditOut> => {
+      const before = client.getQueryData<AuditOut>(key);
       const audit = unwrap(
-        await api.GET("/api/audits/{audit_id}", { params: { path: { audit_id: auditId } } }),
+        await api.GET("/api/audits/{audit_id}", { params: { path: { audit_id: auditId } }, signal }),
       );
       if (before !== undefined && ACTIVE.has(before.status) && !ACTIVE.has(audit.status))
         refreshBalance(client);
