@@ -11,7 +11,7 @@
 - Current phase: **Phase 2 — the SPA (`frontend/`) is authorised** (owner, 2026-10-15, #267), plan of record
   `docs/FRONTEND-PLAN.md`, design `design/v2/`. Work on `frontend/` follows the slice issues #267-#286; Phase 1
   backend rules still apply to every Python change. The frontend never computes finance (invariant 4): no
-  IRR, yield, tax, CAPEX, Max Bid or credit settlement in TypeScript, only display formatting.
+  IRR, yield, tax, CAPEX, Max Bid or credit settlement in TypeScript, only display formatting. Every `frontend/` change follows `rules/frontend.md`.
 - If this file and the blueprint disagree, stop and ask in the issue. Do not pick one silently.
 
 ## 1. Non-negotiable invariants (each has a named test marked `@pytest.mark.invariant`)
@@ -122,6 +122,7 @@ Read the matching file when your change touches the area; update the doc in the 
 - `rules/repo-layout.md` — shallow repo: no single-child dirs, flat package layout (no `src/`).
 - `rules/blockers.md` — stop and record owner-only blockers in `docs/BLOCKERS.md`; work only in this checkout; pull `staging` after every merge.
 - `rules/delivery.md` — journey-first priority, ready/done levels, checkpoints, `docs/STATUS.md` upkeep.
+- `rules/frontend.md` — every `frontend/` change: evidence before claims, tested primitive promises, one door per session transition, untrusted network data, copy and numbers from one place, durable audits (audit 2026-10-15).
 - `rules/context.md` — keep root `CONTEXT.md` current: update it in the same PR as any change that makes it stale; bump its "Last updated" line.
 Cursor mirrors these in `.cursor/rules/*.mdc` as pointers only; edit the `.agent/rules/` file, never the pointer.
 
