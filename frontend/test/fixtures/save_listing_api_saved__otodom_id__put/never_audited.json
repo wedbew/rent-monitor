@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "NOT_FOUND",
+    "instance": "/api/saved/ID00000000",
+    "request_id": "req_fixture",
+    "status": 404,
+    "title": "Listing not found",
+    "type": "urn:rentmonitor:problem:NOT_FOUND"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "PUT /api/saved/{otodom_id}",
+    "method": "PUT",
+    "operation_id": "save_listing_api_saved__otodom_id__put",
+    "path": "/api/saved/{otodom_id}"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/saved/ID00000000"
+  },
+  "scenario": "never_audited",
+  "status": 404
+}

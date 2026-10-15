@@ -1,0 +1,19 @@
+{
+  "body": null,
+  "content_type": "",
+  "headers": {},
+  "operation": {
+    "key": "DELETE /api/me",
+    "method": "DELETE",
+    "operation_id": "delete_my_account_api_me_delete",
+    "path": "/api/me"
+  },
+  "request": {
+    "body": {
+      "confirm_email": "user-2@example.test"
+    },
+    "path": "/api/me"
+  },
+  "scenario": "erased",
+  "status": 204
+}

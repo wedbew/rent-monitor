@@ -1,4 +1,4 @@
-.PHONY: fe-install fe-check fe-dev api-samples api-samples-clean ci ci-fast ci-full hooks sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
+.PHONY: fe-fixtures fe-install fe-check fe-dev api-samples api-samples-clean ci ci-fast ci-full hooks sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
 
 sync:
 	uv sync --all-packages --group dev
@@ -92,3 +92,7 @@ fe-check:
 
 fe-dev:
 	pnpm --dir frontend dev
+
+# Sanitised frontend fixtures from the newest local capture (make api-samples first). Commit the result.
+fe-fixtures:
+	uv run python scripts/derive_ui_fixtures.py

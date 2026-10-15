@@ -1,0 +1,42 @@
+{
+  "body": {
+    "avatar_url": null,
+    "credit_balance": 3,
+    "email": "user-17@example.test",
+    "email_verified": true,
+    "flags": {
+      "smoke_on": true
+    },
+    "id": "00000000-0000-4000-8000-000000000295",
+    "name": "Tomasz Testowski",
+    "plan": {
+      "code": "free",
+      "grace_until": null,
+      "is_pro": false,
+      "period": null,
+      "subscription_status": null
+    },
+    "role": "user",
+    "upstream": {
+      "otodom_breaker_open": true,
+      "reason": "captcha",
+      "retry_after_s": 899
+    }
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/me",
+    "method": "GET",
+    "operation_id": "my_profile_api_me_get",
+    "path": "/api/me"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/me"
+  },
+  "scenario": "upstream_breaker_open",
+  "status": 200
+}

@@ -1,0 +1,20 @@
+{
+  "body": null,
+  "content_type": "",
+  "headers": {},
+  "operation": {
+    "key": "POST /api/auth/password/change",
+    "method": "POST",
+    "operation_id": "password_change_api_auth_password_change_post",
+    "path": "/api/auth/password/change"
+  },
+  "request": {
+    "body": {
+      "current_password": "[redacted]",
+      "new_password": "[redacted]"
+    },
+    "path": "/api/auth/password/change"
+  },
+  "scenario": "changed",
+  "status": 204
+}

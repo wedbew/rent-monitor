@@ -1,0 +1,35 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "rollout_pct"],
+        "msg": "Input should be less than or equal to 100",
+        "type": "less_than_equal"
+      }
+    ],
+    "instance": "/api/admin/flags/smoke_range",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "PUT /api/admin/flags/{key}",
+    "method": "PUT",
+    "operation_id": "update_flag_api_admin_flags__key__put",
+    "path": "/api/admin/flags/{key}"
+  },
+  "request": {
+    "body": {
+      "rollout_pct": 101
+    },
+    "path": "/api/admin/flags/smoke_range"
+  },
+  "scenario": "rollout_out_of_range",
+  "status": 422
+}

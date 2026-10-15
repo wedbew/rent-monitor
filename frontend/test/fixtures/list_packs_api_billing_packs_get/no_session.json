@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/billing/packs",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/billing/packs",
+    "method": "GET",
+    "operation_id": "list_packs_api_billing_packs_get",
+    "path": "/api/billing/packs"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/billing/packs"
+  },
+  "scenario": "no_session",
+  "status": 401
+}

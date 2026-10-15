@@ -1,0 +1,17 @@
+{
+  "body": null,
+  "content_type": "",
+  "headers": {},
+  "operation": {
+    "key": "POST /api/auth/signout",
+    "method": "POST",
+    "operation_id": "sign_out_api_auth_signout_post",
+    "path": "/api/auth/signout"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/auth/signout"
+  },
+  "scenario": "signed_out",
+  "status": 204
+}

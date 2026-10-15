@@ -1,0 +1,35 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "credential"],
+        "msg": "String should have at least 20 characters",
+        "type": "string_too_short"
+      }
+    ],
+    "instance": "/api/auth/google",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/google",
+    "method": "POST",
+    "operation_id": "google_sign_in_api_auth_google_post",
+    "path": "/api/auth/google"
+  },
+  "request": {
+    "body": {
+      "credential": "[redacted]"
+    },
+    "path": "/api/auth/google"
+  },
+  "scenario": "validation_error",
+  "status": 422
+}

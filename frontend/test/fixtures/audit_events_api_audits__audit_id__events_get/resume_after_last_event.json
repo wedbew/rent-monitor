@@ -1,0 +1,84 @@
+{
+  "body": null,
+  "content_type": "text/event-stream; charset=utf-8",
+  "events": [
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000014",
+        "message": "",
+        "pct": 15,
+        "stage": "extract"
+      },
+      "event": "progress",
+      "id": "132"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000014",
+        "message": "",
+        "pct": 25,
+        "stage": "context"
+      },
+      "event": "progress",
+      "id": "133"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000014",
+        "message": "",
+        "pct": 35,
+        "stage": "vision"
+      },
+      "event": "progress",
+      "id": "134"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000014",
+        "message": "",
+        "pct": 85,
+        "stage": "synthesize"
+      },
+      "event": "progress",
+      "id": "135"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000014",
+        "message": "",
+        "pct": 95,
+        "stage": "persist"
+      },
+      "event": "progress",
+      "id": "136"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000014",
+        "grade": "E",
+        "pct": 100,
+        "result_url": "/api/audits/00000000-0000-4000-8000-000000000014",
+        "stage": "persist",
+        "status": "succeeded"
+      },
+      "event": "done",
+      "id": "137"
+    }
+  ],
+  "headers": {
+    "cache-control": "no-store",
+    "content-type": "text/event-stream; charset=utf-8"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}/events",
+    "method": "GET",
+    "operation_id": "audit_events_api_audits__audit_id__events_get",
+    "path": "/api/audits/{audit_id}/events"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/00000000-0000-4000-8000-000000000014/events"
+  },
+  "scenario": "resume_after_last_event",
+  "status": 200
+}

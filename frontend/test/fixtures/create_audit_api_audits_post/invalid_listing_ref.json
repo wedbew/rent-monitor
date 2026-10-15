@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "INVALID_LISTING_REF",
+    "instance": "/api/audits",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Not an Otodom listing URL or ID",
+    "type": "urn:rentmonitor:problem:INVALID_LISTING_REF"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/audits",
+    "method": "POST",
+    "operation_id": "create_audit_api_audits_post",
+    "path": "/api/audits"
+  },
+  "request": {
+    "body": {
+      "listing_ref": "https://example.test/fixture/4"
+    },
+    "path": "/api/audits"
+  },
+  "scenario": "invalid_listing_ref",
+  "status": 422
+}

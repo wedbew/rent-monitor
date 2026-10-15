@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "NOT_FOUND",
+    "instance": "/api/audits/00000000-0000-4000-8000-000000000011/events",
+    "request_id": "req_fixture",
+    "status": 404,
+    "title": "Audit not found",
+    "type": "urn:rentmonitor:problem:NOT_FOUND"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}/events",
+    "method": "GET",
+    "operation_id": "audit_events_api_audits__audit_id__events_get",
+    "path": "/api/audits/{audit_id}/events"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/00000000-0000-4000-8000-000000000011/events"
+  },
+  "scenario": "foreign_audit",
+  "status": 404
+}

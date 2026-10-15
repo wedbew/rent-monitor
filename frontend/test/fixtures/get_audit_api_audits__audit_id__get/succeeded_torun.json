@@ -1,0 +1,341 @@
+{
+  "body": {
+    "asking_price_pln": "520000.00",
+    "audit_id": "00000000-0000-4000-8000-000000000041",
+    "capex_pln": "314580.00",
+    "charge_state": "captured",
+    "created_at": "2026-10-01T10:00:00Z",
+    "error_code": null,
+    "finished_at": "2026-10-01T10:00:00Z",
+    "grade": "E",
+    "irr_10y": "-0.0046",
+    "max_bid_pln": null,
+    "otodom_id": "IDFIX0020",
+    "result": {
+      "assumptions_version": "2026-10-12.2",
+      "capex": {
+        "base_pln": "299600.00",
+        "catalog_version": "placeholder-2026-10-12",
+        "condition_assumed": false,
+        "condition_used": "shell",
+        "confidence": "medium",
+        "high_pln": "374500.00",
+        "low_pln": "224700.00",
+        "multiplier": "1.00",
+        "pln_per_m2": "4000.00",
+        "prices_are_placeholders": true,
+        "tier": "other"
+      },
+      "capex_used_pln": "314580.00",
+      "cash_flow": {
+        "assumptions_version": "2026-10-12.2",
+        "capex_pln": "314580.00",
+        "exit": {
+          "exit_value_pln": "633877.10",
+          "net_proceeds_pln": "621199.56",
+          "sale_tax_pln": "0.00",
+          "selling_costs_pln": "12677.54"
+        },
+        "purchase": {
+          "broker_pln": "0.00",
+          "court_fee_pln": "200.00",
+          "deed_copies_pln": "150.00",
+          "notary_pln": "3505.50",
+          "pcc_pln": "10400.00",
+          "price_pln": "520000.00",
+          "total_acquisition_pln": "534255.50",
+          "total_costs_pln": "14255.50"
+        },
+        "returns": {
+          "cagr": "-0.0041",
+          "gross_yield": "0.0624",
+          "irr": "-0.0046",
+          "moic": "0.9594",
+          "net_yield": "0.0240"
+        },
+        "total_invested_pln": "848835.50",
+        "warnings": [],
+        "years": [
+          {
+            "costs": {
+              "admin_fee_pln": "6480.00",
+              "insurance_pln": "780.00",
+              "maintenance_pln": "2600.00",
+              "management_pln": "0.00",
+              "property_tax_pln": "89.13",
+              "total_pln": "9949.13"
+            },
+            "income_tax_pln": "2069.78",
+            "net_cash_flow_pln": "12331.47",
+            "rent_collected_pln": "24350.38",
+            "year": 1
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "6674.40",
+              "insurance_pln": "803.40",
+              "maintenance_pln": "2678.00",
+              "management_pln": "0.00",
+              "property_tax_pln": "91.80",
+              "total_pln": "10247.60"
+            },
+            "income_tax_pln": "2605.63",
+            "net_cash_flow_pln": "17801.19",
+            "rent_collected_pln": "30654.42",
+            "year": 2
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "6874.63",
+              "insurance_pln": "827.50",
+              "maintenance_pln": "2758.34",
+              "management_pln": "0.00",
+              "property_tax_pln": "94.56",
+              "total_pln": "10555.03"
+            },
+            "income_tax_pln": "2683.79",
+            "net_cash_flow_pln": "18335.23",
+            "rent_collected_pln": "31574.05",
+            "year": 3
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "7080.87",
+              "insurance_pln": "852.33",
+              "maintenance_pln": "2841.09",
+              "management_pln": "0.00",
+              "property_tax_pln": "97.40",
+              "total_pln": "10871.68"
+            },
+            "income_tax_pln": "2764.31",
+            "net_cash_flow_pln": "18885.29",
+            "rent_collected_pln": "32521.28",
+            "year": 4
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "7293.30",
+              "insurance_pln": "877.90",
+              "maintenance_pln": "2926.32",
+              "management_pln": "0.00",
+              "property_tax_pln": "100.32",
+              "total_pln": "11197.83"
+            },
+            "income_tax_pln": "2847.24",
+            "net_cash_flow_pln": "19451.84",
+            "rent_collected_pln": "33496.91",
+            "year": 5
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "7512.10",
+              "insurance_pln": "904.23",
+              "maintenance_pln": "3014.11",
+              "management_pln": "0.00",
+              "property_tax_pln": "103.33",
+              "total_pln": "11533.77"
+            },
+            "income_tax_pln": "2932.65",
+            "net_cash_flow_pln": "20035.40",
+            "rent_collected_pln": "34501.82",
+            "year": 6
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "7737.46",
+              "insurance_pln": "931.36",
+              "maintenance_pln": "3104.54",
+              "management_pln": "0.00",
+              "property_tax_pln": "106.43",
+              "total_pln": "11879.78"
+            },
+            "income_tax_pln": "3020.63",
+            "net_cash_flow_pln": "20636.47",
+            "rent_collected_pln": "35536.88",
+            "year": 7
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "7969.58",
+              "insurance_pln": "959.30",
+              "maintenance_pln": "3197.67",
+              "management_pln": "0.00",
+              "property_tax_pln": "109.62",
+              "total_pln": "12236.18"
+            },
+            "income_tax_pln": "3111.25",
+            "net_cash_flow_pln": "21255.55",
+            "rent_collected_pln": "36602.98",
+            "year": 8
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "8208.67",
+              "insurance_pln": "988.08",
+              "maintenance_pln": "3293.60",
+              "management_pln": "0.00",
+              "property_tax_pln": "112.91",
+              "total_pln": "12603.26"
+            },
+            "income_tax_pln": "3204.59",
+            "net_cash_flow_pln": "21893.22",
+            "rent_collected_pln": "37701.07",
+            "year": 9
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "8454.93",
+              "insurance_pln": "1017.72",
+              "maintenance_pln": "3392.41",
+              "management_pln": "0.00",
+              "property_tax_pln": "116.30",
+              "total_pln": "12981.36"
+            },
+            "income_tax_pln": "3300.73",
+            "net_cash_flow_pln": "22550.01",
+            "rent_collected_pln": "38832.10",
+            "year": 10
+          }
+        ]
+      },
+      "confidence": "medium",
+      "engine_version": "0.1.0",
+      "legal": {
+        "confidence": "medium",
+        "evidence": [],
+        "legal_class": "residential",
+        "price_basis": "unknown"
+      },
+      "listing": {
+        "admin_fee_pln": "540",
+        "area_m2": "74.9",
+        "build_year": 1998,
+        "building_floors": 5,
+        "building_ownership": null,
+        "building_type": null,
+        "city": "Toruń",
+        "created_at": "2026-09-01T10:00:00Z",
+        "deposit_pln": null,
+        "description": "Opis testowy ogłoszenia.",
+        "floor": "2",
+        "floor_plan_urls": ["https://example.test/fixture/57", "https://example.test/fixture/58"],
+        "heating": null,
+        "kind": "SALE",
+        "latitude": "53.01",
+        "location_id": null,
+        "longitude": "18.6",
+        "modified_at": "2026-10-01T08:30:00Z",
+        "otodom_id": "IDFIX0021",
+        "photo_urls": [
+          "https://example.test/fixture/33",
+          "https://example.test/fixture/34",
+          "https://example.test/fixture/35",
+          "https://example.test/fixture/36",
+          "https://example.test/fixture/37",
+          "https://example.test/fixture/38",
+          "https://example.test/fixture/39",
+          "https://example.test/fixture/40",
+          "https://example.test/fixture/41",
+          "https://example.test/fixture/42",
+          "https://example.test/fixture/43",
+          "https://example.test/fixture/44",
+          "https://example.test/fixture/45",
+          "https://example.test/fixture/46",
+          "https://example.test/fixture/47",
+          "https://example.test/fixture/48",
+          "https://example.test/fixture/49",
+          "https://example.test/fixture/50",
+          "https://example.test/fixture/51",
+          "https://example.test/fixture/52",
+          "https://example.test/fixture/53",
+          "https://example.test/fixture/54",
+          "https://example.test/fixture/55",
+          "https://example.test/fixture/56"
+        ],
+        "price_pln": "520000",
+        "rooms": 4,
+        "street": "Przykładowa",
+        "title": "Mieszkanie 4 pok., Toruń, 74.9 m2",
+        "url": null,
+        "warnings": ["building_type_missing", "heating_missing", "windows_missing"],
+        "windows": null
+      },
+      "ownership": {
+        "confidence": "low",
+        "evidence": [],
+        "interest": "unknown",
+        "share_denominator": null,
+        "share_numerator": null,
+        "structured_value": null,
+        "title_form": "unknown"
+      },
+      "rent": {
+        "basis": "asking",
+        "comparables": 14,
+        "confidence": "high",
+        "haircut": "0.03",
+        "input_monthly_pln": "2846.20",
+        "monthly_after_haircut_pln": "2760.81",
+        "monthly_used_pln": "2705.60"
+      },
+      "schema_version": 1,
+      "valuation": {
+        "asking_price_pln": "520000.00",
+        "discount_to_asking": null,
+        "grade": "E",
+        "hurdle": "0.0750",
+        "irr_at_asking": "-0.0046",
+        "max_bid_bounded": true,
+        "max_bid_if_appreciation_minus_1pp_pln": null,
+        "max_bid_if_appreciation_plus_1pp_pln": null,
+        "max_bid_pln": null,
+        "verdict": "pass"
+      },
+      "vision": {
+        "capex": {
+          "applied": "0.05",
+          "base": "299600.00",
+          "clamped": false,
+          "proposed": "0.05",
+          "value": "314580.0000"
+        },
+        "condition": "shell",
+        "model": "vendor/smoke-model",
+        "photos_excluded": 1,
+        "photos_total": 24,
+        "prompt_version": "vision-v1",
+        "rent": {
+          "applied": "-0.02",
+          "base": "2760.814",
+          "clamped": false,
+          "proposed": "-0.02",
+          "value": "2705.59772"
+        }
+      },
+      "warnings": [
+        "building_type_missing",
+        "heating_missing",
+        "windows_missing",
+        "capex_prices_are_placeholders"
+      ]
+    },
+    "started_at": "2026-10-01T10:00:00Z",
+    "status": "succeeded"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}",
+    "method": "GET",
+    "operation_id": "get_audit_api_audits__audit_id__get",
+    "path": "/api/audits/{audit_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/00000000-0000-4000-8000-000000000041"
+  },
+  "scenario": "succeeded_torun",
+  "status": 200
+}

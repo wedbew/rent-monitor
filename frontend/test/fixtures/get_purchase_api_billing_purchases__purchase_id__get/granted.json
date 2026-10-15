@@ -1,0 +1,31 @@
+{
+  "body": {
+    "checkout_url": "https://example.test/fixture/73",
+    "created_at": "2026-10-01T10:00:00Z",
+    "currency": "PLN",
+    "granted_at": "2026-10-01T10:00:00Z",
+    "gross_pln": "40",
+    "pack_code": "reports_5",
+    "purchase_id": "00000000-0000-4000-8000-000000000052",
+    "refunded_at": null,
+    "reports": 5,
+    "state": "granted",
+    "transaction_id": "txn_fixture0004"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/billing/purchases/{purchase_id}",
+    "method": "GET",
+    "operation_id": "get_purchase_api_billing_purchases__purchase_id__get",
+    "path": "/api/billing/purchases/{purchase_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/billing/purchases/00000000-0000-4000-8000-000000000052"
+  },
+  "scenario": "granted",
+  "status": 200
+}

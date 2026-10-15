@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "GOOGLE_EMAIL_UNVERIFIED",
+    "instance": "/api/auth/google",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Google email is not verified",
+    "type": "urn:rentmonitor:problem:GOOGLE_EMAIL_UNVERIFIED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/google",
+    "method": "POST",
+    "operation_id": "google_sign_in_api_auth_google_post",
+    "path": "/api/auth/google"
+  },
+  "request": {
+    "body": {
+      "credential": "[redacted]"
+    },
+    "path": "/api/auth/google"
+  },
+  "scenario": "email_unverified",
+  "status": 401
+}

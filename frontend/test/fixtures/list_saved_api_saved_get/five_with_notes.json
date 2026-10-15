@@ -1,0 +1,50 @@
+{
+  "body": [
+    {
+      "created_at": "2026-10-01T10:00:00Z",
+      "latest_audit_id": "00000000-0000-4000-8000-000000000287",
+      "note": "Notatka testowa 10",
+      "otodom_id": "IDFIX0253"
+    },
+    {
+      "created_at": "2026-10-01T10:00:00Z",
+      "latest_audit_id": "00000000-0000-4000-8000-000000000288",
+      "note": "Notatka testowa 11",
+      "otodom_id": "IDFIX0254"
+    },
+    {
+      "created_at": "2026-10-01T10:00:00Z",
+      "latest_audit_id": "00000000-0000-4000-8000-000000000289",
+      "note": "Notatka testowa 12",
+      "otodom_id": "IDFIX0255"
+    },
+    {
+      "created_at": "2026-10-01T10:00:00Z",
+      "latest_audit_id": "00000000-0000-4000-8000-000000000290",
+      "note": "Notatka testowa 13",
+      "otodom_id": "IDFIX0256"
+    },
+    {
+      "created_at": "2026-10-01T10:00:00Z",
+      "latest_audit_id": "00000000-0000-4000-8000-000000000291",
+      "note": null,
+      "otodom_id": "IDFIX0257"
+    }
+  ],
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/saved",
+    "method": "GET",
+    "operation_id": "list_saved_api_saved_get",
+    "path": "/api/saved"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/saved"
+  },
+  "scenario": "five_with_notes",
+  "status": 200
+}

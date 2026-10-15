@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/admin/users/nobody/billing-hold/clear",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/admin/users/{user_id}/billing-hold/clear",
+    "method": "POST",
+    "operation_id": "clear_hold_api_admin_users__user_id__billing_hold_clear_post",
+    "path": "/api/admin/users/{user_id}/billing-hold/clear"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/admin/users/nobody/billing-hold/clear"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

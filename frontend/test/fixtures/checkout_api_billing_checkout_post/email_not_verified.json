@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "EMAIL_NOT_VERIFIED",
+    "instance": "/api/billing/checkout",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Verify your email address first",
+    "type": "urn:rentmonitor:problem:EMAIL_NOT_VERIFIED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/billing/checkout",
+    "method": "POST",
+    "operation_id": "checkout_api_billing_checkout_post",
+    "path": "/api/billing/checkout"
+  },
+  "request": {
+    "body": {
+      "pack_code": "reports_5"
+    },
+    "path": "/api/billing/checkout"
+  },
+  "scenario": "email_not_verified",
+  "status": 403
+}

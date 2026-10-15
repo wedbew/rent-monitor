@@ -1,0 +1,35 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "note"],
+        "msg": "String should have at least 10 characters",
+        "type": "string_too_short"
+      }
+    ],
+    "instance": "/api/admin/users/00000000-0000-4000-8000-000000000022/billing-hold/clear",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/admin/users/{user_id}/billing-hold/clear",
+    "method": "POST",
+    "operation_id": "clear_hold_api_admin_users__user_id__billing_hold_clear_post",
+    "path": "/api/admin/users/{user_id}/billing-hold/clear"
+  },
+  "request": {
+    "body": {
+      "note": "Notatka testowa 6"
+    },
+    "path": "/api/admin/users/00000000-0000-4000-8000-000000000022/billing-hold/clear"
+  },
+  "scenario": "note_too_short",
+  "status": 422
+}

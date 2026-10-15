@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "NOT_FOUND",
+    "instance": "/api/admin/flags/does_not_exist",
+    "request_id": "req_fixture",
+    "status": 404,
+    "title": "Flag not found",
+    "type": "urn:rentmonitor:problem:NOT_FOUND"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "PUT /api/admin/flags/{key}",
+    "method": "PUT",
+    "operation_id": "update_flag_api_admin_flags__key__put",
+    "path": "/api/admin/flags/{key}"
+  },
+  "request": {
+    "body": {
+      "enabled_default": true
+    },
+    "path": "/api/admin/flags/does_not_exist"
+  },
+  "scenario": "unknown_flag",
+  "status": 404
+}

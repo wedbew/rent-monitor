@@ -13,6 +13,7 @@ export default tseslint.config(
       "dist",
       "node_modules",
       "api/schema.generated.ts",
+      "api/report.generated.ts",
       "coverage",
       "playwright-report",
       "test-results",
@@ -44,6 +45,21 @@ export default tseslint.config(
         {
           selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
           message: "User and listing content is rendered as text (guide section 7). No raw HTML.",
+        },
+        {
+          selector:
+            "CallExpression[callee.name='Number'] > MemberExpression[property.name=/_pln$|^irr|ratio$/]",
+          message:
+            "Money and ratios are decimal strings: format them with api/format.ts, never through Number().",
+        },
+        {
+          selector: "UnaryExpression[operator='+'] > MemberExpression[property.name=/_pln$|^irr|ratio$/]",
+          message: "Money and ratios are decimal strings: format them with api/format.ts, never coerce them.",
+        },
+        {
+          selector:
+            "CallExpression[callee.name='parseFloat'], CallExpression[callee.property.name='parseFloat']",
+          message: "No binary floats for money, areas or rates: use api/format.ts.",
         },
         ...HTML_SINKS.map((name) => ({
           selector: `AssignmentExpression[left.property.name='${name}']`,

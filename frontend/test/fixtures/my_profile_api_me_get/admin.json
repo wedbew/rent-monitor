@@ -1,0 +1,42 @@
+{
+  "body": {
+    "avatar_url": null,
+    "credit_balance": 3,
+    "email": "user-15@example.test",
+    "email_verified": true,
+    "flags": {
+      "smoke_on": true
+    },
+    "id": "00000000-0000-4000-8000-000000000293",
+    "name": "Ewa Wzorcowa",
+    "plan": {
+      "code": "free",
+      "grace_until": null,
+      "is_pro": false,
+      "period": null,
+      "subscription_status": null
+    },
+    "role": "admin",
+    "upstream": {
+      "otodom_breaker_open": false,
+      "reason": null,
+      "retry_after_s": 0
+    }
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/me",
+    "method": "GET",
+    "operation_id": "my_profile_api_me_get",
+    "path": "/api/me"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/me"
+  },
+  "scenario": "admin",
+  "status": 200
+}

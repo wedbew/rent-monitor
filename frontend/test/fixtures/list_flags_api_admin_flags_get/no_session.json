@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/admin/flags",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/admin/flags",
+    "method": "GET",
+    "operation_id": "list_flags_api_admin_flags_get",
+    "path": "/api/admin/flags"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/admin/flags"
+  },
+  "scenario": "no_session",
+  "status": 401
+}

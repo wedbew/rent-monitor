@@ -1,0 +1,56 @@
+{
+  "body": {
+    "items": [
+      {
+        "asking_price_pln": "395000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000055",
+        "created_at": "2026-10-01T10:00:00Z",
+        "error_code": null,
+        "finished_at": "2026-10-01T10:00:01Z",
+        "grade": "E",
+        "max_bid_pln": "2194.34",
+        "otodom_id": "IDFIX0024",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "612000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000056",
+        "created_at": "2026-10-01T10:00:00Z",
+        "error_code": null,
+        "finished_at": "2026-10-01T10:00:00Z",
+        "grade": "E",
+        "max_bid_pln": "189884.87",
+        "otodom_id": "IDFIX0025",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "890000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000057",
+        "created_at": "2026-10-01T10:00:00Z",
+        "error_code": null,
+        "finished_at": "2026-10-01T10:00:00Z",
+        "grade": "E",
+        "max_bid_pln": "356345.43",
+        "otodom_id": "IDFIX0026",
+        "status": "succeeded"
+      }
+    ],
+    "next_cursor": null
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/audits",
+    "method": "GET",
+    "operation_id": "list_audits_api_audits_get",
+    "path": "/api/audits"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits"
+  },
+  "scenario": "after_real_runs",
+  "status": 200
+}

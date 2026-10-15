@@ -1,0 +1,29 @@
+{
+  "body": {
+    "code": "RATE_LIMITED",
+    "instance": "/api/billing/checkout",
+    "request_id": "req_fixture",
+    "status": 429,
+    "title": "Too many requests",
+    "type": "urn:rentmonitor:problem:RATE_LIMITED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json",
+    "retry-after": "48"
+  },
+  "operation": {
+    "key": "POST /api/billing/checkout",
+    "method": "POST",
+    "operation_id": "checkout_api_billing_checkout_post",
+    "path": "/api/billing/checkout"
+  },
+  "request": {
+    "body": {
+      "pack_code": "reports_5"
+    },
+    "path": "/api/billing/checkout"
+  },
+  "scenario": "rate_limited",
+  "status": 429
+}

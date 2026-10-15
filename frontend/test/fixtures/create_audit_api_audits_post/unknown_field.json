@@ -1,0 +1,36 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "x"],
+        "msg": "Extra inputs are not permitted",
+        "type": "extra_forbidden"
+      }
+    ],
+    "instance": "/api/audits",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/audits",
+    "method": "POST",
+    "operation_id": "create_audit_api_audits_post",
+    "path": "/api/audits"
+  },
+  "request": {
+    "body": {
+      "listing_ref": "IDFIX0006",
+      "x": 1
+    },
+    "path": "/api/audits"
+  },
+  "scenario": "unknown_field",
+  "status": 422
+}

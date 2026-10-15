@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/billing/checkout",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/billing/checkout",
+    "method": "POST",
+    "operation_id": "checkout_api_billing_checkout_post",
+    "path": "/api/billing/checkout"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/billing/checkout"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

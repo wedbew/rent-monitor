@@ -153,6 +153,7 @@ def write_sample(run_dir: Path, operation_id: str, scenario: Scenario, ex: Excha
     if isinstance(body, dict) and "request_id" in body:
         body["request_id"] = REDACTED
     sample = {
+        "operation": {"key": scenario.key, "operation_id": operation_id},
         "scenario": scenario.name,
         "note": scenario.note or None,
         "expected_status": scenario.status,

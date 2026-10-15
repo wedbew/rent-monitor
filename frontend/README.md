@@ -20,26 +20,52 @@ differs from `.node-version`.
 
 ## Scripts (run from `frontend/`)
 
-| Script                              | What it does                                                                                                     |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                          | Vite dev server; `/api` proxied to `API_ORIGIN` (default `http://127.0.0.1:8000`)                                |
-| `pnpm generate:api`                 | Regenerate `api/schema.generated.ts` from `../docs/openapi.json`                                                 |
-| `pnpm check:api`                    | Fail when the committed types differ from the schema (never rewrites)                                            |
-| `pnpm typecheck`                    | `tsc` for the app and for the tooling configs (strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) |
-| `pnpm lint` / `pnpm lint:css`       | ESLint (type-checked, React Hooks, a11y) and Stylelint, zero warnings                                            |
-| `pnpm format:check` / `pnpm format` | Prettier check / rewrite                                                                                         |
-| `pnpm test` / `pnpm test:watch`     | Vitest + Testing Library                                                                                         |
-| `pnpm build`                        | Production build into `dist/`                                                                                    |
-| `pnpm check:dist`                   | `dist/` contains no mock or test tooling                                                                         |
-| `pnpm check`                        | All of the above in order                                                                                        |
+| Script                              | What it does                                                                                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                          | Vite dev server; `/api` proxied to `API_ORIGIN` (default `http://127.0.0.1:8000`)                                                           |
+| `pnpm generate:api`                 | Regenerate `api/schema.generated.ts` (from `../docs/openapi.json`) and `api/report.generated.ts` (from `../docs/deal-analysis.schema.json`) |
+| `pnpm check:api`                    | Fail when either committed file differs from its schema (never rewrites)                                                                    |
+| `pnpm typecheck`                    | `tsc` for the app and for the tooling configs (strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`)                            |
+| `pnpm lint` / `pnpm lint:css`       | ESLint (type-checked, React Hooks, a11y) and Stylelint, zero warnings                                                                       |
+| `pnpm format:check` / `pnpm format` | Prettier check / rewrite                                                                                                                    |
+| `pnpm test` / `pnpm test:watch`     | Vitest + Testing Library; `pnpm test` also enforces the coverage floor on `api/`                                                            |
+| `pnpm check:fixtures-vs-samples`    | Local only: every key path of the newest capture exists in a fixture (SKIPPED where `data/` is absent)                                      |
+| `pnpm build`                        | Production build into `dist/`                                                                                                               |
+| `pnpm check:dist`                   | `dist/` contains no mock or test tooling                                                                                                    |
+| `pnpm check`                        | All of the above in order                                                                                                                   |
 
-Playwright (`test:e2e`, #269), Storybook (#270) and MSW fixtures (#268) are added by their slices.
+Playwright (`test:e2e`, #269) and Storybook (#270) are added by their slices.
 
 ## Environment
 
 The browser always calls relative `/api` URLs. There are no runtime variables in the bundle yet; **every `VITE_*` value
 would be public** (never put a key in one). `API_ORIGIN` only configures the dev proxy and is read by Node, not the app.
 Names live in `../.env.example`; real values are never read or committed.
+
+## API seam (`api/`)
+
+- `client.ts`: the one `openapi-fetch` client (`createApi`), relative `/api` URLs, a 15 s deadline on every request.
+  `unwrap()` turns an error status into `ApiError` (RFC 9457 `Problem`, `code`, `request_id`, `Retry-After`) and a
+  dropped connection, timeout or abort into `TransportError`.
+- `problems.ts`: Polish title, detail and next action for **every** problem code (exhaustive: a new API code is a
+  compile error and a failing test), plus the transport failures. Where a failure releases the credit, the text says so.
+- `format.ts`: the only place numbers become text. Money, areas and rates arrive as decimal strings and are formatted
+  by integer arithmetic (no `Number`, no `parseFloat`; both are linted). `null` is "nie obliczono", never `0`. Dates in
+  Europe/Warsaw, pl-PL numbers, Polish plurals.
+- `query.ts`: TanStack Query defaults. Mutations are never retried; reads retry at most twice, only on network errors,
+  timeouts and 5xx; `staleTime` 30 s; `clearTenantState` empties the cache on sign-out.
+- `report.ts`: `parseReport` renders a known `schema_version` and says "unsupported" otherwise.
+
+## Fixtures and scenarios (`test/`)
+
+`test/fixtures/` are sanitised API answers derived from a local capture by `make fe-fixtures`
+(`scripts/derive_ui_fixtures.py`; synthetic ids, emails, names, text, URLs and times; shapes and nullability kept).
+`test/scenarios.ts` is the typed registry the screens are built and tested against: `firstVisit`, `empty`, `loaded`
+(five distinct audits), `pending`, `degraded`, `rejectedRent`, `rejectedFractional`, `failedUpstream`, `failedInput`,
+`insufficientCredits`, `breakerOpen`, `billingDisabled`, `sessionExpired`, `offline`, `reconnecting`. Scenarios are
+plain data: `test/handlers.ts` serves them with MSW in Vitest (`useScenario("loaded")`) and the Playwright lane (#269)
+reads the same registry. A request no route matches answers 599 and fails the test. `test/contract.ts` validates every
+fixture against `docs/openapi.json`.
 
 ## Layout
 

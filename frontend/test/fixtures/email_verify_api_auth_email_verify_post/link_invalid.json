@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "MAGIC_LINK_INVALID",
+    "instance": "/api/auth/email/verify",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Link is invalid, used or expired",
+    "type": "urn:rentmonitor:problem:MAGIC_LINK_INVALID"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/email/verify",
+    "method": "POST",
+    "operation_id": "email_verify_api_auth_email_verify_post",
+    "path": "/api/auth/email/verify"
+  },
+  "request": {
+    "body": {
+      "token": "[redacted]"
+    },
+    "path": "/api/auth/email/verify"
+  },
+  "scenario": "link_invalid",
+  "status": 401
+}

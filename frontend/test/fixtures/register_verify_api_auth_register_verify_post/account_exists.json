@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "ACCOUNT_EXISTS",
+    "instance": "/api/auth/register/verify",
+    "request_id": "req_fixture",
+    "status": 409,
+    "title": "An account for this address already exists; sign in or reset the password",
+    "type": "urn:rentmonitor:problem:ACCOUNT_EXISTS"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/register/verify",
+    "method": "POST",
+    "operation_id": "register_verify_api_auth_register_verify_post",
+    "path": "/api/auth/register/verify"
+  },
+  "request": {
+    "body": {
+      "token": "[redacted]"
+    },
+    "path": "/api/auth/register/verify"
+  },
+  "scenario": "account_exists",
+  "status": 409
+}
