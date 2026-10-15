@@ -44,7 +44,8 @@ Method: every factual claim in the four files was checked against the code, Open
 Worth keeping: the four-layer component model, state-ownership table, contract-first adapters, honest states, SSE
 lifecycle rules, the no-client-finance boundary, the media and AI-tool cautions. They match the blueprint and the
 production bar. Not worth adding yet: Storybook before the first primitives exist (start it with #270, not #267),
-virtualisation, a translation framework, offline/PWA.
+virtualisation, offline/PWA. A translation framework was deferred here; after the 2026-10-15 audit the owner
+requires copy in a typed catalog (#305, `.agent/rules/frontend.md` §7).
 
 ## 2. Order
 
