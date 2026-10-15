@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, type QueryKey } from "@tanstack/react-query";
 
 import { ApiError, TransportError } from "./errors";
 
@@ -45,7 +45,13 @@ export function createQueryClient(): QueryClient {
   });
 }
 
-export function clearTenantState(client: QueryClient): void {
+export function clearTenantState(client: QueryClient, keep?: QueryKey): void {
   void client.cancelQueries();
-  client.clear();
+  client.getMutationCache().clear();
+  for (const query of client.getQueryCache().getAll()) {
+    // `clear()` would also drop the session query that observers (the session boundary) are subscribed to, leaving
+    // them watching a removed query; every other cache entry belongs to the person who just left.
+    if (keep === undefined || query.queryKey[0] !== keep[0])
+      client.removeQueries({ queryKey: query.queryKey, exact: true });
+  }
 }

@@ -127,7 +127,7 @@ function withMe(patch: (body: MeDetail) => MeDetail, scenario = "with_credits_an
 
 const PACKS = fromFixture("GET /api/billing/packs", "three_packs");
 const SAVED_EMPTY = fromFixture("GET /api/saved", "empty");
-const EMPTY_PAGE: Route = {
+export const EMPTY_PAGE: Route = {
   operation: "GET /api/audits",
   reply: { status: 200, body: { items: [], next_cursor: null } satisfies AuditPage },
 };
@@ -179,6 +179,11 @@ export const SCENARIOS = {
   insufficientCredits: scenario("insufficientCredits", "No reports left: submitting answers 402.", [
     withMe((m) => ({ ...m, credit_balance: 0 })),
     fromFixture("POST /api/audits", "no_credits"),
+  ]),
+  unverified: scenario("unverified", "Signed in, but the e-mail address is not confirmed yet.", [
+    withMe((m) => ({ ...m, email_verified: false })),
+    EMPTY_PAGE,
+    fromFixture("POST /api/auth/register/resend", "accepted"),
   ]),
   breakerOpen: scenario("breakerOpen", "Otodom is rate-limiting us: the breaker is open.", [
     fromFixture("GET /api/me", "upstream_breaker_open"),
@@ -244,4 +249,139 @@ export function matchRoute(scenario: Scenario, method: string, path: string): Ma
 export function resolveReply(matched: Matched, request: MockRequest): Reply {
   const { reply } = matched.route;
   return typeof reply === "function" ? reply(request) : reply;
+}
+
+// ------------------------------------------------------------------------------------------- auth flow
+const wrongPassword = "wrong-password-1";
+const WEAK = "password1234";
+
+export interface AuthFlow extends Scenario {
+  /** Mutable: a successful sign-in flips it, so a following GET /api/me answers like the real API would. */
+  readonly state: { signedIn: boolean };
+  readonly calls: string[];
+}
+
+/**
+ * The sign-in surface as one stateful scenario: GET /api/me answers 401 until a sign-in succeeds, then the
+ * signed-in profile, and 401 again after sign-out. Tokens and passwords steer the answer: a token starting with
+ * `invalid` is refused, `exists` is an account that already exists, `wrong-password-1` is a bad password and
+ * `password1234` a weak one. Built fresh per test (the state is the point), from the same fixtures as the others.
+ */
+export function createAuthFlow(overrides: Record<string, Reply> = {}): AuthFlow {
+  const state = { signedIn: false };
+  const calls: string[] = [];
+  const me = bodyOf<MeDetail>(fx("GET /api/me", "with_credits_and_flags"));
+  const reply = (operation: string, scenarioName: string): Reply =>
+    overrides[operation] ?? replyFrom(fx(operation, scenarioName));
+  const signIn = (operation: string, scenarioName: string): Reply => {
+    state.signedIn = true;
+    return reply(operation, scenarioName);
+  };
+  const tokenOf = (request: MockRequest): string => {
+    const token = (request.body as { token?: unknown } | null)?.token;
+    return typeof token === "string" ? token : "";
+  };
+  const routes: Route[] = [
+    {
+      operation: "GET /api/me",
+      reply: () => (state.signedIn ? { status: 200, body: me } : replyFrom(fx("GET /api/me", "no_session"))),
+    },
+    {
+      operation: "POST /api/auth/login",
+      reply: (request) => {
+        calls.push("login");
+        const password = (request.body as { password?: string } | null)?.password;
+        if (overrides["POST /api/auth/login"] !== undefined) return overrides["POST /api/auth/login"];
+        return password === wrongPassword
+          ? replyFrom(fx("POST /api/auth/login", "wrong_password"))
+          : signIn("POST /api/auth/login", "signed_in");
+      },
+    },
+    {
+      operation: "POST /api/auth/google",
+      reply: (request) => {
+        calls.push("google");
+        const credential = (request.body as { credential?: string } | null)?.credential ?? "";
+        if (credential.includes("unverified"))
+          return replyFrom(fx("POST /api/auth/google", "email_unverified"));
+        if (credential.includes("confirm"))
+          return replyFrom(fx("POST /api/auth/google", "email_confirmation_required"));
+        return signIn("POST /api/auth/google", "new_account");
+      },
+    },
+    {
+      operation: "POST /api/auth/email/start",
+      reply: () => (calls.push("email-start"), reply("POST /api/auth/email/start", "accepted")),
+    },
+    {
+      operation: "POST /api/auth/email/verify",
+      reply: (request) => {
+        calls.push(`email-verify:${tokenOf(request)}`);
+        return tokenOf(request).startsWith("invalid")
+          ? replyFrom(fx("POST /api/auth/email/verify", "link_invalid"))
+          : signIn("POST /api/auth/email/verify", "signed_in");
+      },
+    },
+    {
+      operation: "POST /api/auth/register",
+      reply: (request) => {
+        calls.push("register");
+        const password = (request.body as { password?: string } | null)?.password;
+        return password === WEAK
+          ? replyFrom(fx("POST /api/auth/register", "weak_password"))
+          : reply("POST /api/auth/register", "accepted");
+      },
+    },
+    {
+      operation: "POST /api/auth/register/resend",
+      reply: () => (calls.push("register-resend"), reply("POST /api/auth/register/resend", "accepted")),
+    },
+    {
+      operation: "POST /api/auth/register/verify",
+      reply: (request) => {
+        const token = tokenOf(request);
+        calls.push(`register-verify:${token}`);
+        if (token.startsWith("invalid"))
+          return replyFrom(fx("POST /api/auth/register/verify", "link_invalid"));
+        if (token.startsWith("exists"))
+          return replyFrom(fx("POST /api/auth/register/verify", "account_exists"));
+        return signIn("POST /api/auth/register/verify", "account_created");
+      },
+    },
+    {
+      operation: "POST /api/auth/password/forgot",
+      reply: () => (calls.push("forgot"), reply("POST /api/auth/password/forgot", "accepted")),
+    },
+    {
+      operation: "POST /api/auth/password/reset",
+      reply: (request) => {
+        const token = tokenOf(request);
+        calls.push(`reset:${token}`);
+        const password = (request.body as { password?: string } | null)?.password;
+        if (token.startsWith("invalid"))
+          return replyFrom(fx("POST /api/auth/password/reset", "link_invalid"));
+        return password === WEAK
+          ? replyFrom(fx("POST /api/auth/password/reset", "weak_password"))
+          : reply("POST /api/auth/password/reset", "password_set");
+      },
+    },
+    {
+      operation: "POST /api/auth/signout",
+      reply: () => {
+        calls.push("signout");
+        state.signedIn = false;
+        return reply("POST /api/auth/signout", "signed_out");
+      },
+    },
+    SAVED_EMPTY,
+    PACKS,
+    EMPTY_PAGE,
+  ];
+  return {
+    name: "authFlow",
+    description: "Sign-in methods against a stateful session.",
+    routes,
+    state,
+    calls,
+  };
 }

@@ -56,7 +56,9 @@ export default defineConfig({
         ],
   webServer: {
     // Both lanes serve the built SPA; the journey lane's preview server also proxies /api to the real API.
-    command: `pnpm build && pnpm preview --port ${port} --strictPort`,
+    // The mocked lane builds with a test Google client id (a public value) so the Google button renders; e2e/gis.ts
+    // replaces the Google script. The journey lane builds without one: real Google is not part of it.
+    command: `${lane === "journey" ? "" : "VITE_GOOGLE_CLIENT_ID=test-client.apps.googleusercontent.com "}pnpm build && pnpm preview --port ${port} --strictPort`,
     url: baseURL,
     reuseExistingServer: !ci,
     timeout: 120_000,

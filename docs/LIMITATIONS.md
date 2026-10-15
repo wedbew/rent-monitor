@@ -211,6 +211,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** Treat samples as shape evidence. Ask the owner to run the live capture once before the report page (#274) is finalised.
 - **Target:** #263; the live run is an owner action recorded on #44.
 
+### L-029 — The SPA's Google sign-in and mailed links are verified against stand-ins
+- **Status:** active
+- **Discovered:** 2026-10-15
+- **Affects:** `frontend/features/auth` (`gis.ts`, `GoogleButton.tsx`), the e2e lanes, #281 (CSP)
+- **Evidence:** confirmed (tests): the mocked lane replaces Google's script with `e2e/gis.ts`; the journey lane runs sign-up through a token that `scripts/e2e_session.py register-token` stores as registration does, because the journey stack has no mail provider. Real Google Identity Services, real Resend delivery and the production CSP have not been exercised.
+- **Description:** The Google button needs `VITE_GOOGLE_CLIENT_ID` at build time (B-004: not set on the host) and the CSP must allow `accounts.google.com` scripts, frames and connections (#281, blueprint §4.3 currently lists Stripe only). Until then the button is hidden (or shows "niedostępne" if the script is blocked) and the e-mail methods work.
+- **Workaround:** E-mail and password, and the sign-in link.
+- **Target:** B-004 (client id on the host), #281 (CSP), level 3 evidence per `delivery.md`.
+
 ## Deferred
 
 ### L-025 — V2 manual analysis and creative tools are local design flows

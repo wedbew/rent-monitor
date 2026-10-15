@@ -227,6 +227,7 @@ test.describe("theme", () => {
 test("the skip link is the first stop and moves focus to the main region", async ({ page, serve }) => {
   await serve("empty");
   await page.goto("/app");
+  await expect(page.getByRole("heading", { level: 1, name: "Pulpit" })).toBeVisible();
   const skip = page.getByRole("link", { name: "Przejdź do treści" });
   await exercise("shell.skip", async () => {
     await page.keyboard.press("Tab");

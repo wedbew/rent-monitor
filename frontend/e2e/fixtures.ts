@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test as base, type Page } from "@playwright/test";
 
 import type { Scenario, ScenarioName } from "../test/scenarios";
+import { installFakeGis } from "./gis";
 import { mockApi, type MockApi } from "./mock";
 
 interface Fixtures {
@@ -16,6 +17,7 @@ interface Fixtures {
  */
 export const test = base.extend<Fixtures>({
   serve: async ({ page }, provide) => {
+    await installFakeGis(page);
     const apis: MockApi[] = [];
     const problems: string[] = [];
     page.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`));

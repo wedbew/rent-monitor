@@ -1,6 +1,7 @@
 import createClient from "openapi-fetch";
 
 import { ApiError, asProblem, TransportError } from "./errors";
+import { emitSessionExpired } from "./session-events";
 import type { paths } from "./schema.generated";
 
 /** Every request has a deadline; a caller's own signal (route change, unmount) still wins. */
@@ -21,7 +22,7 @@ export interface ApiOptions {
 export function createApi({
   fetch: impl = (request) => fetch(request),
   timeoutMs = REQUEST_TIMEOUT_MS,
-  baseUrl = "",
+  baseUrl = window.location.origin,
 }: ApiOptions = {}) {
   const timed: FetchImpl = async (request) => {
     // Own controller and timer instead of AbortSignal.timeout/any: they behave differently across realms (jsdom and
@@ -78,7 +79,9 @@ function retryAfter(response: Response): number | null {
 export function unwrap<T>(result: Result<T>): T {
   const { response } = result;
   if (!response.ok) {
-    throw new ApiError(response.status, asProblem(result.error), retryAfter(response));
+    const problem = asProblem(result.error);
+    if (response.status === 401 && problem?.code === "UNAUTHENTICATED") emitSessionExpired();
+    throw new ApiError(response.status, problem, retryAfter(response));
   }
   return result.data as T;
 }

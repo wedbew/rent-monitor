@@ -52,6 +52,10 @@
   border-top: 1px solid var(--border);
 }
 
+.account {
+  margin-top: var(--space-2);
+}
+
 .menu {
   display: none;
 }
@@ -96,7 +100,8 @@
   }
 
   .primary,
-  .legal {
+  .legal,
+  .account {
     display: none;
   }
 
@@ -128,4 +133,12 @@
   .main {
     padding-inline: var(--space-4);
   }
+}
+
+.banner {
+  margin-bottom: var(--space-6);
+}
+
+.banner:empty {
+  display: none;
 }

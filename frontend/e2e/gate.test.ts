@@ -133,6 +133,45 @@ describe("findViolations", () => {
   });
 });
 
+describe("page states", () => {
+  const base = entry({ id: "b", role: "button", name: "Zapisz" });
+  const inState = entry({ id: "s", role: "link", name: "Popraw to pole", state: "errors" });
+  const registry = [base, inState];
+  const snapshot = `- button "Zapisz"\n- link "Popraw to pole"`;
+
+  it("the base state demands only base elements and does not accept state-only ones", () => {
+    const found = findViolations('- button "Zapisz"', registry, { page: "list", scenario: "x" });
+    expect(found).toEqual([]);
+    const extra = findViolations(snapshot, registry, { page: "list", scenario: "x" });
+    expect(extra.map((v) => v.kind)).toEqual(["unregistered"]);
+  });
+
+  it("a state accepts base elements and demands its own", () => {
+    expect(findViolations(snapshot, registry, { page: "list", scenario: "x", state: "errors" })).toEqual([]);
+    expect(
+      findViolations('- button "Zapisz"', registry, { page: "list", scenario: "x", state: "errors" }).map(
+        (v) => v.kind,
+      ),
+    ).toEqual(["missing"]);
+  });
+
+  it("a state does not demand base elements that the state replaced", () => {
+    expect(
+      findViolations('- link "Popraw to pole"', registry, { page: "list", scenario: "x", state: "errors" }),
+    ).toEqual([]);
+  });
+
+  it("the signed-out frame's shared elements apply to public pages only", () => {
+    const shared = [entry({ id: "t", page: "public:*", role: "button", name: "Tryb ciemny" })];
+    expect(
+      findViolations('- button "Tryb ciemny"', shared, { page: "login", scenario: "x", layout: "public" }),
+    ).toEqual([]);
+    expect(
+      findViolations('- button "Tryb ciemny"', shared, { page: "login", scenario: "x" }).map((v) => v.kind),
+    ).toEqual(["unregistered"]);
+  });
+});
+
 describe("coverage comparison", () => {
   const interactions = [
     entry({ id: "nav.pulpit", role: "link", name: "Pulpit", outcome: "url" }),

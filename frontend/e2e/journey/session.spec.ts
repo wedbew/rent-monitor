@@ -60,7 +60,9 @@ test("a seeded session is accepted by the real API through the SPA origin", asyn
   expect(await reply.json()).toMatchObject({ email: seeded.email, credit_balance: 3 });
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: "renti" })).toBeVisible();
+  await expect(page).toHaveURL(/\/app$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Pulpit" })).toBeVisible();
+  await expect(page.getByText("3 raporty na koncie")).toBeVisible();
 });
 
 test("without the cookie the same API call is refused", async ({ page }) => {

@@ -3,8 +3,10 @@ import { useLocation, useNavigate } from "react-router";
 
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
+import { AccountBlock } from "./AccountBlock";
 import { LEGAL, PRIMARY } from "./navigation";
 import { NavList } from "./NavList";
+import { useSession } from "./session";
 import styles from "./MobileMenu.module.css";
 
 const isPlainLeftClick = (event: MouseEvent) =>
@@ -21,6 +23,7 @@ export function MobileMenu() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const session = useSession();
   const pending = useRef<string | null>(null);
 
   // Any route change not started by the sheet (back button, a link elsewhere) also closes it. State that follows a
@@ -65,6 +68,7 @@ export function MobileMenu() {
         <div className={styles["sections"]}>
           <NavList label="Nawigacja mobilna" destinations={PRIMARY} size="sheet" onFollow={follow} />
           <NavList label="Dokumenty" destinations={LEGAL} size="sheet" onFollow={follow} />
+          {session.status === "signedIn" ? <AccountBlock /> : null}
         </div>
       </Dialog>
     </>
