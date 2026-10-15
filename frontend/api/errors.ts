@@ -35,11 +35,40 @@ export class TransportError extends Error {
   }
 }
 
-/** Narrow an unknown JSON value to a Problem; anything else is not trusted as one. */
+const isNullableString = (value: unknown) =>
+  value === undefined || value === null || typeof value === "string";
+
+/** One entry of a 422's `errors`: FastAPI's `loc` mixes field names and list indexes. */
+function isProblemField(value: unknown): boolean {
+  if (typeof value !== "object" || value === null) return false;
+  const item = value as Record<string, unknown>;
+  return (
+    Array.isArray(item["loc"]) &&
+    item["loc"].every((part) => typeof part === "string" || typeof part === "number") &&
+    typeof item["msg"] === "string"
+  );
+}
+
+/**
+ * Narrow an unknown JSON value to a Problem. Every field the app reads is checked (code, status, title, instance,
+ * detail, request_id and each `errors` entry); anything else is not trusted as one, so a malformed body becomes
+ * "unexpected response" copy instead of an exception while an error is being shown (audit F11).
+ */
 export function asProblem(value: unknown): Problem | null {
-  if (typeof value !== "object" || value === null) return null;
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
   const record = value as Record<string, unknown>;
   if (!isProblemCode(record["code"]) || typeof record["status"] !== "number") return null;
   if (typeof record["title"] !== "string" || typeof record["instance"] !== "string") return null;
-  return value as Problem;
+  const detail = record["detail"];
+  const requestId = record["request_id"];
+  if (!isNullableString(detail) || !isNullableString(requestId)) return null;
+  const errors = record["errors"];
+  if (errors !== undefined && errors !== null && !(Array.isArray(errors) && errors.every(isProblemField)))
+    return null;
+  return {
+    ...record,
+    detail: detail ?? null,
+    request_id: requestId ?? null,
+    errors: (errors as Problem["errors"] | undefined) ?? null,
+  } as Problem;
 }

@@ -39,7 +39,8 @@ const REASONS: Record<string, string> = {
 
 export function weakPasswordMessage(reason: unknown): string {
   return (
-    (typeof reason === "string" ? REASONS[reason] : undefined) ??
+    // Own keys only: a reason like "toString" must not reach the prototype (a function is not copy).
+    (typeof reason === "string" && Object.hasOwn(REASONS, reason) ? REASONS[reason] : undefined) ??
     "Hasło jest zbyt słabe. Wybierz dłuższe, mniej oczywiste hasło."
   );
 }
@@ -78,7 +79,7 @@ export function readFailure(error: unknown): FailedSubmit {
   if (problem.code === "VALIDATION_ERROR" && problem.errors !== null && problem.errors.length > 0) {
     const fields: Record<string, string> = {};
     for (const item of problem.errors) {
-      const name = item.loc.at(-1) ?? "";
+      const name = String(item.loc.at(-1) ?? "");
       fields[name] ??= "Sprawdź tę wartość.";
     }
     return { fields, general: null, code: problem.code };

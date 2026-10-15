@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ApiError, TransportError } from "../../api/errors";
+import { ApiError, asProblem, TransportError } from "../../api/errors";
 import {
   currentPasswordError,
   emailError,
@@ -114,5 +114,43 @@ describe("readFailure", () => {
   it("does not trust an error that is not a problem", () => {
     expect(readFailure(new ApiError(502, null)).general?.action).toBe("reload");
     expect(readFailure(new Error("boom")).general?.action).toBe("reload");
+  });
+});
+
+/**
+ * Audit F11: a problem body is checked field by field before it is trusted. Each body below used to pass the
+ * four-field check, and the first three made `readFailure` throw while an error was being shown.
+ */
+describe("a malformed problem body never breaks the form", () => {
+  it.each([
+    ["`errors` is not a list", { errors: "oops" }],
+    ["an entry has no `loc` list", { errors: [{ loc: "body", msg: "x" }] }],
+    ["`loc` holds an object", { errors: [{ loc: [{}], msg: "x" }] }],
+    ["an entry has no message", { errors: [{ loc: ["body", "email"] }] }],
+    ["`detail` is a number", { detail: 5 }],
+    ["`request_id` is an object", { request_id: {} }],
+  ])("%s: general 'unexpected response' copy, no exception", (_, over) => {
+    const raw = problem(over);
+    expect(asProblem(raw)).toBeNull();
+    const out = readFailure(new ApiError(422, asProblem(raw)));
+    expect(out.general?.action).toBe("reload");
+    expect(out.fields).toEqual({});
+  });
+
+  it("accepts FastAPI's list indexes in `loc` and missing optional fields", () => {
+    const raw = { ...problem({ errors: [{ loc: ["body", "items", 0], msg: "x", type: "t" }] }) };
+    delete (raw as Record<string, unknown>)["detail"];
+    delete (raw as Record<string, unknown>)["request_id"];
+    const parsed = asProblem(raw);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.detail).toBeNull();
+    expect(readFailure(new ApiError(422, parsed)).fields).toEqual({ "0": "Sprawdź tę wartość." });
+  });
+
+  it("a weak-password reason never reaches the prototype", () => {
+    for (const reason of ["toString", "__proto__", "constructor", "hasOwnProperty"])
+      expect(weakPasswordMessage(reason)).toBe(
+        "Hasło jest zbyt słabe. Wybierz dłuższe, mniej oczywiste hasło.",
+      );
   });
 });

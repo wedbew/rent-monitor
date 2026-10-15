@@ -20,9 +20,29 @@ const report = await compile(reportSchema, "DealAnalysis", {
   format: false,
 });
 
+// The same schema as data, for the runtime check of `AuditOut.result` (api/schema-check.ts). Only keywords that
+// constrain a value are kept; titles, descriptions and defaults are documentation.
+const DOC_KEYWORDS = new Set(["title", "description", "default", "$id", "$schema", "x-schema-version"]);
+const strip = (node) =>
+  Array.isArray(node)
+    ? node.map(strip)
+    : node !== null && typeof node === "object"
+      ? Object.fromEntries(
+          Object.entries(node)
+            .filter(([key]) => !DOC_KEYWORDS.has(key))
+            .map(([key, value]) =>
+              key === "properties" || key === "$defs"
+                ? [key, Object.fromEntries(Object.entries(value).map(([name, sub]) => [name, strip(sub)]))]
+                : [key, strip(value)],
+            ),
+        )
+      : node;
+const reportSchemaData = `${BANNER}export const REPORT_SCHEMA = ${JSON.stringify(strip(reportSchema))} as const;\n`;
+
 const outputs = [
   ["api/schema.generated.ts", api],
   ["api/report.generated.ts", report],
+  ["api/report-schema.generated.ts", reportSchemaData],
 ];
 
 let stale = false;
