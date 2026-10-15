@@ -265,6 +265,35 @@ export const PAGES: readonly AppPage[] = [
         },
       },
       {
+        name: "degraded",
+        path: "/app/analyses/00000000-0000-4000-8000-000000000037",
+        scenario: "degraded",
+        prepare: async (page) => {
+          await page.getByRole("heading", { level: 2, name: "Podsumowanie" }).waitFor();
+        },
+      },
+      {
+        name: "unsupported-version",
+        scenario: "unsupportedReport",
+        prepare: async (page) => {
+          await page.getByRole("status").filter({ hasText: "Nieobsługiwana wersja raportu" }).waitFor();
+        },
+      },
+      {
+        name: "invalid-result",
+        scenario: "invalidReport",
+        prepare: async (page) => {
+          await page.getByRole("status").filter({ hasText: "Nie można wyświetlić raportu" }).waitFor();
+        },
+      },
+      {
+        name: "rich",
+        scenario: "richReport",
+        prepare: async (page) => {
+          await page.getByRole("heading", { level: 2, name: "Podsumowanie" }).waitFor();
+        },
+      },
+      {
         name: "not-found",
         path: "/app/analyses/00000000-0000-4000-8000-000000000999",
         scenario: "unknownAudit",
@@ -651,6 +680,52 @@ export const INTERACTIONS: readonly Interaction[] = [
 
   // One analysis (progress and result).
   { id: "report.all", page: "report", role: "link", name: "Moje analizy", outcome: "url" },
+  ...[
+    ["podsumowanie", "Podsumowanie"],
+    ["czynsz", "Czynsz"],
+    ["koszty", "Koszty i stan"],
+    ["cena", "Cena zakupu"],
+    ["sprawdz", "Co sprawdzić"],
+    ["zrodla", "Źródła"],
+  ].map(([id = "", label = ""]): Interaction => ({
+    id: `report.nav.${id}`,
+    page: "report",
+    role: "link",
+    name: label,
+    outcome: "focus",
+  })),
+  ...[
+    ["rent-how", "Jak policzyliśmy czynsz"],
+    ["purchase", "Koszty zakupu: szczegóły"],
+    ["owner-costs", "Koszty właściciela w roku 1"],
+    ["capex", "Remont: szacunek i założenia"],
+    ["sensitivity", "Zwroty, wyjście i wrażliwość na wzrost cen"],
+    ["years", "Przepływy pieniężne rok po roku"],
+    ["listing", "Dane z ogłoszenia"],
+    ["vision", "Ocena zdjęć"],
+  ].map(([id = "", label = ""]): Interaction => ({
+    id: `report.more.${id}`,
+    page: "report",
+    role: "button",
+    name: label,
+    outcome: "state",
+  })),
+  {
+    id: "report.external",
+    page: "report",
+    state: "rich",
+    role: "link",
+    name: "Zobacz ogłoszenie na Otodom",
+    outcome: "state",
+  },
+  {
+    id: "report.more.evidence",
+    page: "report",
+    state: "rich",
+    role: "button",
+    name: /^Fragmenty ogłoszenia użyte w ocenie/,
+    outcome: "state",
+  },
   {
     id: "report.new.rejected",
     page: "report",

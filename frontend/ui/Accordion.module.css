@@ -1,0 +1,55 @@
+.root {
+  display: grid;
+  border-top: 1px solid var(--border);
+}
+
+.item {
+  border-bottom: 1px solid var(--border);
+}
+
+.header {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-3) var(--space-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trigger:hover {
+  border-color: var(--hover-border);
+}
+
+.chevron {
+  display: inline-flex;
+  transition: transform 150ms ease;
+  transform: rotate(90deg);
+}
+
+.trigger[data-panel-open] .chevron {
+  transform: rotate(-90deg);
+}
+
+.panel {
+  padding: var(--space-2) var(--space-3) var(--space-6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}

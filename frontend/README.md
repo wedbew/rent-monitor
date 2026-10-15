@@ -132,6 +132,18 @@ patterns (decision recorded in #270).
 - Scenarios: `createRun({outcome, interrupt, streamDown, silent, post, postDelayMs, listAfterPost, listFails})` is one
   analysis from click to end with a stateful balance, audit and stream.
 
+## The report (RM-274)
+
+- `features/analyses/report/ReportView.tsx` renders a `DealAnalysis` (version 1 only; `api/report.ts` decides: unsupported
+  or incomplete results get a safe notice and no values). Every figure is the engine's decimal string passed to
+  `api/format.ts`; the only things derived on the client are wording (`discountSentence` strips a sign) and lists.
+  A `null` is "nie obliczono" in italics, a zero stays "0,00 zł".
+- `copy.ts` and `warnings.ts` are exhaustive maps of the engine's vocabularies (verdict, grade, condition, title form,
+  warning codes); an unknown warning code is still shown. `ui/Accordion.tsx` (`DisclosureGroup`, Base UI) holds the
+  details; several can be open.
+- Listing photos are not displayed (third-party images; counts only). `LEGAL[republication]` is on `SourceSection`.
+- Scenarios: `unsupportedReport`, `invalidReport`, `richReport` patch the stored result of the first captured audit.
+
 ### Journey lane
 
 The same SPA against a real stack: API, Postgres, workers and fake providers. The session is seeded **inside the api

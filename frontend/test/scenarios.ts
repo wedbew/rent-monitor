@@ -178,6 +178,17 @@ const NOT_READY = {
   request_id: "req_fixture",
 };
 
+/** The first finished audit with its stored result changed: for the report states a capture cannot show. */
+function withResult(
+  patch: (result: Record<string, unknown>) => Record<string, unknown>,
+): readonly AuditOut[] {
+  const [first] = SUCCEEDED_AUDITS;
+  if (first === undefined) throw new Error("no succeeded audit fixture");
+  return [{ ...first, result: patch(structuredClone(first.result as Record<string, unknown>)) }];
+}
+
+const RICH_URL = "https://www.otodom.pl/pl/oferta/mieszkanie-2-pokoje-ID4abcd";
+
 export const SCENARIOS = {
   firstVisit: scenario(
     "firstVisit",
@@ -226,6 +237,33 @@ export const SCENARIOS = {
       reply: { status: 200, body: { items: [], next_cursor: null } satisfies AuditPage, delayMs: 1500 },
     },
   ]),
+  unsupportedReport: scenario(
+    "unsupportedReport",
+    "A finished audit whose stored result has a schema version this build does not know.",
+    auditRoutes(withResult((r) => ({ ...r, schema_version: 2, valuation: { secret: "hidden" } }))),
+  ),
+  invalidReport: scenario(
+    "invalidReport",
+    "A finished audit whose stored result lacks required parts.",
+    auditRoutes(withResult((r) => ({ schema_version: r["schema_version"] }))),
+  ),
+  richReport: scenario(
+    "richReport",
+    "A report with a link to the listing, quoted evidence and a hostile-looking excerpt.",
+    auditRoutes(
+      withResult((r) => {
+        const listing = r["listing"] as Record<string, unknown>;
+        const legal = r["legal"] as Record<string, unknown>;
+        const ownership = r["ownership"] as Record<string, unknown>;
+        return {
+          ...r,
+          listing: { ...listing, url: RICH_URL },
+          legal: { ...legal, evidence: ["Cena zawiera podatek VAT 23%."] },
+          ownership: { ...ownership, evidence: ["<img src=x onerror=alert(1)> własność"] },
+        };
+      }),
+    ),
+  ),
   unknownAudit: scenario("unknownAudit", "The audit id is not the person's: 404.", auditRoutes([])),
   auditUnavailable: scenario("auditUnavailable", "One analysis cannot be loaded (503).", [
     {

@@ -38,7 +38,7 @@ test.describe("desktop rail", () => {
   }) => {
     await serve("loaded");
     await page.goto(`/app/analyses/${SUCCEEDED_AUDITS[0]?.audit_id ?? ""}`);
-    await expect(page.getByRole("link", { name: "Moje analizy", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: "Moje analizy", exact: true }).first()).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -51,7 +51,7 @@ test.describe("desktop rail", () => {
       "aria-current",
       "page",
     );
-    await expect(page.getByRole("link", { name: "Moje analizy", exact: true })).not.toHaveAttribute(
+    await expect(page.getByRole("link", { name: "Moje analizy", exact: true }).first()).not.toHaveAttribute(
       "aria-current",
       "page",
     );
