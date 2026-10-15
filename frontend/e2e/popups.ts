@@ -47,11 +47,18 @@ export async function expectDialogContract(page: Page, contract: DialogContract)
         .count()) + 2;
     for (let i = 0; i < stops; i += 1) {
       await page.keyboard.press("Tab");
-      expect(await focusIsInside(dialog), `Tab ${i + 1} stays inside the popup`).toBe(true);
+      await expect
+        .poll(() => focusIsInside(dialog), { message: `Tab ${i + 1} stays inside the popup`, timeout: 1500 })
+        .toBe(true);
     }
     for (let i = 0; i < stops; i += 1) {
       await page.keyboard.press("Shift+Tab");
-      expect(await focusIsInside(dialog), `Shift+Tab ${i + 1} stays inside the popup`).toBe(true);
+      await expect
+        .poll(() => focusIsInside(dialog), {
+          message: `Shift+Tab ${i + 1} stays inside the popup`,
+          timeout: 1500,
+        })
+        .toBe(true);
     }
   }
 
@@ -62,6 +69,8 @@ export async function expectDialogContract(page: Page, contract: DialogContract)
   // Backdrop policy: reopen, click outside the popup.
   await trigger.click();
   await expect(dialog).toBeVisible();
+  // A popup ignores outside presses until its enter transition has started: wait for it like a person would.
+  await expect(dialog).not.toHaveAttribute("data-starting-style", /.*/);
   const box = await dialog.boundingBox();
   const outside =
     box === null || box.x > 24

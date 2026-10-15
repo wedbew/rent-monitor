@@ -1,0 +1,106 @@
+/*
+ * Buttons and button-shaped links share one control. The border is reserved (transparent) at rest so hover and
+ * focus change colour, never size; only the icon moves, briefly, and not under reduced motion (tokens zero the time).
+ */
+.control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--control-height);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--motion-ui) var(--ease-standard),
+    border-color var(--motion-ui) var(--ease-standard);
+}
+
+.control:hover {
+  background: var(--surface-hover);
+  border-color: var(--ink);
+}
+
+.control:disabled,
+.control[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.danger:hover {
+  background: var(--danger-fill);
+  border-color: var(--danger);
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.control:hover .icon,
+.control:focus-visible .icon {
+  animation: nudge var(--motion-ui) var(--ease-out);
+}
+
+@keyframes nudge {
+  50% {
+    transform: translateX(3px);
+  }
+}
+
+.busy {
+  cursor: progress;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.iconOnly {
+  justify-content: center;
+  width: var(--control-height);
+  padding: 0;
+}
+
+.fill {
+  width: 100%;
+}
+
+.small {
+  min-height: 36px;
+}

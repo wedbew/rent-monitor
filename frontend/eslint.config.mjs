@@ -113,7 +113,7 @@ export default tseslint.config(
   },
   {
     // Tooling files run in Node, outside the app: no type-aware rules, console output is their interface.
-    files: ["*.mjs", "*.config.ts"],
+    files: ["*.mjs", "*.config.ts", "public/*.js"],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: { ...globals.node } },
     rules: { "no-console": "off", "no-restricted-imports": "off" },

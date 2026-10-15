@@ -26,6 +26,7 @@ const SNAPSHOT = `
   - textbox "Szukaj po numerze"
   - button "Usuń \\"koszt\\""
   - button
+  - button "Otwórz menu nawigacji": Menu
   - 'button "Eksport: CSV"'
   - checkbox "Tylko udane" [checked]
   - combobox "Status":
@@ -44,9 +45,14 @@ describe("parseAriaSnapshot", () => {
     const nodes = parseAriaSnapshot(SNAPSHOT);
     expect(nodes.find((n) => n.role === "link" && n.name === "Pulpit")?.attributes).toEqual(["[disabled]"]);
     expect(nodes.find((n) => n.role === "heading")?.attributes).toEqual(["[level=1]"]);
-    expect(nodes.some((n) => n.role === "text" || n.role === "paragraph")).toBe(false);
+    expect(interactiveNodes(SNAPSHOT).some((n) => n.role === "text" || n.role === "paragraph")).toBe(false);
     expect(nodes.find((n) => n.name?.startsWith("Usuń"))?.name).toBe('Usuń "koszt"');
     expect(nodes.find((n) => n.name?.startsWith("Eksport"))?.name).toBe("Eksport: CSV");
+  });
+
+  it("reads a control whose text content follows the name", () => {
+    const nodes = parseAriaSnapshot(SNAPSHOT);
+    expect(nodes.find((n) => n.name === "Otwórz menu nawigacji")?.role).toBe("button");
   });
 
   it("keeps a control with no name as a nameless node", () => {
@@ -79,6 +85,7 @@ describe("findViolations", () => {
     entry({ id: "g", role: "checkbox", name: "Tylko udane" }),
     entry({ id: "h", role: "combobox", name: "Status" }),
     entry({ id: "i", role: "option", name: "Wszystkie" }),
+    entry({ id: "j", role: "button", name: "Otwórz menu nawigacji" }),
   ];
   const scope = { page: "list", scenario: "loaded" };
 

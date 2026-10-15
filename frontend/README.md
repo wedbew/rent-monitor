@@ -44,6 +44,34 @@ The browser always calls relative `/api` URLs. There are no runtime variables in
 would be public** (never put a key in one). `API_ORIGIN` only configures the dev proxy and is read by Node, not the app.
 Names live in `../.env.example`; real values are never read or committed.
 
+## Shell, tokens and primitives (RM-270)
+
+- `styles/tokens.css`: semantic tokens (surfaces, text, boundaries, actions, status, geometry, motion) for the light
+  palette and the explicit dark one; `styles/globals.css` is reset, text, focus and the screen-reader utility only.
+  Components own CSS Modules next to them. Reduced motion zeroes the motion tokens (no `!important`).
+- **Theme**: light on first visit even when the system prefers dark; an explicit choice persists in `localStorage`
+  (`renti-theme`); storage failures fall back silently. `public/theme-boot.js` applies it before first paint as an
+  external script (no inline-script CSP exception). The control's visible text is its name and names the mode it
+  switches to (`Tryb ciemny` / `Tryb jasny`), with the matching moon or sun.
+- **Navigation**: `shell/navigation.ts` is the one registry behind the desktop rail and the mobile sheet; each
+  destination owns its active rule, so a report under `/app/analyses/:id` lights "Moje analizy" and
+  `/app/analyses/new` lights "Nowa analiza". The sheet is a modal dialog that closes first and navigates after, so the
+  new page's `h1` gets focus last. After every client navigation the shell focuses that `h1`; every page starts with
+  `PageHeading` (title, `h1`, document title `<page> · renti`).
+- **Primitives** (`ui/`): `Button`, `IconButton`, `LinkButton` (a real link that looks like a button), `Icon`,
+  `InlineNotice`, `Skeleton`, `Dialog` (Base UI). Hover is a stable 1 px border plus a brief icon nudge, never a size
+  change. They import nothing from `api/`, `features/` or `shell/` (ESLint).
+- **Errors**: `NotFound` and `RouteError` render inside the shell; a stale chunk after a deploy offers a manual reload
+  and never reloads by itself.
+- Pages that exist in the navigation but are not built use `PendingPage` and say so; Rynek, Architekt wnętrz and Stwórz
+  ogłoszenie say "Niedostępne" until their backend exists.
+- **Adding a page**: add its route in `routes.tsx`, its entry in `e2e/interactions.ts` (`PAGES`, `INTERACTIONS`,
+  `POPUPS`), and tests that `exercise()` each element. The gate fails the run otherwise.
+
+Storybook is deliberately not installed yet: with only these primitives a catalog would be a second set of examples to
+keep in sync; the real pages in the e2e gate are the living examples. Revisit when a second feature slice shares
+patterns (decision recorded in #270).
+
 ## End-to-end tests (`e2e/`)
 
 "Every page, popup and clickable element has an e2e test" is a gate, not a habit (docs/FRONTEND-PLAN.md section 4).
