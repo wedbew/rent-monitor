@@ -220,6 +220,33 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** E-mail and password, and the sign-in link.
 - **Target:** B-004 (client id on the host), #281 (CSP), level 3 evidence per `delivery.md`.
 
+### L-030 — Frontend session transitions do not consistently purge tenant state
+- **Status:** active
+- **Discovered:** 2026-10-15
+- **Affects:** `frontend/shell/session.tsx`, `AccountBlock.tsx`, tenant query cache and progress streams
+- **Evidence:** confirmed in code and a focused Vitest reproduction: `/api/me` revalidation returning 401 renders signed out without invoking tenant cleanup or removing cached audits. Failed sign-out also ends local state even when server revocation is unconfirmed.
+- **Description:** Session revalidation and changes of authenticated identity do not all pass through a cleanup boundary. Prior tenant queries can survive expiry/account switching; a failed sign-out may leave a valid cookie that restores the session. Browser-cache exposure is established; no backend authorization bypass was demonstrated. See frontend audit F02–F03 and F10.
+- **Workaround:** Do not treat a failed network sign-out as confirmed revocation. Reloading clears in-memory query data but does not revoke a server session.
+- **Target:** #301 (session cleanup/cancellation), #302 (failed sign-out), before release #286; regression tests and remediation in `frontend/docs/AUDIT-2026-10-15.md`, tracker #314. Re-verified open on `staging` `5444eb8` (audit re-verification section).
+
+### L-031 — GitHub checks do not enforce frontend validation
+- **Status:** active
+- **Discovered:** 2026-10-15
+- **Affects:** `.github/workflows/ci.yml`, `security.yml`, npm dependency monitoring and frontend merge confidence
+- **Evidence:** confirmed (workflow/config read): Python checks and two historical frontend filename checks exist; no SPA install/typecheck/lint/build/unit/browser lane or npm Dependabot entry exists. Local CI has frontend stages.
+- **Description:** Green backend checks do not establish frontend correctness. The proposed separate frontend pipeline, shared contract/journey gates and required aggregate are documented in frontend audit F01.
+- **Workaround:** Execute frontend quality and browser checks locally and retain their results; local evidence does not replace a remote required gate.
+- **Target:** GitHub lanes #296; release hardening #286.
+
+### L-032 — Frontend localization and async edge cases remain outside the current guarantees
+- **Status:** active
+- **Discovered:** 2026-10-15
+- **Affects:** `frontend/api`, auth and analysis forms, analysis submission recovery
+- **Evidence:** confirmed source review and focused reproductions; see `frontend/docs/AUDIT-2026-10-15.md`, F05–F13 and F16; re-verified on `staging` `5444eb8`.
+- **Description:** Copy is embedded in code, Intl display is partial and body errors escape transport normalization. Ambiguous-submission recovery matches the Otodom id within 5 minutes, so an earlier analysis of the same listing can be mistaken for the new request. (Busy-button submission and the silent-stream gap were fixed in RM-273.) Existing unit-test coverage thresholds apply only to the API directory and do not prove these behaviors.
+- **Workaround:** Preserve exact decimal strings and use existing centralized formatters; do not infer acceptance of an ambiguous request from an unrelated recent audit. Treat current automated passes as scoped evidence.
+- **Target:** Audit remediation #304–#307 and #309–#311 (recovery, localization, transport, guards, errors and tests), tracker #314; hardening #286.
+
 ## Deferred
 
 ### L-025 — V2 manual analysis and creative tools are local design flows
