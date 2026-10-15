@@ -115,6 +115,23 @@ patterns (decision recorded in #270).
 - A test also fails on any console error or uncaught page error, and on any API request the scenario has no route for
   (`e2e/fixtures.ts`). No retries and no `waitForTimeout` (linted).
 
+## New analysis and progress (RM-273)
+
+- `features/analyses/new/` is the form (`LEGAL[url-analysis]`): client validation is only "not empty, at most 300
+  characters"; the API decides what an Otodom sale listing is. `useCreateAudit` never retries. After a transport failure
+  that proves nothing (dropped connection, timeout) `reconcileAfterAmbiguousFailure` looks for an analysis of the same
+  Otodom id created since the click; nothing else counts as proof and an empty or unreadable list is "unknown".
+- `features/analyses/progress/`: `streams.ts` owns one `EventSource` per analysis (shared, replays what it has seen to
+  a late watcher, deduplicates by event id, closes on the terminal frame and on `runTenantCleanups`); `frames.ts`
+  parses defensively; `useAuditProgress` copies stage and percentage, never computes them. A server `error` event and
+  the connection's own `error` event are different things (`MessageEvent` or not).
+- `AnalysisPage` reads `GET /api/audits/{id}` first (a remount cannot resume a stream), opens the stream only for an
+  active analysis, and keeps polling as a safety net: 10 s always, 3 s when the stream failed or kept reconnecting for
+  8 s. A read that shows the analysis finished refreshes the balance (`refreshBalance`, never from inside the audit query's
+  own invalidation).
+- Scenarios: `createRun({outcome, interrupt, streamDown, silent, post, postDelayMs, listAfterPost, listFails})` is one
+  analysis from click to end with a stateful balance, audit and stream.
+
 ### Journey lane
 
 The same SPA against a real stack: API, Postgres, workers and fake providers. The session is seeded **inside the api
@@ -127,7 +144,10 @@ pnpm test:e2e:journey          # builds the SPA, serves it with `vite preview` (
 ```
 
 `deploy/compose.e2e.yml` sets `PUBLIC_APP_URL=http://localhost:4173` so the API's Origin check and Secure cookies behave
-as in production. Override the compose command with `E2E_COMPOSE`. The interaction gate counts the mocked lane; the journey lane runs the whole sign-up (register, mailed link via `register-token`, sign out, sign in);
+as in production. Override the compose command with `E2E_COMPOSE`. `scripts/e2e_session.py plant-listing --kind sale|rent` plants a hand-built, fresh listing (and rental comparables in a
+made-up city) so the worker makes no Otodom request; `deploy/compose.e2e.yml` gives the audit worker
+`AUDIT_PROVIDERS=real` and a test `RISK_FREE_RATE`. Evidence class: fake provider data; there is no OpenRouter key,
+so a success is `succeeded_degraded`. The interaction gate counts the mocked lane; the journey lane runs the whole sign-up (register, mailed link via `register-token`, sign out, sign in);
 journeys are the few paths worth running against the real thing. The GitHub lanes (PR, nightly Firefox and WebKit)
 are the follow-up issue #296 because they edit `.github/`.
 

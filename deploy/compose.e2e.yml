@@ -11,6 +11,10 @@ services:
   worker-audit:
     environment:
       PUBLIC_APP_URL: http://localhost:4173
+      # The journey plants hand-built listings and rental comparables (scripts/e2e_session.py plant-listing): the
+      # real adapters read them from Postgres, nothing reaches Otodom. No OpenRouter key: a success is degraded.
+      AUDIT_PROVIDERS: real
+      RISK_FREE_RATE: "0.05"
   worker-ops:
     environment:
       PUBLIC_APP_URL: http://localhost:4173

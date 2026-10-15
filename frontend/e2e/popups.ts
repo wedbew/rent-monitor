@@ -38,7 +38,10 @@ export async function expectDialogContract(page: Page, contract: DialogContract)
   await page.keyboard.press("Enter");
   await expect(dialog, "opens from the keyboard").toBeVisible();
   await expect(dialog, "has an accessible name").toHaveAccessibleName(/\S/);
-  expect(await focusIsInside(dialog), "initial focus is inside the popup").toBe(true);
+  // Focus moves in once the popup has mounted: wait for it, as a person would, instead of sampling it once.
+  await expect
+    .poll(() => focusIsInside(dialog), { message: "initial focus is inside the popup", timeout: 2000 })
+    .toBe(true);
 
   if (modal) {
     const stops =

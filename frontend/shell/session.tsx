@@ -58,8 +58,13 @@ export async function startSession(client: QueryClient): Promise<void> {
  * granted) ask again instead of adding or subtracting locally.
  */
 export function refreshAccount(client: QueryClient): void {
-  void client.invalidateQueries({ queryKey: SESSION_KEY });
+  refreshBalance(client);
   void client.invalidateQueries({ queryKey: ["audits"] });
+}
+
+/** Only the profile (balance, flags, Otodom state): safe to call from inside a query function of `["audits", ...]`. */
+export function refreshBalance(client: QueryClient): void {
+  void client.invalidateQueries({ queryKey: SESSION_KEY });
 }
 
 export function SessionProvider({ children }: { readonly children: ReactNode }) {

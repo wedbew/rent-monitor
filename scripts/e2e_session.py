@@ -5,6 +5,8 @@
     $C register-token --email e2e-<x>@example.test --password <p>
     $C delete <user_id>
     $C delete-email e2e-<x>@example.test
+    $C plant-listing [--kind sale|rent]
+    $C unplant --ref IDJ... --stem journey-check-...
 
 It runs *inside* the api container, with the deployed settings and database, and writes the user, a credit
 account and a session row exactly as the sign-in routes would; the raw session token is printed once (JSON
@@ -22,16 +24,22 @@ import argparse
 import asyncio
 import json
 import sys
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from decimal import Decimal
+from typing import Any
 from uuid import uuid4
 
+from journey_check import CITY, Planted, hand_built_ad
+from journey_check import remove as remove_planted
 from rm_api.auth.password import _issue_register_token
 from rm_api.auth.passwords import PasswordHasher
 from rm_api.auth.sessions import create_session
-from rm_core.db.models import AuthToken, User
+from rm_core.comparables import StoredComparable, city_slug, replace_comparables
+from rm_core.db.models import AuthToken, MarketSidecar, SidecarKind, User
 from rm_core.db.session import make_engine, make_sessionmaker
 from rm_core.ledger import admin_adjust, ensure_credit_account
 from rm_core.settings import get_settings
+from rm_core.snapshots import FetchedListing, content_hash, store_snapshot
 from sqlalchemy import delete
 
 
@@ -116,6 +124,62 @@ async def remove(user_id: str) -> bool:
         await engine.dispose()
 
 
+async def plant_listing(kind: str) -> dict[str, str]:
+    """A fresh, hand-built, anonymised listing snapshot (so the worker makes no Otodom request) and, for a
+    sale, hand-built rental comparables for a made-up city, as `scripts/journey_check.py` plants them.
+    EVIDENCE CLASS: fake provider data. `kind=rent` plants a rental ad: the audit must end
+    `rejected / RENT_NOT_DEAL`."""
+    run_id = uuid4().hex[:8]
+    ref = "IDJ" + run_id.upper()
+    stem = f"journey-check-{run_id}"
+    ad: dict[str, Any] = hand_built_ad(ref)
+    city = f"{CITY}{run_id}"  # one made-up city per listing: parallel journeys never share a sidecar grain
+    ad["location"]["address"]["city"]["name"] = city
+    if kind == "rent":
+        ad["adCategory"] = {"type": "RENT"}
+    rows = [StoredComparable(Decimal(price * 48), Decimal(48)) for price in (60, 61, 62, 63, 64, 65)]
+    engine = make_engine(get_settings(), pool_size=1, max_overflow=0)
+    sm = make_sessionmaker(engine)
+    try:
+        async with sm() as session, session.begin():
+            sidecar = MarketSidecar(
+                kind=SidecarKind.otodom_rental,
+                price_basis="rent",
+                city_slug=city_slug(city),
+                period=date(2026, 10, 1),
+                size_bucket="30-50",
+                source_stem=stem,
+                sha256=uuid4().hex * 2,
+                payload={},
+                generated_at=datetime.now(UTC),
+            )
+            session.add(sidecar)
+            await session.flush()
+            await replace_comparables(session, sidecar.id, rows)
+            await store_snapshot(
+                session,
+                FetchedListing(
+                    otodom_id=ref,
+                    url=f"https://www.otodom.pl/pl/oferta/{ref}",
+                    ad=ad,
+                    content_sha256=content_hash(ad),
+                ),
+            )
+        return {"ref": ref, "stem": stem, "kind": kind}
+    finally:
+        await engine.dispose()
+
+
+async def unplant_listing(ref: str, stem: str) -> bool:
+    engine = make_engine(get_settings(), pool_size=1, max_overflow=0)
+    sm = make_sessionmaker(engine)
+    try:
+        planted = Planted(run_id="", ref=ref, stem=stem, ad={}, rows=[])
+        return await remove_planted(sm, planted)
+    finally:
+        await engine.dispose()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -131,7 +195,18 @@ def main() -> int:
     token.add_argument("--password", required=True)
     drop_email = sub.add_parser("delete-email")
     drop_email.add_argument("email")
+    plant = sub.add_parser("plant-listing")
+    plant.add_argument("--kind", choices=["sale", "rent"], default="sale")
+    unplant = sub.add_parser("unplant")
+    unplant.add_argument("--ref", required=True)
+    unplant.add_argument("--stem", required=True)
     args = parser.parse_args()
+    if args.command == "plant-listing":
+        print(json.dumps(asyncio.run(plant_listing(args.kind))))
+        return 0
+    if args.command == "unplant":
+        print(json.dumps({"removed": asyncio.run(unplant_listing(args.ref, args.stem))}))
+        return 0
     if args.command == "create":
         print(json.dumps(asyncio.run(create(args.credits, admin=args.admin))))
         return 0

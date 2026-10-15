@@ -2,6 +2,7 @@
  * The app shell: navigation (rail on desktop, sheet on mobile), theme, skip link, 404, focus and layout rules.
  * Every shell element registered in e2e/interactions.ts is exercised here with an asserted outcome.
  */
+import { SUCCEEDED_AUDITS } from "../test/scenarios";
 import { LEGAL, PRIMARY } from "../shell/navigation";
 import { exercise, outcome } from "./coverage";
 import { expect, expectNoA11yViolations, test } from "./fixtures";
@@ -35,8 +36,8 @@ test.describe("desktop rail", () => {
     page,
     serve,
   }) => {
-    await serve("empty");
-    await page.goto("/app/analyses/00000000-0000-4000-8000-000000000001");
+    await serve("loaded");
+    await page.goto(`/app/analyses/${SUCCEEDED_AUDITS[0]?.audit_id ?? ""}`);
     await expect(page.getByRole("link", { name: "Moje analizy", exact: true })).toHaveAttribute(
       "aria-current",
       "page",
@@ -155,8 +156,8 @@ test.describe("mobile sheet", () => {
   }
 
   test("the sheet marks the current page", async ({ page, serve }) => {
-    await serve("empty");
-    await page.goto("/app/analyses/00000000-0000-4000-8000-000000000001");
+    await serve("loaded");
+    await page.goto(`/app/analyses/${SUCCEEDED_AUDITS[0]?.audit_id ?? ""}`);
     await page.getByRole("button", { name: "Otwórz menu nawigacji" }).click();
     const dialog = page.getByRole("dialog", { name: "Nawigacja" });
     await expect(dialog.getByRole("link", { name: "Moje analizy", exact: true })).toHaveAttribute(

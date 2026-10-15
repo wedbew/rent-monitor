@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
 
+import { AnalysisPage } from "./features/analyses/AnalysisPage";
+import { NewAnalysisPage } from "./features/analyses/new/NewAnalysisPage";
 import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { EmailLinkPage, VerifySignupPage } from "./features/auth/LinkPages";
 import { LoginPage } from "./features/auth/LoginPage";
@@ -86,11 +88,11 @@ export const routes: RouteObject[] = [
                     path: "/app/credits",
                     element: <PendingPage title="Raporty i zakupy" availability="building" />,
                   },
-                  pending("new-analysis", "/app/analyses/new"),
+                  { path: "/app/analyses/new", element: <NewAnalysisPage /> },
                   pending("analyses", "/app/analyses"),
                   {
                     path: "/app/analyses/:auditId",
-                    element: <PendingPage title="Raport" availability="building" />,
+                    element: <AnalysisPage />,
                   },
                   pending("market", "/app/market"),
                   pending("interior", "/app/interior"),
