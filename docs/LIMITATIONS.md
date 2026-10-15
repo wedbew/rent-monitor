@@ -218,7 +218,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Evidence:** confirmed (tests): the mocked lane replaces Google's script with `e2e/gis.ts`; the journey lane runs sign-up through a token that `scripts/e2e_session.py register-token` stores as registration does, because the journey stack has no mail provider. Real Google Identity Services, real Resend delivery and the production CSP have not been exercised.
 - **Description:** The Google button needs `VITE_GOOGLE_CLIENT_ID` at build time (B-004: not set on the host) and the CSP must allow `accounts.google.com` scripts, frames and connections (#281, blueprint §4.3 currently lists Stripe only). Until then the button is hidden (or shows "niedostępne" if the script is blocked) and the e-mail methods work.
 - **Workaround:** E-mail and password, and the sign-in link.
-- **Target:** B-004 (client id on the host), #281 (CSP), level 3 evidence per `delivery.md`.
+- **Target:** B-004 (client id on the host), level 3 evidence per `delivery.md`. **RM-281:** the Caddy CSP now allows the GIS script, style, frame and connections and the web image passes `GOOGLE_CLIENT_ID` as the build argument; the button under the real CSP is unverified until a client id is set.
 
 ### L-031 — GitHub checks do not enforce frontend validation
 - **Status:** active

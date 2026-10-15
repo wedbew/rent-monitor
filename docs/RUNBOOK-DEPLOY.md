@@ -94,8 +94,10 @@ concurrency 2), so a long audit can never starve mail, the reconciler or the mon
 ## 6. Public exposure (not part of the private beta)
 
 Needs, in order: the owner's DNS change (B-005), `PUBLIC_HOST` and `PUBLIC_APP_URL=https://<domain>` in `.env`,
-`check_env.py` without `--private`, then `$C --profile public up -d caddy`. Caddy terminates TLS, hides `/healthz` and `/readyz`,
-streams SSE unbuffered and serves only `/api/*`. Do not open it before the `docs/PRE-DEPLOYMENT.md` sections for security,
+`check_env.py` without `--private`, then `$C --profile public up -d --build caddy` (the image is built from
+`deploy/web.Dockerfile`: the SPA and the Caddyfile together; `GOOGLE_CLIENT_ID` from `.env` is passed as the public
+build argument for the Google button). Caddy terminates TLS, hides `/healthz` and `/readyz`, streams SSE unbuffered,
+proxies `/api/*` and serves the SPA (RM-281). Rebuild `caddy` on every deploy so the HTML and its assets match. Do not open it before the `docs/PRE-DEPLOYMENT.md` sections for security,
 privacy and legal are ticked with evidence.
 
 ## 7. When something is wrong
