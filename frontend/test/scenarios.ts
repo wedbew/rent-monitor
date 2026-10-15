@@ -237,6 +237,7 @@ export const SCENARIOS = {
       reply: { status: 200, body: { items: [], next_cursor: null } satisfies AuditPage, delayMs: 1500 },
     },
   ]),
+  collection: createCollection(),
   unsupportedReport: scenario(
     "unsupportedReport",
     "A finished audit whose stored result has a schema version this build does not know.",
@@ -309,6 +310,89 @@ export const SCENARIOS = {
 
 export type ScenarioName = keyof typeof SCENARIOS;
 export const SCENARIO_NAMES = Object.keys(SCENARIOS) as ScenarioName[];
+
+// ------------------------------------------------------------------------------------------- a collection
+export interface CollectionOptions {
+  /** How many analyses the person has (default 120). */
+  readonly count?: number;
+  /** Requests for pages after the first fail with a 503 until `state.failing` is set false. */
+  readonly failPage?: number;
+  /** A repeated read of the first page (a refresh) answers after this many milliseconds. */
+  readonly refreshDelayMs?: number;
+}
+
+export interface Collection extends Scenario {
+  readonly state: { requests: string[]; failing: boolean };
+  readonly audits: readonly AuditSummary[];
+}
+
+/**
+ * A heavy account: `count` analyses built from the captured shapes (five finished, plus queued, degraded,
+ * rejected and failed ones), newest first, with the server's list semantics: filters by status, grade and
+ * Otodom-id prefix, `limit`, and an opaque cursor that ends with `null`. The mock pages exactly like the API so
+ * the page can be tested against paging, not against a fixed array.
+ */
+export function createCollection(options: CollectionOptions = {}): Collection {
+  const count = options.count ?? 120;
+  const pool = [...SUCCEEDED_AUDITS, ...MIXED_AUDITS.filter((a) => a.status !== "succeeded")];
+  const audits: AuditSummary[] = Array.from({ length: count }, (_, i) => {
+    const base = summaryOf(pool[i % pool.length] as AuditOut);
+    const at = new Date(Date.parse("2026-10-14T12:00:00Z") - i * 5_400_000)
+      .toISOString()
+      .replace(".000Z", "Z");
+    return {
+      ...base,
+      audit_id: `00000000-0000-4000-8000-${(0x100000 + i).toString(16).padStart(12, "0")}`,
+      otodom_id: `IDLST${String(i).padStart(4, "0")}`,
+      created_at: at,
+      finished_at: base.finished_at === null ? null : at,
+    };
+  });
+  const state = { requests: [] as string[], failing: options.failPage !== undefined };
+  const list: Route = {
+    operation: "GET /api/audits",
+    reply: (request) => {
+      const q = request.url.searchParams;
+      state.requests.push(request.url.search);
+      const cursor = q.get("cursor");
+      // While `failing`, every request for a further page fails (set it false to let the retry through).
+      if (cursor !== null && state.failing)
+        return { status: 503, body: NOT_READY, contentType: "application/problem+json" };
+      const statuses = q.getAll("status");
+      const grade = q.get("grade");
+      const prefix = q.get("q");
+      const limit = Math.min(Number(q.get("limit") ?? "50"), 100);
+      const matching = audits.filter(
+        (a) =>
+          (statuses.length === 0 || statuses.includes(a.status)) &&
+          (grade === null || a.grade === grade) &&
+          (prefix === null || a.otodom_id.startsWith(prefix)),
+      );
+      const start = cursor === null ? 0 : Number(atob(cursor).replace("cursor:", ""));
+      if (!Number.isInteger(start) || start < 0) return replyFrom(fx("GET /api/audits", "invalid_cursor"));
+      const items = matching.slice(start, start + limit);
+      const next = start + limit < matching.length ? btoa(`cursor:${start + limit}`) : null;
+      const slow = options.refreshDelayMs !== undefined && cursor === null && state.requests.length > 1;
+      return {
+        status: 200,
+        body: { items, next_cursor: next } satisfies AuditPage,
+        ...(slow ? { delayMs: options.refreshDelayMs } : {}),
+      };
+    },
+  };
+  const detail: Route = {
+    operation: "GET /api/audits/{audit_id}",
+    reply: (request) => ({
+      status: 200,
+      body: { ...(SUCCEEDED_AUDITS[0] as AuditOut), audit_id: request.params["audit_id"] ?? "" },
+    }),
+  };
+  const base = scenario("collection", `A heavy account: ${count} analyses over cursor paging.`, [
+    list,
+    detail,
+  ]);
+  return { ...base, state, audits };
+}
 
 // ------------------------------------------------------------------------------------------ a run, stateful
 export const RUN_AUDIT_ID = "00000000-0000-4000-8000-0000000000a1";

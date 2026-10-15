@@ -144,6 +144,18 @@ patterns (decision recorded in #270).
 - Listing photos are not displayed (third-party images; counts only). `LEGAL[republication]` is on `SourceSection`.
 - Scenarios: `unsupportedReport`, `invalidReport`, `richReport` patch the stored result of the first captured audit.
 
+## Analyses collection (RM-275)
+
+- `/app/analyses` displays the API's newest-first collection as cards or a native table. View, status group, grade
+  and Otodom-id-prefix search live in the URL; Back and reload restore them.
+- `features/analyses/list/useAuditList.ts` requests server-cursor pages of 24 and follows `next_cursor`; no client-side
+  slicing or inferred total. Repeated ids are rendered once, and a failed next page keeps the existing rows.
+- First visit, filtered-empty, loading, refreshing-with-results and errors have separate states. The table has a
+  caption, row/column headers and its own labelled keyboard-focusable horizontal scroll region at 320 px.
+- `e2e/analyses.spec.ts` covers 120 audits, cursor exhaustion, duplicate rows, filters/history, both views, errors and
+  table reflow/focus. Browser inventory/axe includes light and dark collection scenarios; journey tests verify the
+  real API's newly created analyses can be opened from the collection using fake provider data.
+
 ### Journey lane
 
 The same SPA against a real stack: API, Postgres, workers and fake providers. The session is seeded **inside the api
