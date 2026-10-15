@@ -22,7 +22,9 @@
     "check:dist": "node check-dist.mjs",
     "preview": "vite preview",
     "check": "pnpm check:api && pnpm typecheck && pnpm lint && pnpm lint:css && pnpm format:check && pnpm test && pnpm build && pnpm check:dist && pnpm check:fixtures-vs-samples",
-    "check:fixtures-vs-samples": "node check-fixtures-vs-samples.mjs"
+    "check:fixtures-vs-samples": "node check-fixtures-vs-samples.mjs",
+    "test:e2e": "E2E_COVERAGE=enforce playwright test",
+    "test:e2e:journey": "E2E_LANE=journey playwright test"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.2",
@@ -32,7 +34,9 @@
     "react-router": "^8.4.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.64.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",

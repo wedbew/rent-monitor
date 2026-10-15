@@ -1,0 +1,16 @@
+# Overlay for the browser journey lane (frontend/e2e/journey): the stack must believe the SPA is served from the
+# origin Playwright uses, so the API's Origin check and Secure cookies behave as they do in production.
+#   docker compose -f deploy/compose.yml -f deploy/compose.e2e.yml up -d --build --wait api worker-audit worker-ops
+# `vite preview` (port 4173) serves the built SPA and proxies /api to the API on :8000 (frontend/vite.config.ts).
+name: rentmonitor
+
+services:
+  api:
+    environment:
+      PUBLIC_APP_URL: http://localhost:4173
+  worker-audit:
+    environment:
+      PUBLIC_APP_URL: http://localhost:4173
+  worker-ops:
+    environment:
+      PUBLIC_APP_URL: http://localhost:4173

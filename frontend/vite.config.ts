@@ -12,13 +12,17 @@ export default defineConfig({
     // the API runs on :8000 (`make up`); override with API_ORIGIN, never with a VITE_* value (those are public).
     proxy: { "/api": { target: process.env["API_ORIGIN"] ?? "http://127.0.0.1:8000", changeOrigin: false } },
   },
+  preview: {
+    // The journey lane serves the built SPA with `vite preview` next to the real API (e2e/journey).
+    proxy: { "/api": { target: process.env["API_ORIGIN"] ?? "http://127.0.0.1:8000", changeOrigin: false } },
+  },
   build: { target: BUILD_TARGET, sourcemap: false, cssTarget: BUILD_TARGET },
   test: {
     environment: "jsdom",
     globals: true,
     setupFiles: ["./test/setup.ts"],
     include: ["**/*.test.{ts,tsx}"],
-    exclude: ["node_modules", "dist", "e2e"],
+    exclude: ["node_modules", "dist", "e2e/**/*.spec.ts"],
     css: false,
     coverage: {
       provider: "v8",

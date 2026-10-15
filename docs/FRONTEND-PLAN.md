@@ -114,7 +114,7 @@ data/api-samples/<UTC timestamp>/
 3. **Coverage reporter**: tests call `interaction(id)` and must assert the outcome (URL, request sent, dialog state,
    focus target, text). The run fails if any registered id was not exercised.
 4. **Popup contract** helper used by every popup test: initial focus, focus trap, Escape, focus return, backdrop policy.
-5. **Lanes, all automatic:**
+5. **Lanes, all automatic** (the harness is #269; the GitHub workflows for them are #296 and need the owner's approval):
 
 | Lane | When | Against |
 | --- | --- | --- |
@@ -135,7 +135,8 @@ data/api-samples/<UTC timestamp>/
 | FE-A3 versioned `DealAnalysis` schema | #266 | frontend, phase-1 | — |
 | FE-01 Phase 2 authorisation + foundation | #267 | owner, blocked | #263, owner comment |
 | FE-02 typed client, problem copy, fixtures | #268 | | #263, #267, #264 (#266 for report types) |
-| FE-03 e2e harness + coverage gate + CI | #269 | | #267; `.github/` approval |
+| FE-03 e2e harness + coverage gate | #269 | | #267 |
+| FE-03b GitHub lanes, npm audit, Dependabot | #296 | owner | #269; `.github/` approval |
 | FE-04 tokens, primitives, theme, shell | #270 | | #267, #269 |
 | FE-05 auth pages + session boundary | #271 | | #268, #270 |
 | FE-06 Pulpit | #272 | | #271 |

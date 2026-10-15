@@ -71,7 +71,7 @@ export default tseslint.config(
   {
     // Production code never imports test tooling, mocks or fixtures.
     files: ["**/*.{ts,tsx}"],
-    ignores: ["**/*.test.{ts,tsx}", "test/**", "e2e/**"],
+    ignores: ["**/*.test.{ts,tsx}", "test/**", "e2e/**", "playwright.config.ts", "vite.config.ts"],
     rules: {
       "no-restricted-imports": [
         "error",

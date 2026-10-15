@@ -46,6 +46,10 @@ build/
 node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
+frontend/playwright-coverage/
 *.tsbuildinfo
 npm-debug.log*
 
