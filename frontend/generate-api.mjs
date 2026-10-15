@@ -39,10 +39,45 @@ const strip = (node) =>
       : node;
 const reportSchemaData = `${BANNER}export const REPORT_SCHEMA = ${JSON.stringify(strip(reportSchema))} as const;\n`;
 
+// Every success body's schema, by operation and status, for the runtime check in api/client.ts (audit F11, #325).
+const openapi = JSON.parse(readFileSync(new URL("docs/openapi.json", root), "utf8"));
+const DOC_ONLY = new Set([...DOC_KEYWORDS, "examples", "example"]);
+const stripDoc = (node) =>
+  Array.isArray(node)
+    ? node.map(stripDoc)
+    : node !== null && typeof node === "object"
+      ? Object.fromEntries(
+          Object.entries(node)
+            .filter(([key]) => !DOC_ONLY.has(key))
+            .map(([key, value]) =>
+              key === "properties"
+                ? [key, Object.fromEntries(Object.entries(value).map(([name, sub]) => [name, stripDoc(sub)]))]
+                : [key, stripDoc(value)],
+            ),
+        )
+      : node;
+const responses = {};
+for (const [path, item] of Object.entries(openapi.paths)) {
+  for (const [method, op] of Object.entries(item)) {
+    for (const [status, response] of Object.entries(op.responses ?? {})) {
+      const schema = response?.content?.["application/json"]?.schema;
+      if (status.startsWith("2") && schema !== undefined)
+        (responses[`${method.toUpperCase()} ${path}`] ??= {})[status] = stripDoc(schema);
+    }
+  }
+}
+const schemas = Object.fromEntries(
+  Object.entries(openapi.components.schemas).map(([name, schema]) => [name, stripDoc(schema)]),
+);
+const responseData =
+  `${BANNER}export const RESPONSE_DOCUMENT = ${JSON.stringify({ components: { schemas } })} as const;\n` +
+  `export const RESPONSES: Readonly<Record<string, Readonly<Record<string, Readonly<Record<string, unknown>>>>>> = ${JSON.stringify(responses)};\n`;
+
 const outputs = [
   ["api/schema.generated.ts", api],
   ["api/report.generated.ts", report],
   ["api/report-schema.generated.ts", reportSchemaData],
+  ["api/responses.generated.ts", responseData],
 ];
 
 let stale = false;

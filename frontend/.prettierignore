@@ -7,3 +7,4 @@ playwright-report
 test-results
 api/report.generated.ts
 api/report-schema.generated.ts
+api/responses.generated.ts

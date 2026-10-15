@@ -236,7 +236,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Evidence:** confirmed source review and focused reproductions; see `frontend/docs/AUDIT-2026-10-15.md`, F05–F13 and F16; re-verified on `staging` `5444eb8`.
 - **Description:** Copy is embedded in code (numbers are laid out by Intl since RM-306; body errors are normalised since RM-307). (Busy-button submission and the silent-stream gap were fixed in RM-273.) Existing unit-test coverage thresholds apply only to the API directory and do not prove these behaviors.
 - **Workaround:** Preserve exact decimal strings and use existing centralized formatters; do not infer acceptance of an ambiguous request from an unrelated recent audit. Treat current automated passes as scoped evidence.
-- **Target:** open: #305 (copy catalog), #311 (browser evidence and coverage), #325 (remaining response bodies); fixed: recovery RM-304, numbers RM-306, transport RM-307, guards RM-309, form errors RM-310; tracker #314; hardening #286.
+- **Target:** open: #305 (copy catalog), #311 (browser evidence and coverage); fixed: recovery RM-304, numbers RM-306, transport RM-307, guards RM-309 and RM-325, form errors RM-310, bundle RM-312; tracker #314; hardening #286.
 
 ## Deferred
 

@@ -44,13 +44,25 @@ function matchesType(value: unknown, type: unknown): boolean {
   return Array.isArray(type) ? type.some(one) : one(type);
 }
 
+/** Local references only: `#/$defs/X` (JSON Schema) and `#/components/schemas/X` (OpenAPI). */
 function resolve(root: Schema, ref: string): Schema {
-  const prefix = "#/$defs/";
-  if (!ref.startsWith(prefix)) throw new Error(`unsupported $ref ${ref}`);
-  const defs = root["$defs"] as Record<string, Schema> | undefined;
-  const target = defs?.[ref.slice(prefix.length)];
-  if (target === undefined) throw new Error(`unknown $ref ${ref}`);
-  return target;
+  if (!ref.startsWith("#/")) throw new Error(`unsupported $ref ${ref}`);
+  let node: unknown = root;
+  for (const part of ref.slice(2).split("/")) {
+    node = typeof node === "object" && node !== null ? (node as Record<string, unknown>)[part] : undefined;
+  }
+  if (typeof node !== "object" || node === null) throw new Error(`unknown $ref ${ref}`);
+  return node as Schema;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export interface CheckOptions {
+  /**
+   * Accept keys a closed object does not list. For API responses: the server may add a field before the SPA
+   * knows it, and the SPA reads only what it knows. Types, required fields and enum values are still checked.
+   */
+  readonly allowExtraKeys?: boolean;
 }
 
 const patterns = new Map<string, RegExp>();
@@ -63,19 +75,26 @@ function regex(source: string): RegExp {
   return compiled;
 }
 
-function check(root: Schema, schema: Schema, value: unknown, path: string, errors: string[]): void {
+function check(
+  root: Schema,
+  schema: Schema,
+  value: unknown,
+  path: string,
+  errors: string[],
+  options: CheckOptions,
+): void {
   if (errors.length >= MAX_ERRORS) return;
   const fail = (message: string) => {
     if (errors.length < MAX_ERRORS) errors.push(`${path || "/"}: ${message}`);
   };
 
   if (typeof schema["$ref"] === "string") {
-    check(root, resolve(root, schema["$ref"]), value, path, errors);
+    check(root, resolve(root, schema["$ref"]), value, path, errors, options);
     return;
   }
   if (Array.isArray(schema["anyOf"])) {
-    const options = schema["anyOf"] as Schema[];
-    if (!options.some((option) => validate(root, option, value).length === 0))
+    const choices = schema["anyOf"] as Schema[];
+    if (!choices.some((option) => validate(root, option, value, options).length === 0))
       fail("matches no allowed shape");
     return;
   }
@@ -96,11 +115,13 @@ function check(root: Schema, schema: Schema, value: unknown, path: string, error
     if (typeof schema["maxLength"] === "number" && value.length > schema["maxLength"]) fail("too long");
     if (typeof schema["pattern"] === "string" && !regex(schema["pattern"]).test(value)) fail("wrong format");
     if (schema["format"] === "date-time" && Number.isNaN(Date.parse(value))) fail("not a date-time");
+    if (schema["format"] === "uuid" && !UUID_RE.test(value)) fail("not a UUID");
   }
   if (Array.isArray(value)) {
     if (typeof schema["maxItems"] === "number" && value.length > schema["maxItems"]) fail("too many items");
     const items = schema["items"] as Schema | undefined;
-    if (items !== undefined) value.forEach((item, i) => check(root, items, item, `${path}/${i}`, errors));
+    if (items !== undefined)
+      value.forEach((item, i) => check(root, items, item, `${path}/${i}`, errors, options));
   }
   if (typeOf(value) === "object") {
     const record = value as Record<string, unknown>;
@@ -110,23 +131,37 @@ function check(root: Schema, schema: Schema, value: unknown, path: string, error
     }
     for (const [key, item] of Object.entries(record)) {
       const sub = properties[key];
-      if (sub !== undefined) check(root, sub, item, `${path}/${key}`, errors);
-      else if (schema["additionalProperties"] === false) fail(`unexpected ${key}`);
-      else if (typeof schema["additionalProperties"] === "object" && schema["additionalProperties"] !== null)
-        check(root, schema["additionalProperties"] as Schema, item, `${path}/${key}`, errors);
+      if (sub !== undefined) check(root, sub, item, `${path}/${key}`, errors, options);
+      else if (schema["additionalProperties"] === false) {
+        if (options.allowExtraKeys !== true) fail(`unexpected ${key}`);
+      } else if (
+        typeof schema["additionalProperties"] === "object" &&
+        schema["additionalProperties"] !== null
+      )
+        check(root, schema["additionalProperties"] as Schema, item, `${path}/${key}`, errors, options);
     }
   }
 }
 
-function validate(root: Schema, schema: Schema, value: unknown): string[] {
+function validate(root: Schema, schema: Schema, value: unknown, options: CheckOptions): string[] {
   const errors: string[] = [];
-  check(root, schema, value, "", errors);
+  check(root, schema, value, "", errors, options);
   return errors;
 }
 
 /** The problems with `value` against `schema` (JSON pointers with a reason); empty when it conforms. */
-export function schemaErrors(schema: Schema, value: unknown): string[] {
-  return validate(schema, schema, value);
+export function schemaErrors(schema: Schema, value: unknown, options: CheckOptions = {}): string[] {
+  return validate(schema, schema, value, options);
+}
+
+/** The same against `schema` inside a document whose `$ref`s point into `root` (an OpenAPI response). */
+export function schemaErrorsIn(
+  root: Schema,
+  schema: Schema,
+  value: unknown,
+  options: CheckOptions = {},
+): string[] {
+  return validate(root, schema, value, options);
 }
 
 /** Every keyword the schema uses that this checker does not understand (a test keeps this empty). */
