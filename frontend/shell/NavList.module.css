@@ -1,0 +1,58 @@
+.list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The 1px border is always there (transparent), so hover, active and focus never move or resize the item. */
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: 0 var(--space-3);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background var(--motion-ui) var(--ease-standard),
+    border-color var(--motion-ui) var(--ease-standard),
+    color var(--motion-ui) var(--ease-standard);
+}
+
+.sheet .item {
+  min-height: 52px;
+  font-size: 0.9375rem;
+}
+
+.item:hover {
+  border-color: var(--hover-border);
+  color: var(--ink);
+}
+
+.active {
+  background: var(--selected-bg);
+  border-color: var(--selected-border);
+  color: var(--ink);
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.item:hover .icon,
+.item:focus-visible .icon {
+  animation: nudge var(--motion-ui) var(--ease-out);
+}
+
+@keyframes nudge {
+  50% {
+    transform: translateY(-2px);
+  }
+}

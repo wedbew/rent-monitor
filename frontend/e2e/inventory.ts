@@ -1,12 +1,12 @@
 import type { Locator, Page } from "@playwright/test";
 
-import { findViolations, type Violation } from "./gate";
+import { findViolations, type Scope, type Violation } from "./gate";
 import { INTERACTIONS, type Interaction } from "./interactions";
 
 /** Violations of the interaction gate for what the browser shows right now (the page or one popup). */
 export async function inventory(
   page: Page,
-  scope: { page: string; scenario: string; within?: string },
+  scope: Scope,
   registry: readonly Interaction[] = INTERACTIONS,
   root?: Locator,
 ): Promise<Violation[]> {

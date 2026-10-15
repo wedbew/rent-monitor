@@ -3,7 +3,7 @@
  * comparing what was exercised with what is registered. Unit-tested in gate.test.ts; used by inventory.spec.ts and
  * coverage-reporter.ts.
  */
-import type { InteractiveRole, Interaction, Popup } from "./interactions";
+import { EVERY_PAGE, type InteractiveRole, type Interaction, type Popup } from "./interactions";
 
 export const INTERACTIVE_ROLES: ReadonlySet<string> = new Set<InteractiveRole>([
   "button",
@@ -31,7 +31,7 @@ export interface AriaNode {
   readonly attributes: readonly string[];
 }
 
-const LINE = /^([a-z]+)(?: "((?:[^"\\]|\\.)*)")?((?: \[[^\]]+\])*):?$/;
+const LINE = /^([a-z]+)(?: "((?:[^"\\]|\\.)*)")?((?: \[[^\]]+\])*)(?::(?: .*)?)?$/;
 
 /** The text content of a quoted YAML scalar line (Playwright quotes lines holding `:` or other specials). */
 function unquote(text: string): string {
@@ -48,7 +48,7 @@ export function parseAriaSnapshot(snapshot: string): AriaNode[] {
   for (const raw of snapshot.split("\n")) {
     const trimmed = raw.trim();
     if (!trimmed.startsWith("- ")) continue;
-    const body = unquote(trimmed.slice(2).replace(/:$/, "").trim());
+    const body = unquote(trimmed.slice(2).trim());
     const match = LINE.exec(body);
     if (match === null) continue;
     const [, role = "", name, attrs = ""] = match;
@@ -78,6 +78,7 @@ export interface Violation {
 export interface Scope {
   readonly page: string;
   readonly scenario: string;
+  readonly viewport?: "desktop" | "mobile";
   /** Popup being inspected, or undefined for the page itself. */
   readonly within?: string;
 }
@@ -98,7 +99,11 @@ export function findViolations(
 ): Violation[] {
   const where = `${scope.page} / ${scope.scenario}${scope.within ? ` / ${scope.within}` : ""}`;
   const expected = registry.filter(
-    (e) => e.page === scope.page && e.within === scope.within && applies(e, scope.scenario),
+    (e) =>
+      (e.page === scope.page || e.page === EVERY_PAGE) &&
+      e.within === scope.within &&
+      applies(e, scope.scenario) &&
+      (e.viewport === undefined || scope.viewport === undefined || e.viewport === scope.viewport),
   );
   const shown = interactiveNodes(snapshot);
   const violations: Violation[] = [];

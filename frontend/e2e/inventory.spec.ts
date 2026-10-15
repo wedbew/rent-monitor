@@ -1,10 +1,13 @@
-import { expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 import { expectNoA11yViolations, test } from "./fixtures";
 import { exercise } from "./coverage";
-import { INTERACTIONS, PAGES, POPUPS } from "./interactions";
+import { EVERY_PAGE, INTERACTIONS, PAGES, POPUPS, type Viewport } from "./interactions";
 import { inventory } from "./inventory";
 import { expectDialogContract } from "./popups";
+
+const viewportOf = (page: Page): Viewport =>
+  (page.viewportSize()?.width ?? 1280) <= 760 ? "mobile" : "desktop";
 
 for (const appPage of PAGES) {
   for (const scenario of appPage.scenarios) {
@@ -12,16 +15,24 @@ for (const appPage of PAGES) {
       page,
       serve,
     }) => {
+      const viewport = viewportOf(page);
       await serve(scenario);
       await page.goto(appPage.path);
       await expect(page.getByRole("heading", { level: 1, name: appPage.heading })).toBeVisible();
 
-      expect((await inventory(page, { page: appPage.id, scenario })).map((v) => v.message)).toEqual([]);
+      expect((await inventory(page, { page: appPage.id, scenario, viewport })).map((v) => v.message)).toEqual(
+        [],
+      );
       await expectNoA11yViolations(page);
 
-      for (const popup of POPUPS.filter(
-        (p) => p.page === appPage.id && (p.scenarios === undefined || p.scenarios.includes(scenario)),
-      )) {
+      // A shell popup is the same on every page: it is opened and inventoried once, on the first page.
+      const popups = POPUPS.filter(
+        (p) =>
+          (p.page === appPage.id || (p.page === EVERY_PAGE && appPage === PAGES[0])) &&
+          (p.viewport === undefined || p.viewport === viewport) &&
+          (p.scenarios === undefined || p.scenarios.includes(scenario)),
+      );
+      for (const popup of popups) {
         const trigger = INTERACTIONS.find((i) => i.id === popup.trigger);
         if (trigger === undefined)
           throw new Error(`popup ${popup.id}: trigger ${popup.trigger} is not registered`);
@@ -33,12 +44,18 @@ for (const appPage of PAGES) {
         await triggerLocator.click();
         await expect(dialog).toBeVisible();
         expect(
-          (await inventory(page, { page: appPage.id, scenario, within: popup.id }, INTERACTIONS, dialog)).map(
-            (v) => v.message,
-          ),
+          (
+            await inventory(
+              page,
+              { page: appPage.id, scenario, viewport, within: popup.id },
+              INTERACTIONS,
+              dialog,
+            )
+          ).map((v) => v.message),
         ).toEqual([]);
         await expectNoA11yViolations(page, "[role=dialog], [role=alertdialog], [role=menu], [role=listbox]");
         await page.keyboard.press("Escape");
+        await expect(dialog).toBeHidden();
         await expectDialogContract(page, {
           id: popup.id,
           trigger: triggerLocator,
@@ -54,12 +71,13 @@ test("the registry only names pages, popups and triggers that exist", () => {
   const pages = new Set(PAGES.map((p) => p.id));
   const ids = INTERACTIONS.map((i) => i.id);
   expect(new Set(ids).size, "interaction ids are unique").toBe(ids.length);
+  const known = (page: string) => page === EVERY_PAGE || pages.has(page);
   expect(
-    INTERACTIONS.filter((i) => !pages.has(i.page)).map((i) => i.id),
+    INTERACTIONS.filter((i) => !known(i.page)).map((i) => i.id),
     "interactions on unknown pages",
   ).toEqual([]);
   expect(
-    POPUPS.filter((p) => !pages.has(p.page)).map((p) => p.id),
+    POPUPS.filter((p) => !known(p.page)).map((p) => p.id),
     "popups on unknown pages",
   ).toEqual([]);
   expect(

@@ -1,0 +1,111 @@
+/*
+ * Semantic design tokens (design/v2/design-system.md). Light is the first-visit default; the dark palette is an
+ * explicit user choice (data-theme="dark", set before first paint by public/theme-boot.js). Tokens describe purpose,
+ * not colour. Add one when a shared semantic need appears, not for every pixel.
+ */
+:root {
+  color-scheme: light;
+
+  /* surfaces */
+  --canvas: #f5f7f4;
+  --surface: #fff;
+  --surface-hover: #edf2ee;
+  --surface-raised: #e5ede7;
+  --sidebar-bg: #edf2ed;
+
+  /* text */
+  --ink: #182c28;
+  --muted: #52625c;
+  --subtle: #65746c;
+
+  /* boundaries */
+  --border: #d1dbd4;
+  --control-border: #7a8b80;
+  --hover-border: #7c9786;
+  --selected-bg: #dfe9e1;
+  --selected-border: #c3d3c6;
+
+  /* actions */
+  --accent: #182c28;
+  --accent-ink: #fff;
+  --accent-hover: #29473d;
+  --focus-ring: #1f6f5a;
+
+  /* status (always with words or an icon, never colour alone) */
+  --success: #24643e;
+  --success-fill: #e6f1e8;
+  --warning: #775016;
+  --warning-fill: #faf0d9;
+  --danger: #a12c24;
+  --danger-fill: #fbe9e6;
+  --info: #2c4d6b;
+  --info-fill: #e6eef5;
+
+  /* geometry */
+  --font-ui: arial, helvetica, -apple-system, blinkmacsystemfont, "Segoe UI", sans-serif;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --radius: 3px;
+  --radius-card: 8px;
+  --radius-overlay: 6px;
+  --control-height: 44px;
+  --content-width: 1280px;
+  --sidebar-width: 232px;
+  --shadow-overlay: 0 24px 90px #182c2826;
+
+  /* layers */
+  --layer-skip: 100;
+  --layer-overlay: 50;
+
+  /* motion: one reduced-motion policy below turns every duration to zero */
+  --motion-fast: 160ms;
+  --motion-ui: 240ms;
+  --motion-overlay: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.2, 0.65, 0.3, 1);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #08090a;
+  --surface: #111315;
+  --surface-hover: #181b1e;
+  --surface-raised: #1a1d20;
+  --sidebar-bg: #0e1012;
+  --ink: #f5f6f7;
+  --muted: #a9aeb4;
+  --subtle: #818891;
+  --border: #353a40;
+  --control-border: #7f8790;
+  --hover-border: #85909c;
+  --selected-bg: #20252a;
+  --selected-border: #41484f;
+  --accent: #f5f6f7;
+  --accent-ink: #0a0b0c;
+  --accent-hover: #dce1e5;
+  --focus-ring: #7fd1b5;
+  --success: #b1d5bc;
+  --success-fill: #17241d;
+  --warning: #efcf98;
+  --warning-fill: #2b2318;
+  --danger: #ffc0b4;
+  --danger-fill: #2e1a17;
+  --info: #b6d0e8;
+  --info-fill: #16212b;
+  --shadow-overlay: 0 24px 90px #0009;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-ui: 0ms;
+    --motion-overlay: 0ms;
+  }
+}

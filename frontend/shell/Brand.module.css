@@ -1,0 +1,23 @@
+.brand {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+}
+
+.brand img {
+  width: 150px;
+  height: auto;
+}
+
+.dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .light {
+  display: none;
+}
+
+:root[data-theme="dark"] .dark {
+  display: block;
+}

@@ -1,0 +1,131 @@
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+.skip {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: var(--layer-skip);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--focus-ring);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  transform: translateY(-200%);
+}
+
+.skip:focus {
+  transform: none;
+}
+
+/* Desktop: a rail as tall as the viewport. */
+.rail {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  height: 100dvh;
+  padding: var(--space-8) var(--space-4) var(--space-4);
+  overflow-y: auto;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+}
+
+.brand {
+  padding: 0 var(--space-2);
+}
+
+.bottom {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.legal {
+  display: grid;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+.menu {
+  display: none;
+}
+
+.main {
+  min-width: 0;
+  padding: var(--space-12) var(--space-8) var(--space-16);
+}
+
+.content {
+  max-width: calc(var(--content-width) - var(--sidebar-width));
+  margin-inline: auto;
+}
+
+@media (width <= 1050px) and (width >= 761px) {
+  .shell {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .rail {
+    padding-inline: var(--space-3);
+  }
+}
+
+/* Mobile: the rail becomes a bar with the brand, the theme control and the menu button. */
+@media (width <= 760px) {
+  .shell {
+    display: block;
+  }
+
+  .rail {
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    height: auto;
+    padding: var(--space-3) var(--space-6);
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .primary,
+  .legal {
+    display: none;
+  }
+
+  .bottom {
+    display: block;
+    margin: 0 0 0 auto;
+  }
+
+  .bottom > :first-child {
+    width: auto;
+    min-height: var(--control-height);
+    border-color: var(--control-border);
+  }
+
+  .menu {
+    display: block;
+  }
+
+  .main {
+    padding: var(--space-8) var(--space-6) var(--space-12);
+  }
+}
+
+@media (width <= 390px) {
+  .rail {
+    padding-inline: var(--space-4);
+  }
+
+  .main {
+    padding-inline: var(--space-4);
+  }
+}
