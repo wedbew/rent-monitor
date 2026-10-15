@@ -25,7 +25,7 @@ The two last checklist items map to rules: **Legal / GDPR** (`rules/legal-tags.m
 - Migrations: expand-only; the contract step is a later PR. `pytest tests/migrations` and `squawk` pass.
 - Golden `DealAnalysis` snapshots unchanged, or every diff explained under the section it affects.
 - New dependency: name it and say why in the PR body (`agents.md` §4).
-- Frontend: `rules/frontend.md` checklist, with the `make fe-check` (and `pnpm test:e2e` when UI changed) summary lines. GitHub does not yet run the SPA checks (#296), so a green PR is not frontend evidence.
+- Frontend: `rules/frontend.md` checklist, with the `make fe-check` (and `pnpm test:e2e` when UI changed) summary lines. GitHub runs `frontend`, `frontend-e2e` and `frontend-journey`; until they are required checks (L-031) confirm they passed before merging.
 
 ## Check locally before you push (saves CI time)
 

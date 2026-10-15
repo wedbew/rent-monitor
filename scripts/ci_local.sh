@@ -49,7 +49,7 @@ skip() { echo; echo "=== $1: skipped ($2) ==="; RESULTS+=("SKIPPED  $1: $2"); }
 have() { command -v "$1" >/dev/null 2>&1; }
 
 st_commits() { python3 scripts/check_commit_msg.py --range "$BASE..HEAD"; }
-st_lint() { uv run ruff check . && uv run ruff format --check . && test ! -e frontend/src/lib/cashflow.ts && test ! -e frontend/src/lib/appreciation.ts; }
+st_lint() { uv run ruff check . && uv run ruff format --check .; } # SPA finance guard: ESLint in `frontend` (eslint.money.mjs)
 st_types() { uv run pyright; }
 st_types_ty() { uvx ty check packages services; }
 st_unit() { uv run pytest -m "not e2e and not integration" -q; }

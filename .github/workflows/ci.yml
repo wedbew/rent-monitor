@@ -29,8 +29,6 @@ jobs:
       - run: uv sync --all-packages --group dev
       - run: uv run ruff check --output-format=github .
       - run: uv run ruff format --check .
-      - name: frontend finance code must not exist (blueprint P0.3)
-        run: test ! -e frontend/src/lib/cashflow.ts && test ! -e frontend/src/lib/appreciation.ts
 
   types:
     runs-on: ubuntu-24.04
@@ -122,3 +120,103 @@ jobs:
         run: |
           uv run alembic upgrade head --sql > /tmp/migrations.sql
           npx --yes squawk-cli@2.68.0 /tmp/migrations.sql
+
+  # ---------------------------------------------------------------- the SPA (frontend/, audit F01, #296)
+  # These jobs always run (no path filter), so a required check is never left pending. Invariant 4 in the
+  # browser (no finance in TypeScript) is enforced by the tested ESLint money guard in `pnpm check`
+  # (frontend/eslint.money.mjs), which replaces the old check for two obsolete file paths.
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: frontend/.node-version
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: check (generated API drift, types, ESLint, Stylelint, Prettier, Vitest, build, dist scan)
+        run: pnpm check
+      - name: bundle size
+        run: |
+          {
+            echo "### SPA bundle (gzip)"
+            echo '```'
+            for f in dist/assets/*.js dist/assets/*.css; do printf '%8d B  %s\n' "$(gzip -9c "$f" | wc -c)" "${f#dist/}"; done
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  frontend-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      CI: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: frontend/.node-version
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Chromium (the version pinned by the Playwright lockfile entry)
+        run: pnpm exec playwright install --with-deps chromium
+      - name: mocked lane (axe, popups, interaction-coverage gate)
+        run: pnpm test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: frontend-e2e-traces
+          path: |
+            frontend/test-results
+            frontend/playwright-report
+          retention-days: 7
+
+  frontend-journey:
+    # The SPA against the real Compose stack (API, Postgres, workers, fake providers). The session is seeded
+    # inside the api container by scripts/e2e_session.py; no secrets are used.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      CI: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: frontend/.node-version
+      - run: corepack enable
+      - name: stack
+        run: docker compose -f deploy/compose.yml -f deploy/compose.e2e.yml up -d --build --wait api worker-audit worker-ops
+      - run: pnpm install --frozen-lockfile
+        working-directory: frontend
+      - run: pnpm exec playwright install --with-deps chromium
+        working-directory: frontend
+      - name: journey lane
+        run: pnpm test:e2e:journey
+        working-directory: frontend
+      - if: failure()
+        name: stack logs
+        run: docker compose -f deploy/compose.yml -f deploy/compose.e2e.yml logs --no-color --tail=300 api worker-audit
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: frontend-journey-traces
+          path: frontend/test-results
+          retention-days: 7

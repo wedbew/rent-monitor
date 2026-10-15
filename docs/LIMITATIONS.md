@@ -224,10 +224,10 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Status:** active
 - **Discovered:** 2026-10-15
 - **Affects:** `.github/workflows/ci.yml`, `security.yml`, npm dependency monitoring and frontend merge confidence
-- **Evidence:** confirmed (workflow/config read): Python checks and two historical frontend filename checks exist; no SPA install/typecheck/lint/build/unit/browser lane or npm Dependabot entry exists. Local CI has frontend stages.
-- **Description:** Green backend checks do not establish frontend correctness. The proposed separate frontend pipeline, shared contract/journey gates and required aggregate are documented in frontend audit F01.
-- **Workaround:** Execute frontend quality and browser checks locally and retain their results; local evidence does not replace a remote required gate.
-- **Target:** GitHub lanes #296; release hardening #286.
+- **Evidence:** confirmed (workflow/config read): Python checks and two historical frontend filename checks exist; no SPA install/typecheck/lint/build/unit/browser lane or npm Dependabot entry exists. Local CI has frontend stages. **RM-296 (2026-10-15):** `ci.yml` now runs `frontend` (`pnpm check`), `frontend-e2e` (mocked lane with the interaction gate) and `frontend-journey` (Compose stack) on every PR; `security.yml` runs `pnpm audit --prod`; Dependabot covers npm.
+- **Description:** The jobs run but are not yet **required** checks in the `staging`/`main` rulesets (a repository setting only the owner can change), so a merge does not wait for them. Firefox and WebKit are not run (#311).
+- **Workaround:** Read the frontend jobs' result on the head commit before merging; keep running `make ci` locally.
+- **Target:** owner adds `frontend`, `frontend-e2e`, `frontend-journey` to the required checks (B-019); cross-browser #311; release hardening #286.
 
 ### L-032 — Frontend localization and async edge cases remain outside the current guarantees
 - **Status:** active
