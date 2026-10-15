@@ -1,4 +1,5 @@
 import type { components } from "../../api/schema.generated";
+import { t } from "../../i18n";
 
 export type AuditState = components["schemas"]["AuditState"];
 export type Tone = "success" | "warning" | "danger" | "info" | "neutral";
@@ -10,18 +11,13 @@ export interface StatusCopy {
   readonly credit: string | null;
 }
 
-const REJECTIONS: Record<string, string> = {
-  RENT_NOT_DEAL: "To ogłoszenie wynajmu",
-  FRACTIONAL_OWNERSHIP: "Sprzedaż udziału",
-};
-
-const FAILURES: Record<string, string> = {
-  LISTING_GONE: "Ogłoszenie nieaktywne",
-  UPSTREAM_BLOCKED: "Otodom zablokował pobranie",
-  UPSTREAM_SCHEMA_DRIFT: "Nie udało się odczytać ogłoszenia",
-  CONTEXT_UNAVAILABLE: "Brak danych rynkowych",
-  TIMEOUT: "Przekroczono czas",
-};
+const REJECTIONS: Readonly<Record<string, string>> = t.analyses.status.rejections;
+const FAILURES: Readonly<Record<string, string>> = t.analyses.status.failures;
+const label = t.analyses.status;
+const credit = t.analyses.status.credit;
+/** Own keys only: an error code is server data and must not reach the prototype. */
+const own = (table: Readonly<Record<string, string>>, code: string | null) =>
+  code !== null && Object.hasOwn(table, code) ? table[code] : undefined;
 
 /**
  * What an analysis's state means in words, in one place for the dashboard, the collection and the report. The
@@ -30,29 +26,29 @@ const FAILURES: Record<string, string> = {
 export function statusCopy(status: AuditState, errorCode: string | null): StatusCopy {
   switch (status) {
     case "queued":
-      return { label: "W kolejce", tone: "neutral", credit: "Raport jest zarezerwowany." };
+      return { label: label.queued, tone: "neutral", credit: credit.reserved };
     case "running":
-      return { label: "W trakcie", tone: "info", credit: "Raport jest zarezerwowany." };
+      return { label: label.running, tone: "info", credit: credit.reserved };
     case "succeeded":
-      return { label: "Analiza gotowa", tone: "success", credit: "Raport został pobrany z konta." };
+      return { label: label.succeeded, tone: "success", credit: credit.captured };
     case "succeeded_degraded":
-      return { label: "Gotowa, mniej pewna", tone: "warning", credit: "Raport został pobrany z konta." };
+      return { label: label.succeeded_degraded, tone: "warning", credit: credit.captured };
     case "rejected":
       return {
-        label: (errorCode !== null ? REJECTIONS[errorCode] : undefined) ?? "Odrzucona",
+        label: own(REJECTIONS, errorCode) ?? label.rejected,
         tone: "warning",
-        credit: "Raport nie został pobrany.",
+        credit: credit.notCharged,
       };
     case "failed_input":
     case "failed_upstream":
     case "failed_internal":
       return {
-        label: (errorCode !== null ? FAILURES[errorCode] : undefined) ?? "Nie udało się",
+        label: own(FAILURES, errorCode) ?? label.failed,
         tone: "danger",
-        credit: "Raport nie został pobrany.",
+        credit: credit.notCharged,
       };
     case "cancelled":
-      return { label: "Anulowana", tone: "neutral", credit: "Raport nie został pobrany." };
+      return { label: label.cancelled, tone: "neutral", credit: credit.notCharged };
   }
 }
 

@@ -4,6 +4,7 @@ import { formatReports } from "../api/format";
 import { Button } from "../ui/Button";
 import styles from "./AccountBlock.module.css";
 import { signOut, useMe } from "./session";
+import { t } from "../i18n";
 
 function initials(name: string | null, email: string): string {
   const source = (name ?? "").trim() || email;
@@ -29,11 +30,11 @@ export function AccountBlock() {
         </span>
         <span className={styles["details"]}>
           <strong>{me.name ?? me.email}</strong>
-          <span>{formatReports(me.credit_balance)} na koncie</span>
+          <span>{t.shell.balance({ reports: formatReports(me.credit_balance) })}</span>
         </span>
       </div>
       <Button type="button" small fill busy={leave.isPending} onClick={() => leave.mutate()}>
-        Wyloguj się
+        {t.shell.signOut}
       </Button>
     </div>
   );

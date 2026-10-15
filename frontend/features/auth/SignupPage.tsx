@@ -12,6 +12,8 @@ import { GoogleButton } from "./GoogleButton";
 import { ProblemNotice } from "./ProblemNotice";
 import { useGoogleSignIn, useRegister, useRegisterResend } from "./useAuthMutations";
 import styles from "./auth.module.css";
+import { t } from "../../i18n";
+import { Rich } from "../../i18n/Rich";
 
 const IDS = { email: "signup-email", password: "signup-password" } as const;
 
@@ -60,23 +62,22 @@ export function SignupPage() {
   if (sentTo !== null) {
     return (
       <div className={styles["stack"]}>
-        <PageHeading title="Sprawdź skrzynkę" />
-        <InlineNotice tone="success" title="Wysłaliśmy link potwierdzający" live="status">
-          Jeśli {sentTo} może założyć konto, znajdziesz tam wiadomość z linkiem. Konto powstanie dopiero po
-          jego otwarciu. Jeśli wiadomość nie dotarła, sprawdź spam albo poproś o nowy link.
+        <PageHeading title={t.auth.checkInbox} />
+        <InlineNotice tone="success" title={t.auth.signup.sentTitle} live="status">
+          {t.auth.signup.sentBody({ email: sentTo })}
         </InlineNotice>
         {resend.isSuccess ? (
-          <InlineNotice tone="info" title="Poprosiliśmy o nowy link" live="status">
-            Jeśli czekała na Ciebie rejestracja, wysłaliśmy nową wiadomość. Poprzedni link przestał działać.
+          <InlineNotice tone="info" title={t.auth.signup.resentTitle} live="status">
+            {t.auth.signup.resentBody}
           </InlineNotice>
         ) : null}
         {resendFailure?.general ? <ProblemNotice problem={resendFailure.general} /> : null}
         <div className={styles["links"]}>
           <Button type="button" busy={resend.isPending} onClick={() => resend.mutate(sentTo)}>
-            Wyślij link ponownie
+            {t.auth.signup.resend}
           </Button>
           <Button type="button" onClick={() => setSentTo(null)}>
-            Zmień adres
+            {t.auth.signup.changeAddress}
           </Button>
         </div>
       </div>
@@ -85,15 +86,15 @@ export function SignupPage() {
 
   return (
     <div className={styles["stack"]}>
-      <PageHeading title="Załóż konto" lead="Pierwsze analizy dostajesz po potwierdzeniu adresu e-mail." />
+      <PageHeading title={t.auth.signup.title} lead={t.auth.signup.lead} />
       {googleFailure?.general ? <ProblemNotice problem={googleFailure.general} tone="info" /> : null}
       <GoogleButton text="signup_with" onCredential={(credential) => google.mutate(credential)} />
-      <form className={styles["form"]} onSubmit={submit} noValidate aria-label="Rejestracja">
+      <form className={styles["form"]} onSubmit={submit} noValidate aria-label={t.auth.signup.form}>
         <FormErrorSummary errors={shown} attempt={attempt} />
         {failure?.general ? <ProblemNotice key={attempt} problem={failure.general} /> : null}
         <TextField
           fieldId={IDS.email}
-          label="Adres e-mail"
+          label={t.auth.email}
           type="email"
           name="email"
           autoComplete="email"
@@ -104,25 +105,29 @@ export function SignupPage() {
         />
         <TextField
           fieldId={IDS.password}
-          label="Hasło"
+          label={t.auth.password}
           type="password"
           name="new-password"
           autoComplete="new-password"
-          hint={`Co najmniej ${formatCount(PASSWORD_MIN)} znaków. Unikaj popularnych haseł i swojego adresu e-mail.`}
+          hint={t.auth.passwordHint({ min: formatCount(PASSWORD_MIN) })}
           value={password}
           onValueChange={setPassword}
           error={messageFor(IDS.password)}
         />
         <Button type="submit" variant="primary" fill busy={register.isPending} icon="arrow">
-          Załóż konto
+          {t.auth.signup.submit}
         </Button>
         <p className={styles["muted"]}>
-          Zakładając konto, akceptujesz <Link to="/terms">Regulamin</Link> i zapoznajesz się z{" "}
-          <Link to="/privacy">Polityką prywatności</Link>.
+          <Rich
+            parts={t.auth.signup.consent({
+              terms: <Link to="/terms">{t.auth.signup.termsLink}</Link>,
+              privacy: <Link to="/privacy">{t.auth.signup.privacyLink}</Link>,
+            })}
+          />
         </p>
       </form>
       <p className={styles["muted"]}>
-        Masz już konto? <Link to="/login">Zaloguj się</Link>
+        <Rich parts={t.auth.signup.haveAccount({ link: <Link to="/login">{t.auth.signIn}</Link> })} />
       </p>
     </div>
   );

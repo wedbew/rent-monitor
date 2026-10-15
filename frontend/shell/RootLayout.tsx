@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router";
 
 import { requestHeadingFocus } from "./headingFocus";
 import styles from "./RootLayout.module.css";
+import { t } from "../i18n";
 
 /**
  * Above every frame (signed-out, app, documents). A single-page app gets no focus move from the browser when the
@@ -30,7 +31,7 @@ export function RootLayout() {
 export function AppLoading() {
   return (
     <p role="status" aria-live="polite" className={styles["loading"]}>
-      Wczytuję stronę…
+      {t.shell.loadingPage}
     </p>
   );
 }

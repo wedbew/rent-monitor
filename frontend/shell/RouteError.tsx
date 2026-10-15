@@ -3,6 +3,7 @@ import { isRouteErrorResponse, useRouteError } from "react-router";
 import { Button, LinkButton } from "../ui/Button";
 import { InlineNotice } from "../ui/Status";
 import { PageHeading } from "./PageHeading";
+import { t } from "../i18n";
 
 /** A lazily loaded route chunk that no longer exists after a deploy (the HTML still points at an old file). */
 export function isChunkLoadError(error: unknown): boolean {
@@ -22,44 +23,26 @@ export function classifyRouteError(error: unknown): ErrorKind {
   return isRouteErrorResponse(error) ? "response" : "unexpected";
 }
 
-const COPY: Record<ErrorKind, { title: string; body: string; action: string }> = {
-  chunk: {
-    title: "Dostępna jest nowa wersja aplikacji",
-    body: "Ta strona potrzebuje świeżej wersji. Odśwież ją, aby kontynuować. Nic z tego, co wpisano w innych kartach, nie zostanie utracone.",
-    action: "Odśwież stronę",
-  },
-  response: {
-    title: "Nie udało się otworzyć tej strony",
-    body: "Serwer odpowiedział błędem. Spróbuj ponownie za chwilę.",
-    action: "Spróbuj ponownie",
-  },
-  unexpected: {
-    title: "Coś poszło nie tak",
-    body: "Ten ekran nie zadziałał. Pozostała część aplikacji działa; spróbuj ponownie.",
-    action: "Spróbuj ponownie",
-  },
-};
-
 /**
  * The route error boundary. A reload is offered, never forced, so a bad deploy cannot put the page in a reload
  * loop. It renders inside the shell: the navigation still works.
  */
 export function RouteError() {
   const error = useRouteError();
-  const copy = COPY[classifyRouteError(error)];
+  const copy = t.shell.routeError[classifyRouteError(error)];
   return (
     <>
       <PageHeading title={copy.title} />
       <InlineNotice
         tone="danger"
-        title="Wystąpił błąd"
+        title={t.shell.routeError.heading}
         live="alert"
         actions={
           <>
             <Button type="button" variant="primary" icon="refresh" onClick={() => window.location.reload()}>
               {copy.action}
             </Button>
-            <LinkButton to="/app">Wróć do pulpitu</LinkButton>
+            <LinkButton to="/app">{t.shell.backToDashboard}</LinkButton>
           </>
         }
       >

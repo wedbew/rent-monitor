@@ -45,7 +45,7 @@ Worth keeping: the four-layer component model, state-ownership table, contract-f
 lifecycle rules, the no-client-finance boundary, the media and AI-tool cautions. They match the blueprint and the
 production bar. Not worth adding yet: Storybook before the first primitives exist (start it with #270, not #267),
 virtualisation, offline/PWA. A translation framework was deferred here; after the 2026-10-15 audit the owner
-requires copy in a typed catalog (#305, `.agent/rules/frontend.md` §7).
+requires copy in a typed catalog: `frontend/i18n/pl.ts` since RM-305 (`.agent/rules/frontend.md` §7).
 
 ## 2. Order
 

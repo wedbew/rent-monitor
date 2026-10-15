@@ -1,3 +1,5 @@
+import { t } from "../../../i18n";
+
 /**
  * What an engine warning means for the person, and what to do about it. The engine's codes are stable; an unknown
  * one is still shown (generically, with its code) so that nothing the engine flagged is ever hidden.
@@ -10,104 +12,35 @@ export interface WarningCopy {
   readonly check: string;
 }
 
-const KNOWN: Readonly<Record<string, WarningCopy>> = {
-  vision_unavailable: {
-    material: true,
-    title: "Nie oceniliśmy zdjęć",
-    check:
-      "Obejrzyj zdjęcia i rzut samodzielnie i oceń stan; koszt remontu poniżej jest założeniem, nie oceną.",
-  },
-  capex_prices_are_placeholders: {
-    material: true,
-    title: "Koszt remontu jest wstępny",
-    check: "Zbierz wycenę remontu od wykonawcy. Ceny w raporcie to tymczasowe wartości, nie rynkowy cennik.",
-  },
-  admin_fee_missing: {
-    material: true,
-    title: "Brak czynszu administracyjnego",
-    check:
-      "Zapytaj sprzedającego o miesięczny czynsz administracyjny: to stały koszt właściciela i wpływa na wynik.",
-  },
-  rent_refused_too_few_comparables: {
-    material: true,
-    title: "Za mało podobnych ofert do wyceny czynszu",
-    check: "Sprawdź czynsze podobnych mieszkań w okolicy; raport nie ma wystarczającej próby.",
-  },
-  rent_thin_market: {
-    material: true,
-    title: "Mało podobnych ofert wynajmu",
-    check: "Potraktuj czynsz jako przybliżony i porównaj go z aktualnymi ofertami w okolicy.",
-  },
-  size_window_widened: {
-    material: false,
-    title: "Porównano mieszkania o bardziej różnym metrażu",
-    check: "Sprawdź, czy porównywane mieszkania są naprawdę podobne wielkością.",
-  },
-  comparables_dropped_implausible: {
-    material: false,
-    title: "Odrzuciliśmy nieprawdopodobne oferty wynajmu",
-    check: "Nic do zrobienia; część ofert miała ceny, które odbiegały od rynku.",
-  },
-  irr_not_computable: {
-    material: true,
-    title: "Nie da się obliczyć stopy zwrotu",
-    check: "Wynik nie ma sensu rachunkowego dla tych założeń; nie opieraj decyzji na stopie zwrotu.",
-  },
-  legal_class_needs_review: {
-    material: true,
-    title: "Rodzaj lokalu lub rozliczenie VAT wymaga sprawdzenia",
-    check: "Zapytaj w księdze wieczystej i u sprzedającego, czy to lokal mieszkalny i czy cena zawiera VAT.",
-  },
-  city_missing: {
-    material: true,
-    title: "Brak miasta w ogłoszeniu",
-    check: "Ustal dokładną lokalizację; porównania czynszów zależą od miasta.",
-  },
-  street_missing: {
-    material: false,
-    title: "Brak ulicy w ogłoszeniu",
-    check: "Ustal dokładny adres przed oglądaniem.",
-  },
-  coordinates_missing: {
-    material: false,
-    title: "Brak współrzędnych ogłoszenia",
-    check: "Sprawdź lokalizację na mapie.",
-  },
-  coordinates_invalid: {
-    material: false,
-    title: "Współrzędne ogłoszenia są niepoprawne",
-    check: "Sprawdź lokalizację na mapie.",
-  },
-  coordinates_outside_poland: {
-    material: false,
-    title: "Współrzędne ogłoszenia są poza Polską",
-    check: "Sprawdź lokalizację i adres w ogłoszeniu.",
-  },
-  building_type_missing: {
-    material: false,
-    title: "Brak rodzaju budynku",
-    check: "Zapytaj o rodzaj budynku i jego stan techniczny.",
-  },
-  heating_missing: {
-    material: false,
-    title: "Brak informacji o ogrzewaniu",
-    check: "Zapytaj o rodzaj ogrzewania i koszty miesięczne.",
-  },
-  windows_missing: {
-    material: false,
-    title: "Brak informacji o oknach",
-    check: "Sprawdź stan okien podczas oglądania.",
-  },
+/** Material warnings change how far the result can be trusted (behaviour, not copy; the words are in the catalog). */
+const MATERIAL: Readonly<Record<string, boolean>> = {
+  vision_unavailable: true,
+  capex_prices_are_placeholders: true,
+  admin_fee_missing: true,
+  rent_refused_too_few_comparables: true,
+  rent_thin_market: true,
+  size_window_widened: false,
+  comparables_dropped_implausible: false,
+  irr_not_computable: true,
+  legal_class_needs_review: true,
+  city_missing: true,
+  street_missing: false,
+  coordinates_missing: false,
+  coordinates_invalid: false,
+  coordinates_outside_poland: false,
+  building_type_missing: false,
+  heating_missing: false,
+  windows_missing: false,
 };
 
+const KNOWN: Readonly<Record<string, { readonly title: string; readonly check: string }>> =
+  t.analyses.report.warnings.known;
+
 export function warningCopy(code: string): WarningCopy {
-  return (
-    KNOWN[code] ?? {
-      material: false,
-      title: "Dodatkowe zastrzeżenie silnika",
-      check: `Skontaktuj się z pomocą, jeśli to ważne (kod: ${code}).`,
-    }
-  );
+  // Own keys only: the code is engine data and must not reach the prototype.
+  const known = Object.hasOwn(KNOWN, code) ? KNOWN[code] : undefined;
+  if (known !== undefined) return { ...known, material: MATERIAL[code] === true };
+  return { material: false, ...t.analyses.report.warnings.unknown({ code }) };
 }
 
 /** Unique codes, material first, otherwise in the order the engine reported them. */

@@ -14,6 +14,7 @@ import { PendingPage } from "./shell/PendingPage";
 import { AppLoading, RootLayout } from "./shell/RootLayout";
 import { RouteError } from "./shell/RouteError";
 import { RedirectIfSignedIn, RequireSession } from "./shell/session";
+import { t } from "./i18n";
 
 const NewAnalysisPage = lazy(async () => ({
   default: (await import("./features/analyses/new/NewAnalysisPage")).NewAnalysisPage,
@@ -104,7 +105,7 @@ export const routes: RouteObject[] = [
                   { path: "/app", element: <DashboardPage /> },
                   {
                     path: "/app/credits",
-                    element: <PendingPage title="Raporty i zakupy" availability="building" />,
+                    element: <PendingPage title={t.shell.creditsPage} availability="building" />,
                   },
                   // The analysis pages load on first visit (audit F17, #312): the report and the collection are the
                   // largest features and most visits start on the Pulpit. A chunk that fails to load (a deploy

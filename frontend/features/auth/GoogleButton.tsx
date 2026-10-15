@@ -6,6 +6,7 @@ import { InlineNotice } from "../../ui/Status";
 import { Skeleton } from "../../ui/Skeleton";
 import { type GisId, loadGis } from "./gis";
 import styles from "./auth.module.css";
+import { t } from "../../i18n";
 
 interface GoogleButtonProps {
   readonly text: "signin_with" | "signup_with";
@@ -76,8 +77,8 @@ export function GoogleButton({ text, onCredential }: GoogleButtonProps) {
       <div ref={host} className={styles["google"]} aria-busy={state === "loading"} />
       {state === "loading" ? <Skeleton height="44px" /> : null}
       {state === "unavailable" ? (
-        <InlineNotice tone="info" title="Logowanie przez Google jest niedostępne">
-          Użyj adresu e-mail: hasła albo linku wysłanego na skrzynkę.
+        <InlineNotice tone="info" title={t.auth.google.unavailableTitle}>
+          {t.auth.google.unavailableBody}
         </InlineNotice>
       ) : null}
     </div>

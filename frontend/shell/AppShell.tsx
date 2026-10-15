@@ -9,6 +9,7 @@ import styles from "./AppShell.module.css";
 import { useSession } from "./session";
 import { ThemeControl } from "./ThemeControl";
 import { VerifyBanner } from "./VerifyBanner";
+import { t } from "../i18n";
 
 /**
  * Landmarks: one banner (the rail on desktop, the bar on mobile), one `main`, a skip link first. The desktop rail
@@ -19,19 +20,19 @@ export function AppShell() {
   return (
     <div className={styles["shell"]}>
       <a className={styles["skip"]} href="#main">
-        Przejdź do treści
+        {t.shell.skipToContent}
       </a>
       <header className={styles["rail"]}>
         <div className={styles["brand"]}>
           <Brand />
         </div>
         <div className={styles["primary"]}>
-          <NavList label="Nawigacja aplikacji" destinations={PRIMARY} />
+          <NavList label={t.shell.appNavigation} destinations={PRIMARY} />
         </div>
         <div className={styles["bottom"]}>
           <ThemeControl />
           <div className={styles["legal"]}>
-            <NavList label="Dokumenty" destinations={LEGAL} />
+            <NavList label={t.shell.documents} destinations={LEGAL} />
           </div>
           {session.status === "signedIn" ? (
             <div className={styles["account"]}>

@@ -12,6 +12,7 @@ import { InlineNotice } from "../ui/Status";
 import { onSessionSignal, sendSessionSignal } from "./sessionBus";
 import { advanceSessionGeneration, runTenantCleanups } from "./tenant";
 import styles from "./session.module.css";
+import { t } from "../i18n";
 
 export type Me = components["schemas"]["MeDetailOut"];
 
@@ -234,7 +235,7 @@ export function RequireSession() {
       return (
         <FullPage>
           <p role="status" aria-live="polite">
-            Sprawdzam sesję…
+            {t.shell.session.checking}
           </p>
         </FullPage>
       );
@@ -243,15 +244,15 @@ export function RequireSession() {
         <FullPage>
           <InlineNotice
             tone="danger"
-            title={state.error instanceof ApiError ? "Nie udało się sprawdzić sesji" : "Brak połączenia"}
+            title={state.error instanceof ApiError ? t.shell.session.checkFailed : t.shell.session.offline}
             live="alert"
             actions={
               <Button type="button" variant="primary" icon="refresh" onClick={state.retry}>
-                Spróbuj ponownie
+                {t.shell.session.retry}
               </Button>
             }
           >
-            Spróbuj ponownie za chwilę.
+            {t.shell.session.retryLater}
           </InlineNotice>
         </FullPage>
       );
@@ -282,16 +283,15 @@ function SignOutPending({ retrying, retry }: { readonly retrying: boolean; reado
   return (
     <InlineNotice
       tone="warning"
-      title="Nie udało się potwierdzić wylogowania"
+      title={t.shell.session.signOutUnconfirmed.title}
       live="alert"
       actions={
         <Button type="button" variant="primary" icon="refresh" busy={retrying} onClick={retry}>
-          Spróbuj wylogować ponownie
+          {t.shell.session.signOutUnconfirmed.retry}
         </Button>
       }
     >
-      Twoje dane są ukryte, ale sesja może być nadal aktywna. Sprawdź połączenie i spróbuj ponownie. Na
-      współdzielonym komputerze zamknij też przeglądarkę.
+      {t.shell.session.signOutUnconfirmed.body}
     </InlineNotice>
   );
 }

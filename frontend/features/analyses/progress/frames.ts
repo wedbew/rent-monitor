@@ -3,6 +3,8 @@
  * then exactly one `done` or `error`. Everything is read defensively: a frame that does not fit is dropped, never
  * guessed at, and no number is ever computed here (stage and percentage are the server's).
  */
+import { t } from "../../../i18n";
+
 export type FrameKind = "progress" | "done" | "error";
 
 export interface Frame {
@@ -50,17 +52,10 @@ export function parseFrame(kind: string, lastEventId: string, data: unknown): Fr
 }
 
 /** Human names of the pipeline stages (CONTEXT.md section 7). An unknown stage keeps its raw name out of the UI. */
-const STAGES: Readonly<Record<string, string>> = {
-  fetch: "Pobieranie ogłoszenia",
-  extract: "Odczyt danych z ogłoszenia",
-  context: "Dane rynkowe i czynsze",
-  vision: "Analiza zdjęć",
-  ocr: "Odczyt rzutu mieszkania",
-  anchors: "Ceny odniesienia",
-  synthesize: "Wyliczenia inwestycji",
-  persist: "Zapis raportu",
-};
+const STAGES: Readonly<Record<string, string>> = t.analyses.stages;
 
 export function stageLabel(stage: string | null): string {
-  return (stage !== null ? STAGES[stage] : undefined) ?? "Przetwarzanie";
+  return (
+    (stage !== null && Object.hasOwn(STAGES, stage) ? STAGES[stage] : undefined) ?? t.analyses.stages.unknown
+  );
 }

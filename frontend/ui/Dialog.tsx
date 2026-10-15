@@ -3,6 +3,7 @@ import type { ReactNode, RefObject } from "react";
 
 import { IconButton } from "./Button";
 import styles from "./Dialog.module.css";
+import { t } from "../i18n";
 
 export interface DialogProps {
   readonly open: boolean;
@@ -33,7 +34,7 @@ export function Dialog({
   title,
   description,
   variant = "modal",
-  closeLabel = "Zamknij",
+  closeLabel = t.ui.close,
   onClosed,
   finalFocus,
   children,

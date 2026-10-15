@@ -23,8 +23,9 @@ import {
 } from "./filters";
 import { useAuditList } from "./useAuditList";
 import styles from "./AnalysesPage.module.css";
+import { t } from "../../../i18n";
 
-const title = (audit: AuditSummary) => `Ogłoszenie ${audit.otodom_id}`;
+const title = (audit: AuditSummary) => t.common.listingTitle({ id: audit.otodom_id });
 const money = (value: string | null) => (value === null ? NOT_COMPUTED : formatMoney(value, { decimals: 0 }));
 
 function Badge({ audit }: { readonly audit: AuditSummary }) {
@@ -35,7 +36,7 @@ function Badge({ audit }: { readonly audit: AuditSummary }) {
 // LEGAL[republication]: shows listing identifiers and asking-price summaries from the tenant's analyses (RM-275)
 function Cards({ items }: { readonly items: readonly AuditSummary[] }) {
   return (
-    <ul className={styles["cards"]} aria-label="Analizy">
+    <ul className={styles["cards"]} aria-label={t.analyses.list.cardsLabel}>
       {items.map((audit) => (
         <li key={audit.audit_id} className={`${styles["card"]} ${styles["cardWrap"]}`}>
           <div className={styles["cardTop"]}>
@@ -46,19 +47,19 @@ function Cards({ items }: { readonly items: readonly AuditSummary[] }) {
           </div>
           <dl className={styles["facts"]}>
             <div>
-              <dt>Data</dt>
+              <dt>{t.analyses.list.columns.date}</dt>
               <dd>{formatDate(audit.created_at)}</dd>
             </div>
             <div>
-              <dt>Ocena</dt>
+              <dt>{t.analyses.list.columns.grade}</dt>
               <dd>{audit.grade ?? "—"}</dd>
             </div>
             <div>
-              <dt>Cena ofertowa</dt>
+              <dt>{t.analyses.list.columns.askingPrice}</dt>
               <dd>{money(audit.asking_price_pln)}</dd>
             </div>
             <div>
-              <dt>Cena progowa</dt>
+              <dt>{t.analyses.list.columns.maxBid}</dt>
               <dd>{money(audit.max_bid_pln)}</dd>
             </div>
           </dl>
@@ -72,20 +73,20 @@ function Cards({ items }: { readonly items: readonly AuditSummary[] }) {
 function Table({ items }: { readonly items: readonly AuditSummary[] }) {
   return (
     // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrollable region must be reachable by keyboard
-    <div className={styles["region"]} role="region" aria-label="Tabela analiz" tabIndex={0}>
+    <div className={styles["region"]} role="region" aria-label={t.analyses.list.tableLabel} tabIndex={0}>
       <table className={styles["table"]}>
-        <caption>Od najnowszej. Kwoty w złotych.</caption>
+        <caption>{t.analyses.list.tableCaption}</caption>
         <thead>
           <tr>
-            <th scope="col">Ogłoszenie</th>
-            <th scope="col">Data</th>
-            <th scope="col">Status</th>
-            <th scope="col">Ocena</th>
+            <th scope="col">{t.analyses.list.columns.listing}</th>
+            <th scope="col">{t.analyses.list.columns.date}</th>
+            <th scope="col">{t.analyses.list.columns.status}</th>
+            <th scope="col">{t.analyses.list.columns.grade}</th>
             <th scope="col" className={styles["num"]}>
-              Cena ofertowa
+              {t.analyses.list.columns.askingPrice}
             </th>
             <th scope="col" className={styles["num"]}>
-              Cena progowa
+              {t.analyses.list.columns.maxBid}
             </th>
           </tr>
         </thead>
@@ -142,15 +143,20 @@ export function AnalysesPage() {
   return (
     <div className={styles["page"]}>
       <PageHeading
-        title="Moje analizy"
-        eyebrow="Historia"
-        lead="Wszystkie Twoje analizy, od najnowszej. Raport otwierasz bez zużywania kolejnego."
+        title={t.analyses.list.title}
+        eyebrow={t.analyses.list.eyebrow}
+        lead={t.analyses.list.lead}
       />
 
       <div className={styles["toolbar"]}>
-        <form className={styles["search"]} onSubmit={search} role="search" aria-label="Szukaj analizy">
+        <form
+          className={styles["search"]}
+          onSubmit={search}
+          role="search"
+          aria-label={t.analyses.list.searchLabel}
+        >
           <TextField
-            label="Numer ogłoszenia (początek)"
+            label={t.analyses.list.searchField}
             value={draft ?? filters.q}
             onValueChange={setDraft}
             autoComplete="off"
@@ -158,22 +164,22 @@ export function AnalysesPage() {
             maxLength={20}
           />
           <Button type="submit" icon="search">
-            Szukaj
+            {t.analyses.list.search}
           </Button>
         </form>
         <Select
-          label="Status"
+          label={t.analyses.list.statusFilter}
           value={filters.status}
           options={STATUS_OPTIONS}
           onValueChange={(status) => update({ status: status as CollectionFilters["status"] })}
         />
         <Select
-          label="Ocena"
+          label={t.analyses.list.gradeFilter}
           value={filters.grade}
           options={GRADE_OPTIONS}
           onValueChange={(grade) => update({ grade: grade as CollectionFilters["grade"] })}
         />
-        <div className={styles["views"]} role="group" aria-label="Widok">
+        <div className={styles["views"]} role="group" aria-label={t.analyses.list.viewLabel}>
           {(["cards", "table"] as const satisfies readonly View[]).map((view) => (
             <Button
               key={view}
@@ -183,7 +189,7 @@ export function AnalysesPage() {
               aria-pressed={filters.view === view}
               onClick={() => update({ view })}
             >
-              {view === "cards" ? "Karty" : "Tabela"}
+              {view === "cards" ? t.analyses.list.viewCards : t.analyses.list.viewTable}
             </Button>
           ))}
         </div>
@@ -191,15 +197,20 @@ export function AnalysesPage() {
 
       {filtered ? (
         <div className={styles["bar"]}>
-          <span className={styles["count"]}>Filtry są włączone.</span>
+          <span className={styles["count"]}>{t.analyses.list.filtersOn}</span>
           <Button type="button" small onClick={() => update({ status: "", grade: "", q: "" })}>
-            Wyczyść filtry
+            {t.analyses.list.clearFilters}
           </Button>
         </div>
       ) : null}
 
       {query.isPending ? (
-        <div className={styles["skeletons"]} role="status" aria-busy="true" aria-label="Wczytuję analizy">
+        <div
+          className={styles["skeletons"]}
+          role="status"
+          aria-busy="true"
+          aria-label={t.analyses.list.loading}
+        >
           <Skeleton height="72px" />
           <Skeleton height="72px" />
           <Skeleton height="72px" />
@@ -207,7 +218,7 @@ export function AnalysesPage() {
       ) : query.isError && items.length === 0 ? (
         <InlineNotice
           tone="danger"
-          title="Nie udało się wczytać analiz"
+          title={t.analyses.list.failed}
           live="alert"
           actions={
             <Button
@@ -217,7 +228,7 @@ export function AnalysesPage() {
               busy={query.isFetching}
               onClick={() => void query.refetch()}
             >
-              Spróbuj ponownie
+              {t.common.retry}
             </Button>
           }
         >
@@ -226,16 +237,16 @@ export function AnalysesPage() {
       ) : items.length === 0 ? (
         filtered ? (
           <div className={styles["empty"]}>
-            <strong>Żadna analiza nie pasuje do filtrów</strong>
-            <p>Zmień filtry albo wyczyść je, aby zobaczyć wszystkie analizy.</p>
+            <strong>{t.analyses.list.noMatchTitle}</strong>
+            <p>{t.analyses.list.noMatchBody}</p>
           </div>
         ) : (
           <div className={styles["empty"]}>
-            <strong>Nie masz jeszcze żadnej analizy</strong>
-            <p>Wklej adres ogłoszenia z Otodom, a w kilkadziesiąt sekund dostaniesz raport.</p>
+            <strong>{t.dashboard.recent.emptyTitle}</strong>
+            <p>{t.dashboard.recent.emptyBody}</p>
             <div>
               <LinkButton to="/app/analyses/new" variant="primary" icon="arrow">
-                Sprawdź pierwsze mieszkanie
+                {t.dashboard.recent.emptyAction}
               </LinkButton>
             </div>
           </div>
@@ -244,13 +255,15 @@ export function AnalysesPage() {
         <>
           <div className={styles["bar"]}>
             <span className={styles["count"]} role="status">
-              {refreshing ? "Odświeżam listę…" : `Wyświetlono ${formatAnalyses(items.length)}`}
+              {refreshing
+                ? t.analyses.list.refreshing
+                : t.analyses.list.shown({ count: formatAnalyses(items.length) })}
             </span>
           </div>
           {filters.view === "table" ? <Table items={items} /> : <Cards items={items} />}
           <div className={styles["more"]}>
             {query.isFetchNextPageError ? (
-              <InlineNotice tone="danger" title="Nie udało się wczytać kolejnych analiz" live="alert">
+              <InlineNotice tone="danger" title={t.analyses.list.moreFailed} live="alert">
                 {failureOf(query.error).detail}
               </InlineNotice>
             ) : null}
@@ -261,10 +274,12 @@ export function AnalysesPage() {
                 busy={query.isFetchingNextPage}
                 onClick={() => void query.fetchNextPage()}
               >
-                Załaduj więcej
+                {t.analyses.list.loadMore}
               </Button>
             ) : (
-              <span className={styles["count"]}>To wszystkie analizy ({formatCount(items.length)}).</span>
+              <span className={styles["count"]}>
+                {t.analyses.list.allShown({ count: formatCount(items.length) })}
+              </span>
             )}
           </div>
         </>

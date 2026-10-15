@@ -11,6 +11,8 @@ import { GoogleButton } from "./GoogleButton";
 import { ProblemNotice } from "./ProblemNotice";
 import { useGoogleSignIn, useLogin, useMagicLinkRequest } from "./useAuthMutations";
 import styles from "./auth.module.css";
+import { t } from "../../i18n";
+import { Rich } from "../../i18n/Rich";
 
 const IDS = { email: "login-email", password: "login-password", linkEmail: "link-email" } as const;
 
@@ -73,7 +75,7 @@ export function LoginPage() {
 
   return (
     <div className={styles["stack"]}>
-      <PageHeading title="Zaloguj się" lead="Wróć do swoich analiz mieszkań." />
+      <PageHeading title={t.auth.login.title} lead={t.auth.login.lead} />
 
       {googleFailure?.general ? (
         <ProblemNotice
@@ -82,7 +84,7 @@ export function LoginPage() {
           actions={
             needsLink ? (
               <Button type="button" onClick={() => linkField.current?.focus()}>
-                Użyj linku e-mail
+                {t.auth.login.useEmailLink}
               </Button>
             ) : undefined
           }
@@ -90,12 +92,17 @@ export function LoginPage() {
       ) : null}
       <GoogleButton text="signin_with" onCredential={(credential) => google.mutate(credential)} />
 
-      <form className={styles["form"]} onSubmit={submitPassword} noValidate aria-label="Logowanie hasłem">
+      <form
+        className={styles["form"]}
+        onSubmit={submitPassword}
+        noValidate
+        aria-label={t.auth.login.passwordForm}
+      >
         <FormErrorSummary errors={shown} attempt={attempt} />
         {loginFailure?.general ? <ProblemNotice key={attempt} problem={loginFailure.general} /> : null}
         <TextField
           fieldId={IDS.email}
-          label="Adres e-mail"
+          label={t.auth.email}
           type="email"
           name="email"
           autoComplete="email"
@@ -106,7 +113,7 @@ export function LoginPage() {
         />
         <TextField
           fieldId={IDS.password}
-          label="Hasło"
+          label={t.auth.password}
           type="password"
           name="password"
           autoComplete="current-password"
@@ -115,46 +122,50 @@ export function LoginPage() {
           error={fieldMessage(IDS.password)}
         />
         <Button type="submit" variant="primary" fill busy={login.isPending} icon="arrow">
-          Zaloguj się
+          {t.auth.signIn}
         </Button>
         <p className={styles["links"]}>
-          <Link to="/password/forgot">Nie pamiętam hasła</Link>
+          <Link to="/password/forgot">{t.auth.login.forgot}</Link>
         </p>
       </form>
 
       <section className={styles["section"]} aria-labelledby="link-heading">
-        <h2 id="link-heading">Albo wyślij sobie link</h2>
+        <h2 id="link-heading">{t.auth.login.linkHeading}</h2>
         {link.isSuccess ? (
-          <InlineNotice tone="success" title="Sprawdź skrzynkę" live="status">
-            Jeśli ten adres ma konto albo może je założyć, wysłaliśmy na niego link do logowania. Jest ważny
-            przez ograniczony czas i działa raz.
+          <InlineNotice tone="success" title={t.auth.checkInbox} live="status">
+            {t.auth.login.linkSentBody}
           </InlineNotice>
         ) : (
-          <form className={styles["form"]} onSubmit={submitLink} noValidate aria-label="Logowanie linkiem">
+          <form
+            className={styles["form"]}
+            onSubmit={submitLink}
+            noValidate
+            aria-label={t.auth.login.linkForm}
+          >
             <FormErrorSummary errors={linkShown} attempt={linkAttempt} />
             {linkFailure?.general ? <ProblemNotice key={linkAttempt} problem={linkFailure.general} /> : null}
             <TextField
               fieldId={IDS.linkEmail}
               inputRef={linkField}
-              label="Adres e-mail do linku"
+              label={t.auth.login.linkEmail}
               type="email"
               name="link-email"
               autoComplete="email"
               inputMode="email"
-              hint="Bez hasła: kliknij link w wiadomości."
+              hint={t.auth.login.linkHint}
               value={linkEmail}
               onValueChange={setLinkEmail}
               error={linkMessage}
             />
             <Button type="submit" fill busy={link.isPending}>
-              Wyślij link do logowania
+              {t.auth.login.sendLink}
             </Button>
           </form>
         )}
       </section>
 
       <p className={styles["muted"]}>
-        Nie masz konta? <Link to="/signup">Zarejestruj się</Link>
+        <Rich parts={t.auth.login.noAccount({ link: <Link to="/signup">{t.auth.login.signUpLink}</Link> })} />
       </p>
     </div>
   );

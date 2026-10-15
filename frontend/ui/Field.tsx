@@ -2,6 +2,7 @@ import { type ChangeEvent, type InputHTMLAttributes, type Ref, useId } from "rea
 
 import { Icon } from "./Icon";
 import styles from "./Field.module.css";
+import { t } from "../i18n";
 
 export interface TextFieldProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -63,7 +64,7 @@ export function TextField({
         <p className={styles["error"]} id={errorId}>
           <Icon name="alert" size={16} />
           <span>
-            <span className="sr-only">Błąd: </span>
+            <span className="sr-only">{t.ui.errorPrefix}</span>
             {error}
           </span>
         </p>

@@ -173,6 +173,14 @@ so a success is `succeeded_degraded`. The interaction gate counts the mocked lan
 journeys are the few paths worth running against the real thing. The GitHub lanes (PR, nightly Firefox and WebKit)
 are the follow-up issue #296 because they edit `.github/`.
 
+## Copy (`i18n/`)
+
+Every visible text is in `i18n/pl.ts` and read as `t.<area>.<key>` (RM-305). A message with values is a function of
+named, already formatted strings (`t.dashboard.greetingLead({ name })`); plural forms are tuples that
+`api/format.ts` selects with `Intl.PluralRules`; a sentence with a link inside is a rich message rendered with
+`<Rich parts={…} />`. `Catalog` (in `i18n/index.ts`) is the shape a second language would have to fill completely.
+ESLint (`eslint.copy.mjs`) refuses letters in JSX text and in visible props outside `i18n/`, tests and e2e.
+
 ## API seam (`api/`)
 
 - `client.ts`: the one `openapi-fetch` client (`createApi`), relative `/api` URLs, a 15 s deadline on every request.

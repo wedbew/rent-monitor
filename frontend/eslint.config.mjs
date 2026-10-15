@@ -5,9 +5,23 @@ import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
+import { COPY_SYNTAX } from "./eslint.copy.mjs";
 import { MONEY_SYNTAX } from "./eslint.money.mjs";
 
 const HTML_SINKS = ["innerHTML", "outerHTML"];
+
+/** Bans for all code; copy-in-JSX (COPY_SYNTAX) applies to production code only, see the override below. */
+const BASE_SYNTAX = [
+  {
+    selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+    message: "User and listing content is rendered as text (guide section 7). No raw HTML.",
+  },
+  ...MONEY_SYNTAX,
+  ...HTML_SINKS.map((name) => ({
+    selector: `AssignmentExpression[left.property.name='${name}']`,
+    message: `Assigning ${name} is banned: it renders untrusted text as HTML.`,
+  })),
+];
 
 export default tseslint.config(
   {
@@ -44,18 +58,7 @@ export default tseslint.config(
         { "ts-expect-error": "allow-with-description", minimumDescriptionLength: 10 },
       ],
       "no-console": "error",
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
-          message: "User and listing content is rendered as text (guide section 7). No raw HTML.",
-        },
-        ...MONEY_SYNTAX,
-        ...HTML_SINKS.map((name) => ({
-          selector: `AssignmentExpression[left.property.name='${name}']`,
-          message: `Assigning ${name} is banned: it renders untrusted text as HTML.`,
-        })),
-      ],
+      "no-restricted-syntax": ["error", ...BASE_SYNTAX, ...COPY_SYNTAX],
     },
   },
   {
@@ -100,6 +103,11 @@ export default tseslint.config(
   {
     files: ["**/*.test.{ts,tsx}", "test/**"],
     languageOptions: { globals: { ...globals.vitest } },
+  },
+  {
+    // Tests, e2e and the catalog itself may contain literal copy: they assert or define it.
+    files: ["**/*.test.{ts,tsx}", "test/**", "e2e/**", "i18n/**"],
+    rules: { "no-restricted-syntax": ["error", ...BASE_SYNTAX] },
   },
   {
     // Tooling files run in Node, outside the app: no type-aware rules, console output is their interface.

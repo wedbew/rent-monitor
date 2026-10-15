@@ -8,6 +8,7 @@ import { LEGAL, PRIMARY } from "./navigation";
 import { NavList } from "./NavList";
 import { useSession } from "./session";
 import styles from "./MobileMenu.module.css";
+import { t } from "../i18n";
 
 const isPlainLeftClick = (event: MouseEvent) =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
@@ -48,17 +49,17 @@ export function MobileMenu() {
         small
         variant="secondary"
         aria-haspopup="dialog"
-        aria-label="Otwórz menu nawigacji"
+        aria-label={t.shell.openMenu}
         onClick={() => setOpen(true)}
       >
-        Menu
+        {t.shell.menu}
       </Button>
       <Dialog
         open={open}
         onOpenChange={setOpen}
-        title="Nawigacja"
+        title={t.shell.navigationTitle}
         variant="drawer"
-        closeLabel="Zamknij nawigację"
+        closeLabel={t.shell.closeNavigation}
         onClosed={() => {
           const to = pending.current;
           pending.current = null;
@@ -66,8 +67,8 @@ export function MobileMenu() {
         }}
       >
         <div className={styles["sections"]}>
-          <NavList label="Nawigacja mobilna" destinations={PRIMARY} size="sheet" onFollow={follow} />
-          <NavList label="Dokumenty" destinations={LEGAL} size="sheet" onFollow={follow} />
+          <NavList label={t.shell.mobileNavigation} destinations={PRIMARY} size="sheet" onFollow={follow} />
+          <NavList label={t.shell.documents} destinations={LEGAL} size="sheet" onFollow={follow} />
           {session.status === "signedIn" ? <AccountBlock /> : null}
         </div>
       </Dialog>

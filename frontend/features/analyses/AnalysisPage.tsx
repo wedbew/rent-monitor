@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 
 import { ApiError, TransportError } from "../../api/errors";
-import { describeProblem, describeTransport } from "../../api/problems";
+import { describeProblem, describeTransport, isProblemCode } from "../../api/problems";
+import { t } from "../../i18n";
 import { PageHeading } from "../../shell/PageHeading";
 import { refreshAccount } from "../../shell/session";
 import { Button, LinkButton } from "../../ui/Button";
@@ -25,11 +26,7 @@ export const RECONNECT_GRACE_MS = 8000;
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** What happened to the report credit, in the server's own terms (`charge_state`), never inferred from the status. */
-const CHARGE: Record<"reserved" | "captured" | "released", string> = {
-  reserved: "Raport jest zarezerwowany do końca analizy.",
-  captured: "Raport został pobrany z konta.",
-  released: "Raport nie został pobrany z konta.",
-};
+const CHARGE = t.analyses.page.charge;
 
 /**
  * One analysis. While it runs: the server's stages and percentage over a live stream (with a polling fallback);
@@ -41,12 +38,12 @@ export function AnalysisPage() {
   if (!ID.test(auditId)) {
     return (
       <div className={styles["page"]}>
-        <PageHeading title="Raport" />
-        <InlineNotice tone="warning" title="Nie znaleziono analizy">
-          Ten adres nie wskazuje żadnej Twojej analizy.
+        <PageHeading title={t.analyses.page.title} />
+        <InlineNotice tone="warning" title={t.analyses.page.notFoundTitle}>
+          {t.analyses.page.badAddress}
         </InlineNotice>
         <LinkButton to="/app/analyses" icon="arrow">
-          Moje analizy
+          {t.shell.destinations.analyses}
         </LinkButton>
       </div>
     );
@@ -88,8 +85,8 @@ function Analysis({ auditId }: { readonly auditId: string }) {
   if (audit.isPending) {
     return (
       <div className={styles["page"]}>
-        <PageHeading title="Raport" />
-        <div role="status" aria-busy="true" aria-label="Wczytuję analizę">
+        <PageHeading title={t.analyses.page.title} />
+        <div role="status" aria-busy="true" aria-label={t.analyses.page.loading}>
           <Skeleton height="120px" />
         </div>
       </div>
@@ -104,15 +101,15 @@ function Analysis({ auditId }: { readonly auditId: string }) {
         : describeTransport(error instanceof TransportError ? error.kind : "invalid-response");
     return (
       <div className={styles["page"]}>
-        <PageHeading title="Raport" />
+        <PageHeading title={t.analyses.page.title} />
         <InlineNotice
           tone={notFound ? "warning" : "danger"}
-          title={notFound ? "Nie znaleziono analizy" : described.title}
+          title={notFound ? t.analyses.page.notFoundTitle : described.title}
           live="alert"
           actions={
             notFound ? (
               <LinkButton to="/app/analyses" icon="arrow">
-                Moje analizy
+                {t.shell.destinations.analyses}
               </LinkButton>
             ) : (
               <Button
@@ -122,12 +119,12 @@ function Analysis({ auditId }: { readonly auditId: string }) {
                 busy={audit.isFetching}
                 onClick={() => void audit.refetch()}
               >
-                Spróbuj ponownie
+                {t.common.retry}
               </Button>
             )
           }
         >
-          {notFound ? "Ta analiza nie istnieje albo nie należy do Ciebie." : described.detail}
+          {notFound ? t.analyses.page.notYours : described.detail}
         </InlineNotice>
       </div>
     );
@@ -138,21 +135,21 @@ function Analysis({ auditId }: { readonly auditId: string }) {
   return (
     <div className={styles["page"]}>
       <PageHeading
-        title="Raport"
-        eyebrow={`Ogłoszenie ${data.otodom_id}`}
-        lead={isActive(data.status) && progress.stage !== null ? "W trakcie" : copy.label}
+        title={t.analyses.page.title}
+        eyebrow={t.common.listingTitle({ id: data.otodom_id })}
+        lead={isActive(data.status) && progress.stage !== null ? t.analyses.page.inProgress : copy.label}
       />
 
       {isActive(data.status) ? (
-        <section className={styles["card"]} aria-label="Postęp analizy">
+        <section className={styles["card"]} aria-label={t.analyses.page.progressLabel}>
           {progress.connection === "reconnecting" ? (
-            <InlineNotice tone="warning" title="Łączę ponownie" live="status">
-              Połączenie z serwerem przerwało się. Analiza trwa dalej; postęp wróci za chwilę.
+            <InlineNotice tone="warning" title={t.analyses.page.reconnectingTitle} live="status">
+              {t.analyses.page.reconnectingBody}
             </InlineNotice>
           ) : null}
           {streamFailed ? (
-            <InlineNotice tone="info" title="Sprawdzam postęp co kilka sekund" live="status">
-              Podgląd na żywo jest niedostępny. Wynik pojawi się tu, gdy analiza się skończy.
+            <InlineNotice tone="info" title={t.analyses.page.pollingTitle} live="status">
+              {t.analyses.page.pollingBody}
             </InlineNotice>
           ) : null}
           <p className={styles["pct"]} aria-hidden="true">
@@ -161,7 +158,7 @@ function Analysis({ auditId }: { readonly auditId: string }) {
           <div
             className={styles["bar"]}
             role="progressbar"
-            aria-label="Postęp analizy"
+            aria-label={t.analyses.page.progressLabel}
             aria-valuemin={0}
             aria-valuemax={100}
             {...(progress.pct !== null ? { "aria-valuenow": progress.pct } : {})}
@@ -172,11 +169,11 @@ function Analysis({ auditId }: { readonly auditId: string }) {
             {progress.stage !== null
               ? stageLabel(progress.stage)
               : data.status === "queued"
-                ? "Czekam na wolne miejsce w kolejce"
-                : "Zaczynam"}
+                ? t.analyses.page.waitingInQueue
+                : t.analyses.page.starting}
           </p>
           {progress.stages.length > 0 ? (
-            <ol className={styles["stages"]} aria-label="Etapy analizy">
+            <ol className={styles["stages"]} aria-label={t.analyses.page.stagesLabel}>
               {progress.stages.map((stage) => (
                 <li key={stage} aria-current={stage === progress.stage ? "step" : undefined}>
                   <Icon name={stage === progress.stage ? "arrow" : "check"} />
@@ -188,19 +185,19 @@ function Analysis({ auditId }: { readonly auditId: string }) {
           <p className={styles["meta"]}>{CHARGE[data.charge_state]}</p>
         </section>
       ) : (
-        <section className={styles["card"]} aria-label="Wynik analizy">
+        <section className={styles["card"]} aria-label={t.analyses.page.resultLabel}>
           <InlineNotice tone={copy.tone === "neutral" ? "info" : copy.tone} title={copy.label} live="status">
-            {hasReport(data.status) ? "Analiza jest gotowa." : describeProblemFor(data.error_code)}
+            {hasReport(data.status) ? t.analyses.page.ready : describeProblemFor(data.error_code)}
           </InlineNotice>
           <p className={styles["meta"]}>{CHARGE[data.charge_state]}</p>
           <div className={styles["actions"]}>
             {hasReport(data.status) ? null : (
               <LinkButton to="/app/analyses/new" variant="primary" icon="arrow">
-                Nowa analiza
+                {t.shell.destinations["new-analysis"]}
               </LinkButton>
             )}
             <LinkButton to="/app/analyses" icon="arrow">
-              Moje analizy
+              {t.shell.destinations.analyses}
             </LinkButton>
           </div>
         </section>
@@ -218,23 +215,18 @@ function ReportBody({ result, degraded }: { readonly result: unknown; readonly d
   if (parsed.kind === "ready") return <ReportView report={parsed.report} degraded={degraded} />;
   if (parsed.kind === "unsupported")
     return (
-      <InlineNotice tone="warning" title="Nieobsługiwana wersja raportu" live="status">
-        Ten raport powstał w wersji, której ta aplikacja jeszcze nie potrafi wyświetlić. Dane są bezpieczne i
-        nie zostały zmienione; nic nie jest pokazywane na podstawie domysłów.
+      <InlineNotice tone="warning" title={t.analyses.page.unsupportedTitle} live="status">
+        {t.analyses.page.unsupportedBody}
       </InlineNotice>
     );
   return (
-    <InlineNotice tone="danger" title="Nie można wyświetlić raportu" live="status">
-      Zapisany wynik jest niekompletny. Napisz do pomocy, podając numer ogłoszenia.
+    <InlineNotice tone="danger" title={t.analyses.page.invalidTitle} live="status">
+      {t.analyses.page.invalidBody}
     </InlineNotice>
   );
 }
 
+/** The stored error code is server data: only a known problem code gets its copy, anything else a plain line. */
 function describeProblemFor(code: string | null): string {
-  if (code === null) return "Analiza nie została ukończona.";
-  try {
-    return describeProblem(code as Parameters<typeof describeProblem>[0]).detail;
-  } catch {
-    return "Analiza nie została ukończona.";
-  }
+  return code !== null && isProblemCode(code) ? describeProblem(code).detail : t.analyses.page.notFinished;
 }

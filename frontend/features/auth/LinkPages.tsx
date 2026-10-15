@@ -11,6 +11,7 @@ import { ProblemNotice } from "./ProblemNotice";
 import { clearCapturedToken, readCapturedToken } from "./token";
 import { useMagicLinkVerify, useRegisterVerify } from "./useAuthMutations";
 import styles from "./auth.module.css";
+import { t } from "../../i18n";
 
 interface TokenPageProps {
   readonly title: string;
@@ -53,8 +54,8 @@ function TokenPage({ title, verifying, mutation, retry, special }: TokenPageProp
     <div className={styles["stack"]}>
       <PageHeading title={title} />
       {token === null ? (
-        <InlineNotice tone="danger" title="Ten link jest niepełny" live="alert">
-          Otwórz link z wiadomości jeszcze raz w całości albo poproś o nowy.
+        <InlineNotice tone="danger" title={t.auth.links.incompleteTitle} live="alert">
+          {t.auth.links.incompleteBody}
         </InlineNotice>
       ) : mutation.isError ? (
         isSpecial ? (
@@ -82,7 +83,7 @@ function TokenPage({ title, verifying, mutation, retry, special }: TokenPageProp
         </div>
       ) : null}
       <p className={styles["muted"]}>
-        <Link to="/login">Wróć do logowania</Link>
+        <Link to="/login">{t.auth.backToLogin}</Link>
       </p>
     </div>
   );
@@ -93,10 +94,10 @@ export function EmailLinkPage() {
   const mutation = useMagicLinkVerify();
   return (
     <TokenPage
-      title="Logowanie linkiem"
-      verifying="Sprawdzam link i loguję Cię…"
+      title={t.auth.links.email.title}
+      verifying={t.auth.links.email.verifying}
       mutation={mutation}
-      retry={{ to: "/login", label: "Poproś o nowy link" }}
+      retry={{ to: "/login", label: t.auth.links.email.retry }}
     />
   );
 }
@@ -106,16 +107,16 @@ export function VerifySignupPage() {
   const mutation = useRegisterVerify();
   return (
     <TokenPage
-      title="Potwierdzenie adresu e-mail"
-      verifying="Potwierdzam adres i zakładam konto…"
+      title={t.auth.links.signup.title}
+      verifying={t.auth.links.signup.verifying}
       mutation={mutation}
-      retry={{ to: "/signup", label: "Zarejestruj się ponownie" }}
+      retry={{ to: "/signup", label: t.auth.links.signup.retry }}
       special={{
         code: "ACCOUNT_EXISTS",
-        title: "Masz już konto z tym adresem",
-        body: "Zaloguj się hasłem albo ustaw nowe, jeśli go nie pamiętasz.",
+        title: t.auth.links.signup.existsTitle,
+        body: t.auth.links.signup.existsBody,
         to: "/login",
-        label: "Zaloguj się",
+        label: t.auth.links.signup.existsAction,
       }}
     />
   );
