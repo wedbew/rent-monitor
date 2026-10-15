@@ -113,7 +113,8 @@ export function findViolations(
         (e.page === EVERY_PAGE && scope.layout !== "public") ||
         (e.page === EVERY_PUBLIC_PAGE && scope.layout === "public")) &&
       e.within === scope.within &&
-      applies(e, scope.scenario) &&
+      // A page state brings its own scenario (often a factory with no registry name): its scenario is not filtered.
+      (scope.state !== undefined || applies(e, scope.scenario)) &&
       (e.viewport === undefined || scope.viewport === undefined || e.viewport === scope.viewport),
   );
   // A state inventory accepts the page's base elements too (they are usually still there) but only demands the

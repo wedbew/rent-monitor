@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
 
+import { AnalysesPage } from "./features/analyses/list/AnalysesPage";
 import { AnalysisPage } from "./features/analyses/AnalysisPage";
 import { NewAnalysisPage } from "./features/analyses/new/NewAnalysisPage";
 import { DashboardPage } from "./features/dashboard/DashboardPage";
@@ -89,7 +90,7 @@ export const routes: RouteObject[] = [
                     element: <PendingPage title="Raporty i zakupy" availability="building" />,
                   },
                   { path: "/app/analyses/new", element: <NewAnalysisPage /> },
-                  pending("analyses", "/app/analyses"),
+                  { path: "/app/analyses", element: <AnalysesPage /> },
                   {
                     path: "/app/analyses/:auditId",
                     element: <AnalysisPage />,

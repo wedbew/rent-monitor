@@ -97,6 +97,11 @@ test("a sale listing: submitted, watched live, finished, the report kept", async
   await expect(page.getByRole("heading", { level: 2, name: "Podsumowanie" })).toBeVisible();
   await expect(page.getByRole("term").filter({ hasText: /^Kapitał na start$/ })).toBeVisible();
   await expect(page.getByRole("region", { name: "Co sprawdzić przed ofertą" })).toBeVisible();
+  // The same analysis is in the collection, found by the id of the listing (server-side filter).
+  await page.goto(`/app/analyses?q=${item.ref}`);
+  const row = page.getByRole("list", { name: "Analizy" }).getByRole("listitem");
+  await expect(row).toHaveCount(1);
+  await expect(row.first()).toContainText(`Ogłoszenie ${item.ref}`);
 });
 
 test("a rental listing is rejected and the report is given back", async ({ page, baseURL }) => {

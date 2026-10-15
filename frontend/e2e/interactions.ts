@@ -17,6 +17,7 @@ import type { Page } from "@playwright/test";
 import { LEGAL, PRIMARY } from "../shell/navigation";
 import {
   createAuthFlow,
+  createCollection,
   createRun,
   type Scenario,
   type ScenarioName,
@@ -233,7 +234,50 @@ export const PAGES: readonly AppPage[] = [
       },
     ],
   },
-  { id: "analyses", path: "/app/analyses", heading: "Moje analizy", scenarios: EVERY_SCENARIO },
+  {
+    id: "analyses",
+    path: "/app/analyses",
+    heading: "Moje analizy",
+    scenarios: ["empty", "collection", "slow", "auditsFailing"],
+    states: [
+      {
+        name: "table",
+        scenario: () => createCollection(),
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Tabela" }).click();
+          await page.getByRole("table").waitFor();
+        },
+      },
+      {
+        name: "filtered-empty",
+        scenario: () => createCollection(),
+        prepare: async (page) => {
+          await page.getByRole("textbox", { name: "Numer ogłoszenia (początek)" }).fill("ZZZ");
+          await page.getByRole("button", { name: "Szukaj" }).click();
+          await page.getByText("Żadna analiza nie pasuje do filtrów").waitFor();
+        },
+      },
+      {
+        name: "load-more-error",
+        scenario: () => createCollection({ failPage: 1 }),
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Załaduj więcej" }).click();
+          await page
+            .getByRole("alert")
+            .filter({ hasText: "Nie udało się wczytać kolejnych analiz" })
+            .waitFor();
+        },
+      },
+      {
+        name: "end-of-list",
+        scenario: () => createCollection({ count: 30 }),
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Załaduj więcej" }).click();
+          await page.getByText("To wszystkie analizy (30).").waitFor();
+        },
+      },
+    ],
+  },
   {
     id: "report",
     path: `/app/analyses/${SUCCEEDED_AUDITS[0]?.audit_id ?? ""}`,
@@ -601,6 +645,79 @@ export const INTERACTIONS: readonly Interaction[] = [
     scenarios: ["insufficientCredits"],
     role: "link",
     name: "Kup raporty",
+    outcome: "url",
+  },
+
+  // Moje analizy.
+  {
+    id: "analyses.search",
+    page: "analyses",
+    role: "textbox",
+    name: "Numer ogłoszenia (początek)",
+    outcome: "state",
+  },
+  { id: "analyses.search.submit", page: "analyses", role: "button", name: "Szukaj", outcome: "url" },
+  { id: "analyses.status", page: "analyses", role: "combobox", name: "Status", outcome: "url" },
+  { id: "analyses.grade", page: "analyses", role: "combobox", name: "Ocena", outcome: "url" },
+  { id: "analyses.view.cards", page: "analyses", role: "button", name: "Karty", outcome: "state" },
+  { id: "analyses.view.table", page: "analyses", role: "button", name: "Tabela", outcome: "url" },
+  { id: "analyses.option.all", page: "analyses", role: "option", name: "Wszystkie", outcome: "url" },
+  ...[
+    ["ready", "Gotowe"],
+    ["active", "W toku"],
+    ["rejected", "Odrzucone"],
+    ["failed", "Nieudane"],
+    ["grade-A", "A"],
+    ["grade-B", "B"],
+    ["grade-C", "C"],
+    ["grade-D", "D"],
+    ["grade-E", "E"],
+    ["grade-N", "Bez oceny"],
+  ].map(([id = "", label = ""]): Interaction => ({
+    id: `analyses.option.${id}`,
+    page: "analyses",
+    role: "option",
+    name: label,
+    outcome: "url",
+  })),
+  {
+    id: "analyses.row",
+    page: "analyses",
+    scenarios: ["collection"],
+    role: "link",
+    name: /^Ogłoszenie IDLST/,
+    outcome: "url",
+  },
+  {
+    id: "analyses.more",
+    page: "analyses",
+    scenarios: ["collection"],
+    role: "button",
+    name: "Załaduj więcej",
+    outcome: "request",
+  },
+  {
+    id: "analyses.first",
+    page: "analyses",
+    scenarios: ["empty", "slow"],
+    role: "link",
+    name: "Sprawdź pierwsze mieszkanie",
+    outcome: "url",
+  },
+  {
+    id: "analyses.retry",
+    page: "analyses",
+    scenarios: ["auditsFailing"],
+    role: "button",
+    name: "Spróbuj ponownie",
+    outcome: "request",
+  },
+  {
+    id: "analyses.clear",
+    page: "analyses",
+    state: "filtered-empty",
+    role: "button",
+    name: "Wyczyść filtry",
     outcome: "url",
   },
 
