@@ -150,6 +150,7 @@ Per `rules/legal-tags.md`, tag the new implementations of these; features stay.
 | `price_intel/sources/moniter.py`, `cenogram.py`, `bdl.py`, `demography.py`; `deal_analyzer/nominatim.py`, `osm_distance.py` (OSM usage policy) | `LEGAL[third-party-data]` |
 | Raw `listing_snapshot.payload` (may contain seller name / phone) | `GDPR[personal-data]`, retention + erasure path |
 | Report Markdown / API results that echo listing text or photos to other tenants | `LEGAL[republication]` |
+| Frontend analyses cards/table (`frontend/features/analyses/list/AnalysesPage.tsx`), showing listing ids and asking-price summaries | `LEGAL[republication]` (RM-275) |
 
 ## 7. Pipeline to preserve (confirmed from blueprint §2 and POC `PIPELINE.md` headline)
 

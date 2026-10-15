@@ -32,6 +32,7 @@ function Badge({ audit }: { readonly audit: AuditSummary }) {
   return <span className={`${styles["badge"]} ${styles[copy.tone]}`}>{copy.label}</span>;
 }
 
+// LEGAL[republication]: shows listing identifiers and asking-price summaries from the tenant's analyses (RM-275)
 function Cards({ items }: { readonly items: readonly AuditSummary[] }) {
   return (
     <ul className={styles["cards"]} aria-label="Analizy">
@@ -67,6 +68,7 @@ function Cards({ items }: { readonly items: readonly AuditSummary[] }) {
   );
 }
 
+// LEGAL[republication]: shows the same listing identifiers and asking-price summaries in a table (RM-275)
 function Table({ items }: { readonly items: readonly AuditSummary[] }) {
   return (
     // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrollable region must be reachable by keyboard
