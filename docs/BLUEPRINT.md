@@ -1187,10 +1187,14 @@ volumes: { pgdata: {}, caddy_data: {}, caddy_config: {} }
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
         X-Content-Type-Options nosniff
         Referrer-Policy strict-origin-when-cross-origin
-        Content-Security-Policy "default-src 'self'; script-src 'self' https://cloud.umami.is https://accounts.google.com; style-src 'self' https://accounts.google.com/gsi/style; connect-src 'self' https://cloud.umami.is <Better Stack ingesting host from SENTRY_DSN> https://accounts.google.com; img-src 'self' data: https:; frame-src https://accounts.google.com https://checkout.stripe.com https://billing.stripe.com"
+        # As built (RM-281, deploy/Caddyfile): only 'self' and Google sign-in. Paddle (#277) and browser error
+        # reporting (#280) add their hosts in their own PRs; Umami waits on L-010; the Stripe entries are gone.
+        Content-Security-Policy "default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://accounts.google.com/gsi/style; img-src 'self' data:; font-src 'self'; connect-src 'self' https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'; frame-ancestors 'none'"
     }
     @internal path /healthz /readyz
-    respond @internal 404
+    handle @internal {
+        respond 404                    # inside a handle: a bare respond runs after the handle blocks
+    }
 
     @sse path_regexp sse ^/api/audits/[0-9a-f-]+/events$
     handle @sse {

@@ -1,0 +1,10 @@
+# Context for deploy/web.Dockerfile (BuildKit reads this file instead of the root .dockerignore).
+*
+!frontend/
+!deploy/Caddyfile
+frontend/node_modules
+frontend/dist
+frontend/test-results
+frontend/playwright-report
+frontend/playwright-coverage
+frontend/coverage

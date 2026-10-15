@@ -73,12 +73,18 @@ services:
 
   caddy:
     profiles: ["public"]
-    image: caddy:2
+    # The SPA and the Caddyfile are baked into one image (deploy/web.Dockerfile, RM-281), so the HTML and its
+    # assets of a release always match. Rebuild it on every deploy, like the Python image.
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    image: rentmonitor-web:${IMAGE_TAG:-local}
     restart: unless-stopped
     ports: ["80:80", "443:443"]
     mem_limit: 64m
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
     environment:
       SITE_ADDRESS: ${PUBLIC_HOST:-localhost}  # `localhost` = Caddy's internal CA; set the real domain before going public (RUNBOOK §6)

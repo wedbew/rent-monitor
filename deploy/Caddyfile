@@ -1,6 +1,5 @@
-# TLS reverse proxy for the API (public profile only). `SITE_ADDRESS` is the domain; Caddy gets and renews the
-# certificate itself. The SPA is Phase 2: until then only /api is served and everything else is 404.
-# www is only a pointer to the apex (the A record exists in DNS); it gets its own certificate and a redirect.
+# The public site (RM-281): TLS, the SPA from /srv/spa and the API behind /api. `SITE_ADDRESS` is the domain; Caddy
+# gets and renews the certificate itself. www is only a pointer to the apex (its own certificate and a redirect).
 www.{$SITE_ADDRESS} {
 	redir https://{$SITE_ADDRESS}{uri} permanent
 }
@@ -8,19 +7,25 @@ www.{$SITE_ADDRESS} {
 {$SITE_ADDRESS} {
 	encode zstd gzip
 
+	# The only places the page may load from: itself, and Google sign-in (GIS script, its button iframe and its
+	# styles). No inline script; no third party not listed here. Paddle (#277) and error reporting (#280) add their
+	# hosts in the PR that adds them. React sets dynamic sizes through the CSSOM, which `style-src` does not block.
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "same-origin"
 		X-Frame-Options "DENY"
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
-		Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://accounts.google.com/gsi/style; img-src 'self' data:; font-src 'self'; connect-src 'self' https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'; frame-ancestors 'none'"
 		-Server
 	}
 
-	# Internal probes are never public (the external monitor uses /api/health).
+	# Internal probes are never public (the external monitor uses /api/health). Inside its own `handle`: a bare
+	# `respond` runs after the `handle` blocks, so the SPA catch-all would answer these paths first.
 	@internal path /healthz /readyz
-	respond @internal 404
+	handle @internal {
+		respond 404
+	}
 
 	# Server-sent events must not be buffered.
 	@sse path_regexp sse ^/api/audits/[0-9a-f-]+/events$
@@ -30,6 +35,7 @@ www.{$SITE_ADDRESS} {
 		}
 	}
 
+	# The API answers every /api path itself, including unknown ones (problem JSON 404): never the SPA.
 	handle /api/* {
 		request_body {
 			max_size 1MB
@@ -37,7 +43,20 @@ www.{$SITE_ADDRESS} {
 		reverse_proxy api:8000
 	}
 
+	# Hashed build assets never change: cached for a year. A missing one is a 404, never index.html (a stale tab
+	# then shows the "new version" notice instead of parsing HTML as JavaScript).
+	handle /assets/* {
+		root * /srv/spa
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	# Everything else is the app: a real file (icons, theme boot script) or index.html for a deep link. Always
+	# revalidated, so a new release is picked up on the next load.
 	handle {
-		respond 404
+		root * /srv/spa
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
 	}
 }

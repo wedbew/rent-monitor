@@ -70,5 +70,20 @@ services:
     depends_on:
       bootstrap: { condition: service_completed_successfully }
 
+  # The public web image locally (RM-281): the built SPA and the Caddyfile, TLS from Caddy's internal CA for
+  # `localhost`. Opt in with `--profile web`; the smoke test uses it (scripts/smoke_docker.sh).
+  web:
+    profiles: ["web"]
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    image: rentmonitor-web:local
+    environment:
+      SITE_ADDRESS: localhost
+    ports:
+      - "127.0.0.1:${WEB_PORT:-18443}:443"
+    depends_on:
+      api: { condition: service_healthy }
+
 volumes:
   pgdata: {}
