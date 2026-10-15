@@ -1,4 +1,4 @@
-.PHONY: api-samples api-samples-clean ci ci-fast ci-full hooks sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
+.PHONY: fe-install fe-check fe-dev api-samples api-samples-clean ci ci-fast ci-full hooks sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
 
 sync:
 	uv sync --all-packages --group dev
@@ -82,3 +82,13 @@ api-samples:
 
 api-samples-clean:
 	uv run python scripts/capture_api_samples.py --clean
+
+# The SPA (Phase 2, Node per frontend/.node-version, pnpm via corepack). See frontend/README.md.
+fe-install:
+	pnpm --dir frontend install --frozen-lockfile
+
+fe-check:
+	pnpm --dir frontend check
+
+fe-dev:
+	pnpm --dir frontend dev

@@ -1,0 +1,24 @@
+/* Foundations only (reset, text, focus). Tokens and the component styles arrive with #270. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  line-height: 1.5;
+  background: #f5f7f4;
+  color: #182c28;
+}
+
+:focus-visible {
+  outline: 2px solid #1f6f5a;
+  outline-offset: 2px;
+}

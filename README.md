@@ -23,6 +23,9 @@ make down        # stop the containers (add -v via docker compose to drop the da
 make dev         # only Postgres in Docker + bootstrap; run API/worker on the host with uv run
 make migrate     # alembic upgrade head against $DATABASE_URL (postgresql+psycopg://…)
 make seed        # plans, feature flags, admin role (set ADMIN_EMAIL); idempotent
+make fe-install   # SPA dependencies (Node per frontend/.node-version, pnpm via corepack)
+make fe-check     # the SPA gate: api drift, types, lint, css, format, tests, build
+make fe-dev       # Vite dev server, /api proxied to the local API
 make api-samples  # run every API operation over loopback HTTP, keep the answers in data/api-samples/ (gitignored; POSTGRES_PORT=55432 if 5432 is taken)
 make api-samples-clean  # delete every capture
 make backup-drill  # dump and restore the dev database into a scratch DB and compare row counts
@@ -66,6 +69,7 @@ it also separates "implemented" from "integrated" and "verified against a real p
 | [`docs/deal-analysis.schema.json`](docs/deal-analysis.schema.json) | JSON Schema of the report in `result` (`scripts/gen_report_schema.py`, rules in [`docs/REPORT-SCHEMA.md`](docs/REPORT-SCHEMA.md)); a test fails if it drifts |
 | [`docs/openapi.json`](docs/openapi.json) | Generated OpenAPI schema (`scripts/gen_openapi.py`); a test fails if it drifts from the app |
 | [`docs/RUNBOOK-GDPR.md`](docs/RUNBOOK-GDPR.md) | Retention, erasure, export, restore re-erasure |
+| [`frontend/README.md`](frontend/README.md) | SPA bootstrap, scripts, dependency decisions, browser support |
 | [`docs/FRONTEND-PLAN.md`](docs/FRONTEND-PLAN.md) | Phase 2 frontend plan: V2 handoff verification, API smoke and samples first, e2e coverage gate, issues #263-#286 |
 | [`design/`](design/README.md) | Phase 2 design direction: interactive prototype, principles, spec (#44 input) |
 | [`docs/BLOCKERS.md`](docs/BLOCKERS.md) | Owner-only blockers agents stop on |

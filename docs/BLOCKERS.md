@@ -34,7 +34,6 @@ with host journey evidence remain pending. Use `ssh deploy@vps-d1af13a5.vps.ovh.
 
 | ID | What | Owner action | Waits on it |
 |---|---|---|---|
-| B-018 | **Phase 2 is not authorised** (2026-10-15). The four backend slices (#263-#266) are merged; every frontend slice starts at #267, and `.agent/agents.md` §0 forbids `frontend/` until the owner says so. | Comment **"Phase 2 authorised"** on #267. #267 also edits `.agent/agents.md` §0, so its PR needs your approval before merge (comment "approved" on it). Nothing else is needed to start the UI chain | #267 and everything after it (#268-#281, #286), the landing-free app shell, the e2e gate |
 | B-017 | **Paddle sandbox needs three owner inputs** (2026-10-14). Products and the webhook destination exist in the sandbox; prices and the signing secret do not. | (1) Tell the agent the three gross PLN pack prices (recommended 10/40/70 PLN) plus signup allowance and expiry (#43). (2) Copy the destination's signing secret from the Paddle sandbox dashboard into the local `.env` as `PADDLE_WEBHOOK_SECRET`. (3) Set the default payment link to `https://renti.tech`. Exact steps: `docs/PADDLE-SANDBOX-SETUP.md` section 2 | Paddle sandbox prices, billing switched on, #220, #14 |
 | B-016 | **SSH to the beta VPS (`vps-ee6fa92e.vps.ovh.net`) does not complete.** 2026-10-14, two attempts from the dev machine: TCP port 22 accepts the connection, the SSH banner never arrives (`Connection timed out during banner exchange`); ports 80 and 443 refuse. Not an authentication problem, so credentials do not matter. Not retried further (fail2ban/lockout risk). | **One action:** OVH Manager -> Bare Metal Cloud -> VPS -> the VPS -> Reboot, then tell the agent. If the banner still times out, open the KVM console, log in as the OVH default user and run `sudo systemctl restart ssh && sudo ss -tlnp \| grep :22` | The beta deployment, `docs/DEPLOYMENTS.md`, journey evidence on the host, #15 |
 
@@ -54,6 +53,7 @@ with host journey evidence remain pending. Use `ssh deploy@vps-d1af13a5.vps.ovh.
 
 | ID | What | Resolution | Date |
 |---|---|---|---|
+| B-018 | Phase 2 (frontend) authorisation | The owner authorised Phase 2 in the agent session on 2026-10-15 (recorded on #267), including the `.agent/agents.md` §0 edit; delivery follows `docs/FRONTEND-PLAN.md` | 2026-10-15 |
 | B-005c | R2 connectivity | corrected S3 credentials saved privately; `scripts/check_r2_upload.py` uploaded 55 bytes to `rent-monitor` at `connection-tests/20261012T173240Z-f9eb4c3fe2594328bdeb6f2f194f0322.txt` and read back identical content. Test object retained. SHA-256: `2038114c0ffb30fe0da1ff2434f06a7f8605bbac59973461225660d76314a704`. Previous failure was an invalid access-key length. Specification: `docs/R2-SPEC.md` (open choices: EU jurisdiction, bucket layout, WAL-G retention) | 2026-10-12 |
 | B-006a | VPS purchase | Owner bought an OVH VPS-1 (no commitment); details in the owner's local notes (not in the repo) | 2026-10-12 |
 | B-005b | Domain registration | Owner registered the production domain at OVH; details in the owner's local notes (not in the repo) | 2026-10-12 |
