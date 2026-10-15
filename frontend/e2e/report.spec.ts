@@ -30,6 +30,30 @@ async function open(page: Page, index = 0): Promise<void> {
 }
 
 test.describe("the report", () => {
+  test("the report is loaded on first visit; if its file is gone after a deploy the page offers a reload", async ({
+    page,
+    serve,
+    allowErrors,
+  }) => {
+    // The chunk is aborted on purpose: the browser and React Router report it, and the page must still cope.
+    allowErrors(/Failed to load resource/, /Failed to fetch dynamically imported module/);
+    await serve("loaded");
+    const chunks: string[] = [];
+    page.on("request", (request) => {
+      if (request.url().includes("/assets/")) chunks.push(request.url());
+    });
+    await page.goto("/app");
+    await expect(page.getByRole("heading", { level: 1, name: "Pulpit" })).toBeVisible();
+    expect(chunks.some((url) => /AnalysisPage-/.test(url))).toBe(false); // not part of the first page (#312)
+
+    await page.route(/\/assets\/AnalysisPage-[^/]+\.js$/, (route) => route.abort("failed"));
+    await page.goto(`/app/analyses/${idOf(0)}`);
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Dostępna jest nowa wersja aplikacji" }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Odśwież stronę" })).toBeVisible();
+  });
+
   test("five different captured results each show their own property and numbers", async ({
     page,
     serve,

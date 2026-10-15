@@ -1,8 +1,6 @@
+import { type ComponentType, lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
 
-import { AnalysesPage } from "./features/analyses/list/AnalysesPage";
-import { AnalysisPage } from "./features/analyses/AnalysisPage";
-import { NewAnalysisPage } from "./features/analyses/new/NewAnalysisPage";
 import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { EmailLinkPage, VerifySignupPage } from "./features/auth/LinkPages";
 import { LoginPage } from "./features/auth/LoginPage";
@@ -13,9 +11,28 @@ import { AppShell } from "./shell/AppShell";
 import { type Destination, LEGAL, PRIMARY } from "./shell/navigation";
 import { NotFound } from "./shell/NotFound";
 import { PendingPage } from "./shell/PendingPage";
-import { RootLayout } from "./shell/RootLayout";
+import { AppLoading, RootLayout } from "./shell/RootLayout";
 import { RouteError } from "./shell/RouteError";
 import { RedirectIfSignedIn, RequireSession } from "./shell/session";
+
+const NewAnalysisPage = lazy(async () => ({
+  default: (await import("./features/analyses/new/NewAnalysisPage")).NewAnalysisPage,
+}));
+const AnalysesPage = lazy(async () => ({
+  default: (await import("./features/analyses/list/AnalysesPage")).AnalysesPage,
+}));
+const AnalysisPage = lazy(async () => ({
+  default: (await import("./features/analyses/AnalysisPage")).AnalysisPage,
+}));
+
+/** A page whose code loads on first visit: a quiet status while it loads, never a blank screen. */
+function lazyPage(Page: ComponentType) {
+  return (
+    <Suspense fallback={<AppLoading />}>
+      <Page />
+    </Suspense>
+  );
+}
 
 const byId = (id: string): Destination => {
   const found = [...PRIMARY, ...LEGAL].find((d) => d.id === id);
@@ -89,12 +106,12 @@ export const routes: RouteObject[] = [
                     path: "/app/credits",
                     element: <PendingPage title="Raporty i zakupy" availability="building" />,
                   },
-                  { path: "/app/analyses/new", element: <NewAnalysisPage /> },
-                  { path: "/app/analyses", element: <AnalysesPage /> },
-                  {
-                    path: "/app/analyses/:auditId",
-                    element: <AnalysisPage />,
-                  },
+                  // The analysis pages load on first visit (audit F17, #312): the report and the collection are the
+                  // largest features and most visits start on the Pulpit. A chunk that fails to load (a deploy
+                  // replaced the files) throws while rendering, into this RouteError, which offers a reload.
+                  { path: "/app/analyses/new", element: lazyPage(NewAnalysisPage) },
+                  { path: "/app/analyses", element: lazyPage(AnalysesPage) },
+                  { path: "/app/analyses/:auditId", element: lazyPage(AnalysisPage) },
                   pending("market", "/app/market"),
                   pending("interior", "/app/interior"),
                   pending("listing", "/app/listings/new"),
