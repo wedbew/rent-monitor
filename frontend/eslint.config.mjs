@@ -14,6 +14,7 @@ export default tseslint.config(
       "node_modules",
       "api/schema.generated.ts",
       "api/report.generated.ts",
+      "api/report-schema.generated.ts",
       "coverage",
       "playwright-report",
       "test-results",
