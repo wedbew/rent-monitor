@@ -9,8 +9,9 @@ import type { AuditPage } from "../queries";
 
 /**
  * Submit a listing. Never retried by the library (api/query.ts) and never twice for one click: the button is busy
- * while the request is in flight. `lang` is always Polish and `analyst` is never sent (the API answers
- * FEATURE_NOT_IN_PLAN for it), so the body is exactly what the product offers today.
+ * while the request is in flight. Every submission carries an `Idempotency-Key`: the server creates at most one
+ * audit (and one reservation) per key, so sending the same submission again can never charge twice. `lang` is
+ * always Polish and `analyst` is never sent (the API answers FEATURE_NOT_IN_PLAN for it).
  */
 export function useCreateAudit() {
   const client = useQueryClient();
@@ -18,9 +19,12 @@ export function useCreateAudit() {
   return useMutation({
     // The session generation is read at the click (`submission`), not here: the library starts this a tick later,
     // by when a sign-out may already have happened.
-    mutationFn: async ({ listingRef, generation }: Submission) => {
+    mutationFn: async ({ listingRef, generation, requestKey }: Submission) => {
       const accepted = unwrap(
-        await api.POST("/api/audits", { body: { listing_ref: listingRef, lang: "pl", analyst: false } }),
+        await api.POST("/api/audits", {
+          body: { listing_ref: listingRef, lang: "pl", analyst: false },
+          params: { header: { "Idempotency-Key": requestKey } },
+        }),
       );
       return { accepted, generation };
     },
@@ -36,44 +40,51 @@ export function useCreateAudit() {
 export interface Submission {
   readonly listingRef: string;
   readonly generation: number;
-}
-
-/** What one click submits: the reference and the session it was made in. */
-export function submission(listingRef: string): Submission {
-  return { listingRef, generation: sessionGeneration() };
-}
-
-export type Reconciled = { readonly found: { readonly auditId: string } } | { readonly unknown: true };
-
-const OTODOM_ID = /(ID[0-9A-Za-z]{3,20})(?:[/?#]|$)/;
-
-/** The Otodom id inside what the person typed (an id, or the end of a listing URL); null when there is none. */
-export function otodomIdOf(listingRef: string): string | null {
-  return OTODOM_ID.exec(listingRef.trim())?.[1] ?? null;
+  /** The `Idempotency-Key`: one per submission, kept when the same submission is sent again. */
+  readonly requestKey: string;
 }
 
 /**
- * After a failure that says nothing about whether the server got the request (dropped connection, timeout), the
- * list of analyses can tell, but only for THIS listing: a row with the same Otodom id created since the click
- * means an analysis of it exists. An unrelated recent analysis, a missing row, a clock that disagrees or a list
- * that cannot be read prove nothing: the answer is then "unknown", never "not sent". Nothing here resubmits.
+ * What one click submits: the reference, the session it was made in and its request key. When the previous
+ * submission's answer was lost and the person sends the same listing again, it is the SAME submission (same key):
+ * the server then answers with the audit that request created, if it did, instead of reserving again.
+ */
+export function submission(listingRef: string, unanswered: Submission | null = null): Submission {
+  const generation = sessionGeneration();
+  if (unanswered !== null && unanswered.listingRef === listingRef && unanswered.generation === generation)
+    return unanswered;
+  return { listingRef, generation, requestKey: crypto.randomUUID() };
+}
+
+/**
+ * What the server says about a submission whose answer was lost: it created this audit (`found`), it has no
+ * audit for this request key (`notReceived`: sending the same submission again is safe), or it could not be asked
+ * (`unknown`).
+ */
+export type Reconciled =
+  | { readonly found: { readonly auditId: string } }
+  | { readonly notReceived: true }
+  | { readonly unknown: true };
+
+/**
+ * After a failure that says nothing about whether the server got the request (dropped connection, timeout), ask
+ * the server, read-only, whether THIS request (its key) created an audit. Nothing is guessed from other rows,
+ * listings or clocks, and nothing here resubmits: the person decides to send it again.
  */
 export async function reconcileAfterAmbiguousFailure(
   error: unknown,
-  listingRef: string,
-  since: number,
+  submitted: Submission,
 ): Promise<Reconciled | null> {
   if (!(error instanceof TransportError) || (error.kind !== "network" && error.kind !== "timeout"))
     return null;
-  const id = otodomIdOf(listingRef);
-  if (id === null) return { unknown: true };
-  const generation = sessionGeneration();
   try {
-    const page: AuditPage = unwrap(await api.GET("/api/audits", { params: { query: { limit: 10 } } }));
+    const page: AuditPage = unwrap(
+      await api.GET("/api/audits", { params: { query: { request_key: submitted.requestKey, limit: 1 } } }),
+    );
     // A list read after the session changed is somebody else's: it says nothing about this request.
-    if (!isCurrentSession(generation)) return null;
-    const created = page.items.find((a) => a.otodom_id === id && Date.parse(a.created_at) >= since - 300_000);
-    return created === undefined ? { unknown: true } : { found: { auditId: created.audit_id } };
+    if (!isCurrentSession(submitted.generation)) return null;
+    const created = page.items[0];
+    return created === undefined ? { notReceived: true } : { found: { auditId: created.audit_id } };
   } catch {
     return { unknown: true };
   }

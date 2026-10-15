@@ -27,7 +27,14 @@ function handlerFor(scenario: Scenario) {
     }
     const text = await request.clone().text();
     const body = parseBody(text);
-    const reply = resolveReply(matched, { method, url, params: matched.params, body });
+    const requestHeaders = Object.fromEntries(request.headers.entries());
+    const reply = resolveReply(matched, {
+      method,
+      url,
+      params: matched.params,
+      body,
+      headers: requestHeaders,
+    });
     if (reply.delayMs !== undefined) await delay(reply.delayMs);
     if (reply.networkError === true) return HttpResponse.error();
     const headers = { ...reply.headers, "content-type": reply.contentType ?? "application/json" };

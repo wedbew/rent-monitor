@@ -91,6 +91,25 @@ async def _active_audit_id(db: AsyncSession, user_id: str, otodom_id: str) -> UU
     )
 
 
+async def _by_request_key(db: AsyncSession, user_id: str, key: UUID) -> Audit | None:
+    return await db.scalar(select(Audit).where(Audit.user_id == user_id, Audit.request_key == key))
+
+
+async def _replay(db: AsyncSession, user_id: str, audit: Audit, short_id: str) -> AuditAccepted:
+    """The answer to a repeated POST: the audit that request created, as it is now; nothing reserved again."""
+    if audit.otodom_id != short_id:
+        raise Problem(
+            409, ProblemCode.IDEMPOTENCY_CONFLICT, "This Idempotency-Key was used for a different listing"
+        )
+    ent = await load_entitlements(db, user_id)
+    return AuditAccepted(
+        audit_id=audit.id,
+        status=AuditState(audit.status.value),
+        events_url=f"/api/audits/{audit.id}/events",
+        credits_remaining=ent.credit_balance if audit.charge_source is ChargeSource.credit else None,
+    )
+
+
 def _in_progress(audit_id: UUID) -> Problem:
     return Problem(
         409,
@@ -102,7 +121,18 @@ def _in_progress(audit_id: UUID) -> Problem:
 
 @router.post("", status_code=202, response_model=AuditAccepted)
 async def create_audit(
-    body: AuditCreate, request: Request, db: SessionDep, principal: PrincipalDep
+    body: AuditCreate,
+    request: Request,
+    db: SessionDep,
+    principal: PrincipalDep,
+    idempotency_key: Annotated[
+        UUID | None,
+        Header(
+            alias="Idempotency-Key",
+            description="A UUID per submission. Repeating it returns the audit it created and never reserves "
+            "again; used for a different listing it is 409 IDEMPOTENCY_CONFLICT.",
+        ),
+    ] = None,
 ) -> AuditAccepted:
     try:
         short_id = parse_listing_ref(body.listing_ref)
@@ -112,6 +142,11 @@ async def create_audit(
         body.analyst
     ):  # the text-LLM audit does not exist yet: refuse instead of charging 2 credits for nothing
         raise Problem(403, ProblemCode.FEATURE_NOT_IN_PLAN, "The analyst audit is not available yet")
+
+    if idempotency_key is not None:  # before the in-progress check: the audit this request made is active
+        earlier = await _by_request_key(db, principal.user_id, idempotency_key)
+        if earlier is not None:
+            return await _replay(db, principal.user_id, earlier, short_id)
 
     existing = await _active_audit_id(db, principal.user_id, short_id)
     if existing is not None:
@@ -146,12 +181,19 @@ async def create_audit(
             analyst=False,
             engine_version=ENGINE_VERSION,
             schema_version=SCHEMA_VERSION,
+            request_key=idempotency_key,
         )
     )
     try:
-        await db.flush()  # hits uq_audit_one_active_per_listing when a parallel request got there first
+        # Hits uq_audit_one_active_per_listing when a parallel request got there first, or
+        # uq_audit_user_request_key when the same request arrived twice at once.
+        await db.flush()
     except IntegrityError:
         await db.rollback()  # also undoes the reservation made above
+        if idempotency_key is not None:
+            twin = await _by_request_key(db, principal.user_id, idempotency_key)
+            if twin is not None:
+                return await _replay(db, principal.user_id, twin, short_id)
         winner = await _active_audit_id(db, principal.user_id, short_id)
         if winner is None:
             raise
@@ -211,6 +253,10 @@ async def list_audits(
     status: Annotated[list[AuditState] | None, Query(description="repeat to match any of several")] = None,
     grade: Annotated[str | None, Query(pattern=r"^[A-Za-z][+-]?$", max_length=2)] = None,
     q: Annotated[str | None, Query(pattern=r"^[A-Za-z0-9]{1,16}$", description="Otodom id prefix")] = None,
+    request_key: Annotated[
+        UUID | None,
+        Query(description="the `Idempotency-Key` of a POST: did that exact request create an audit?"),
+    ] = None,
 ) -> AuditPage:
     """The caller's audits, newest first, by keyset over `(created_at, id)`: a row inserted between two
     requests never repeats or skips a row. Another user's cursor only ever pages the caller's own rows."""
@@ -221,6 +267,8 @@ async def list_audits(
         stmt = stmt.where(Audit.grade == grade.upper())
     if q is not None:
         stmt = stmt.where(Audit.otodom_id.ilike(f"{q}%"))  # q is alphanumeric only (pattern above)
+    if request_key is not None:
+        stmt = stmt.where(Audit.request_key == request_key)
     if cursor is not None:
         at, ident = _decode_cursor(cursor)
         stmt = stmt.where(or_(Audit.created_at < at, and_(Audit.created_at == at, Audit.id < ident)))

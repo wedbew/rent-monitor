@@ -2074,6 +2074,8 @@ export interface operations {
                 grade?: string | null;
                 /** @description Otodom id prefix */
                 q?: string | null;
+                /** @description the `Idempotency-Key` of a POST: did that exact request create an audit? */
+                request_key?: string | null;
             };
             header?: never;
             path?: never;
@@ -2131,7 +2133,10 @@ export interface operations {
     create_audit_api_audits_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description A UUID per submission. Repeating it returns the audit it created and never reserves again; used for a different listing it is 409 IDEMPOTENCY_CONFLICT. */
+                "Idempotency-Key"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2177,7 +2182,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
-            /** @description Problem: AUDIT_IN_PROGRESS */
+            /** @description Problem: AUDIT_IN_PROGRESS, IDEMPOTENCY_CONFLICT */
             409: {
                 headers: {
                     [name: string]: unknown;

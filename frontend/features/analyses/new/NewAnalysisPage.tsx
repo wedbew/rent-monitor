@@ -3,7 +3,7 @@ import { type FormEvent, useState } from "react";
 import { Link } from "react-router";
 
 import { formatCount, formatReports } from "../../../api/format";
-import { ApiError } from "../../../api/errors";
+import { ApiError, TransportError } from "../../../api/errors";
 import { describeProblem } from "../../../api/problems";
 import { invalidateAudits } from "../../../api/query";
 import { PageHeading } from "../../../shell/PageHeading";
@@ -19,6 +19,7 @@ import { readFailure, retryIn } from "../../auth/forms";
 import {
   reconcileAfterAmbiguousFailure,
   type Reconciled,
+  type Submission,
   submission,
   useCreateAudit,
 } from "./useCreateAudit";
@@ -53,6 +54,8 @@ export function NewAnalysisPage() {
   const [attempt, markInvalid] = useFormAttempt();
   const [paywall, setPaywall] = useState(false);
   const [reconciled, setReconciled] = useState<Reconciled | null>(null);
+  // The last submission whose answer was lost: sending the same listing again reuses it (same request key).
+  const [unanswered, setUnanswered] = useState<Submission | null>(null);
   const busy = create.isPending;
 
   const breaker = me.upstream.otodom_breaker_open;
@@ -74,14 +77,17 @@ export function NewAnalysisPage() {
       markInvalid();
       return;
     }
-    const startedAt = Date.now();
-    const submitted = submission(value.trim());
+    const submitted = submission(value.trim(), unanswered);
     create.mutate(submitted, {
+      onSuccess: () => setUnanswered(null),
       onError: (error) => {
         markInvalid(); // the server's answer is here: now the summary (or the notice) is announced and focused
         if (error instanceof ApiError && error.code === "QUOTA_EXHAUSTED") setPaywall(true);
         if (!isCurrentSession(submitted.generation)) return;
-        void reconcileAfterAmbiguousFailure(error, value, startedAt).then(setReconciled);
+        const lost =
+          error instanceof TransportError && (error.kind === "network" || error.kind === "timeout");
+        setUnanswered(lost ? submitted : null);
+        void reconcileAfterAmbiguousFailure(error, submitted).then(setReconciled);
         void invalidateAudits(client);
       },
     });
@@ -182,6 +188,14 @@ function FailureNotice({
       </InlineNotice>
     );
   }
+  if (reconciled !== null && "notReceived" in reconciled) {
+    return (
+      <InlineNotice tone="warning" title="Analiza nie dotarła do serwera" live="alert">
+        Połączenie przerwało się, zanim serwer przyjął zgłoszenie. Kliknij „Rozpocznij analizę” jeszcze raz:
+        to samo zgłoszenie nie zostanie policzone dwa razy.
+      </InlineNotice>
+    );
+  }
   if (reconciled !== null) {
     return (
       <InlineNotice
@@ -194,8 +208,8 @@ function FailureNotice({
           </Link>
         }
       >
-        Połączenie przerwało się i nie możemy tego rozstrzygnąć. Zanim spróbujesz ponownie, sprawdź listę
-        analiz, żeby nie zapłacić dwa razy.
+        Połączenie przerwało się i nie możemy tego teraz sprawdzić. Gdy połączenie wróci, wyślij to samo
+        ogłoszenie jeszcze raz: to samo zgłoszenie nie zostanie policzone dwa razy.
       </InlineNotice>
     );
   }

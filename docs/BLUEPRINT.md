@@ -171,7 +171,7 @@ FastAPI is stateless: every byte of state — sessions, audits, credits, jobs, p
 | --- | --- | --- | --- |
 | `/api/auth/*` | FastAPI | public | Google ID-token sign-in, email magic link, email/password (`register`, `register/verify`, `register/resend`, `login`, `password/forgot`, `password/reset`; `password/change` needs a session), sign-out, session list (spec: PASSWORD-AUTH-SPEC.md) |
 | `/api/me` | FastAPI | session | Profile, plan, credit balance, feature flags; `GET /api/me/export` (access request, 5 per hour); `DELETE /api/me` (account erasure, confirmed by typing the address) |
-| `/api/audits` | FastAPI | session + entitlement | `POST` create (202), `GET` list (`{items, next_cursor}`; keyset cursor; filters `status`, `grade`, `q`), `GET /{id}`, `GET /{id}/events` (SSE), `POST /{id}/cancel` |
+| `/api/audits` | FastAPI | session + entitlement | `POST` create (202; optional `Idempotency-Key` UUID: a repeat returns the audit it created, never a second reservation, RM-304), `GET` list (`{items, next_cursor}`; keyset cursor; filters `status`, `grade`, `q`, `request_key`), `GET /{id}`, `GET /{id}/events` (SSE), `POST /{id}/cancel` |
 | `/api/saved` | FastAPI | session | Save or unsave listings, notes; only listings the caller has audited can be saved (anything else is 404), at most 500 |
 | `/api/market/*` | FastAPI | session; free tier sees top 20 | 727-city yield radar, city sidecars by grain |
 | `/api/screener/*` | FastAPI | Pro feature flag | Discovery runs, approval queue, batch generate |
@@ -258,7 +258,7 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `CONTEXT_UNAVAILABLE` | a market input the engine cannot run without is not configured (risk-free rate) or the market-data store failed (RM-187) | `failed_internal` + Better Stack error | none until the input exists | released |
 | `INTERNAL` | anything else | `failed_internal` + Better Stack error | Procrastinate retry once | released |
 | `BILLING_UNAVAILABLE` | billing is switched off or no approved catalog is loaded (the default) | 503 | none | n/a |
-| `IDEMPOTENCY_CONFLICT` | an `Idempotency-Key` was reused for a different pack | 409 | use a new key | n/a |
+| `IDEMPOTENCY_CONFLICT` | an `Idempotency-Key` was reused for a different pack, or (`POST /api/audits`) for a different listing | 409 | use a new key | n/a; no audit reserved |
 | `BILLING_PROVIDER_ERROR` | the payment provider refused to start a purchase | 502 | try again with a new key | n/a |
 | `INVALID_WEBHOOK_SIGNATURE` | the Paddle notification is not signed by the configured secret, or its timestamp is outside the tolerance | 400 | Paddle retries | n/a |
 | `BILLING_HOLD` | units were already spent when a purchase was reversed: new reservations and purchases wait for staff | 403 | contact support | n/a |
@@ -709,10 +709,13 @@ class Audit(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     started_at: Mapped[datetime | None]
     finished_at: Mapped[datetime | None]
+    request_key: Mapped[UUID | None]      # client Idempotency-Key of the creating POST (RM-304)
     __table_args__ = (
         Index("ix_audit_user_created", "user_id", text("created_at DESC")),
         Index("uq_audit_one_active_per_listing", "user_id", "otodom_id", unique=True,
               postgresql_where=text("status IN ('queued','running')")),
+        Index("uq_audit_user_request_key", "user_id", "request_key", unique=True,
+              postgresql_where=text("request_key IS NOT NULL")),
         CheckConstraint("(charge_source = 'plan') = (usage_period_id IS NOT NULL)", name="plan_has_period"),
         APP,
     )

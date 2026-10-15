@@ -133,21 +133,6 @@ function replyOf(operation: string, name: string) {
   };
 }
 
-/** The list row of an analysis created a moment ago (what the list says after a POST whose answer was lost). */
-function justCreated() {
-  return {
-    audit_id: RUN_AUDIT_ID,
-    otodom_id: "ID4abcd",
-    status: "queued" as const,
-    error_code: null,
-    created_at: new Date().toISOString(),
-    finished_at: null,
-    grade: null,
-    asking_price_pln: null,
-    max_bid_pln: null,
-  };
-}
-
 /** Type a listing into the new-analysis form and send it. */
 function submitListing(value: string) {
   return async (page: Page): Promise<void> => {
@@ -226,11 +211,19 @@ export const PAGES: readonly AppPage[] = [
       },
       {
         name: "ambiguous-arrived",
-        scenario: () =>
-          createRun({ post: { status: 0, networkError: true }, listAfterPost: [justCreated()] }),
+        // The server created the audit for this request key; only the answer was lost.
+        scenario: () => createRun({ post: { status: 0, networkError: true }, lostAnswer: true }),
         prepare: async (page) => {
           await submitListing(LISTING)(page);
           await page.getByRole("status").filter({ hasText: "Analiza została przyjęta" }).waitFor();
+        },
+      },
+      {
+        name: "ambiguous-not-received",
+        scenario: () => createRun({ post: { status: 0, networkError: true } }),
+        prepare: async (page) => {
+          await submitListing(LISTING)(page);
+          await page.getByRole("alert").filter({ hasText: "Analiza nie dotarła do serwera" }).waitFor();
         },
       },
       {

@@ -58,7 +58,7 @@ EXTRA: dict[str, Errors] = {
     "POST /api/audits": {
         402: (C.QUOTA_EXHAUSTED,),
         403: (C.BILLING_HOLD, C.FEATURE_NOT_IN_PLAN),
-        409: (C.AUDIT_IN_PROGRESS,),
+        409: (C.AUDIT_IN_PROGRESS, C.IDEMPOTENCY_CONFLICT),
         422: (C.INVALID_LISTING_REF,),
     },
     "GET /api/audits/{audit_id}": {404: (C.NOT_FOUND,)},
