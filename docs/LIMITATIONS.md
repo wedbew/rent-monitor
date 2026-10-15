@@ -213,15 +213,6 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 
 ## Deferred
 
-### L-026 — Frontend collection and report typing need contract work
-- **Status:** deferred
-- **Discovered:** 2026-10-15
-- **Affects:** `services/rm_api/audits.py` list endpoint, `packages/rm_contracts/audits.py`, Phase 2 collection/report implementation
-- **Evidence:** `GET /api/audits` now pages by cursor with `status`, `grade` and `q` filters (RM-265, no total by design: an exact count under filters is a scan per request). Still open: `AuditOut.result` is `dict[str, Any] | None` (#266).
-- **Description:** Complete-history pagination/search cannot be implemented honestly by slicing the current capped response. OpenAPI generation alone does not produce typed internal report sections from the opaque result object.
-- **Workaround:** Keep collection completeness explicit; design against separately labeled contract fixtures. Use a reviewed versioned report schema/adapter before rendering internal sections; do not bypass with unchecked casts.
-- **Target:** Phase 2 frontend/API interface work (blueprint §4.8 step 6); pagination/search contract and report-version typing with integration tests. See `design/v2/implementation-guide.md` §5.
-
 ### L-025 — V2 manual analysis and creative tools are local design flows
 - **Status:** deferred
 - **Discovered:** 2026-10-15
@@ -241,6 +232,17 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Target:** Phase 2 design (blueprint §4.8 step 6): replacement analysis cards, proper pagination, a table-view option and a fuller market information architecture. 2026-10-15 (#262): the market data lives in Postgres only; no `/api/market/*` route exists yet (#21), so the Rynek redesign (#282) waits on it; collection paging is #265.
 
 ## Resolved
+
+### L-026 — Frontend collection and report typing need contract work
+- **Status:** resolved
+- **Discovered:** 2026-10-15
+- **Affects:** `services/rm_api/audits.py` list endpoint, `packages/rm_contracts/audits.py`, Phase 2 collection/report implementation
+- **Evidence:** `GET /api/audits` now pages by cursor with `status`, `grade` and `q` filters (RM-265, no total by design: an exact count under filters is a scan per request). `AuditOut.result` stays an opaque object in OpenAPI on purpose; its shape is `docs/deal-analysis.schema.json` (RM-266, `docs/REPORT-SCHEMA.md`).
+- **Description:** Complete-history pagination/search cannot be implemented honestly by slicing the current capped response. OpenAPI generation alone does not produce typed internal report sections from the opaque result object.
+- **Workaround:** Keep collection completeness explicit; design against separately labeled contract fixtures. Use a reviewed versioned report schema/adapter before rendering internal sections; do not bypass with unchecked casts.
+- **Target:** Phase 2 frontend/API interface work (blueprint §4.8 step 6); pagination/search contract and report-version typing with integration tests. See `design/v2/implementation-guide.md` §5.
+- **Resolved:** 2026-10-15: paging and filters by RM-265 (#265), the versioned report schema by RM-266 (#266); the frontend adapters (#268, #274) consume them.
+
 
 ### L-027 — OpenAPI does not describe the problem+json error responses
 - **Status:** resolved

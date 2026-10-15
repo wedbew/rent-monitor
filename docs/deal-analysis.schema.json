@@ -1,0 +1,1112 @@
+{
+  "$defs": {
+    "Applied": {
+      "additionalProperties": false,
+      "properties": {
+        "applied": {
+          "title": "Applied",
+          "type": "string"
+        },
+        "base": {
+          "title": "Base",
+          "type": "string"
+        },
+        "clamped": {
+          "title": "Clamped",
+          "type": "boolean"
+        },
+        "proposed": {
+          "title": "Proposed",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "base",
+        "proposed",
+        "applied",
+        "clamped",
+        "value"
+      ],
+      "title": "Applied",
+      "type": "object"
+    },
+    "CapexEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "base_pln": {
+          "title": "Base Pln",
+          "type": "string"
+        },
+        "catalog_version": {
+          "title": "Catalog Version",
+          "type": "string"
+        },
+        "condition_assumed": {
+          "title": "Condition Assumed",
+          "type": "boolean"
+        },
+        "condition_used": {
+          "$ref": "#/$defs/Condition"
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "high_pln": {
+          "title": "High Pln",
+          "type": "string"
+        },
+        "low_pln": {
+          "title": "Low Pln",
+          "type": "string"
+        },
+        "multiplier": {
+          "title": "Multiplier",
+          "type": "string"
+        },
+        "pln_per_m2": {
+          "title": "Pln Per M2",
+          "type": "string"
+        },
+        "prices_are_placeholders": {
+          "default": true,
+          "title": "Prices Are Placeholders",
+          "type": "boolean"
+        },
+        "tier": {
+          "enum": [
+            "metro",
+            "major",
+            "other"
+          ],
+          "title": "Tier",
+          "type": "string"
+        }
+      },
+      "required": [
+        "condition_used",
+        "condition_assumed",
+        "tier",
+        "multiplier",
+        "pln_per_m2",
+        "base_pln",
+        "low_pln",
+        "high_pln",
+        "confidence",
+        "catalog_version"
+      ],
+      "title": "CapexEstimate",
+      "type": "object"
+    },
+    "CashFlowResult": {
+      "additionalProperties": false,
+      "properties": {
+        "assumptions_version": {
+          "default": "2026-10-12.2",
+          "title": "Assumptions Version",
+          "type": "string"
+        },
+        "capex_pln": {
+          "title": "Capex Pln",
+          "type": "string"
+        },
+        "exit": {
+          "$ref": "#/$defs/ExitBreakdown"
+        },
+        "purchase": {
+          "$ref": "#/$defs/PurchaseCosts"
+        },
+        "returns": {
+          "$ref": "#/$defs/Returns"
+        },
+        "total_invested_pln": {
+          "title": "Total Invested Pln",
+          "type": "string"
+        },
+        "warnings": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        },
+        "years": {
+          "items": {
+            "$ref": "#/$defs/YearRow"
+          },
+          "title": "Years",
+          "type": "array"
+        }
+      },
+      "required": [
+        "purchase",
+        "capex_pln",
+        "total_invested_pln",
+        "years",
+        "exit",
+        "returns"
+      ],
+      "title": "CashFlowResult",
+      "type": "object"
+    },
+    "Condition": {
+      "enum": [
+        "good",
+        "refresh",
+        "renovation",
+        "shell",
+        "unknown"
+      ],
+      "title": "Condition",
+      "type": "string"
+    },
+    "Confidence": {
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Confidence",
+      "type": "string"
+    },
+    "ExitBreakdown": {
+      "additionalProperties": false,
+      "properties": {
+        "exit_value_pln": {
+          "title": "Exit Value Pln",
+          "type": "string"
+        },
+        "net_proceeds_pln": {
+          "title": "Net Proceeds Pln",
+          "type": "string"
+        },
+        "sale_tax_pln": {
+          "title": "Sale Tax Pln",
+          "type": "string"
+        },
+        "selling_costs_pln": {
+          "title": "Selling Costs Pln",
+          "type": "string"
+        }
+      },
+      "required": [
+        "exit_value_pln",
+        "selling_costs_pln",
+        "sale_tax_pln",
+        "net_proceeds_pln"
+      ],
+      "title": "ExitBreakdown",
+      "type": "object"
+    },
+    "LegalAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 6,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "legal_class": {
+          "$ref": "#/$defs/LegalClass"
+        },
+        "price_basis": {
+          "enum": [
+            "gross",
+            "net_plus_vat",
+            "unknown"
+          ],
+          "title": "Price Basis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "legal_class",
+        "price_basis",
+        "confidence"
+      ],
+      "title": "LegalAssessment",
+      "type": "object"
+    },
+    "LegalClass": {
+      "enum": [
+        "residential",
+        "vat_sale",
+        "non_residential"
+      ],
+      "title": "LegalClass",
+      "type": "string"
+    },
+    "Listing": {
+      "additionalProperties": false,
+      "properties": {
+        "admin_fee_pln": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Admin Fee Pln"
+        },
+        "area_m2": {
+          "title": "Area M2",
+          "type": "string"
+        },
+        "build_year": {
+          "anyOf": [
+            {
+              "maximum": 2100,
+              "minimum": 1500,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Build Year"
+        },
+        "building_floors": {
+          "anyOf": [
+            {
+              "maximum": 200,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Building Floors"
+        },
+        "building_ownership": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Building Ownership"
+        },
+        "building_type": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Building Type"
+        },
+        "city": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "City"
+        },
+        "created_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created At"
+        },
+        "deposit_pln": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deposit Pln"
+        },
+        "description": {
+          "maxLength": 200000,
+          "title": "Description",
+          "type": "string"
+        },
+        "floor": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Floor"
+        },
+        "floor_plan_urls": {
+          "default": [],
+          "items": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "maxItems": 40,
+          "title": "Floor Plan Urls",
+          "type": "array"
+        },
+        "heating": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Heating"
+        },
+        "kind": {
+          "const": "SALE",
+          "title": "Kind",
+          "type": "string"
+        },
+        "latitude": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latitude"
+        },
+        "location_id": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "pattern": "^[a-z0-9-]+(/[a-z0-9-]+){0,3}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location Id"
+        },
+        "longitude": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longitude"
+        },
+        "modified_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Modified At"
+        },
+        "otodom_id": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Otodom Id",
+          "type": "string"
+        },
+        "photo_urls": {
+          "default": [],
+          "items": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "maxItems": 40,
+          "title": "Photo Urls",
+          "type": "array"
+        },
+        "price_pln": {
+          "title": "Price Pln",
+          "type": "string"
+        },
+        "rooms": {
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Rooms",
+          "type": "integer"
+        },
+        "street": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Street"
+        },
+        "title": {
+          "maxLength": 300,
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        },
+        "warnings": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        },
+        "windows": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Windows"
+        }
+      },
+      "required": [
+        "otodom_id",
+        "title",
+        "description",
+        "kind",
+        "price_pln",
+        "area_m2",
+        "rooms"
+      ],
+      "title": "Listing",
+      "type": "object"
+    },
+    "MaxBidResult": {
+      "additionalProperties": false,
+      "properties": {
+        "asking_price_pln": {
+          "title": "Asking Price Pln",
+          "type": "string"
+        },
+        "discount_to_asking": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Discount To Asking"
+        },
+        "grade": {
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "N"
+          ],
+          "title": "Grade",
+          "type": "string"
+        },
+        "hurdle": {
+          "title": "Hurdle",
+          "type": "string"
+        },
+        "irr_at_asking": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Irr At Asking"
+        },
+        "max_bid_bounded": {
+          "title": "Max Bid Bounded",
+          "type": "boolean"
+        },
+        "max_bid_if_appreciation_minus_1pp_pln": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Max Bid If Appreciation Minus 1Pp Pln"
+        },
+        "max_bid_if_appreciation_plus_1pp_pln": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Max Bid If Appreciation Plus 1Pp Pln"
+        },
+        "max_bid_pln": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Max Bid Pln"
+        },
+        "verdict": {
+          "enum": [
+            "buy_at_asking",
+            "negotiate",
+            "pass",
+            "insufficient_data"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        }
+      },
+      "required": [
+        "hurdle",
+        "asking_price_pln",
+        "max_bid_pln",
+        "max_bid_bounded",
+        "discount_to_asking",
+        "irr_at_asking",
+        "max_bid_if_appreciation_minus_1pp_pln",
+        "max_bid_if_appreciation_plus_1pp_pln",
+        "grade",
+        "verdict"
+      ],
+      "title": "MaxBidResult",
+      "type": "object"
+    },
+    "OwnershipAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 6,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "interest": {
+          "enum": [
+            "whole",
+            "fractional",
+            "unknown"
+          ],
+          "title": "Interest",
+          "type": "string"
+        },
+        "share_denominator": {
+          "anyOf": [
+            {
+              "minimum": 2,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Share Denominator"
+        },
+        "share_numerator": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Share Numerator"
+        },
+        "structured_value": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Structured Value"
+        },
+        "title_form": {
+          "enum": [
+            "full_ownership",
+            "cooperative_ownership",
+            "cooperative_tenancy",
+            "unknown"
+          ],
+          "title": "Title Form",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title_form",
+        "interest",
+        "confidence"
+      ],
+      "title": "OwnershipAssessment",
+      "type": "object"
+    },
+    "PurchaseCosts": {
+      "additionalProperties": false,
+      "properties": {
+        "broker_pln": {
+          "title": "Broker Pln",
+          "type": "string"
+        },
+        "court_fee_pln": {
+          "title": "Court Fee Pln",
+          "type": "string"
+        },
+        "deed_copies_pln": {
+          "title": "Deed Copies Pln",
+          "type": "string"
+        },
+        "notary_pln": {
+          "title": "Notary Pln",
+          "type": "string"
+        },
+        "pcc_pln": {
+          "title": "Pcc Pln",
+          "type": "string"
+        },
+        "price_pln": {
+          "title": "Price Pln",
+          "type": "string"
+        },
+        "total_acquisition_pln": {
+          "title": "Total Acquisition Pln",
+          "type": "string"
+        },
+        "total_costs_pln": {
+          "title": "Total Costs Pln",
+          "type": "string"
+        }
+      },
+      "required": [
+        "price_pln",
+        "pcc_pln",
+        "notary_pln",
+        "deed_copies_pln",
+        "court_fee_pln",
+        "broker_pln",
+        "total_costs_pln",
+        "total_acquisition_pln"
+      ],
+      "title": "PurchaseCosts",
+      "type": "object"
+    },
+    "RentApplied": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "enum": [
+            "asking",
+            "achieved"
+          ],
+          "title": "Basis",
+          "type": "string"
+        },
+        "comparables": {
+          "title": "Comparables",
+          "type": "integer"
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "haircut": {
+          "title": "Haircut",
+          "type": "string"
+        },
+        "input_monthly_pln": {
+          "title": "Input Monthly Pln",
+          "type": "string"
+        },
+        "monthly_after_haircut_pln": {
+          "title": "Monthly After Haircut Pln",
+          "type": "string"
+        },
+        "monthly_used_pln": {
+          "title": "Monthly Used Pln",
+          "type": "string"
+        }
+      },
+      "required": [
+        "input_monthly_pln",
+        "basis",
+        "haircut",
+        "monthly_after_haircut_pln",
+        "monthly_used_pln",
+        "comparables",
+        "confidence"
+      ],
+      "title": "RentApplied",
+      "type": "object"
+    },
+    "Returns": {
+      "additionalProperties": false,
+      "properties": {
+        "cagr": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cagr"
+        },
+        "gross_yield": {
+          "title": "Gross Yield",
+          "type": "string"
+        },
+        "irr": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Irr"
+        },
+        "moic": {
+          "title": "Moic",
+          "type": "string"
+        },
+        "net_yield": {
+          "title": "Net Yield",
+          "type": "string"
+        }
+      },
+      "required": [
+        "gross_yield",
+        "net_yield",
+        "irr",
+        "moic",
+        "cagr"
+      ],
+      "title": "Returns",
+      "type": "object"
+    },
+    "VisionRecord": {
+      "additionalProperties": false,
+      "description": "Everything needed to reproduce an audit without the model: provenance plus proposed and applied\nadjustments.",
+      "properties": {
+        "capex": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Applied"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "condition": {
+          "$ref": "#/$defs/Condition"
+        },
+        "model": {
+          "maxLength": 120,
+          "title": "Model",
+          "type": "string"
+        },
+        "photos_excluded": {
+          "title": "Photos Excluded",
+          "type": "integer"
+        },
+        "photos_total": {
+          "title": "Photos Total",
+          "type": "integer"
+        },
+        "prompt_version": {
+          "maxLength": 40,
+          "title": "Prompt Version",
+          "type": "string"
+        },
+        "rent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Applied"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "model",
+        "prompt_version",
+        "condition",
+        "photos_total",
+        "photos_excluded",
+        "capex",
+        "rent"
+      ],
+      "title": "VisionRecord",
+      "type": "object"
+    },
+    "YearRow": {
+      "additionalProperties": false,
+      "properties": {
+        "costs": {
+          "$ref": "#/$defs/YearlyCosts"
+        },
+        "income_tax_pln": {
+          "title": "Income Tax Pln",
+          "type": "string"
+        },
+        "net_cash_flow_pln": {
+          "title": "Net Cash Flow Pln",
+          "type": "string"
+        },
+        "rent_collected_pln": {
+          "title": "Rent Collected Pln",
+          "type": "string"
+        },
+        "year": {
+          "title": "Year",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "year",
+        "rent_collected_pln",
+        "costs",
+        "income_tax_pln",
+        "net_cash_flow_pln"
+      ],
+      "title": "YearRow",
+      "type": "object"
+    },
+    "YearlyCosts": {
+      "additionalProperties": false,
+      "properties": {
+        "admin_fee_pln": {
+          "title": "Admin Fee Pln",
+          "type": "string"
+        },
+        "insurance_pln": {
+          "title": "Insurance Pln",
+          "type": "string"
+        },
+        "maintenance_pln": {
+          "title": "Maintenance Pln",
+          "type": "string"
+        },
+        "management_pln": {
+          "title": "Management Pln",
+          "type": "string"
+        },
+        "property_tax_pln": {
+          "title": "Property Tax Pln",
+          "type": "string"
+        },
+        "total_pln": {
+          "title": "Total Pln",
+          "type": "string"
+        }
+      },
+      "required": [
+        "admin_fee_pln",
+        "property_tax_pln",
+        "insurance_pln",
+        "maintenance_pln",
+        "management_pln",
+        "total_pln"
+      ],
+      "title": "YearlyCosts",
+      "type": "object"
+    }
+  },
+  "$id": "urn:rentmonitor:deal-analysis:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The canonical result. `model_dump_json()` is what is stored, shown through the API and rendered\nto Markdown.",
+  "properties": {
+    "assumptions_version": {
+      "default": "2026-10-12.2",
+      "description": "Version of the numeric assumptions the engine used",
+      "title": "Assumptions Version",
+      "type": "string"
+    },
+    "capex": {
+      "$ref": "#/$defs/CapexEstimate",
+      "description": "Renovation cost estimate before any vision adjustment"
+    },
+    "capex_used_pln": {
+      "description": "CAPEX after the clamped vision adjustment (PLN, string)",
+      "title": "Capex Used Pln",
+      "type": "string"
+    },
+    "cash_flow": {
+      "$ref": "#/$defs/CashFlowResult",
+      "description": "Ten-year cash flows and returns; computed in Python only"
+    },
+    "confidence": {
+      "$ref": "#/$defs/Confidence",
+      "description": "The weakest of the input confidences"
+    },
+    "engine_version": {
+      "default": "0.1.0",
+      "description": "Engine release that produced the numbers",
+      "title": "Engine Version",
+      "type": "string"
+    },
+    "legal": {
+      "$ref": "#/$defs/LegalAssessment",
+      "description": "Residential / VAT-sale / non-residential classification"
+    },
+    "listing": {
+      "$ref": "#/$defs/Listing",
+      "description": "The advert as extracted: asking price, never a deed price"
+    },
+    "ownership": {
+      "$ref": "#/$defs/OwnershipAssessment",
+      "description": "Whole or fractional ownership; fractional never gets here"
+    },
+    "rent": {
+      "$ref": "#/$defs/RentApplied",
+      "description": "Market rent used, with its basis, haircut and confidence"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "description": "Version of this document's shape. Additive changes keep it; a removed or renamed field, a changed type or a narrowed enum bumps it (docs/REPORT-SCHEMA.md)",
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "valuation": {
+      "$ref": "#/$defs/MaxBidResult",
+      "description": "Max Bid and the grade; a null value means 'not computed'"
+    },
+    "vision": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VisionRecord"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "What the photos changed, or null when no vision answer was used (a degraded audit)"
+    },
+    "warnings": {
+      "default": [],
+      "description": "Stable codes for missing or doubtful inputs; they lower confidence",
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "capex",
+    "capex_used_pln",
+    "cash_flow",
+    "confidence",
+    "legal",
+    "listing",
+    "ownership",
+    "rent",
+    "schema_version",
+    "valuation",
+    "vision"
+  ],
+  "title": "DealAnalysis",
+  "type": "object",
+  "x-schema-version": 1
+}

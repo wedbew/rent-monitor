@@ -62,20 +62,34 @@ class DealAnalysis(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
-    schema_version: int = SCHEMA_VERSION
-    engine_version: str = ENGINE_VERSION
-    assumptions_version: str = ASSUMPTIONS_VERSION
-    listing: Listing
-    ownership: OwnershipAssessment
-    legal: LegalAssessment
-    rent: RentApplied
-    capex: CapexEstimate
-    capex_used_pln: Decimal
-    vision: VisionRecord | None
-    cash_flow: CashFlowResult
-    valuation: MaxBidResult
-    confidence: Confidence
-    warnings: tuple[str, ...] = ()
+    schema_version: int = Field(
+        default=SCHEMA_VERSION,
+        description="Version of this document's shape. Additive changes keep it; a removed or renamed "
+        "field, a changed type or a narrowed enum bumps it (docs/REPORT-SCHEMA.md)",
+    )
+    engine_version: str = Field(
+        default=ENGINE_VERSION, description="Engine release that produced the numbers"
+    )
+    assumptions_version: str = Field(
+        default=ASSUMPTIONS_VERSION, description="Version of the numeric assumptions the engine used"
+    )
+    listing: Listing = Field(description="The advert as extracted: asking price, never a deed price")
+    ownership: OwnershipAssessment = Field(
+        description="Whole or fractional ownership; fractional never gets here"
+    )
+    legal: LegalAssessment = Field(description="Residential / VAT-sale / non-residential classification")
+    rent: RentApplied = Field(description="Market rent used, with its basis, haircut and confidence")
+    capex: CapexEstimate = Field(description="Renovation cost estimate before any vision adjustment")
+    capex_used_pln: Decimal = Field(description="CAPEX after the clamped vision adjustment (PLN, string)")
+    vision: VisionRecord | None = Field(
+        description="What the photos changed, or null when no vision answer was used (a degraded audit)"
+    )
+    cash_flow: CashFlowResult = Field(description="Ten-year cash flows and returns; computed in Python only")
+    valuation: MaxBidResult = Field(description="Max Bid and the grade; a null value means 'not computed'")
+    confidence: Confidence = Field(description="The weakest of the input confidences")
+    warnings: tuple[str, ...] = Field(
+        default=(), description="Stable codes for missing or doubtful inputs; they lower confidence"
+    )
 
 
 def _rent_confidence(comparables: int) -> Confidence:
