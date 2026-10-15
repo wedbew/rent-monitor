@@ -113,7 +113,20 @@ const SIGNED_OUT = ["firstVisit"] as const;
 const SAMPLE_TOKEN = "AbCdEfGhIjKlMnOpQrStUvWxYz012345";
 
 export const PAGES: readonly AppPage[] = [
-  { id: "dashboard", path: "/app", heading: "Pulpit", scenarios: ["empty", "unverified"] },
+  {
+    id: "dashboard",
+    path: "/app",
+    heading: "Pulpit",
+    scenarios: [
+      "empty",
+      "loaded",
+      "mixed",
+      "breakerOpen",
+      "insufficientCredits",
+      "auditsFailing",
+      "unverified",
+    ],
+  },
   { id: "new-analysis", path: "/app/analyses/new", heading: "Nowa analiza", scenarios: EVERY_SCENARIO },
   { id: "analyses", path: "/app/analyses", heading: "Moje analizy", scenarios: EVERY_SCENARIO },
   {
@@ -365,6 +378,49 @@ export const INTERACTIONS: readonly Interaction[] = [
     role: "button",
     name: "Wyślij link ponownie",
     outcome: "request",
+  },
+
+  // Dashboard.
+  {
+    id: "dashboard.analysis",
+    page: "dashboard",
+    scenarios: ["empty", "loaded", "mixed", "insufficientCredits", "auditsFailing", "unverified"],
+    role: "link",
+    name: "Rozpocznij analizę",
+    outcome: "url",
+  },
+  { id: "dashboard.all", page: "dashboard", role: "link", name: "Moje analizy", outcome: "url" },
+  {
+    id: "dashboard.first",
+    page: "dashboard",
+    scenarios: ["empty", "breakerOpen", "insufficientCredits", "unverified"],
+    role: "link",
+    name: "Sprawdź pierwsze mieszkanie",
+    outcome: "url",
+  },
+  {
+    id: "dashboard.row",
+    page: "dashboard",
+    scenarios: ["loaded", "mixed"],
+    role: "link",
+    name: /^Ogłoszenie /,
+    outcome: "url",
+  },
+  {
+    id: "dashboard.retry",
+    page: "dashboard",
+    scenarios: ["auditsFailing"],
+    role: "button",
+    name: "Spróbuj ponownie",
+    outcome: "request",
+  },
+  {
+    id: "dashboard.buy",
+    page: "dashboard",
+    scenarios: ["insufficientCredits"],
+    role: "link",
+    name: "Kup raporty",
+    outcome: "url",
   },
 
   // The signed-out frame (every public page).
