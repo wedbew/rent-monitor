@@ -591,6 +591,15 @@ class Audit(Base):
             unique=True,
             postgresql_where=text("status IN ('queued','running')"),
         ),
+        # One audit per client request (`Idempotency-Key`): a repeated POST returns the same audit, never a
+        # second reservation; the browser can ask whether a request whose answer it lost arrived (RM-304).
+        Index(
+            "uq_audit_user_request_key",
+            "user_id",
+            "request_key",
+            unique=True,
+            postgresql_where=text("request_key IS NOT NULL"),
+        ),
         CheckConstraint("(charge_source = 'plan') = (usage_period_id IS NOT NULL)", name="plan_has_period"),
         CheckConstraint("lang IN ('pl','en')", name="lang_vocab"),
     )
@@ -606,6 +615,9 @@ class Audit(Base):
     usage_period_id: Mapped[int | None] = mapped_column(ForeignKey("usage_period.id"))
     lang: Mapped[str] = mapped_column(String(2), default="pl", server_default="pl")
     analyst: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    request_key: Mapped[UUID | None] = mapped_column(
+        comment="client Idempotency-Key of the POST that created it; random, not personal data"
+    )
     engine_version: Mapped[str] = mapped_column(String(40))
     schema_version: Mapped[int]
     result: Mapped[dict[str, Any] | None] = mapped_column(comment="canonical DealAnalysis JSON")

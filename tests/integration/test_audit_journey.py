@@ -372,6 +372,85 @@ async def test_a_delivered_job_runs_the_engine_once(h: Harness, make_google_toke
     await h.assert_ledger_consistent()
 
 
+# ---------------------------------------------------------------- request key (Idempotency-Key, RM-304)
+async def keyed(c: Any, ref: str, key: UUID) -> Any:
+    return await c.post("/api/audits", json={"listing_ref": ref}, headers={"Idempotency-Key": str(key)})
+
+
+async def test_a_repeated_request_returns_the_same_audit_and_reserves_once(
+    h: Harness, make_google_token: MakeToken
+) -> None:
+    """A browser that lost the answer sends the same request again: same audit, one reservation, one job."""
+    c, me = await sign_in(h.app, make_google_token)
+    ref = new_ref()
+    h.source.ads[ref] = sale_ad()
+    key = uuid4()
+    first = await keyed(c, ref, key)
+    again = await keyed(c, ref, key)
+    assert first.status_code == again.status_code == 202
+    assert again.json()["audit_id"] == first.json()["audit_id"]
+    assert again.json()["credits_remaining"] == SIGNUP_CREDITS - 1
+    assert await h.balance(me["id"]) == SIGNUP_CREDITS - 1
+    assert await h.audit_job_count() == 1
+    await h.run_worker()
+    finished = await keyed(c, ref, key)  # still the same audit after it finished, not a new paid one
+    assert finished.json()["audit_id"] == first.json()["audit_id"]
+    assert finished.json()["status"] == "succeeded_degraded"
+    assert await h.balance(me["id"]) == SIGNUP_CREDITS - 1
+    await h.assert_ledger_consistent()
+
+
+async def test_simultaneous_copies_of_one_request_create_one_audit(
+    h: Harness, make_google_token: MakeToken
+) -> None:
+    c, me = await sign_in(h.app, make_google_token)
+    ref = new_ref()
+    h.source.ads[ref] = sale_ad()
+    key = uuid4()
+    results = await asyncio.gather(*(keyed(c, ref, key) for _ in range(6)))
+    assert [r.status_code for r in results] == [202] * 6
+    assert len({r.json()["audit_id"] for r in results}) == 1
+    async with h.sm() as s:
+        assert await s.scalar(select(func.count()).select_from(Audit).where(Audit.user_id == me["id"])) == 1
+    assert await h.balance(me["id"]) == SIGNUP_CREDITS - 1
+    await h.assert_ledger_consistent()
+
+
+async def test_a_request_key_reused_for_another_listing_is_a_conflict(
+    h: Harness, make_google_token: MakeToken
+) -> None:
+    c, me = await sign_in(h.app, make_google_token)
+    first_ref, other_ref = new_ref(), new_ref()
+    h.source.ads[first_ref] = sale_ad()
+    key = uuid4()
+    assert (await keyed(c, first_ref, key)).status_code == 202
+    clash = await keyed(c, other_ref, key)
+    assert clash.status_code == 409
+    assert clash.json()["code"] == "IDEMPOTENCY_CONFLICT"
+    assert await h.balance(me["id"]) == SIGNUP_CREDITS - 1
+
+
+async def test_the_list_answers_whether_a_request_arrived_for_this_user_only(
+    h: Harness, make_google_token: MakeToken
+) -> None:
+    c, _ = await sign_in(h.app, make_google_token)
+    ref = new_ref()
+    h.source.ads[ref] = sale_ad()
+    key = uuid4()
+    audit_id = (await keyed(c, ref, key)).json()["audit_id"]
+    found = await c.get("/api/audits", params={"request_key": str(key)})
+    assert [a["audit_id"] for a in found.json()["items"]] == [audit_id]
+    unknown = await c.get("/api/audits", params={"request_key": str(uuid4())})
+    assert unknown.json()["items"] == []
+
+    other, _ = await sign_in(h.app, make_google_token)  # another person cannot learn about it, nor reuse it
+    assert (await other.get("/api/audits", params={"request_key": str(key)})).json()["items"] == []
+    h.source.ads[ref] = sale_ad()
+    theirs = await keyed(other, ref, key)
+    assert theirs.status_code == 202
+    assert theirs.json()["audit_id"] != audit_id
+
+
 # ---------------------------------------------------------------- quota and input
 async def test_with_no_credit_left_nothing_is_created_or_queued(
     h: Harness, make_google_token: MakeToken

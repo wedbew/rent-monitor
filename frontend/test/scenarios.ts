@@ -20,6 +20,8 @@ export interface MockRequest {
   readonly url: URL;
   readonly params: Readonly<Record<string, string>>;
   readonly body: unknown;
+  /** Request headers, lower-case names (an `Idempotency-Key`, for example). */
+  readonly headers: Readonly<Record<string, string>>;
 }
 
 export interface Reply {
@@ -414,10 +416,18 @@ export interface RunOptions {
   readonly listAfterPost?: AuditSummary[];
   /** The list cannot be read either (the network is down): whether the POST arrived is unknowable. */
   readonly listFails?: boolean;
+  /**
+   * With `post` failing: the server DID create the audit for that `Idempotency-Key` and only the answer was lost.
+   * The list then finds it by `request_key`, and a resend with the same key gets the same audit back.
+   */
+  readonly lostAnswer?: boolean;
+  /** `post` fails only the first time (the connection comes back for the resend). */
+  readonly postFailsOnce?: boolean;
 }
 
 export interface Run extends Scenario {
-  readonly state: { posts: number; streams: number; reads: number; settled: boolean };
+  /** `keys`: the `Idempotency-Key` of every POST, in order. */
+  readonly state: { posts: number; streams: number; reads: number; settled: boolean; keys: string[] };
 }
 
 const RUN_FIXTURES = {
@@ -433,10 +443,27 @@ const reId = <T extends { audit_id: string }>(body: T): T => ({ ...body, audit_i
  * once, kept on success, given back otherwise), the audit (queued, then final), the stream (frames, optionally
  * interrupted once) and the counters a test asserts on (how many POSTs, how many streams were opened).
  */
+/** The list row of an analysis created a moment ago. */
+function queuedSummary(): AuditSummary {
+  return {
+    audit_id: RUN_AUDIT_ID,
+    otodom_id: "ID4abcd",
+    status: "queued",
+    error_code: null,
+    created_at: new Date().toISOString(),
+    finished_at: null,
+    grade: null,
+    asking_price_pln: null,
+    max_bid_pln: null,
+  };
+}
+
 export function createRun(options: RunOptions = {}): Run {
   const kind = options.outcome ?? "succeeded";
   const fixtures = RUN_FIXTURES[kind];
-  const state = { posts: 0, streams: 0, reads: 0, settled: false };
+  const state = { posts: 0, streams: 0, reads: 0, settled: false, keys: [] as string[] };
+  /** Request keys the server has recorded an audit for (what `?request_key=` finds). */
+  const recorded = new Set<string>();
   const me = bodyOf<MeDetail>(fx("GET /api/me", "with_credits_and_flags"));
   const final = reId(bodyOf<AuditOut>(fx("GET /api/audits/{audit_id}", fixtures.audit)));
   const queued = reId(bodyOf<AuditOut>(fx("GET /api/audits/{audit_id}", "queued_not_yet_run")));
@@ -489,9 +516,17 @@ export function createRun(options: RunOptions = {}): Run {
     },
     {
       operation: "POST /api/audits",
-      reply: () => {
+      reply: (request) => {
         state.posts += 1;
-        if (options.post !== undefined) return options.post;
+        const key = request.headers["idempotency-key"] ?? "";
+        state.keys.push(key);
+        const failed =
+          options.post !== undefined &&
+          (options.postFailsOnce === true
+            ? state.posts === 1
+            : !(options.lostAnswer === true && recorded.has(key)));
+        if (options.lostAnswer === true || !failed) recorded.add(key);
+        if (failed && options.post !== undefined) return options.post;
         return {
           status: 202,
           body: {
@@ -517,13 +552,17 @@ export function createRun(options: RunOptions = {}): Run {
     { operation: "GET /api/audits/{audit_id}/events", reply: streamReply },
     {
       operation: "GET /api/audits",
-      reply: () =>
-        options.listFails === true
-          ? { status: 0, networkError: true }
-          : {
-              status: 200,
-              body: { items: options.listAfterPost ?? [], next_cursor: null } satisfies AuditPage,
-            },
+      reply: (request) => {
+        if (options.listFails === true) return { status: 0, networkError: true };
+        const key = request.url.searchParams.get("request_key");
+        const items =
+          key === null
+            ? (options.listAfterPost ?? [])
+            : recorded.has(key)
+              ? [{ ...queuedSummary(), audit_id: RUN_AUDIT_ID }]
+              : [];
+        return { status: 200, body: { items, next_cursor: null } satisfies AuditPage };
+      },
     },
   ];
   const base = scenario("run", "One analysis from the click to its end.", routes);

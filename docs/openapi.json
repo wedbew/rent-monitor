@@ -3311,6 +3311,25 @@
               "description": "Otodom id prefix",
               "title": "Q"
             }
+          },
+          {
+            "description": "the `Idempotency-Key` of a POST: did that exact request create an audit?",
+            "in": "query",
+            "name": "request_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "the `Idempotency-Key` of a POST: did that exact request create an audit?",
+              "title": "Request Key"
+            }
           }
         ],
         "responses": {
@@ -3384,6 +3403,27 @@
       },
       "post": {
         "operationId": "create_audit_api_audits_post",
+        "parameters": [
+          {
+            "description": "A UUID per submission. Repeating it returns the audit it created and never reserves again; used for a different listing it is 409 IDEMPOTENCY_CONFLICT.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A UUID per submission. Repeating it returns the audit it created and never reserves again; used for a different listing it is 409 IDEMPOTENCY_CONFLICT.",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3454,9 +3494,10 @@
                 }
               }
             },
-            "description": "Problem: AUDIT_IN_PROGRESS",
+            "description": "Problem: AUDIT_IN_PROGRESS, IDEMPOTENCY_CONFLICT",
             "x-problem-codes": [
-              "AUDIT_IN_PROGRESS"
+              "AUDIT_IN_PROGRESS",
+              "IDEMPOTENCY_CONFLICT"
             ]
           },
           "422": {

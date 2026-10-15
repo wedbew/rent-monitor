@@ -76,6 +76,9 @@ test.describe("new analysis", () => {
     await expect(page).toHaveURL(new RegExp(`/app/analyses/${RUN_AUDIT_ID}$`));
     expect(run.state.posts).toBe(1);
     expect(api.requests.filter((r) => r.method === "POST" && r.path === "/api/audits")).toHaveLength(1);
+    expect(run.state.keys[0]).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
   });
 
   test("pressing Enter in the field submits once", async ({ page, serve }) => {
@@ -156,22 +159,11 @@ test.describe("new analysis", () => {
     });
   });
 
-  test("a dropped connection that did reach the server is found in the list and not submitted twice", async ({
+  test("a dropped connection that did reach the server is found by its request key and not submitted twice", async ({
     page,
     serve,
   }) => {
-    const created = {
-      audit_id: RUN_AUDIT_ID,
-      otodom_id: "ID4abcd",
-      status: "queued" as const,
-      error_code: null,
-      created_at: new Date().toISOString(),
-      finished_at: null,
-      grade: null,
-      asking_price_pln: null,
-      max_bid_pln: null,
-    };
-    const run = createRun({ post: { status: 0, networkError: true }, listAfterPost: [created] });
+    const run = createRun({ post: { status: 0, networkError: true }, lostAnswer: true });
     const api = await serve(run);
     await page.goto("/app/analyses/new");
     await field(page).fill(LISTING);
@@ -179,7 +171,8 @@ test.describe("new analysis", () => {
     await expect(
       page.getByRole("status").filter({ hasText: "Analiza tego ogłoszenia już istnieje" }),
     ).toBeVisible();
-    expect(api.requests.some((r) => r.method === "GET" && r.path === "/api/audits")).toBe(true);
+    const lookup = api.requests.find((r) => r.method === "GET" && r.path === "/api/audits");
+    expect(lookup?.query).toContain(`request_key=${run.state.keys[0] ?? "missing"}`);
     expect(run.state.posts).toBe(1);
     await exercise("new.arrived", async () => {
       await page.getByRole("link", { name: "Zobacz postęp" }).click();
@@ -187,10 +180,13 @@ test.describe("new analysis", () => {
     });
   });
 
-  test("an unrelated recent analysis is not mistaken for the lost request", async ({ page, serve }) => {
-    const other = {
+  test("an earlier analysis of the same listing is not mistaken for the lost request; resending reuses its key", async ({
+    page,
+    serve,
+  }) => {
+    const earlier = {
       audit_id: "00000000-0000-4000-8000-0000000000b2",
-      otodom_id: "IDOTHER1",
+      otodom_id: "ID4abcd", // the same listing, analysed a moment ago by another request
       status: "running" as const,
       error_code: null,
       created_at: new Date().toISOString(),
@@ -199,12 +195,35 @@ test.describe("new analysis", () => {
       asking_price_pln: null,
       max_bid_pln: null,
     };
-    await serve(createRun({ post: { status: 0, networkError: true }, listAfterPost: [other] }));
+    const run = createRun({
+      post: { status: 0, networkError: true },
+      postFailsOnce: true,
+      listAfterPost: [earlier],
+    });
+    await serve(run);
     await page.goto("/app/analyses/new");
     await field(page).fill(LISTING);
     await submit(page).click();
-    await expect(page.getByRole("alert").filter({ hasText: "Nie wiemy, czy analiza ruszyła" })).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: "Analiza nie dotarła do serwera" })).toBeVisible();
     await expect(page.getByText("Analiza tego ogłoszenia już istnieje")).toHaveCount(0);
+
+    await submit(page).click(); // the connection is back: the same submission, the same key
+    await expect(page).toHaveURL(new RegExp(`/app/analyses/${RUN_AUDIT_ID}$`));
+    expect(run.state.posts).toBe(2);
+    expect(run.state.keys[1]).toBe(run.state.keys[0]);
+  });
+
+  test("a different listing after a lost answer is a new request with a new key", async ({ page, serve }) => {
+    const run = createRun({ post: { status: 0, networkError: true }, postFailsOnce: true });
+    await serve(run);
+    await page.goto("/app/analyses/new");
+    await field(page).fill(LISTING);
+    await submit(page).click();
+    await expect(page.getByRole("alert").filter({ hasText: "Analiza nie dotarła do serwera" })).toBeVisible();
+    await field(page).fill("https://www.otodom.pl/pl/oferta/inne-mieszkanie-ID9other");
+    await submit(page).click();
+    await expect(page).toHaveURL(new RegExp(`/app/analyses/${RUN_AUDIT_ID}$`));
+    expect(run.state.keys[1]).not.toBe(run.state.keys[0]);
   });
 
   test("when the list cannot be read either, the page says it does not know and does not guess", async ({
