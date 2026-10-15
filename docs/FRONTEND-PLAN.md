@@ -1,6 +1,6 @@
 # Frontend delivery plan
 
-**Status:** plan of record for Phase 2 (owner request, 2026-10-15, #262). FE-00 (#263, the API smoke test and sample capture) is implemented; UI implementation has not started; Phase 1 still
+**Status:** plan of record for Phase 2 (owner request, 2026-10-15, #262). FE-00 to FE-A3 (#263-#266: smoke test and samples, problem+json, audit paging, report schema) are merged; UI implementation has not started; Phase 1 still
 forbids `frontend/` until the owner authorises Phase 2 in #267 (FE-01). Delivery state stays in [`STATUS.md`](STATUS.md).
 
 Inputs: the V2 handoff ([implementation guide](../design/v2/implementation-guide.md), [design system](../design/v2/design-system.md),
