@@ -34,9 +34,16 @@ test.describe("the report", () => {
     page,
     serve,
     allowErrors,
+    browserName,
   }) => {
     // The chunk is aborted on purpose: the browser and React Router report it, and the page must still cope.
-    allowErrors(/Failed to load resource/, /Failed to fetch dynamically imported module/);
+    // What each engine logs for the aborted module (Firefox logs the error object without its text).
+    const expected: Record<string, RegExp[]> = {
+      chromium: [/Failed to load resource/, /Failed to fetch dynamically imported module/],
+      webkit: [/Importing a module script failed/],
+      firefox: [/^console\.error: JSHandle@object$/, /React Router caught the following error during render/],
+    };
+    allowErrors(...(expected[browserName] ?? []));
     await serve("loaded");
     const chunks: string[] = [];
     page.on("request", (request) => {

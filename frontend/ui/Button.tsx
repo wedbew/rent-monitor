@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import { Link, type LinkProps } from "react-router";
 
 import styles from "./Button.module.css";
@@ -38,6 +38,8 @@ export interface ButtonProps
   /** Shows progress and ignores clicks (no accidental double submit); the width does not change. */
   readonly busy?: boolean;
   readonly children: ReactNode;
+  /** React 19 passes `ref` as a prop: a dialog can return focus here (`Dialog` `finalFocus`). */
+  readonly ref?: Ref<HTMLButtonElement>;
 }
 
 export function Button({
