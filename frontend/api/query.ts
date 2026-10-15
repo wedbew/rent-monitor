@@ -45,13 +45,33 @@ export function createQueryClient(): QueryClient {
   });
 }
 
+/**
+ * Everything that belongs to the signed-in person lives under `["tenant", <user id>, ...]`. A request that was still
+ * in flight when the person changed can only ever write into the previous person's key, which nobody reads any more.
+ */
+export const TENANT = "tenant";
+
+export function tenantKey<const T extends readonly unknown[]>(userId: string, ...parts: T) {
+  return [TENANT, userId, ...parts] as const;
+}
+
+/** The analyses of whoever is signed in (lists, one analysis): asked again after anything that changes them. */
+export function invalidateAudits(client: QueryClient): Promise<void> {
+  return client.invalidateQueries({
+    predicate: (query) => query.queryKey[0] === TENANT && query.queryKey[2] === "audits",
+  });
+}
+
+/**
+ * Drop the person who just left: stop their requests (the query's signal aborts the HTTP request too), forget
+ * their mutations and every cached answer. The `keep` query (the session) is neither cancelled nor removed: its
+ * observers are subscribed to it, and it may be the very request that noticed the change.
+ */
 export function clearTenantState(client: QueryClient, keep?: QueryKey): void {
-  void client.cancelQueries();
+  const kept = (key: QueryKey) => keep !== undefined && key[0] === keep[0];
+  void client.cancelQueries({ predicate: (query) => !kept(query.queryKey) });
   client.getMutationCache().clear();
   for (const query of client.getQueryCache().getAll()) {
-    // `clear()` would also drop the session query that observers (the session boundary) are subscribed to, leaving
-    // them watching a removed query; every other cache entry belongs to the person who just left.
-    if (keep === undefined || query.queryKey[0] !== keep[0])
-      client.removeQueries({ queryKey: query.queryKey, exact: true });
+    if (!kept(query.queryKey)) client.removeQueries({ queryKey: query.queryKey, exact: true });
   }
 }

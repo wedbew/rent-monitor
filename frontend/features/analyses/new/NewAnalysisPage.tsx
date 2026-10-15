@@ -5,8 +5,10 @@ import { Link } from "react-router";
 import { formatReports } from "../../../api/format";
 import { ApiError } from "../../../api/errors";
 import { describeProblem } from "../../../api/problems";
+import { invalidateAudits } from "../../../api/query";
 import { PageHeading } from "../../../shell/PageHeading";
 import { useMe } from "../../../shell/session";
+import { isCurrentSession } from "../../../shell/tenant";
 import { Button, LinkButton } from "../../../ui/Button";
 import { Dialog } from "../../../ui/Dialog";
 import { TextField } from "../../../ui/Field";
@@ -14,7 +16,12 @@ import { FormErrorSummary } from "../../../ui/FormErrors";
 import { InlineNotice } from "../../../ui/Status";
 import { ProblemNotice } from "../../auth/ProblemNotice";
 import { readFailure, retryIn } from "../../auth/forms";
-import { reconcileAfterAmbiguousFailure, type Reconciled, useCreateAudit } from "./useCreateAudit";
+import {
+  reconcileAfterAmbiguousFailure,
+  type Reconciled,
+  submission,
+  useCreateAudit,
+} from "./useCreateAudit";
 import styles from "./NewAnalysisPage.module.css";
 
 export const MAX_LISTING_REF = 300; // rm_contracts.audits.MAX_LISTING_REF
@@ -63,11 +70,13 @@ export function NewAnalysisPage() {
     setReconciled(null);
     if (problem !== null) return;
     const startedAt = Date.now();
-    create.mutate(value.trim(), {
+    const submitted = submission(value.trim());
+    create.mutate(submitted, {
       onError: (error) => {
         if (error instanceof ApiError && error.code === "QUOTA_EXHAUSTED") setPaywall(true);
+        if (!isCurrentSession(submitted.generation)) return;
         void reconcileAfterAmbiguousFailure(error, value, startedAt).then(setReconciled);
-        void client.invalidateQueries({ queryKey: ["audits"] });
+        void invalidateAudits(client);
       },
     });
   }

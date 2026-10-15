@@ -224,7 +224,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Status:** active
 - **Discovered:** 2026-10-15
 - **Affects:** `frontend/shell/session.tsx`, `AccountBlock.tsx`, tenant query cache and progress streams
-- **Evidence:** confirmed in code and a focused Vitest reproduction: `/api/me` revalidation returning 401 renders signed out without invoking tenant cleanup or removing cached audits. Failed sign-out also ends local state even when server revocation is unconfirmed.
+- **Evidence:** confirmed in code and a focused Vitest reproduction. **RM-301 (2026-10-15):** expiry, account switch and late answers now purge through one door (`shell/sessionTransitions.test.tsx`); the failed sign-out part remains (#302).
 - **Description:** Session revalidation and changes of authenticated identity do not all pass through a cleanup boundary. Prior tenant queries can survive expiry/account switching; a failed sign-out may leave a valid cookie that restores the session. Browser-cache exposure is established; no backend authorization bypass was demonstrated. See frontend audit F02–F03 and F10.
 - **Workaround:** Do not treat a failed network sign-out as confirmed revocation. Reloading clears in-memory query data but does not revoke a server session.
 - **Target:** #301 (session cleanup/cancellation), #302 (failed sign-out), before release #286; regression tests and remediation in `frontend/docs/AUDIT-2026-10-15.md`, tracker #314. Re-verified open on `staging` `5444eb8` (audit re-verification section).

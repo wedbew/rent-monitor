@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { api, unwrap } from "../../../api/client";
 import { TransportError } from "../../../api/errors";
 import { refreshAccount } from "../../../shell/session";
+import { isCurrentSession, sessionGeneration } from "../../../shell/tenant";
 import type { AuditPage } from "../queries";
 
 /**
@@ -15,15 +16,31 @@ export function useCreateAudit() {
   const client = useQueryClient();
   const navigate = useNavigate();
   return useMutation({
-    mutationFn: async (listingRef: string) =>
-      unwrap(
+    // The session generation is read at the click (`submission`), not here: the library starts this a tick later,
+    // by when a sign-out may already have happened.
+    mutationFn: async ({ listingRef, generation }: Submission) => {
+      const accepted = unwrap(
         await api.POST("/api/audits", { body: { listing_ref: listingRef, lang: "pl", analyst: false } }),
-      ),
-    onSuccess: (accepted) => {
+      );
+      return { accepted, generation };
+    },
+    onSuccess: ({ accepted, generation }) => {
+      // An answer that arrives after the person signed out (or somebody else signed in) belongs to nobody here.
+      if (!isCurrentSession(generation)) return;
       refreshAccount(client); // the reserved report shows in the balance, from the server
       void navigate(`/app/analyses/${accepted.audit_id}`);
     },
   });
+}
+
+export interface Submission {
+  readonly listingRef: string;
+  readonly generation: number;
+}
+
+/** What one click submits: the reference and the session it was made in. */
+export function submission(listingRef: string): Submission {
+  return { listingRef, generation: sessionGeneration() };
 }
 
 export type Reconciled = { readonly found: { readonly auditId: string } } | { readonly unknown: true };
@@ -50,8 +67,11 @@ export async function reconcileAfterAmbiguousFailure(
     return null;
   const id = otodomIdOf(listingRef);
   if (id === null) return { unknown: true };
+  const generation = sessionGeneration();
   try {
     const page: AuditPage = unwrap(await api.GET("/api/audits", { params: { query: { limit: 10 } } }));
+    // A list read after the session changed is somebody else's: it says nothing about this request.
+    if (!isCurrentSession(generation)) return null;
     const created = page.items.find((a) => a.otodom_id === id && Date.parse(a.created_at) >= since - 300_000);
     return created === undefined ? { unknown: true } : { found: { auditId: created.audit_id } };
   } catch {

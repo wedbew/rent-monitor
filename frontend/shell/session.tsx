@@ -4,13 +4,13 @@ import { Navigate, Outlet, useLocation } from "react-router";
 
 import { api, unwrap } from "../api/client";
 import { ApiError } from "../api/errors";
-import { clearTenantState } from "../api/query";
+import { clearTenantState, invalidateAudits } from "../api/query";
 import type { components } from "../api/schema.generated";
 import { onSessionExpired } from "../api/session-events";
 import { Button } from "../ui/Button";
 import { InlineNotice } from "../ui/Status";
 import { onSessionSignal, sendSessionSignal } from "./sessionBus";
-import { runTenantCleanups } from "./tenant";
+import { advanceSessionGeneration, runTenantCleanups } from "./tenant";
 import styles from "./session.module.css";
 
 export type Me = components["schemas"]["MeDetailOut"];
@@ -20,10 +20,26 @@ export const SESSION_KEY = ["session"] as const;
 /** Whether the person chose to sign out (then the sign-in page does not offer to go back where they were). */
 const SESSION_ENDED_KEY = ["session", "ended-by-choice"] as const;
 
-async function fetchMe(): Promise<Me | null> {
-  const result = await api.GET("/api/me");
-  if (result.response.status === 401) return null;
-  return unwrap(result);
+/**
+ * The one door every change of person goes through: a 401 here, another tab's sign-in, a sign-in in this tab. When
+ * the answer is somebody else (or nobody) the previous person's state is purged BEFORE the answer is stored, so no
+ * component ever renders the new person next to the old person's cache.
+ */
+function sessionQueryFn(client: QueryClient) {
+  return async ({ signal }: { readonly signal: AbortSignal }): Promise<Me | null> => {
+    const result = await api.GET("/api/me", { signal });
+    const next = result.response.status === 401 ? null : unwrap(result);
+    const previous = client.getQueryData<Me | null>(SESSION_KEY);
+    if (previous !== undefined && previous !== null && previous.id !== next?.id) purgeTenant(client);
+    return next;
+  };
+}
+
+/** Close streams and release resources, forget every tenant answer and mutation, and make earlier work late. */
+function purgeTenant(client: QueryClient): void {
+  advanceSessionGeneration();
+  runTenantCleanups();
+  clearTenantState(client, SESSION_KEY);
 }
 
 export type SessionState =
@@ -36,8 +52,8 @@ const SessionContext = createContext<SessionState>({ status: "loading" });
 
 /** End the session in this tab: close streams and release media, empty every tenant cache, show signed out. */
 export function endSession(client: QueryClient, options: { readonly deliberate?: boolean } = {}): void {
-  runTenantCleanups();
-  clearTenantState(client, SESSION_KEY);
+  void client.cancelQueries({ queryKey: SESSION_KEY });
+  purgeTenant(client);
   client.setQueryData(SESSION_ENDED_KEY, options.deliberate === true);
   client.setQueryData(SESSION_KEY, null);
 }
@@ -49,7 +65,7 @@ export function endSession(client: QueryClient, options: { readonly deliberate?:
  */
 export async function startSession(client: QueryClient): Promise<void> {
   client.setQueryData(SESSION_ENDED_KEY, false);
-  await client.fetchQuery({ queryKey: SESSION_KEY, queryFn: fetchMe, staleTime: 0 });
+  await client.fetchQuery({ queryKey: SESSION_KEY, queryFn: sessionQueryFn(client), staleTime: 0 });
   sendSessionSignal("signed-in");
 }
 
@@ -59,7 +75,7 @@ export async function startSession(client: QueryClient): Promise<void> {
  */
 export function refreshAccount(client: QueryClient): void {
   refreshBalance(client);
-  void client.invalidateQueries({ queryKey: ["audits"] });
+  void invalidateAudits(client);
 }
 
 /** Only the profile (balance, flags, Otodom state): safe to call from inside a query function of `["audits", ...]`. */
@@ -71,7 +87,7 @@ export function SessionProvider({ children }: { readonly children: ReactNode }) 
   const client = useQueryClient();
   const query = useQuery({
     queryKey: SESSION_KEY,
-    queryFn: fetchMe,
+    queryFn: sessionQueryFn(client),
     // The session is the one thing worth checking when the tab comes back: a revoked session should be noticed.
     refetchOnWindowFocus: true,
     staleTime: 10_000,
@@ -81,6 +97,7 @@ export function SessionProvider({ children }: { readonly children: ReactNode }) 
     const offExpired = onSessionExpired(() => endSession(client));
     const offSignal = onSessionSignal((signal) => {
       if (signal === "signed-out") endSession(client);
+      // Possibly somebody else: the session query compares the id and purges before the new person shows.
       else void client.invalidateQueries({ queryKey: SESSION_KEY });
     });
     return () => {

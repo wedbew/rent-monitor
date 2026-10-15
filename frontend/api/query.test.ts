@@ -5,10 +5,12 @@ import {
   clearTenantState,
   createQueryClient,
   DEFAULT_STALE_MS,
+  invalidateAudits,
   isTransient,
   MAX_READ_RETRIES,
   retryDelayMs,
   shouldRetryRead,
+  tenantKey,
 } from "./query";
 
 describe("query defaults", () => {
@@ -53,5 +55,42 @@ describe("query defaults", () => {
     client.setQueryData(["me"], { id: "a" });
     clearTenantState(client);
     expect(client.getQueryCache().getAll()).toHaveLength(0);
+  });
+
+  it("keeps the session query, and never cancels it: it may be the read that noticed the change", async () => {
+    const client = createQueryClient();
+    let sessionAborted = false;
+    const session = client.fetchQuery({
+      queryKey: ["session"],
+      queryFn: ({ signal }) =>
+        new Promise<string>((resolve) => {
+          signal.addEventListener("abort", () => (sessionAborted = true));
+          setTimeout(() => resolve("someone"), 5);
+        }),
+    });
+    client.setQueryData(tenantKey("a", "audits", "recent"), { items: [1] });
+    clearTenantState(client, ["session"]);
+    await expect(session).resolves.toBe("someone");
+    expect(sessionAborted).toBe(false);
+    expect(client.getQueryData(tenantKey("a", "audits", "recent"))).toBeUndefined();
+    expect(client.getQueryData(["session"])).toBe("someone");
+  });
+});
+
+describe("tenant keys", () => {
+  it("put every tenant answer under the person's id", () => {
+    expect(tenantKey("u1", "audits", "one", "x")).toEqual(["tenant", "u1", "audits", "one", "x"]);
+  });
+
+  it("invalidateAudits marks the analyses stale, and nothing else", async () => {
+    const client = createQueryClient();
+    client.setQueryData(tenantKey("u1", "audits", "recent", 5), { items: [] });
+    client.setQueryData(tenantKey("u1", "purchases"), { items: [] });
+    client.setQueryData(["session"], { id: "u1" });
+    await invalidateAudits(client);
+    const stale = (key: readonly unknown[]) => client.getQueryState(key)?.isInvalidated;
+    expect(stale(tenantKey("u1", "audits", "recent", 5))).toBe(true);
+    expect(stale(tenantKey("u1", "purchases"))).toBe(false);
+    expect(stale(["session"])).toBe(false);
   });
 });
