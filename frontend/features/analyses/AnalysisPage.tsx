@@ -13,6 +13,7 @@ import { InlineNotice } from "../../ui/Status";
 import { useAudit } from "./queries";
 import { stageLabel } from "./progress/frames";
 import type { Connection } from "./progress/streams";
+import { formatPercent } from "../../api/format";
 import { parseReport } from "../../api/report";
 import { ReportView } from "./report/ReportView";
 import { useAuditProgress } from "./progress/useAuditProgress";
@@ -155,7 +156,7 @@ function Analysis({ auditId }: { readonly auditId: string }) {
             </InlineNotice>
           ) : null}
           <p className={styles["pct"]} aria-hidden="true">
-            {progress.pct !== null ? `${progress.pct}%` : "…"}
+            {progress.pct !== null ? formatPercent(progress.pct) : "…"}
           </p>
           <div
             className={styles["bar"]}

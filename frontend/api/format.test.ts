@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  createNumberFormat,
   formatAnalyses,
+  formatCount,
+  formatPercent,
   formatArea,
   formatDate,
   formatDateTime,
@@ -125,5 +128,74 @@ describe("Polish plurals", () => {
   it("formats counts", () => {
     expect(formatReports(5)).toBe(`5${NBSP}raportów`);
     expect(formatAnalyses(2)).toBe(`2${NBSP}analizy`);
+  });
+});
+
+/**
+ * Audit F07 and F16: every displayed number goes through Intl for its layout, digits stay exact, and bad input
+ * never throws, never gets a unit and never shows a raw number.
+ */
+describe("Intl layout with exact digits", () => {
+  it("groups counts like every other number and picks the Polish plural form", () => {
+    expect(formatReports(1234)).toBe(`1${NBSP}234${NBSP}raporty`);
+    expect(formatAnalyses(1)).toBe(`1${NBSP}analiza`);
+    for (const [count, form] of [
+      [12, "raportów"],
+      [22, "raporty"],
+      [112, "raportów"],
+      [1_000_002, "raporty"],
+    ] as const)
+      expect(formatReports(count)).toMatch(new RegExp(`${NBSP}${form}$`));
+    expect(formatCount(1_000_000)).toBe(`1${NBSP}000${NBSP}000`);
+  });
+
+  it("refuses a count that is not a whole number instead of printing it raw", () => {
+    for (const bad of [Number.NaN, Number.POSITIVE_INFINITY, 1.5, 2 ** 60]) {
+      expect(formatCount(bad)).toBe(NOT_COMPUTED);
+      expect(formatReports(bad)).toBe(NOT_COMPUTED);
+    }
+  });
+
+  it("formats whole percentages for progress", () => {
+    expect(formatPercent(0)).toBe("0%");
+    expect(formatPercent(35)).toBe("35%");
+    expect(formatPercent(100)).toBe("100%");
+    expect(formatPercent(Number.NaN)).toBe(NOT_COMPUTED);
+  });
+
+  it("never puts a unit on an unknown or unreadable area", () => {
+    expect(formatArea("abc")).toBe(NOT_COMPUTED);
+    expect(formatArea("")).toBe(NOT_COMPUTED);
+    expect(formatArea("1e3")).toBe(NOT_COMPUTED);
+  });
+
+  it("accepts only bounded integer precision and never throws on another", () => {
+    for (const digits of [Number.NaN, -1, 2.5, 99, Number.POSITIVE_INFINITY]) {
+      expect(() => formatRatio("0.0734", digits)).not.toThrow();
+      expect(formatRatio("0.0734", digits)).toBe("7,3%");
+      expect(formatDecimal("74.95", digits)).toBe("74,95");
+    }
+    expect(formatRatio("0.0734", 0)).toBe("7%");
+    expect(formatRatio("0.07345678", 6)).toBe("7,345678%");
+  });
+
+  it("refuses an absurdly long input instead of doing unbounded work", () => {
+    expect(formatMoney("9".repeat(65))).toBe(NOT_COMPUTED);
+    expect(formatMoney("9".repeat(60))).toMatch(/zł$/);
+  });
+
+  it("negative zero rounds to plain zero in every style", () => {
+    expect(formatRatio("-0.00001")).toBe("0,0%");
+    expect(formatDecimal("-0.001")).toBe("0");
+  });
+
+  it("takes separators, symbols and their order from the locale (a second locale)", () => {
+    const en = createNumberFormat("en-US");
+    expect(en.compose("currency", true, 123456n, 2)).toBe(`${MINUS}PLN${NBSP}1,234.56`);
+    expect(en.compose("percent", false, 73n, 1)).toBe("7.3%");
+    expect(en.compose("decimal", false, 1234567n, 3)).toBe("1,234.567");
+    expect(en.plural(1, ["one", "few", "many"])).toBe("one");
+    expect(en.plural(3, ["one", "few", "many"])).toBe("many"); // English has no "few"
+    expect(en.formatCount(1234)).toBe("1,234");
   });
 });

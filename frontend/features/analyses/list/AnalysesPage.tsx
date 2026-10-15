@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router";
 
 import { ApiError, TransportError } from "../../../api/errors";
 import { describeProblem, describeTransport } from "../../../api/problems";
-import { formatAnalyses, formatDate, formatMoney, NOT_COMPUTED } from "../../../api/format";
+import { formatAnalyses, formatDate, formatMoney, NOT_COMPUTED, formatCount } from "../../../api/format";
 import { PageHeading } from "../../../shell/PageHeading";
 import { Button, LinkButton } from "../../../ui/Button";
 import { TextField } from "../../../ui/Field";
@@ -264,7 +264,7 @@ export function AnalysesPage() {
                 Załaduj więcej
               </Button>
             ) : (
-              <span className={styles["count"]}>To wszystkie analizy ({items.length}).</span>
+              <span className={styles["count"]}>To wszystkie analizy ({formatCount(items.length)}).</span>
             )}
           </div>
         </>

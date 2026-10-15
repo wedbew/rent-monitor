@@ -67,14 +67,14 @@ describe("weak password reasons", () => {
 
 describe("retryIn", () => {
   it.each([
-    [1, "za 1 sekundę"],
-    [2, "za 2 sekundy"],
-    [5, "za 5 sekund"],
-    [42, "za 42 sekundy"],
-    [89, "za 89 sekund"],
-    [90, "za 2 minuty"],
-    [300, "za 5 minut"],
-    [3600, "za 60 minut"],
+    [1, "za 1\u00a0sekundę"],
+    [2, "za 2\u00a0sekundy"],
+    [5, "za 5\u00a0sekund"],
+    [42, "za 42\u00a0sekundy"],
+    [89, "za 89\u00a0sekund"],
+    [90, "za 2\u00a0minuty"],
+    [300, "za 5\u00a0minut"],
+    [3600, "za 60\u00a0minut"],
   ])("%i s -> %s", (seconds, text) => {
     expect(retryIn(seconds)).toBe(text);
   });

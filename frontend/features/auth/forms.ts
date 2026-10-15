@@ -1,7 +1,7 @@
 import { ApiError } from "../../api/errors";
 import { describeProblem, describeTransport, type DescribedProblem } from "../../api/problems";
 import { TransportError } from "../../api/errors";
-import { plural } from "../../api/format";
+import { formatCount, formatCounted } from "../../api/format";
 
 /** Loose on purpose: delivery is the real check, the server is authoritative (rm_contracts EMAIL_PATTERN). */
 const EMAIL =
@@ -20,8 +20,10 @@ export function emailError(value: string): string | null {
 
 export function newPasswordError(value: string): string | null {
   if (value === "") return "Wpisz hasło.";
-  if ([...value].length < PASSWORD_MIN) return `Hasło musi mieć co najmniej ${PASSWORD_MIN} znaków.`;
-  if ([...value].length > PASSWORD_MAX) return `Hasło może mieć najwyżej ${PASSWORD_MAX} znaków.`;
+  if ([...value].length < PASSWORD_MIN)
+    return `Hasło musi mieć co najmniej ${formatCount(PASSWORD_MIN)} znaków.`;
+  if ([...value].length > PASSWORD_MAX)
+    return `Hasło może mieć najwyżej ${formatCount(PASSWORD_MAX)} znaków.`;
   return null;
 }
 
@@ -31,8 +33,8 @@ export function currentPasswordError(value: string): string | null {
 
 /** The API's closed vocabulary for `WEAK_PASSWORD.reason` (services/rm_api/auth/passwords.py). */
 const REASONS: Record<string, string> = {
-  too_short: `Hasło jest za krótkie: użyj co najmniej ${PASSWORD_MIN} znaków.`,
-  too_long: `Hasło jest za długie: użyj najwyżej ${PASSWORD_MAX} znaków.`,
+  too_short: `Hasło jest za krótkie: użyj co najmniej ${formatCount(PASSWORD_MIN)} znaków.`,
+  too_long: `Hasło jest za długie: użyj najwyżej ${formatCount(PASSWORD_MAX)} znaków.`,
   common: "To hasło jest zbyt popularne. Wybierz inne, najlepiej kilka słów.",
   contains_email: "Hasło nie może zawierać Twojego adresu e-mail.",
 };
@@ -47,9 +49,9 @@ export function weakPasswordMessage(reason: unknown): string {
 
 /** "za 42 sekundy", "za 2 minuty": how long until a throttled action may be retried. */
 export function retryIn(seconds: number): string {
-  if (seconds < 90) return `za ${seconds} ${plural(seconds, ["sekundę", "sekundy", "sekund"])}`;
+  if (seconds < 90) return `za ${formatCounted(seconds, ["sekundę", "sekundy", "sekund"])}`;
   const minutes = Math.ceil(seconds / 60);
-  return `za ${minutes} ${plural(minutes, ["minutę", "minuty", "minut"])}`;
+  return `za ${formatCounted(minutes, ["minutę", "minuty", "minut"])}`;
 }
 
 export interface FailedSubmit {
