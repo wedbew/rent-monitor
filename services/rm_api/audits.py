@@ -8,6 +8,10 @@ LEGAL[url-analysis]: accepts a user-supplied listing URL or id; only the parsed 
 LEGAL[republication]: the stored result echoes third-party listing fields to the requesting tenant (RM-184).
 """
 
+import base64
+import binascii
+import json
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID, uuid4
 
@@ -19,6 +23,7 @@ from rm_contracts.audits import (
     AuditAccepted,
     AuditCreate,
     AuditOut,
+    AuditPage,
     AuditState,
     AuditSummary,
     ChargeStateName,
@@ -28,7 +33,7 @@ from rm_core.db.models import Audit, AuditStatus, ChargeSource, ChargeState, Lis
 from rm_core.entitlements import load_entitlements
 from rm_core.ledger import BillingHoldError, record_reservation, reserve
 from rm_core.listing_ref import InvalidListingRefError, parse_listing_ref
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -169,19 +174,61 @@ async def create_audit(
     )
 
 
-@router.get("", response_model=list[AuditSummary])
+def _encode_cursor(a: Audit) -> str:
+    raw = json.dumps([a.created_at.isoformat(), str(a.id)], separators=(",", ":")).encode()
+    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
+
+
+def _decode_cursor(cursor: str) -> tuple[datetime, UUID]:
+    """Strict: anything that is not exactly what `_encode_cursor` makes is a 422, never a 500 or a guess."""
+    try:
+        raw = base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4))
+        stamp, ident = json.loads(raw)
+        at = datetime.fromisoformat(stamp)
+        if at.tzinfo is None or not isinstance(ident, str):
+            raise ValueError
+        return at, UUID(ident)
+    except (ValueError, TypeError, binascii.Error):
+        raise Problem(
+            422,
+            ProblemCode.VALIDATION_ERROR,
+            "Invalid cursor",
+            errors=[
+                {"loc": ["query", "cursor"], "type": "invalid_cursor", "msg": "Not a cursor from this API"}
+            ],
+        ) from None
+
+
+@router.get("", response_model=AuditPage)
 async def list_audits(
-    db: SessionDep, principal: PrincipalDep, limit: Annotated[int, Query(ge=1, le=100)] = 50
-) -> list[AuditSummary]:
-    rows = (
-        await db.scalars(
-            select(Audit)
-            .where(Audit.user_id == principal.user_id)
-            .order_by(Audit.created_at.desc(), Audit.id)
-            .limit(limit)
-        )
-    ).all()
-    return [_summary(a) for a in rows]
+    db: SessionDep,
+    principal: PrincipalDep,
+    *,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    cursor: Annotated[
+        str | None, Query(max_length=200, description="`next_cursor` of the previous page")
+    ] = None,
+    status: Annotated[list[AuditState] | None, Query(description="repeat to match any of several")] = None,
+    grade: Annotated[str | None, Query(pattern=r"^[A-Za-z][+-]?$", max_length=2)] = None,
+    q: Annotated[str | None, Query(pattern=r"^[A-Za-z0-9]{1,16}$", description="Otodom id prefix")] = None,
+) -> AuditPage:
+    """The caller's audits, newest first, by keyset over `(created_at, id)`: a row inserted between two
+    requests never repeats or skips a row. Another user's cursor only ever pages the caller's own rows."""
+    stmt = select(Audit).where(Audit.user_id == principal.user_id)
+    if status:
+        stmt = stmt.where(Audit.status.in_([AuditStatus(s.value) for s in status]))
+    if grade is not None:
+        stmt = stmt.where(Audit.grade == grade.upper())
+    if q is not None:
+        stmt = stmt.where(Audit.otodom_id.ilike(f"{q}%"))  # q is alphanumeric only (pattern above)
+    if cursor is not None:
+        at, ident = _decode_cursor(cursor)
+        stmt = stmt.where(or_(Audit.created_at < at, and_(Audit.created_at == at, Audit.id < ident)))
+    rows = (await db.scalars(stmt.order_by(Audit.created_at.desc(), Audit.id.desc()).limit(limit + 1))).all()
+    page = rows[:limit]
+    return AuditPage(
+        items=[_summary(a) for a in page], next_cursor=_encode_cursor(page[-1]) if len(rows) > limit else None
+    )
 
 
 @router.get("/{audit_id}", response_model=AuditOut)

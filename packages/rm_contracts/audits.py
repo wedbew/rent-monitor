@@ -79,6 +79,16 @@ class AuditOut(BaseModel):
     )
 
 
+class AuditPage(BaseModel):
+    """One page of the caller's audits, newest first. There is deliberately no total: an exact count under
+    filters is a scan per request, and a cursor is all a list needs."""
+
+    items: list["AuditSummary"]
+    next_cursor: str | None = Field(
+        description="opaque; pass it back as `cursor` for the next page. null: this was the last page"
+    )
+
+
 class AuditSummary(BaseModel):
     """List row: the same fields without the full result."""
 

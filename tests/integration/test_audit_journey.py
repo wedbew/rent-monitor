@@ -302,8 +302,9 @@ async def test_a_signed_in_user_gets_a_persisted_canonical_result(
     assert h.ctx.calls == ["rent_input", "risk_free_rate"]
 
     listed = (await c.get("/api/audits")).json()
-    assert [row["audit_id"] for row in listed] == [audit_id]
-    assert "result" not in listed[0]
+    assert [row["audit_id"] for row in listed["items"]] == [audit_id]
+    assert listed["next_cursor"] is None
+    assert "result" not in listed["items"][0]
 
 
 async def test_two_users_auditing_one_listing_cost_one_fetch(
@@ -422,7 +423,7 @@ async def test_another_users_audit_is_a_404_indistinguishable_from_unknown(
     foreign, unknown = await b.get(f"/api/audits/{audit_id}"), await b.get(f"/api/audits/{uuid4()}")
     assert foreign.status_code == unknown.status_code == 404
     assert foreign.json()["code"] == unknown.json()["code"] == "NOT_FOUND"
-    assert (await b.get("/api/audits")).json() == []
+    assert (await b.get("/api/audits")).json() == {"items": [], "next_cursor": None}
     assert (await a.get(f"/api/audits/{audit_id}")).status_code == 200
     # B may analyse the same listing: A's active or finished audit does not block or reveal anything.
     assert (await submit(b, ref)).status_code == 202
