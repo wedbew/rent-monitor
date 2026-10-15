@@ -36,8 +36,6 @@ differs from `.node-version`.
 | `pnpm check:dist`                   | `dist/` contains no mock or test tooling                                                                                                                                                                                         |
 | `pnpm check`                        | All of the above in order                                                                                                                                                                                                        |
 
-Storybook (#270) is added by its slice.
-
 ## Environment
 
 The browser always calls relative `/api` URLs. There are no runtime variables in the bundle yet; **every `VITE_*` value
