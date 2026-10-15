@@ -19,6 +19,10 @@ for (const appPage of PAGES) {
       await serve(scenario);
       await page.goto(appPage.path);
       await expect(page.getByRole("heading", { level: 1, name: appPage.heading })).toBeVisible();
+      await expect(
+        page.locator("[aria-busy=true]"),
+        "loading regions settle before the inventory",
+      ).toHaveCount(0);
 
       expect(
         (
@@ -80,6 +84,7 @@ for (const appPage of PAGES) {
       await page.goto(pageState.path ?? appPage.path);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await pageState.prepare(page);
+      await expect(page.locator("[aria-busy=true]")).toHaveCount(0);
       const scope = {
         page: appPage.id,
         scenario: String(pageState.scenario),

@@ -42,11 +42,24 @@ export function endSession(client: QueryClient, options: { readonly deliberate?:
   client.setQueryData(SESSION_KEY, null);
 }
 
-/** A session started in this tab (sign-in, sign-up verification): remember who, tell the other tabs. */
-export function startSession(client: QueryClient, me: Me | components["schemas"]["MeOut"]): void {
+/**
+ * A session started in this tab (sign-in, sign-up verification). The sign-in routes answer with a short profile
+ * (`MeOut`); the app needs the full one (balance, flags, Otodom state), so it is fetched BEFORE anyone navigates:
+ * the private routes never see a half-filled session, and never bounce a freshly signed-in person back to sign-in.
+ */
+export async function startSession(client: QueryClient): Promise<void> {
   client.setQueryData(SESSION_ENDED_KEY, false);
-  client.setQueryData(SESSION_KEY, me);
+  await client.fetchQuery({ queryKey: SESSION_KEY, queryFn: fetchMe, staleTime: 0 });
   sendSessionSignal("signed-in");
+}
+
+/**
+ * The balance and the lists belong to the server: after anything that changes them (an analysis settled, a pack
+ * granted) ask again instead of adding or subtracting locally.
+ */
+export function refreshAccount(client: QueryClient): void {
+  void client.invalidateQueries({ queryKey: SESSION_KEY });
+  void client.invalidateQueries({ queryKey: ["audits"] });
 }
 
 export function SessionProvider({ children }: { readonly children: ReactNode }) {

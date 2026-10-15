@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
 
+import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { EmailLinkPage, VerifySignupPage } from "./features/auth/LinkPages";
 import { LoginPage } from "./features/auth/LoginPage";
 import { ForgotPasswordPage, ResetPasswordPage } from "./features/auth/PasswordPages";
@@ -80,7 +81,11 @@ export const routes: RouteObject[] = [
               {
                 errorElement: <RouteError />,
                 children: [
-                  pending("dashboard", "/app"),
+                  { path: "/app", element: <DashboardPage /> },
+                  {
+                    path: "/app/credits",
+                    element: <PendingPage title="Raporty i zakupy" availability="building" />,
+                  },
                   pending("new-analysis", "/app/analyses/new"),
                   pending("analyses", "/app/analyses"),
                   {

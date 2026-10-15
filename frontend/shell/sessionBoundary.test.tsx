@@ -174,20 +174,16 @@ describe("ending a session", () => {
     expect(await screen.findByText("formularz logowania")).toBeInTheDocument();
   });
 
-  it("startSession stores the person and a later sign-out is not 'deliberate' until chosen", async () => {
-    useScenario(createAuthFlow());
+  it("startSession fetches the full profile before anyone navigates", async () => {
+    const flow = createAuthFlow();
+    useScenario(flow);
     const { client } = renderApp("/login");
     await screen.findByText("formularz logowania");
-    const me = {
-      id: "1",
-      email: "a@example.test",
-      name: "Anna",
-      avatar_url: null,
-      role: "user",
-      email_verified: true,
-    };
-    act(() => startSession(client, me));
-    expect(client.getQueryData(SESSION_KEY)).toEqual(me);
+    flow.state.signedIn = true; // the sign-in call succeeded
+    await act(async () => startSession(client));
+    const data = client.getQueryData<{ upstream: unknown; credit_balance: number }>(SESSION_KEY);
+    expect(data?.credit_balance).toBe(7); // the detailed profile, not the short sign-in answer
+    expect(data?.upstream).toBeDefined();
   });
 });
 

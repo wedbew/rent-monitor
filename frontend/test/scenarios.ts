@@ -30,6 +30,8 @@ export interface Reply {
   readonly headers?: Readonly<Record<string, string>>;
   /** The request fails before any answer, like a dropped connection. */
   readonly networkError?: true;
+  /** Answer after this many milliseconds (a loading state worth looking at). */
+  readonly delayMs?: number;
 }
 
 export interface Route {
@@ -103,7 +105,13 @@ function page(audits: readonly AuditOut[]): AuditPage {
 
 function auditRoutes(audits: readonly AuditOut[]): Route[] {
   return [
-    { operation: "GET /api/audits", reply: { status: 200, body: page(audits) } },
+    {
+      operation: "GET /api/audits",
+      reply: (request) => {
+        const limit = Number(request.url.searchParams.get("limit") ?? "50");
+        return { status: 200, body: { ...page(audits), items: page(audits).items.slice(0, limit) } };
+      },
+    },
     {
       operation: "GET /api/audits/{audit_id}",
       reply: (request) => {
@@ -133,7 +141,7 @@ export const EMPTY_PAGE: Route = {
 };
 
 /** Routes any signed-in screen needs. A scenario replaces a route by repeating its operation. */
-const SIGNED_IN: readonly Route[] = [me("with_credits_and_flags"), PACKS, SAVED_EMPTY];
+const SIGNED_IN: readonly Route[] = [me("with_credits_and_flags"), PACKS, SAVED_EMPTY, EMPTY_PAGE];
 
 function scenario(
   name: string,
@@ -144,6 +152,31 @@ function scenario(
   const replaced = new Set(routes.map((r) => r.operation));
   return { name, description, routes: [...routes, ...base.filter((r) => !replaced.has(r.operation))] };
 }
+
+const MIXED_SCENARIOS = [
+  "queued_not_yet_run",
+  "succeeded_degraded",
+  "rejected_rent_is_not_a_deal",
+  "failed_upstream_blocked",
+  "failed_input_listing_gone",
+  "succeeded_krakow",
+] as const;
+
+/** Six analyses in six different states, newest first: what a real, busy account looks like. */
+export const MIXED_AUDITS: readonly AuditOut[] = MIXED_SCENARIOS.map((name, i) =>
+  stamped(bodyOf<AuditOut>(fx("GET /api/audits/{audit_id}", name)), i),
+);
+
+const NOT_READY = {
+  type: "urn:rentmonitor:problem:NOT_READY",
+  title: "Service not ready",
+  status: 503,
+  code: "NOT_READY",
+  instance: "/api/audits",
+  detail: null,
+  errors: null,
+  request_id: "req_fixture",
+};
 
 export const SCENARIOS = {
   firstVisit: scenario(
@@ -180,6 +213,24 @@ export const SCENARIOS = {
     withMe((m) => ({ ...m, credit_balance: 0 })),
     fromFixture("POST /api/audits", "no_credits"),
   ]),
+  mixed: scenario("mixed", "Six analyses in six different states.", auditRoutes(MIXED_AUDITS)),
+  auditsFailing: scenario("auditsFailing", "The list of analyses cannot be loaded (503).", [
+    {
+      operation: "GET /api/audits",
+      reply: { status: 503, body: NOT_READY, contentType: "application/problem+json" },
+    },
+  ]),
+  slow: scenario("slow", "The list of analyses takes a while: the loading state.", [
+    {
+      operation: "GET /api/audits",
+      reply: { status: 200, body: { items: [], next_cursor: null } satisfies AuditPage, delayMs: 1500 },
+    },
+  ]),
+  expiredMidUse: scenario(
+    "expiredMidUse",
+    "The session ends while the page is in use: the next request is a 401.",
+    [fromFixture("GET /api/audits", "no_session")],
+  ),
   unverified: scenario("unverified", "Signed in, but the e-mail address is not confirmed yet.", [
     withMe((m) => ({ ...m, email_verified: false })),
     EMPTY_PAGE,

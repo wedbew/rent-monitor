@@ -14,8 +14,8 @@ function useStartAndGo() {
   const client = useQueryClient();
   const navigate = useNavigate();
   const next = useNextPath();
-  return (me: Parameters<typeof startSession>[1]) => {
-    startSession(client, me);
+  return async () => {
+    await startSession(client);
     void navigate(next, { replace: true });
   };
 }

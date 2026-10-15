@@ -49,6 +49,7 @@ export async function mockApi(page: Page, which: ScenarioName | Scenario): Promi
       return;
     }
     const reply = resolveReply(matched, { method, url, params: matched.params, body });
+    if (reply.delayMs !== undefined) await new Promise((resolve) => setTimeout(resolve, reply.delayMs));
     if (reply.networkError === true) {
       await route.abort("failed");
       return;

@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 
 import { type HttpMethod } from "./fixtures";
@@ -28,6 +28,7 @@ function handlerFor(scenario: Scenario) {
     const text = await request.clone().text();
     const body = parseBody(text);
     const reply = resolveReply(matched, { method, url, params: matched.params, body });
+    if (reply.delayMs !== undefined) await delay(reply.delayMs);
     if (reply.networkError === true) return HttpResponse.error();
     const headers = { ...reply.headers, "content-type": reply.contentType ?? "application/json" };
     if (reply.text !== undefined) return new HttpResponse(reply.text, { status: reply.status, headers });
