@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { fx } from "../test/fixtures";
 import { unmatched, useScenario } from "../test/handlers";
@@ -96,5 +96,107 @@ describe("api client", () => {
     const response = await createApi({ baseUrl: BASE }).GET("/api/admin/jobs");
     expect(response.response.status).toBe(599);
     expect(unmatched.splice(0)).toHaveLength(1);
+  });
+});
+
+/**
+ * Audit F08: the deadline and the error kinds cover the whole response, not only its headers. Each case below
+ * escaped as a raw AbortError or SyntaxError, or outlived the deadline, before the body was read inside the race.
+ */
+describe("the response body is inside the deadline and the error kinds", () => {
+  const encoder = new TextEncoder();
+  const json = { "content-type": "application/json" };
+
+  /** Headers at once; the body sends `first` and then whatever `rest` does with the stream. */
+  const answering =
+    (first: string, rest: (controller: ReadableStreamDefaultController<Uint8Array>) => void) =>
+    (request: Request) => {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(encoder.encode(first));
+          rest(controller);
+          request.signal.addEventListener("abort", () => controller.error(request.signal.reason));
+        },
+      });
+      return Promise.resolve(new Response(body, { status: 200, headers: json }));
+    };
+
+  it("headers in time but a body that stalls is a timeout", async () => {
+    const stall = answering('{"id":', () => undefined);
+    await expect(
+      createApi({ baseUrl: BASE, fetch: stall, timeoutMs: 20 }).GET("/api/me"),
+    ).rejects.toMatchObject({ name: "TransportError", kind: "timeout" });
+  });
+
+  it("a body that ignores the abort still ends at the deadline", async () => {
+    const deaf = () =>
+      Promise.resolve(
+        new Response(new ReadableStream<Uint8Array>({ start: () => undefined }), {
+          status: 200,
+          headers: json,
+        }),
+      );
+    await expect(
+      createApi({ baseUrl: BASE, fetch: deaf, timeoutMs: 20 }).GET("/api/me"),
+    ).rejects.toMatchObject({ kind: "timeout" });
+  });
+
+  it("a connection dropped in the middle of the body is a network failure", async () => {
+    const drop = answering('{"id":', (controller) => controller.error(new TypeError("terminated")));
+    await expect(createApi({ baseUrl: BASE, fetch: drop }).GET("/api/me")).rejects.toMatchObject({
+      kind: "network",
+    });
+  });
+
+  it("a success whose body is not JSON is an invalid response", async () => {
+    const portal = () =>
+      Promise.resolve(new Response("<html>Wi-Fi login</html>", { status: 200, headers: json }));
+    await expect(createApi({ baseUrl: BASE, fetch: portal }).GET("/api/me")).rejects.toMatchObject({
+      kind: "invalid-response",
+    });
+  });
+
+  it("a caller's signal that is already aborted never sends the request", async () => {
+    const impl = vi.fn(() => Promise.resolve(new Response("{}", { status: 200, headers: json })));
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      createApi({ baseUrl: BASE, fetch: impl }).GET("/api/me", { signal: controller.signal }),
+    ).rejects.toMatchObject({ kind: "aborted" });
+    expect(impl).not.toHaveBeenCalled();
+  });
+
+  it("a caller's abort while the body is arriving is aborted, not a timeout", async () => {
+    const controller = new AbortController();
+    const slow = answering('{"id":', () => setTimeout(() => controller.abort(), 5));
+    await expect(
+      createApi({ baseUrl: BASE, fetch: slow, timeoutMs: 5000 }).GET("/api/me", {
+        signal: controller.signal,
+      }),
+    ).rejects.toMatchObject({ kind: "aborted" });
+  });
+
+  it("a fast success leaves no timer behind", async () => {
+    vi.useFakeTimers();
+    try {
+      const ok = () => Promise.resolve(new Response('{"id":"x"}', { status: 200, headers: json }));
+      const result = await createApi({ baseUrl: BASE, fetch: ok, timeoutMs: 5000 }).GET("/api/me");
+      expect(result.data).toEqual({ id: "x" });
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("a 204 and an error page still reach openapi-fetch unchanged", async () => {
+    const empty = () => Promise.resolve(new Response(null, { status: 204 }));
+    const result = await createApi({ baseUrl: BASE, fetch: empty }).POST("/api/auth/signout");
+    expect(result.response.status).toBe(204);
+    const proxy = () =>
+      Promise.resolve(
+        new Response("<html>Bad gateway</html>", { status: 502, headers: { "content-type": "text/html" } }),
+      );
+    const failed = await createApi({ baseUrl: BASE, fetch: proxy }).GET("/api/me");
+    expect(() => unwrap(failed)).toThrowError(expect.objectContaining({ status: 502, problem: null }));
   });
 });

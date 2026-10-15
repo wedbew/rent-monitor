@@ -26,8 +26,11 @@ export function createApi({
 }: ApiOptions = {}) {
   const timed: FetchImpl = async (request) => {
     // Own controller and timer instead of AbortSignal.timeout/any: they behave differently across realms (jsdom and
-    // undici) and a composite signal can be collected before it fires. The timer also bounds a slow response body;
-    // it is cleared only when the request fails first.
+    // undici) and a composite signal can be collected before it fires. The deadline covers the headers AND the
+    // body: the body is read here, inside the same race, so a server that sends headers and then stalls is a
+    // timeout like any other, and openapi-fetch only ever parses a body that is already complete.
+    // Cancelled before it started (a route already left): nothing is sent.
+    if (request.signal.aborted) throw new TransportError("aborted", { cause: request.signal.reason });
     const controller = new AbortController();
     let timedOut = false;
     const timer = setTimeout(() => {
@@ -35,25 +38,53 @@ export function createApi({
       controller.abort();
     }, timeoutMs);
     const onCallerAbort = () => controller.abort();
-    if (request.signal.aborted) controller.abort();
-    else request.signal.addEventListener("abort", onCallerAbort, { once: true });
-    // The race makes the deadline and a caller's abort hold whatever `impl` does with the signal.
+    request.signal.addEventListener("abort", onCallerAbort, { once: true });
+    // The race makes the deadline and a caller's abort hold whatever `impl` (or the body stream) does with the signal.
     const stopped = new Promise<never>((_, reject) => {
-      controller.signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), {
-        once: true,
-      });
+      const stop = () => reject(new DOMException("aborted", "AbortError"));
+      if (controller.signal.aborted) stop();
+      else controller.signal.addEventListener("abort", stop, { once: true });
     });
+    stopped.catch(() => undefined); // settled by the race; never an unhandled rejection on the success path
+    let response: Response;
+    let text: string;
     try {
-      return await Promise.race([impl(new Request(request, { signal: controller.signal })), stopped]);
+      response = await Promise.race([impl(new Request(request, { signal: controller.signal })), stopped]);
+      text = await Promise.race([response.text(), stopped]);
     } catch (error) {
-      clearTimeout(timer);
-      request.signal.removeEventListener("abort", onCallerAbort);
       if (request.signal.aborted) throw new TransportError("aborted", { cause: error });
       if (timedOut) throw new TransportError("timeout", { cause: error });
       throw new TransportError("network", { cause: error });
+    } finally {
+      clearTimeout(timer);
+      request.signal.removeEventListener("abort", onCallerAbort);
     }
+    return buffered(response, text);
   };
   return createClient<paths>({ baseUrl, fetch: timed });
+}
+
+/** Statuses whose response may not carry a body (the Response constructor rejects one). */
+const NO_BODY = new Set([101, 103, 204, 205, 304]);
+
+/**
+ * The complete answer, re-wrapped for openapi-fetch. A success that is not JSON is not an API answer (a captive
+ * portal, a truncated proxy reply): it fails here as `invalid-response` instead of a raw `SyntaxError` later. An
+ * error status keeps any body, HTML included: `unwrap` turns it into an ApiError without a problem.
+ */
+function buffered(response: Response, text: string): Response {
+  if (response.ok && text !== "" && !NO_BODY.has(response.status)) {
+    try {
+      JSON.parse(text);
+    } catch (error) {
+      throw new TransportError("invalid-response", { cause: error });
+    }
+  }
+  return new Response(NO_BODY.has(response.status) ? null : text, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
 }
 
 export type Api = ReturnType<typeof createApi>;
