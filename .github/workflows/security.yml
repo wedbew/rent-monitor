@@ -41,6 +41,15 @@ jobs:
         continue-on-error: true
         run: uv audit --preview-features audit-command
 
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: frontend/.node-version
+      - name: pnpm audit (SPA production dependencies; high and above fails)
+        working-directory: frontend
+        run: |
+          corepack enable
+          pnpm audit --prod --audit-level high
+
       - name: semgrep rule tests
         run: uvx semgrep==1.180.0 --test --metrics=off --config .semgrep/rentmonitor.yml .semgrep/rentmonitor.py
 

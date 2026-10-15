@@ -11,9 +11,10 @@ that touches `frontend/`, and to backend PRs that change a contract the SPA cons
 ## 1. Evidence before claims (F01, F13)
 
 - **Frontend checks run before every push**: `make fe-check` (or `make ci`, which includes it), plus
-  `pnpm test:e2e` when a page, popup, form or stream changes. Paste the summary lines in the PR. GitHub does not
-  run them yet (#296, L-031): a green PR on GitHub says nothing about the SPA. Never write "CI green" for frontend
-  work unless the frontend lane exists and ran.
+  `pnpm test:e2e` when a page, popup, form or stream changes. Paste the summary lines in the PR. GitHub runs the
+  `frontend`, `frontend-e2e` and `frontend-journey` jobs (RM-296); until the owner makes them required checks
+  (L-031), a merge does not wait for them, so read their result before merging. Never write "CI green" for
+  frontend work unless those jobs ran and passed on the head commit.
 - A stage that did not run is **SKIPPED** in the PR, with the reason. Browser runs use their own `E2E_PORT`,
   `--output` and `E2E_COVERAGE_DIR`; results from a shared or reused server are not evidence.
 - Coverage numbers are reported **with their scope** (today `api/**` only). Never quote a percentage as covering
