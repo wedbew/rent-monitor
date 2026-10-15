@@ -1,5 +1,5 @@
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 
 import { IconButton } from "./Button";
 import styles from "./Dialog.module.css";
@@ -15,6 +15,11 @@ export interface DialogProps {
   readonly closeLabel?: string;
   /** Called once the close animation has finished. */
   readonly onClosed?: () => void;
+  /**
+   * Where focus goes on close when the dialog was not opened by a focused trigger (opened by the app, or by a
+   * click in Safari, where a clicked button does not take focus). Default: the element focused before opening.
+   */
+  readonly finalFocus?: RefObject<HTMLElement | null>;
   readonly children: ReactNode;
 }
 
@@ -30,6 +35,7 @@ export function Dialog({
   variant = "modal",
   closeLabel = "Zamknij",
   onClosed,
+  finalFocus,
   children,
 }: DialogProps) {
   return (
@@ -40,7 +46,10 @@ export function Dialog({
     >
       <BaseDialog.Portal>
         <BaseDialog.Backdrop className={styles["backdrop"]} />
-        <BaseDialog.Popup className={`${styles["popup"]} ${styles[variant]}`}>
+        <BaseDialog.Popup
+          className={`${styles["popup"]} ${styles[variant]}`}
+          {...(finalFocus ? { finalFocus } : {})}
+        >
           <div className={styles["head"]}>
             <BaseDialog.Title className={styles["title"]}>{title}</BaseDialog.Title>
             <BaseDialog.Close render={<IconButton type="button" label={closeLabel} icon="close" />} />

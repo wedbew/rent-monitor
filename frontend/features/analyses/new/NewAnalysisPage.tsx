@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { Link } from "react-router";
 
 import { formatCount, formatReports } from "../../../api/format";
@@ -53,6 +53,8 @@ export function NewAnalysisPage() {
   const [clientError, setClientError] = useState<string | null>(null);
   const [attempt, markInvalid] = useFormAttempt();
   const [paywall, setPaywall] = useState(false);
+  // The paywall opens on the API's 402, not from a focused trigger: on close focus returns to the submit button.
+  const submitRef = useRef<HTMLButtonElement>(null);
   const [reconciled, setReconciled] = useState<Reconciled | null>(null);
   // The last submission whose answer was lost: sending the same listing again reuses it (same request key).
   const [unanswered, setUnanswered] = useState<Submission | null>(null);
@@ -138,7 +140,7 @@ export function NewAnalysisPage() {
             <FailureNotice key={attempt} error={failure} reconciled={reconciled} />
           ) : null}
           <div className={styles["actions"]}>
-            <Button type="submit" variant="primary" icon="arrow" busy={busy}>
+            <Button ref={submitRef} type="submit" variant="primary" icon="arrow" busy={busy}>
               Rozpocznij analizę
             </Button>
             <p className={styles["cost"]}>
@@ -151,6 +153,7 @@ export function NewAnalysisPage() {
       <Dialog
         open={paywall}
         onOpenChange={setPaywall}
+        finalFocus={submitRef}
         title="Nie masz już raportów"
         description="Kup pakiet raportów, aby przeanalizować to ogłoszenie. Nic nie zostało pobrane."
         closeLabel="Zamknij okno"

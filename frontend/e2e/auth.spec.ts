@@ -25,6 +25,9 @@ async function start(
   return { flow, api };
 }
 
+/** Safari moves focus to links with Option+Tab only (its default "press Tab to highlight" is off). */
+const linkTab = (browserName: string) => (browserName === "webkit" ? "Alt+Tab" : "Tab");
+
 const heading = (page: Page, name: string | RegExp) => page.getByRole("heading", { level: 1, name });
 const field = (page: Page, name: string, exact = true) => page.getByRole("textbox", { name, exact });
 
@@ -35,13 +38,13 @@ async function fillLogin(page: Page, email = EMAIL, password = SAMPLE_PHRASE) {
 
 // ------------------------------------------------------------------------------------------ the frame
 test.describe("the signed-out frame", () => {
-  test("the skip link is the first stop", async ({ page, serve }) => {
+  test("the skip link is the first stop", async ({ page, serve, browserName }) => {
     await start(serve);
     await page.goto("/login");
     await expect(heading(page, "Zaloguj się")).toBeVisible();
     const skip = page.getByRole("link", { name: "Przejdź do treści" });
     await exercise("public.skip", async () => {
-      await page.keyboard.press("Tab");
+      await page.keyboard.press(linkTab(browserName));
       return [await outcome.focus(skip)];
     });
     await page.keyboard.press("Enter");

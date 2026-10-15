@@ -24,7 +24,8 @@
     "check": "pnpm check:api && pnpm typecheck && pnpm lint && pnpm lint:css && pnpm format:check && pnpm test && pnpm build && pnpm check:dist && pnpm check:fixtures-vs-samples",
     "check:fixtures-vs-samples": "node check-fixtures-vs-samples.mjs",
     "test:e2e": "E2E_COVERAGE=enforce playwright test",
-    "test:e2e:journey": "E2E_LANE=journey playwright test"
+    "test:e2e:journey": "E2E_LANE=journey playwright test",
+    "test:e2e:browsers": "E2E_BROWSERS=all playwright test --project=firefox --project=webkit"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

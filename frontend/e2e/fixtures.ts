@@ -35,8 +35,13 @@ export const test = base.extend<Fixtures>({
     page.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`));
     page.on("console", (message) => {
       if (message.type() !== "error") return;
+      // The browser's own report of an `/api` request the scenario made fail on purpose: Chromium and WebKit
+      // say "Failed to load resource" (located at the request); Firefox says it cannot establish a connection
+      // to the `/api` URL (the stream lanes). Anything else, including those words for another URL, still fails.
+      const text = message.text();
       const isMockedApiFailure =
-        message.location().url.includes("/api/") && message.text().startsWith("Failed to load resource");
+        (message.location().url.includes("/api/") && text.startsWith("Failed to load resource")) ||
+        /can.t establish a connection to the server at \S+\/api\//.test(text);
       if (!isMockedApiFailure) problems.push(`console.error: ${message.text()}`);
     });
     await provide(async (which) => {

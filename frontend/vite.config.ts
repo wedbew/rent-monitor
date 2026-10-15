@@ -24,12 +24,21 @@ export default defineConfig({
     include: ["**/*.test.{ts,tsx}"],
     exclude: ["node_modules", "dist", "e2e/**/*.spec.ts"],
     css: false,
+    // Unit-test coverage of ALL production code, reported per directory (audit F13, #311). The floors are a
+    // ratchet at the level measured when they were set: `api/` is the tested seam; `features/` and `ui/` are mostly
+    // exercised by the browser suite (e2e interaction gate), which these numbers do NOT include. Raise a floor when
+    // a slice raises the number; never lower one to pass.
     coverage: {
       provider: "v8",
-      include: ["api/**/*.ts"],
-      exclude: ["api/**/*.generated.ts", "api/**/*.test.ts"],
+      include: ["api/**/*.ts", "shell/**/*.{ts,tsx}", "ui/**/*.{ts,tsx}", "features/**/*.{ts,tsx}"],
+      exclude: ["**/*.generated.ts", "**/*.test.{ts,tsx}"],
       reporter: ["text-summary", "text"],
-      thresholds: { lines: 97, functions: 95, branches: 93, statements: 95 },
+      thresholds: {
+        "api/**": { lines: 97, functions: 95, branches: 93, statements: 95 },
+        "shell/**": { lines: 70, functions: 66, branches: 60, statements: 70 },
+        "ui/**": { lines: 28, functions: 29, branches: 40, statements: 26 },
+        "features/**": { lines: 25, functions: 22, branches: 20, statements: 24 },
+      },
     },
   },
 });

@@ -243,6 +243,34 @@ The last two stable majors of Chromium, Firefox and Safari, iOS Safari and Andro
 oldest of them (`vite.config.ts`: chrome138, firefox140, safari18.4, ios18.4); raise it when the matrix moves. No
 offline or PWA support.
 
+### Evidence matrix (what actually runs, RM-311)
+
+Support above is a target. This is what is tested, and where. "Emulated" is a desktop engine with a phone viewport
+and user agent, not the phone.
+
+| Engine / device                           | How                                                    | Where                                              | Evidence                                                               |
+| ----------------------------------------- | ------------------------------------------------------ | -------------------------------------------------- | ---------------------------------------------------------------------- |
+| Chromium, desktop 1280 px                 | full mocked suite, axe, interaction gate               | `pnpm test:e2e`; PR job `frontend-e2e`             | every PR (once #330 merges)                                            |
+| Chromium, Pixel 7 emulated (390 px)       | full mocked suite, axe, interaction gate               | same                                               | every PR                                                               |
+| Chromium, real stack                      | journey lane (sign-up, analysis, sign-out)             | `pnpm test:e2e:journey`; PR job `frontend-journey` | every PR                                                               |
+| Firefox, desktop 1280 px                  | full mocked suite                                      | `pnpm test:e2e:browsers`; nightly                  | nightly (once #330 merges); last local run RM-311 2026-10-15: all pass |
+| WebKit (Safari engine), desktop 1280 px   | full mocked suite                                      | same                                               | same                                                                   |
+| iOS Safari, Android Chrome (real devices) | none automated                                         | manual before release (#286)                       | **not run**                                                            |
+| Screen readers (VoiceOver, NVDA)          | none automated; focus and `role=alert` contract tested | manual before release (#286)                       | **not run**                                                            |
+| Visual regression (screenshots)           | none: baselines need a pinned Linux image to be stable | #334                                               | **not run**                                                            |
+
+Engine differences the suite handles on purpose: Safari moves focus to links only with Option+Tab (the skip-link
+tests press it in WebKit); a clicked button takes no focus in Safari, so a dialog opened without a focused trigger
+returns focus through `finalFocus` (the new-analysis paywall); each engine logs a failed module import differently
+(the chunk test declares each engine's lines with `allowErrors`).
+
+### Coverage (unit tests)
+
+`pnpm test` reports coverage for `api/`, `shell/`, `ui/` and `features/`, each with its own floor (a ratchet set at
+the measured level, `vite.config.ts`). At RM-311: `api` ~99 % lines, `shell` ~71 %, `ui` ~29 %, `features` ~25 %.
+`ui/` and `features/` are mostly exercised by the browser suite, which these numbers do not include; the interaction
+gate (every registered control exercised with an asserted outcome) is that suite's own measure.
+
 ## Troubleshooting
 
 - `ERR_PNPM_UNSUPPORTED_ENGINE`: your Node is not 24.x; `nvm use` in `frontend/`.

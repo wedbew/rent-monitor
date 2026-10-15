@@ -53,6 +53,22 @@ export default defineConfig({
             testIgnore: "journey/**",
             use: { ...devices["Pixel 7"], viewport: { width: 390, height: 844 } },
           },
+          // Cross-browser lane (audit F13, #311): the same mocked suite in Firefox and WebKit (Safari's engine) at
+          // the desktop width. Opt-in with E2E_BROWSERS=all (`pnpm test:e2e:browsers`); nightly on GitHub.
+          ...(process.env["E2E_BROWSERS"] === "all"
+            ? [
+                {
+                  name: "firefox",
+                  testIgnore: "journey/**",
+                  use: { ...devices["Desktop Firefox"], viewport: { width: 1280, height: 800 } },
+                },
+                {
+                  name: "webkit",
+                  testIgnore: "journey/**",
+                  use: { ...devices["Desktop Safari"], viewport: { width: 1280, height: 800 } },
+                },
+              ]
+            : []),
         ],
   webServer: {
     // Both lanes serve the built SPA; the journey lane's preview server also proxies /api to the real API.
