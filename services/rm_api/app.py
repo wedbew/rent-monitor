@@ -31,6 +31,7 @@ from rm_api.me import router as me_router
 from rm_api.middleware import RequestContextMiddleware
 from rm_api.notify import NotifyListener
 from rm_api.origin import OriginCheckMiddleware
+from rm_api.problem_docs import install_problem_docs
 from rm_api.problems import install_problem_handlers
 from rm_api.queue import AuditQueue, EmailQueue, ProcrastinateEmailQueue
 from rm_api.saved import router as saved_router
@@ -149,21 +150,25 @@ def create_app(
     app.add_middleware(RequestContextMiddleware)
     install_problem_handlers(app)
     _include_routers(app)
+    install_problem_docs(app, ROUTERS)
     return app
 
 
+ROUTERS = (
+    health_router,
+    auth_router,
+    password_router,
+    billing_router,
+    billing_webhook_router,
+    me_router,
+    saved_router,
+    admin_router,
+    audits_router,
+)
+
+
 def _include_routers(app: FastAPI) -> None:
-    for router in (
-        health_router,
-        auth_router,
-        password_router,
-        billing_router,
-        billing_webhook_router,
-        me_router,
-        saved_router,
-        admin_router,
-        audits_router,
-    ):
+    for router in ROUTERS:
         app.include_router(router)
 
 

@@ -1,10 +1,10 @@
 """Check a recorded exchange against `docs/openapi.json` (#263).
 
-Success bodies must validate against the response schema the operation documents. Error bodies are checked
-against the RFC 9457 shape the API really sends (`application/problem+json` with a stable `code` from
-`rm_contracts.problems`), because the document does not describe them yet: FE-A1 (#264, L-027) fixes that.
-Every place where the document and the answer disagree is returned as a *gap*, so the capture manifest records
-it instead of hiding it.
+Success bodies must validate against the response schema the operation documents. Error bodies must be
+RFC 9457 `application/problem+json` with a stable `code` from `rm_contracts.problems`, their status must be
+documented for the operation, validate against the `Problem` schema, and carry a code listed in the
+response's `x-problem-codes` (FE-A1, #264, L-027). Every place where the document and the answer disagree is
+returned as a *gap*; the smoke test fails on any, and the capture manifest records them.
 """
 
 import json
@@ -99,13 +99,15 @@ def check(spec: dict[str, Any], op: Operation, ex: Exchange, expected: int) -> l
     gaps: list[str] = []
     if ex.status >= 400:
         check_problem(ex)
-        schema = (documented or {}).get("content", {}).get("application/json", {}).get("schema")
         if documented is None:
             gaps.append(f"{ex.status} is not documented")
-        elif schema is not None and not _validator(spec, schema).is_valid(ex.body):
-            gaps.append(
-                f"{ex.status} is documented as {schema.get('$ref', 'a schema')} but sent as problem+json"
-            )
+            return gaps
+        schema = documented.get("content", {}).get(PROBLEM_JSON, {}).get("schema")
+        if schema is None or not _validator(spec, schema).is_valid(ex.body):
+            gaps.append(f"{ex.status} is documented, but not as a Problem that this body matches")
+        listed = documented.get("x-problem-codes", [])
+        if ex.body["code"] not in listed:
+            gaps.append(f"{ex.status} sent code {ex.body['code']}, documented: {listed}")
         return gaps
     if documented is None:
         lowest = min(int(s) for s in op.responses if s.startswith("2"))

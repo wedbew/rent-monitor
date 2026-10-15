@@ -3,11 +3,20 @@
 import subprocess
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 from contract import load_spec, operations
 from scenarios import PUBLIC, all_scenarios
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def provoked_elsewhere(status: str, response: dict[str, Any]) -> bool:
+    """Statuses a scenario cannot sensibly provoke on every operation: a crash (500), the database being
+    away (503 NOT_READY alone) and rate limits (429, whose windows differ per route; the limited routes with
+    scenarios are in test_api_smoke and every 429 that does happen is checked against the document)."""
+    codes = set(response.get("x-problem-codes", []))
+    return status in {"500", "429"} or (status == "503" and codes == {"NOT_READY"})
 
 
 def test_every_operation_has_a_scenario() -> None:
@@ -22,8 +31,8 @@ def test_every_operation_has_a_scenario() -> None:
         have = by_key.get(key, set())
         if not any(200 <= status < 300 for status in have):
             missing.append(f"{key}: no success scenario")
-        for documented in op.responses:
-            if documented.startswith("2"):
+        for documented, response in op.responses.items():
+            if documented.startswith("2") or provoked_elsewhere(documented, response):
                 continue
             if int(documented) not in have:
                 missing.append(f"{key}: no scenario for documented {documented}")

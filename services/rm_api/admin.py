@@ -197,7 +197,9 @@ async def clear_hold(
     return BillingHoldOut(cleared=cleared)
 
 
-@router.post("/billing/purchases/{purchase_id}/refund", response_model=RefundOut)
+@router.post(
+    "/billing/purchases/{purchase_id}/refund", response_model=RefundOut, responses={202: {"model": RefundOut}}
+)
 async def refund_purchase(
     purchase_id: Annotated[UUID, Path()],
     body: RefundRequest,
