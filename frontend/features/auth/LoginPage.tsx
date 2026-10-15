@@ -3,7 +3,7 @@ import { Link } from "react-router";
 
 import { Button } from "../../ui/Button";
 import { TextField } from "../../ui/Field";
-import { FormErrorSummary, type FieldError } from "../../ui/FormErrors";
+import { FormErrorSummary, type FieldError, useFormAttempt } from "../../ui/FormErrors";
 import { InlineNotice } from "../../ui/Status";
 import { PageHeading } from "../../shell/PageHeading";
 import { currentPasswordError, emailError, readFailure } from "./forms";
@@ -24,8 +24,9 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [linkEmail, setLinkEmail] = useState("");
   const [errors, setErrors] = useState<readonly FieldError[]>([]);
-  const [submitCount, setSubmitCount] = useState(0);
+  const [attempt, markInvalid] = useFormAttempt();
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [linkAttempt, markLinkInvalid] = useFormAttempt();
   const linkField = useRef<HTMLInputElement>(null);
 
   const submitPassword = (event: React.FormEvent) => {
@@ -37,17 +38,21 @@ export function LoginPage() {
     if (p) found.push({ fieldId: IDS.password, message: p });
     setErrors(found);
     if (found.length > 0) {
-      setSubmitCount((n) => n + 1);
+      markInvalid();
       return;
     }
-    login.mutate({ email: email.trim(), password });
+    login.mutate({ email: email.trim(), password }, { onError: markInvalid });
   };
 
   const submitLink = (event: React.FormEvent) => {
     event.preventDefault();
     const problem = emailError(linkEmail);
     setLinkError(problem);
-    if (problem === null) link.mutate(linkEmail.trim());
+    if (problem !== null) {
+      markLinkInvalid();
+      return;
+    }
+    link.mutate(linkEmail.trim(), { onError: markLinkInvalid });
   };
 
   const loginFailure = login.isError ? readFailure(login.error) : null;
@@ -56,8 +61,15 @@ export function LoginPage() {
     googleFailure?.code === "EMAIL_CONFIRMATION_REQUIRED" ||
     googleFailure?.code === "GOOGLE_EMAIL_UNVERIFIED";
   const linkFailure = link.isError ? readFailure(link.error) : null;
-  const fieldMessage = (id: string, name: string) =>
-    errors.find((x) => x.fieldId === id)?.message ?? loginFailure?.fields[name];
+  // Client errors while the person is fixing them; otherwise the server's field errors. One list, one summary.
+  const serverErrors: FieldError[] = Object.entries(loginFailure?.fields ?? {}).map(([name, message]) => ({
+    fieldId: name === "password" ? IDS.password : IDS.email,
+    message,
+  }));
+  const shown = errors.length > 0 ? errors : serverErrors;
+  const fieldMessage = (id: string) => shown.find((x) => x.fieldId === id)?.message;
+  const linkMessage = linkError ?? linkFailure?.fields["email"] ?? null;
+  const linkShown: FieldError[] = linkMessage ? [{ fieldId: IDS.linkEmail, message: linkMessage }] : [];
 
   return (
     <div className={styles["stack"]}>
@@ -79,8 +91,8 @@ export function LoginPage() {
       <GoogleButton text="signin_with" onCredential={(credential) => google.mutate(credential)} />
 
       <form className={styles["form"]} onSubmit={submitPassword} noValidate aria-label="Logowanie hasłem">
-        <FormErrorSummary errors={errors} submitCount={submitCount} />
-        {loginFailure?.general ? <ProblemNotice problem={loginFailure.general} /> : null}
+        <FormErrorSummary errors={shown} attempt={attempt} />
+        {loginFailure?.general ? <ProblemNotice key={attempt} problem={loginFailure.general} /> : null}
         <TextField
           fieldId={IDS.email}
           label="Adres e-mail"
@@ -90,7 +102,7 @@ export function LoginPage() {
           inputMode="email"
           value={email}
           onValueChange={setEmail}
-          error={fieldMessage(IDS.email, "email")}
+          error={fieldMessage(IDS.email)}
         />
         <TextField
           fieldId={IDS.password}
@@ -100,7 +112,7 @@ export function LoginPage() {
           autoComplete="current-password"
           value={password}
           onValueChange={setPassword}
-          error={fieldMessage(IDS.password, "password")}
+          error={fieldMessage(IDS.password)}
         />
         <Button type="submit" variant="primary" fill busy={login.isPending} icon="arrow">
           Zaloguj się
@@ -119,7 +131,8 @@ export function LoginPage() {
           </InlineNotice>
         ) : (
           <form className={styles["form"]} onSubmit={submitLink} noValidate aria-label="Logowanie linkiem">
-            {linkFailure?.general ? <ProblemNotice problem={linkFailure.general} /> : null}
+            <FormErrorSummary errors={linkShown} attempt={linkAttempt} />
+            {linkFailure?.general ? <ProblemNotice key={linkAttempt} problem={linkFailure.general} /> : null}
             <TextField
               fieldId={IDS.linkEmail}
               inputRef={linkField}
@@ -131,7 +144,7 @@ export function LoginPage() {
               hint="Bez hasła: kliknij link w wiadomości."
               value={linkEmail}
               onValueChange={setLinkEmail}
-              error={linkError}
+              error={linkMessage}
             />
             <Button type="submit" fill busy={link.isPending}>
               Wyślij link do logowania

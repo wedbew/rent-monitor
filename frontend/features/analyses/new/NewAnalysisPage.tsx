@@ -12,7 +12,7 @@ import { isCurrentSession } from "../../../shell/tenant";
 import { Button, LinkButton } from "../../../ui/Button";
 import { Dialog } from "../../../ui/Dialog";
 import { TextField } from "../../../ui/Field";
-import { FormErrorSummary } from "../../../ui/FormErrors";
+import { FormErrorSummary, useFormAttempt } from "../../../ui/FormErrors";
 import { InlineNotice } from "../../../ui/Status";
 import { ProblemNotice } from "../../auth/ProblemNotice";
 import { readFailure, retryIn } from "../../auth/forms";
@@ -35,6 +35,8 @@ export function listingRefError(value: string): string | null {
 }
 
 const FIELD_ID = "listing-ref";
+/** A link is built from the problem's `audit_id` only when it is a UUID (rules/frontend.md section 5). */
+const AUDIT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * The start of the journey: one URL (or Otodom id), one click, one request. The page never decides money or
@@ -47,7 +49,7 @@ export function NewAnalysisPage() {
   const create = useCreateAudit();
   const [value, setValue] = useState("");
   const [clientError, setClientError] = useState<string | null>(null);
-  const [submitCount, setSubmitCount] = useState(0);
+  const [attempt, markInvalid] = useFormAttempt();
   const [paywall, setPaywall] = useState(false);
   const [reconciled, setReconciled] = useState<Reconciled | null>(null);
   const busy = create.isPending;
@@ -65,14 +67,17 @@ export function NewAnalysisPage() {
     event.preventDefault();
     if (busy) return;
     const problem = listingRefError(value);
-    setSubmitCount((n) => n + 1);
     setClientError(problem);
     setReconciled(null);
-    if (problem !== null) return;
+    if (problem !== null) {
+      markInvalid();
+      return;
+    }
     const startedAt = Date.now();
     const submitted = submission(value.trim());
     create.mutate(submitted, {
       onError: (error) => {
+        markInvalid(); // the server's answer is here: now the summary (or the notice) is announced and focused
         if (error instanceof ApiError && error.code === "QUOTA_EXHAUSTED") setPaywall(true);
         if (!isCurrentSession(submitted.generation)) return;
         void reconcileAfterAmbiguousFailure(error, value, startedAt).then(setReconciled);
@@ -105,7 +110,7 @@ export function NewAnalysisPage() {
         </InlineNotice>
       ) : (
         <form className={styles["form"]} onSubmit={submit} noValidate>
-          <FormErrorSummary errors={summary} submitCount={submitCount} />
+          <FormErrorSummary errors={summary} attempt={attempt} />
           <TextField
             fieldId={FIELD_ID}
             label="Adres ogłoszenia lub numer"
@@ -123,7 +128,7 @@ export function NewAnalysisPage() {
             maxLength={MAX_LISTING_REF * 4}
           />
           {failure !== null && fieldError === null && code !== "QUOTA_EXHAUSTED" ? (
-            <FailureNotice error={failure} reconciled={reconciled} />
+            <FailureNotice key={attempt} error={failure} reconciled={reconciled} />
           ) : null}
           <div className={styles["actions"]}>
             <Button type="submit" variant="primary" icon="arrow" busy={busy}>
@@ -201,7 +206,7 @@ function FailureNotice({
         title="Ta analiza już trwa"
         live="status"
         actions={
-          typeof existing === "string" ? (
+          typeof existing === "string" && AUDIT_ID.test(existing) ? (
             <LinkButton to={`/app/analyses/${existing}`} variant="primary" icon="arrow">
               Otwórz analizę
             </LinkButton>

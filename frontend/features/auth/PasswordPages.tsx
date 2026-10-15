@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import { PageHeading } from "../../shell/PageHeading";
 import { Button, LinkButton } from "../../ui/Button";
 import { TextField } from "../../ui/Field";
-import { FormErrorSummary, type FieldError } from "../../ui/FormErrors";
+import { FormErrorSummary, type FieldError, useFormAttempt } from "../../ui/FormErrors";
 import { InlineNotice } from "../../ui/Status";
 import { emailError, newPasswordError, PASSWORD_MIN, readFailure } from "./forms";
 import { ProblemNotice } from "./ProblemNotice";
@@ -12,19 +12,28 @@ import { clearCapturedToken, readCapturedToken } from "./token";
 import { usePasswordForgot, usePasswordReset } from "./useAuthMutations";
 import styles from "./auth.module.css";
 
+const FORGOT_EMAIL_ID = "forgot-email";
+
 /** `/password/forgot`: always answers the same, whether or not the address has an account. */
 export function ForgotPasswordPage() {
   const forgot = usePasswordForgot();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [attempt, markInvalid] = useFormAttempt();
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     const problem = emailError(email);
     setError(problem);
-    if (problem === null) forgot.mutate(email.trim());
+    if (problem !== null) {
+      markInvalid();
+      return;
+    }
+    forgot.mutate(email.trim(), { onError: markInvalid });
   };
   const failure = forgot.isError ? readFailure(forgot.error) : null;
+  const message = error ?? failure?.fields["email"] ?? null;
+  const shown: FieldError[] = message ? [{ fieldId: FORGOT_EMAIL_ID, message }] : [];
 
   return (
     <div className={styles["stack"]}>
@@ -38,8 +47,10 @@ export function ForgotPasswordPage() {
         </InlineNotice>
       ) : (
         <form className={styles["form"]} onSubmit={submit} noValidate aria-label="Reset hasła">
-          {failure?.general ? <ProblemNotice problem={failure.general} /> : null}
+          <FormErrorSummary errors={shown} attempt={attempt} />
+          {failure?.general ? <ProblemNotice key={attempt} problem={failure.general} /> : null}
           <TextField
+            fieldId={FORGOT_EMAIL_ID}
             label="Adres e-mail"
             type="email"
             name="email"
@@ -47,7 +58,7 @@ export function ForgotPasswordPage() {
             inputMode="email"
             value={email}
             onValueChange={setEmail}
-            error={error}
+            error={message}
           />
           <Button type="submit" variant="primary" fill busy={forgot.isPending} icon="arrow">
             Wyślij link
@@ -69,7 +80,7 @@ export function ResetPasswordPage() {
   const [token] = useState(readCapturedToken);
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<readonly FieldError[]>([]);
-  const [submitCount, setSubmitCount] = useState(0);
+  const [attempt, markInvalid] = useFormAttempt();
 
   useEffect(() => clearCapturedToken, []);
 
@@ -80,10 +91,10 @@ export function ResetPasswordPage() {
     const found = problem ? [{ fieldId: PASSWORD_ID, message: problem }] : [];
     setErrors(found);
     if (found.length > 0) {
-      setSubmitCount((n) => n + 1);
+      markInvalid();
       return;
     }
-    reset.mutate({ token, password }, { onError: () => setSubmitCount((n) => n + 1) });
+    reset.mutate({ token, password }, { onError: markInvalid });
   };
 
   const failure = reset.isError ? readFailure(reset.error) : null;
@@ -120,8 +131,8 @@ export function ResetPasswordPage() {
         </>
       ) : (
         <form className={styles["form"]} onSubmit={submit} noValidate aria-label="Nowe hasło">
-          <FormErrorSummary errors={shown} submitCount={submitCount} />
-          {failure?.general ? <ProblemNotice problem={failure.general} /> : null}
+          <FormErrorSummary errors={shown} attempt={attempt} />
+          {failure?.general ? <ProblemNotice key={attempt} problem={failure.general} /> : null}
           <TextField
             fieldId={PASSWORD_ID}
             label="Nowe hasło"
