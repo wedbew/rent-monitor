@@ -463,6 +463,19 @@ async def save_plain(w: World) -> Exchange:
     return await w.send(who, "PUT", f"/api/saved/{ref}", json={})
 
 
+@scenario("PUT /api/saved/{otodom_id}", "limit_reached", 409, "500 saved listings per user")
+async def save_limit(w: World) -> Exchange:
+    who = await w.user(label="saved")
+    refs = await w.seed_audits(who, 501)  # newest first
+    await w.sql(
+        "INSERT INTO app.saved_listing (user_id, otodom_id) SELECT user_id, otodom_id FROM app.audit"
+        " WHERE user_id = :u AND otodom_id <> :r",
+        u=who.user_id,
+        r=refs[0],
+    )
+    return await w.send(who, "PUT", f"/api/saved/{refs[0]}", json={})
+
+
 @scenario("PUT /api/saved/{otodom_id}", "never_audited", 404, "also what another user's listing looks like")
 async def save_unknown(w: World) -> Exchange:
     return await w.send(await w.user(label="saved"), "PUT", "/api/saved/ID00000000", json={})
@@ -921,11 +934,6 @@ async def flags(w: World) -> Exchange:
     return await w.send(await w.user(label="admin", role="admin"), "GET", "/api/admin/flags")
 
 
-@scenario("GET /api/admin/flags", "not_an_admin", 403)
-async def flags_forbidden(w: World) -> Exchange:
-    return await w.send(await w.user(label="plain"), "GET", "/api/admin/flags")
-
-
 @scenario("PUT /api/admin/flags/{key}", "updated", 200)
 async def flag_update(w: World) -> Exchange:
     key = await w.add_flag(f"smoke_{uuid4().hex[:8]}", description="rollout", rollout_pct=10)
@@ -1146,6 +1154,27 @@ async def refund(w: World) -> Exchange:
     )
 
 
+@scenario("POST /api/admin/billing/purchases/{purchase_id}/refund", "provider_refused", 502)
+async def refund_refused(w: World) -> Exchange:
+    who, admin = await w.user(label="buyer", credits=0), await w.user(label="admin", role="admin")
+    bought = await w.bought(who, "reports_1")
+    original = w.paddle.create_full_refund
+
+    async def refuse(**_: Any) -> Any:
+        raise PaddleError("refused")
+
+    w.paddle.create_full_refund = refuse
+    try:
+        return await w.send(
+            admin,
+            "POST",
+            f"/api/admin/billing/purchases/{bought['purchase_id']}/refund",
+            json={"reason": "buyer asked within 14 days, pack unused"},
+        )
+    finally:
+        w.paddle.create_full_refund = original
+
+
 @scenario("POST /api/admin/billing/purchases/{purchase_id}/refund", "not_refundable", 409)
 async def refund_unknown(w: World) -> Exchange:
     admin = await w.user(label="admin", role="admin")
@@ -1187,6 +1216,27 @@ def unauthenticated(key: str, path: str) -> Run:
     return run
 
 
+def wrong_origin(key: str, path: str) -> Run:
+    """An unsafe call whose Origin is not ours: refused before anything else (CSRF defence)."""
+    method = key.split(" ", 1)[0]
+
+    async def run(w: World) -> Exchange:
+        return await w.send(w.anonymous(origin="https://evil.test"), method, path, json={})
+
+    return run
+
+
+def not_an_admin(key: str, path: str) -> Run:
+    """A signed-in user without the admin role: 403 `ADMIN_ONLY`, never a hint that the resource exists."""
+    method = key.split(" ", 1)[0]
+
+    async def run(w: World) -> Exchange:
+        body = {} if method in {"POST", "PUT", "DELETE"} else None
+        return await w.send(await w.user(label="plain"), method, path, json=body)
+
+    return run
+
+
 # The operations that answer without a session. Every other operation also gets the generated `no_session`
 # scenario below (401 `UNAUTHENTICATED`).
 PUBLIC = frozenset(
@@ -1218,8 +1268,12 @@ def all_scenarios() -> list[Scenario]:
 
     generated: list[Scenario] = []
     for key, op in operations(load_spec()).items():
-        if key in PUBLIC:
-            continue
         path = op.path.format(**PATH_VALUES)
-        generated.append(Scenario(key, "no_session", 401, unauthenticated(key, path)))
+        method = key.split(" ", 1)[0]
+        if key not in PUBLIC:
+            generated.append(Scenario(key, "no_session", 401, unauthenticated(key, path)))
+        if method in {"POST", "PUT", "PATCH", "DELETE"}:
+            generated.append(Scenario(key, "wrong_origin", 403, wrong_origin(key, path)))
+        if op.path.startswith("/api/admin/"):
+            generated.append(Scenario(key, "not_an_admin", 403, not_an_admin(key, path)))
     return [*SCENARIOS, *generated]

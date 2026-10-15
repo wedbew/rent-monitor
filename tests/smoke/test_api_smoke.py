@@ -48,7 +48,7 @@ async def world(migrated_url: str, procrastinate_schema: None) -> AsyncIterator[
 async def test_scenario(world: World, s: Scenario) -> None:
     exchange = await s.run(world)
     RESULTS[s.id] = exchange
-    check(SPEC, OPS[s.key], exchange, s.status)
+    assert check(SPEC, OPS[s.key], exchange, s.status) == []  # no gap between the document and the answer
     if s.key == "GET /api/audits/{audit_id}" and s.name in AUDIT_OUTCOMES:
         body = exchange.body
         assert (body["status"], body["error_code"], body["charge_state"]) == AUDIT_OUTCOMES[s.name]

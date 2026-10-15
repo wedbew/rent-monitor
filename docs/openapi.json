@@ -1087,19 +1087,6 @@
         "title": "GoogleCredential",
         "type": "object"
       },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "title": "Detail",
-            "type": "array"
-          }
-        },
-        "title": "HTTPValidationError",
-        "type": "object"
-      },
       "InvoiceOut": {
         "description": "A link to the document Paddle issued for this sale. Short-lived: fetched on demand, never stored.",
         "properties": {
@@ -1566,6 +1553,156 @@
           "period"
         ],
         "title": "PlanOut",
+        "type": "object"
+      },
+      "Problem": {
+        "additionalProperties": true,
+        "description": "The body of every error response (RFC 9457, `application/problem+json`). `code` is the stable part a\nclient branches on; `title` and `detail` are for people. Some codes add fields of their own (for example\n`audit_id` on `AUDIT_IN_PROGRESS`, `upgrade_url` on `QUOTA_EXHAUSTED`), so extra keys are allowed.",
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ProblemCode"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Detail"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ProblemField"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "validation errors, 422 only",
+            "title": "Errors"
+          },
+          "instance": {
+            "description": "the request path",
+            "title": "Instance",
+            "type": "string"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Request Id"
+          },
+          "status": {
+            "title": "Status",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "description": "`urn:rentmonitor:problem:<code>`",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "instance"
+        ],
+        "title": "Problem",
+        "type": "object"
+      },
+      "ProblemCode": {
+        "enum": [
+          "INVALID_LISTING_REF",
+          "QUOTA_EXHAUSTED",
+          "AUDIT_IN_PROGRESS",
+          "RENT_NOT_DEAL",
+          "FRACTIONAL_OWNERSHIP",
+          "LISTING_GONE",
+          "UPSTREAM_BLOCKED",
+          "UPSTREAM_SCHEMA_DRIFT",
+          "VISION_UNAVAILABLE",
+          "CONTEXT_UNAVAILABLE",
+          "INTERNAL",
+          "VALIDATION_ERROR",
+          "NOT_FOUND",
+          "HTTP_ERROR",
+          "NOT_READY",
+          "INVALID_GOOGLE_TOKEN",
+          "GOOGLE_EMAIL_UNVERIFIED",
+          "EMAIL_CONFIRMATION_REQUIRED",
+          "MAGIC_LINK_INVALID",
+          "INVALID_CREDENTIALS",
+          "WEAK_PASSWORD",
+          "AUTH_TOKEN_INVALID",
+          "ACCOUNT_EXISTS",
+          "BILLING_UNAVAILABLE",
+          "IDEMPOTENCY_CONFLICT",
+          "BILLING_PROVIDER_ERROR",
+          "INVALID_WEBHOOK_SIGNATURE",
+          "BILLING_HOLD",
+          "PURCHASE_NOT_REFUNDABLE",
+          "REFUND_NEEDS_REVIEW",
+          "EMAIL_NOT_VERIFIED",
+          "FEATURE_NOT_IN_PLAN",
+          "ADMIN_ONLY",
+          "ALREADY_SUBSCRIBED",
+          "INVALID_STRIPE_SIGNATURE",
+          "UNAUTHENTICATED",
+          "RATE_LIMITED",
+          "ORIGIN_NOT_ALLOWED",
+          "CONFIRMATION_MISMATCH",
+          "CREDIT_BELOW_ZERO",
+          "SAVED_LIMIT_REACHED"
+        ],
+        "title": "ProblemCode",
+        "type": "string"
+      },
+      "ProblemField": {
+        "description": "One rejected input in a 422: where (`loc`), the rule (`type`) and a message. Never the value itself.",
+        "properties": {
+          "loc": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Loc",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Msg",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "type",
+          "msg"
+        ],
+        "title": "ProblemField",
         "type": "object"
       },
       "PurchaseOut": {
@@ -2070,46 +2207,6 @@
         ],
         "title": "UserDataExport",
         "type": "object"
-      },
-      "ValidationError": {
-        "properties": {
-          "ctx": {
-            "title": "Context",
-            "type": "object"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "title": "Location",
-            "type": "array"
-          },
-          "msg": {
-            "title": "Message",
-            "type": "string"
-          },
-          "type": {
-            "title": "Error Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError",
-        "type": "object"
       }
     }
   },
@@ -2156,15 +2253,109 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "202": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/RefundOut"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Accepted"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ADMIN_ONLY, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ADMIN_ONLY",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: PURCHASE_NOT_REFUNDABLE, REFUND_NEEDS_REVIEW",
+            "x-problem-codes": [
+              "PURCHASE_NOT_REFUNDABLE",
+              "REFUND_NEEDS_REVIEW"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "502": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: BILLING_PROVIDER_ERROR",
+            "x-problem-codes": [
+              "BILLING_PROVIDER_ERROR"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: BILLING_UNAVAILABLE, NOT_READY",
+            "x-problem-codes": [
+              "BILLING_UNAVAILABLE",
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Refund Purchase",
@@ -2198,15 +2389,97 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ADMIN_ONLY, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ADMIN_ONLY",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: CREDIT_BELOW_ZERO",
+            "x-problem-codes": [
+              "CREDIT_BELOW_ZERO"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Adjust Credits",
@@ -2232,6 +2505,58 @@
               }
             },
             "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ADMIN_ONLY",
+            "x-problem-codes": [
+              "ADMIN_ONLY"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "List Flags",
@@ -2276,15 +2601,84 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ADMIN_ONLY, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ADMIN_ONLY",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Update Flag",
@@ -2323,15 +2717,71 @@
           "204": {
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ADMIN_ONLY, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ADMIN_ONLY",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Delete Override",
@@ -2385,15 +2835,84 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ADMIN_ONLY, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ADMIN_ONLY",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Put Override",
@@ -2473,15 +2992,70 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ADMIN_ONLY",
+            "x-problem-codes": [
+              "ADMIN_ONLY"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Inspect Jobs",
@@ -2528,15 +3102,84 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ADMIN_ONLY, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ADMIN_ONLY",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Clear Hold",
@@ -2577,15 +3220,57 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "List Audits",
@@ -2616,15 +3301,99 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "402": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: QUOTA_EXHAUSTED",
+            "x-problem-codes": [
+              "QUOTA_EXHAUSTED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: BILLING_HOLD, FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "BILLING_HOLD",
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: AUDIT_IN_PROGRESS",
+            "x-problem-codes": [
+              "AUDIT_IN_PROGRESS"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INVALID_LISTING_REF, VALIDATION_ERROR",
+            "x-problem-codes": [
+              "INVALID_LISTING_REF",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Create Audit",
@@ -2659,15 +3428,70 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Get Audit",
@@ -2716,15 +3540,70 @@
             },
             "description": "progress, then done or error"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Audit Events",
@@ -2751,15 +3630,70 @@
           "204": {
             "description": "Successful Response"
           },
-          "422": {
+          "403": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: RATE_LIMITED",
+            "x-problem-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Email Start",
@@ -2792,15 +3726,70 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: MAGIC_LINK_INVALID",
+            "x-problem-codes": [
+              "MAGIC_LINK_INVALID"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Email Verify",
@@ -2833,15 +3822,72 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: EMAIL_CONFIRMATION_REQUIRED, GOOGLE_EMAIL_UNVERIFIED, INVALID_GOOGLE_TOKEN",
+            "x-problem-codes": [
+              "EMAIL_CONFIRMATION_REQUIRED",
+              "GOOGLE_EMAIL_UNVERIFIED",
+              "INVALID_GOOGLE_TOKEN"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Google Sign In",
@@ -2875,15 +3921,83 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: INVALID_CREDENTIALS",
+            "x-problem-codes": [
+              "INVALID_CREDENTIALS"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: RATE_LIMITED",
+            "x-problem-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Login",
@@ -2910,15 +4024,85 @@
           "204": {
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: INVALID_CREDENTIALS, UNAUTHENTICATED",
+            "x-problem-codes": [
+              "INVALID_CREDENTIALS",
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR, WEAK_PASSWORD",
+            "x-problem-codes": [
+              "VALIDATION_ERROR",
+              "WEAK_PASSWORD"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: RATE_LIMITED",
+            "x-problem-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Password Change",
@@ -2952,15 +4136,70 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "403": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: RATE_LIMITED",
+            "x-problem-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Password Forgot",
@@ -2987,15 +4226,84 @@
           "204": {
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: AUTH_TOKEN_INVALID",
+            "x-problem-codes": [
+              "AUTH_TOKEN_INVALID"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR, WEAK_PASSWORD",
+            "x-problem-codes": [
+              "VALIDATION_ERROR",
+              "WEAK_PASSWORD"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: RATE_LIMITED",
+            "x-problem-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Password Reset",
@@ -3028,15 +4336,71 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "403": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR, WEAK_PASSWORD",
+            "x-problem-codes": [
+              "VALIDATION_ERROR",
+              "WEAK_PASSWORD"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: RATE_LIMITED",
+            "x-problem-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Register",
@@ -3070,15 +4434,70 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "403": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: RATE_LIMITED",
+            "x-problem-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Register Resend",
@@ -3111,15 +4530,96 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: AUTH_TOKEN_INVALID",
+            "x-problem-codes": [
+              "AUTH_TOKEN_INVALID"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ACCOUNT_EXISTS",
+            "x-problem-codes": [
+              "ACCOUNT_EXISTS"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: RATE_LIMITED",
+            "x-problem-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Register Verify",
@@ -3145,6 +4645,45 @@
               }
             },
             "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "List Sessions",
@@ -3160,6 +4699,45 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Sign Out",
@@ -3174,6 +4752,58 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Sign Out Everywhere",
@@ -3218,15 +4848,122 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "202": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/PurchaseOut"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Accepted"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: BILLING_HOLD, EMAIL_NOT_VERIFIED, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "BILLING_HOLD",
+              "EMAIL_NOT_VERIFIED",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: IDEMPOTENCY_CONFLICT",
+            "x-problem-codes": [
+              "IDEMPOTENCY_CONFLICT"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: RATE_LIMITED",
+            "x-problem-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "502": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: BILLING_PROVIDER_ERROR",
+            "x-problem-codes": [
+              "BILLING_PROVIDER_ERROR"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: BILLING_UNAVAILABLE, NOT_READY",
+            "x-problem-codes": [
+              "BILLING_UNAVAILABLE",
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Checkout",
@@ -3248,6 +4985,45 @@
               }
             },
             "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "List Packs",
@@ -3284,15 +5060,57 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "List Purchases",
@@ -3327,15 +5145,70 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Get Purchase",
@@ -3371,15 +5244,110 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: PURCHASE_NOT_REFUNDABLE",
+            "x-problem-codes": [
+              "PURCHASE_NOT_REFUNDABLE"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: RATE_LIMITED",
+            "x-problem-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "502": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: BILLING_PROVIDER_ERROR",
+            "x-problem-codes": [
+              "BILLING_PROVIDER_ERROR"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: BILLING_UNAVAILABLE, NOT_READY",
+            "x-problem-codes": [
+              "BILLING_UNAVAILABLE",
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Get Invoice",
@@ -3406,15 +5374,71 @@
           "204": {
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: CONFIRMATION_MISMATCH, VALIDATION_ERROR",
+            "x-problem-codes": [
+              "CONFIRMATION_MISMATCH",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Delete My Account",
@@ -3435,6 +5459,45 @@
               }
             },
             "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "My Profile",
@@ -3457,6 +5520,58 @@
               }
             },
             "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: RATE_LIMITED",
+            "x-problem-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Export My Data",
@@ -3497,15 +5612,57 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "List Saved",
@@ -3534,15 +5691,70 @@
           "204": {
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Unsave Listing",
@@ -3585,15 +5797,96 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: SAVED_LIMIT_REACHED",
+            "x-problem-codes": [
+              "SAVED_LIMIT_REACHED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
           }
         },
         "summary": "Save Listing",

@@ -202,23 +202,14 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** Request written product assessment with representative reports, prepaid report-pack entitlements and data-rights information. Owner selected one-time packs on 2026-10-13, so recurring BLIK is outside the pilot. If Paddle rejects the offering, ordinary Stripe plus Polish invoicing remains a fallback requiring a separate decision.
 - **Target:** provider evaluation in [BILLING-ALTERNATIVES.md](BILLING-ALTERNATIVES.md); decision before replacing ADR 0005
 
-### L-027 — OpenAPI does not describe the problem+json error responses
-- **Status:** active
-- **Discovered:** 2026-10-15
-- **Affects:** `docs/openapi.json`, `services/rm_api/problems.py`, generated frontend types
-- **Evidence:** confirmed in source: the API answers errors as `application/problem+json` (validation errors converted at `problems.py:138`), but the OpenAPI components contain no problem schema and operations advertise FastAPI's `HTTPValidationError` for 422.
-- **Description:** A client generated from the schema gets wrong types for every error body, including 422, and cannot see which statuses or `code`s an operation returns.
-- **Workaround:** None in production code; the frontend must not start before the schema is fixed.
-- **Target:** #264 (FE-A1), before #268 (FE-02); plan in `docs/FRONTEND-PLAN.md`.
-
 ### L-028 — API samples are fake-provider data; the live capture path is unexercised
 - **Status:** active
 - **Discovered:** 2026-10-15
 - **Affects:** `tests/smoke/`, `scripts/capture_api_samples.py`, `data/api-samples/` (local), the frontend fixtures derived from them (#268)
 - **Evidence:** confirmed (source and a run of `make api-samples`, 174 of 174 scenarios, 36 of 36 operations over loopback HTTP)
-- **Description:** The smoke test and the offline capture run the real API, Postgres, ledger, queue worker and engine, but the listing source, market context, vision model, Paddle and Google are in-memory fakes, and the API runs as a local uvicorn against a throwaway database in the Compose Postgres, not as the `api` container with a real provider configuration. Result numbers (grades, prices, Max Bid) come from five hand-built listings and a flat rent per m2; they say nothing about real listings or accuracy. `--mode live` (owner-authorised, needs `API_SAMPLES_LIVE_AUTHORISED=1` and a refs file) is written but has not been run: no real Otodom, OpenRouter or Paddle answer has been captured, so shapes only a live provider produces (for example a `result.vision` record from a real model, long descriptions, listings with unusual fields) are not in the samples. The documented error statuses (401, 402, 403, 404, 409, 429, 502, 503 and the 202 of checkout and refund) are exercised but missing from `docs/openapi.json` until #264 (L-027); the capture manifest lists each gap.
+- **Description:** The smoke test and the offline capture run the real API, Postgres, ledger, queue worker and engine, but the listing source, market context, vision model, Paddle and Google are in-memory fakes, and the API runs as a local uvicorn against a throwaway database in the Compose Postgres, not as the `api` container with a real provider configuration. Result numbers (grades, prices, Max Bid) come from five hand-built listings and a flat rent per m2; they say nothing about real listings or accuracy. `--mode live` (owner-authorised, needs `API_SAMPLES_LIVE_AUTHORISED=1` and a refs file) is written but has not been run: no real Otodom, OpenRouter or Paddle answer has been captured, so shapes only a live provider produces (for example a `result.vision` record from a real model, long descriptions, listings with unusual fields) are not in the samples. Statuses and codes that the document does not describe fail the smoke test, and the capture manifest lists any gap (none since #264).
 - **Workaround:** Treat samples as shape evidence. Ask the owner to run the live capture once before the report page (#274) is finalised.
-- **Target:** #263 (this slice); live run is an owner action recorded on #44; contract gaps close with #264.
+- **Target:** #263; the live run is an owner action recorded on #44.
 
 ## Deferred
 
@@ -250,6 +241,17 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Target:** Phase 2 design (blueprint §4.8 step 6): replacement analysis cards, proper pagination, a table-view option and a fuller market information architecture. 2026-10-15 (#262): the market data lives in Postgres only; no `/api/market/*` route exists yet (#21), so the Rynek redesign (#282) waits on it; collection paging is #265.
 
 ## Resolved
+
+### L-027 — OpenAPI does not describe the problem+json error responses
+- **Status:** resolved
+- **Discovered:** 2026-10-15
+- **Affects:** `docs/openapi.json`, `services/rm_api/problems.py`, generated frontend types
+- **Evidence:** confirmed in source: the API answers errors as `application/problem+json` (validation errors converted at `problems.py:138`), but the OpenAPI components contain no problem schema and operations advertise FastAPI's `HTTPValidationError` for 422.
+- **Description:** A client generated from the schema gets wrong types for every error body, including 422, and cannot see which statuses or `code`s an operation returns.
+- **Workaround:** None in production code; the frontend must not start before the schema is fixed.
+- **Target:** #264 (FE-A1), before #268 (FE-02); plan in `docs/FRONTEND-PLAN.md`.
+- **Resolved:** 2026-10-15, RM-264 (#264): `Problem` and `ProblemField` schemas, `HTTPValidationError` removed, every operation lists its error statuses as `application/problem+json` with `x-problem-codes`; `tests/unit/test_openapi_problems.py` and the strict smoke contract check keep it true.
+
 
 ### L-013 — Error events may carry stack-frame variables and unscrubbed free text
 - **Status:** resolved

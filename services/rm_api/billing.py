@@ -93,7 +93,7 @@ async def list_packs(request: Request, db: SessionDep, principal: PrincipalDep) 
     )
 
 
-@router.post("/checkout", response_model=PurchaseOut)
+@router.post("/checkout", response_model=PurchaseOut, responses={202: {"model": PurchaseOut}})
 async def checkout(
     body: CheckoutRequest,
     request: Request,
