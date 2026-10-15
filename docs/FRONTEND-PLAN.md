@@ -1,6 +1,6 @@
 # Frontend delivery plan
 
-**Status:** plan of record for Phase 2 (owner request, 2026-10-15, #262). Implementation has not started; Phase 1 still
+**Status:** plan of record for Phase 2 (owner request, 2026-10-15, #262). FE-00 (#263, the API smoke test and sample capture) is implemented; UI implementation has not started; Phase 1 still
 forbids `frontend/` until the owner authorises Phase 2 in #267 (FE-01). Delivery state stays in [`STATUS.md`](STATUS.md).
 
 Inputs: the V2 handoff ([implementation guide](../design/v2/implementation-guide.md), [design system](../design/v2/design-system.md),
@@ -74,14 +74,21 @@ One scenario registry drives two things: a CI test and a local capture.
 - **CI** (`tests/smoke/`): every OpenAPI operation must have at least one success scenario and one per documented error
   status, or `test_every_operation_has_a_scenario` fails. Scenarios run in-process against Testcontainers Postgres and a
   real worker with fake providers; bodies are validated against the OpenAPI response schemas.
-- **Capture** (`make api-samples`): the same scenarios against the local Compose stack write
+- **Capture** (`make api-samples`, implemented in #263): the same scenarios over loopback HTTP. The script starts the
+  Compose Postgres, creates a throwaway database `rm_samples_<timestamp>` in it (dropped afterwards), serves the real app
+  with a local uvicorn, runs the real queue worker and engine child in the same process, and writes
 
 ```
 data/api-samples/<UTC timestamp>/
-  manifest.json                    # commit, openapi sha256, mode (fake|live), evidence class, retention date
-  <operationId>/<scenario>.json    # {request, status, headers (redacted), body}
-  get_audit/<scenario>/events.ndjson   # SSE transcript
+  manifest.json                          # commit, openapi sha256, mode (fake|live), evidence class, retain_until,
+                                         # scenario results, contract_gaps (answers the OpenAPI document does not describe)
+  <operationId>/<scenario>.json          # {scenario, request, status, headers (redacted), body}
+  audit_events_.../<scenario>.events.ndjson   # SSE transcript, one frame per line (events scenarios only)
 ```
+
+  Deviation from the first draft of this plan (recorded, not silent): the API runs as a local uvicorn instead of the `api`
+  container, because the fake Paddle client and the fake Google verifier must be injected; the Compose Postgres is used.
+  If port 5432 is taken, run `POSTGRES_PORT=55432 make api-samples`.
 
 - **At least 5 different examples.** Five hand-built, anonymised SALE listings that differ in city, size, price, admin
   fee and photo count give five distinct `succeeded` results; the failure set adds `succeeded_degraded`, RENT rejection,

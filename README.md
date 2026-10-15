@@ -23,6 +23,8 @@ make down        # stop the containers (add -v via docker compose to drop the da
 make dev         # only Postgres in Docker + bootstrap; run API/worker on the host with uv run
 make migrate     # alembic upgrade head against $DATABASE_URL (postgresql+psycopg://…)
 make seed        # plans, feature flags, admin role (set ADMIN_EMAIL); idempotent
+make api-samples  # run every API operation over loopback HTTP, keep the answers in data/api-samples/ (gitignored; POSTGRES_PORT=55432 if 5432 is taken)
+make api-samples-clean  # delete every capture
 make backup-drill  # dump and restore the dev database into a scratch DB and compare row counts
 make db-down     # stop the dev database
 ```
