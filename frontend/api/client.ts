@@ -1,6 +1,8 @@
 import createClient from "openapi-fetch";
 
 import { ApiError, asProblem, TransportError } from "./errors";
+import { RESPONSE_DOCUMENT, RESPONSES } from "./responses.generated";
+import { schemaErrorsIn } from "./schema-check";
 import { emitSessionExpired } from "./session-events";
 import type { paths } from "./schema.generated";
 
@@ -61,7 +63,35 @@ export function createApi({
     }
     return buffered(response, text);
   };
-  return createClient<paths>({ baseUrl, fetch: timed });
+  const client = createClient<paths>({ baseUrl, fetch: timed });
+  client.use({
+    // Every success body is checked against its OpenAPI schema before anyone reads it (audit F11, #325).
+    async onResponse({ request, response, schemaPath }) {
+      await checkSuccessBody(`${request.method} ${schemaPath}`, response);
+      return undefined;
+    },
+  });
+  return client;
+}
+
+/**
+ * A 2xx body that does not match the operation's documented schema is not an API answer the app can use: it
+ * fails here as `invalid-response` (the "unexpected response" copy) instead of reaching a component as a typed
+ * value it is not. Keys the SPA does not know are allowed (the server may add a field first); types, required
+ * fields and enum values are not. Error statuses are checked by `asProblem` instead.
+ */
+async function checkSuccessBody(operation: string, response: Response): Promise<void> {
+  const schema = RESPONSES[operation]?.[String(response.status)];
+  if (!response.ok || schema === undefined) return;
+  const text = await response.clone().text(); // already buffered by `timed`: no network read here
+  if (text === "") return;
+  const problems = schemaErrorsIn(RESPONSE_DOCUMENT, schema, JSON.parse(text) as unknown, {
+    allowExtraKeys: true,
+  });
+  if (problems.length > 0)
+    throw new TransportError("invalid-response", {
+      cause: new Error(`${operation} ${String(response.status)}: ${problems.slice(0, 5).join("; ")}`),
+    });
 }
 
 /** Statuses whose response may not carry a body (the Response constructor rejects one). */

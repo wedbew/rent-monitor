@@ -4,6 +4,8 @@ import { fx } from "../test/fixtures";
 import { unmatched, useScenario } from "../test/handlers";
 import { ApiError } from "./errors";
 import { createApi, unwrap } from "./client";
+import { RESPONSE_DOCUMENT, RESPONSES } from "./responses.generated";
+import { unsupportedKeywords } from "./schema-check";
 
 const BASE = window.location.origin;
 
@@ -179,9 +181,10 @@ describe("the response body is inside the deadline and the error kinds", () => {
   it("a fast success leaves no timer behind", async () => {
     vi.useFakeTimers();
     try {
-      const ok = () => Promise.resolve(new Response('{"id":"x"}', { status: 200, headers: json }));
+      const me = fx("GET /api/me", "with_credits_and_flags").body;
+      const ok = () => Promise.resolve(new Response(JSON.stringify(me), { status: 200, headers: json }));
       const result = await createApi({ baseUrl: BASE, fetch: ok, timeoutMs: 5000 }).GET("/api/me");
-      expect(result.data).toEqual({ id: "x" });
+      expect(result.data).toEqual(me);
       expect(vi.getTimerCount()).toBe(0);
     } finally {
       vi.useRealTimers();
@@ -198,5 +201,83 @@ describe("the response body is inside the deadline and the error kinds", () => {
       );
     const failed = await createApi({ baseUrl: BASE, fetch: proxy }).GET("/api/me");
     expect(() => unwrap(failed)).toThrowError(expect.objectContaining({ status: 502, problem: null }));
+  });
+});
+
+/**
+ * Audit F11 / #325: every success body is checked against its OpenAPI schema before anyone reads it. Each
+ * malformed body below used to reach a component typed as if it were valid.
+ */
+describe("success bodies are checked against the OpenAPI schema", () => {
+  const json = { "content-type": "application/json" };
+  const answering =
+    (body: unknown, status = 200) =>
+    () =>
+      Promise.resolve(new Response(JSON.stringify(body), { status, headers: json }));
+  const me = () =>
+    structuredClone(fx("GET /api/me", "with_credits_and_flags").body) as Record<string, unknown>;
+
+  it.each([
+    [
+      "a required field is missing",
+      () => {
+        const body = me();
+        delete body["credit_balance"];
+        return body;
+      },
+    ],
+    ["a number arrives as text", () => ({ ...me(), credit_balance: "7" })],
+    ["the body is a list", () => [me()]],
+    ["the body is null", () => null],
+  ])("%s: invalid-response, never a typed value", async (_, make) => {
+    await expect(createApi({ baseUrl: BASE, fetch: answering(make()) }).GET("/api/me")).rejects.toMatchObject(
+      { name: "TransportError", kind: "invalid-response" },
+    );
+  });
+
+  it("the checker understands every keyword of every documented success body", () => {
+    expect(unsupportedKeywords({ $defs: RESPONSE_DOCUMENT.components.schemas })).toEqual([]);
+    for (const byStatus of Object.values(RESPONSES))
+      for (const schema of Object.values(byStatus)) expect(unsupportedKeywords(schema)).toEqual([]);
+    expect(Object.keys(RESPONSES)).toContain("GET /api/me");
+  });
+
+  it("an audit id that is not a UUID is refused", async () => {
+    const page = structuredClone(fx("GET /api/audits", "heavy_user_default_page").body) as {
+      items: Record<string, unknown>[];
+    };
+    const first = page.items[0];
+    if (first !== undefined) first["audit_id"] = "../../admin";
+    await expect(
+      createApi({ baseUrl: BASE, fetch: answering(page) }).GET("/api/audits"),
+    ).rejects.toMatchObject({ kind: "invalid-response" });
+  });
+
+  it("an unknown enum value in a list is refused", async () => {
+    const page = structuredClone(fx("GET /api/audits", "heavy_user_default_page").body) as {
+      items: Record<string, unknown>[];
+    };
+    const first = page.items[0];
+    if (first !== undefined) first["status"] = "teleported";
+    await expect(
+      createApi({ baseUrl: BASE, fetch: answering(page) }).GET("/api/audits"),
+    ).rejects.toMatchObject({ kind: "invalid-response" });
+  });
+
+  it("a field the SPA does not know yet is allowed (the server may add one first)", async () => {
+    const body = { ...me(), added_later: true };
+    const result = await createApi({ baseUrl: BASE, fetch: answering(body) }).GET("/api/me");
+    expect(result.data).toMatchObject({ added_later: true });
+  });
+
+  it("the diagnostics name paths and reasons, not values", async () => {
+    const error: unknown = await createApi({
+      baseUrl: BASE,
+      fetch: answering({ ...me(), email: 42 }),
+    })
+      .GET("/api/me")
+      .catch((e: unknown) => e);
+    expect(String((error as { cause?: unknown }).cause)).toMatch(/GET \/api\/me 200: \/email: expected/);
+    expect(String((error as { cause?: unknown }).cause)).not.toContain("42");
   });
 });
