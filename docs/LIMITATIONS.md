@@ -220,15 +220,6 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** E-mail and password, and the sign-in link.
 - **Target:** B-004 (client id on the host), #281 (CSP), level 3 evidence per `delivery.md`.
 
-### L-030 — Frontend session transitions do not consistently purge tenant state
-- **Status:** active
-- **Discovered:** 2026-10-15
-- **Affects:** `frontend/shell/session.tsx`, `AccountBlock.tsx`, tenant query cache and progress streams
-- **Evidence:** confirmed in code and a focused Vitest reproduction. **RM-301 (2026-10-15):** expiry, account switch and late answers now purge through one door (`shell/sessionTransitions.test.tsx`); the failed sign-out part remains (#302).
-- **Description:** Session revalidation and changes of authenticated identity do not all pass through a cleanup boundary. Prior tenant queries can survive expiry/account switching; a failed sign-out may leave a valid cookie that restores the session. Browser-cache exposure is established; no backend authorization bypass was demonstrated. See frontend audit F02–F03 and F10.
-- **Workaround:** Do not treat a failed network sign-out as confirmed revocation. Reloading clears in-memory query data but does not revoke a server session.
-- **Target:** #301 (session cleanup/cancellation), #302 (failed sign-out), before release #286; regression tests and remediation in `frontend/docs/AUDIT-2026-10-15.md`, tracker #314. Re-verified open on `staging` `5444eb8` (audit re-verification section).
-
 ### L-031 — GitHub checks do not enforce frontend validation
 - **Status:** active
 - **Discovered:** 2026-10-15
@@ -268,6 +259,16 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Target:** Phase 2 design (blueprint §4.8 step 6): replacement analysis cards, proper pagination, a table-view option and a fuller market information architecture. 2026-10-15 (#262): the market data lives in Postgres only; no `/api/market/*` route exists yet (#21), so the Rynek redesign (#282) waits on it; collection paging is #265.
 
 ## Resolved
+
+### L-030 — Frontend session transitions do not consistently purge tenant state
+- **Status:** resolved
+- **Discovered:** 2026-10-15
+- **Affects:** `frontend/shell/session.tsx`, `AccountBlock.tsx`, tenant query cache and progress streams
+- **Evidence:** confirmed in code and a focused Vitest reproduction. **RM-301 (2026-10-15):** expiry, account switch and late answers now purge through one door (`shell/sessionTransitions.test.tsx`); **RM-302:** an unconfirmed sign-out stays visibly pending with a retry, also across reload (`shell/signOut.test.tsx`).
+- **Description:** Session revalidation and changes of authenticated identity do not all pass through a cleanup boundary. Prior tenant queries can survive expiry/account switching; a failed sign-out may leave a valid cookie that restores the session. Browser-cache exposure is established; no backend authorization bypass was demonstrated. See frontend audit F02–F03 and F10.
+- **Workaround:** Do not treat a failed network sign-out as confirmed revocation. Reloading clears in-memory query data but does not revoke a server session.
+- **Resolved:** 2026-10-15, #322 (RM-301) and RM-302
+- **Target:** #301 (session cleanup/cancellation), #302 (failed sign-out), before release #286; regression tests and remediation in `frontend/docs/AUDIT-2026-10-15.md`, tracker #314. Re-verified open on `staging` `5444eb8` (audit re-verification section).
 
 ### L-026 — Frontend collection and report typing need contract work
 - **Status:** resolved

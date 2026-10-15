@@ -172,6 +172,23 @@ export const PAGES: readonly AppPage[] = [
       "auditsFailing",
       "unverified",
     ],
+    states: [
+      {
+        // Audit F03: the sign-out request never reached the server, so the session may still be alive.
+        name: "signout-unconfirmed",
+        scenario: () => {
+          const flow = createAuthFlow({ "POST /api/auth/signout": { status: 0, networkError: true } });
+          flow.state.signedIn = true;
+          return flow;
+        },
+        prepare: async (page) => {
+          if ((page.viewportSize()?.width ?? 1280) <= 760)
+            await page.getByRole("button", { name: "Otwórz menu nawigacji" }).click();
+          await page.getByRole("button", { name: "Wyloguj się" }).click();
+          await page.getByText("Nie udało się potwierdzić wylogowania").waitFor();
+        },
+      },
+    ],
   },
   {
     id: "new-analysis",
@@ -594,6 +611,14 @@ export const INTERACTIONS: readonly Interaction[] = [
     within: "mobile-menu",
     role: "button",
     name: "Wyloguj się",
+    outcome: "url",
+  },
+  {
+    id: "shell.signout.retry",
+    page: "dashboard",
+    state: "signout-unconfirmed",
+    role: "button",
+    name: "Spróbuj wylogować ponownie",
     outcome: "url",
   },
   {

@@ -685,6 +685,9 @@ export function createAuthFlow(overrides: Record<string, Reply> = {}): AuthFlow 
       operation: "POST /api/auth/signout",
       reply: () => {
         calls.push("signout");
+        // An override (a dropped connection, a 5xx) is a sign-out the server never performed: the session stays.
+        const failed = overrides["POST /api/auth/signout"];
+        if (failed !== undefined) return failed;
         state.signedIn = false;
         return reply("POST /api/auth/signout", "signed_out");
       },

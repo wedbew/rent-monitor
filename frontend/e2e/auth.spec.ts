@@ -628,6 +628,41 @@ test.describe("the session boundary", () => {
     });
   });
 
+  test("a sign-out that never reached the server is not shown as done, survives a reload and can be retried", async ({
+    page,
+    serve,
+    isMobile,
+  }) => {
+    test.skip(isMobile, "the rail is desktop; the mobile menu uses the same session code");
+    const overrides: Record<string, ReturnType<typeof replyFrom>> = {
+      "POST /api/auth/signout": { status: 0, networkError: true },
+    };
+    const { flow, api } = await start(serve, overrides);
+    flow.state.signedIn = true;
+    await page.goto("/app");
+    await expect(heading(page, "Pulpit")).toBeVisible();
+    await page.getByRole("button", { name: "Wyloguj się" }).click();
+
+    await expect(page.getByText("Nie udało się potwierdzić wylogowania")).toBeVisible();
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.getByText("7 raportów na koncie")).toBeHidden();
+
+    // Focus and reload: the cookie still works, but nothing private comes back and no success is claimed.
+    await page.reload();
+    await expect(page.getByText("Nie udało się potwierdzić wylogowania")).toBeVisible();
+    await expect(heading(page, "Pulpit")).toBeHidden();
+    await page.goto("/login");
+    await expect(page.getByText("Nie udało się potwierdzić wylogowania")).toBeVisible();
+
+    delete overrides["POST /api/auth/signout"]; // the connection is back
+    await exercise("shell.signout.retry", async () => {
+      await page.getByRole("button", { name: "Spróbuj wylogować ponownie" }).click();
+      return [await outcome.url(page, /\/login$/)];
+    });
+    expect(api.requests.filter((r) => r.path === "/api/auth/signout").length).toBeGreaterThanOrEqual(3);
+    expect(await page.evaluate(() => ({ ...sessionStorage }))).toEqual({});
+  });
+
   test("an unconfirmed address shows a banner with a resend", async ({ page, serve }) => {
     const api = await serve("unverified");
     await page.goto("/app");
