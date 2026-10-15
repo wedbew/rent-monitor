@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
+import { takeHeadingFocus } from "./headingFocus";
 import styles from "./PageHeading.module.css";
 
 interface PageHeadingProps {
@@ -16,13 +17,20 @@ export const TITLE_SUFFIX = " · renti";
  * navigation the shell moves focus to this heading, because the browser does not do it for a single-page app.
  */
 export function PageHeading({ title, eyebrow, lead }: PageHeadingProps) {
+  const ref = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     document.title = `${title}${TITLE_SUFFIX}`;
   }, [title]);
+  // A page whose code loaded after the navigation takes the focus the shell asked for (shell/headingFocus.ts).
+  useEffect(() => {
+    takeHeadingFocus(ref.current);
+  }, []);
   return (
     <div className={styles["heading"]}>
       {eyebrow ? <p className={styles["eyebrow"]}>{eyebrow}</p> : null}
-      <h1 tabIndex={-1}>{title}</h1>
+      <h1 ref={ref} tabIndex={-1}>
+        {title}
+      </h1>
       {lead ? <p className={styles["lead"]}>{lead}</p> : null}
     </div>
   );

@@ -8,6 +8,11 @@ import { mockApi, type MockApi } from "./mock";
 interface Fixtures {
   /** Serve a registry scenario for the page; returns the recorded requests. */
   serve: (which: ScenarioName | Scenario) => Promise<MockApi>;
+  /**
+   * Declare a browser error this test provokes on purpose (a chunk that fails to load, for example). Each pattern
+   * must match at least one error, so an allowance cannot outlive what it was for; anything else still fails.
+   */
+  allowErrors: (...patterns: RegExp[]) => void;
 }
 
 /**
@@ -15,7 +20,14 @@ interface Fixtures {
  * that the scenario meant to fail is the browser's own message and is allowed), and no request that the scenario
  * had no route for.
  */
+const allowances = new WeakMap<Page, RegExp[]>();
+
 export const test = base.extend<Fixtures>({
+  allowErrors: async ({ page }, provide) => {
+    await provide((...patterns) => {
+      allowances.set(page, [...(allowances.get(page) ?? []), ...patterns]);
+    });
+  },
   serve: async ({ page }, provide) => {
     await installFakeGis(page);
     const apis: MockApi[] = [];
@@ -32,7 +44,16 @@ export const test = base.extend<Fixtures>({
       apis.push(api);
       return api;
     });
-    expect(problems, "browser errors during the test").toEqual([]);
+    const allowed = allowances.get(page) ?? [];
+    for (const pattern of allowed)
+      expect(
+        problems.some((p) => pattern.test(p)),
+        `allowed error ${String(pattern)} never happened`,
+      ).toBe(true);
+    expect(
+      problems.filter((p) => !allowed.some((pattern) => pattern.test(p))),
+      "browser errors during the test",
+    ).toEqual([]);
     expect(
       apis.flatMap((a) => a.unmatched),
       "API requests the scenario had no route for",

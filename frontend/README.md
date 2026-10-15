@@ -224,8 +224,20 @@ mock or fixture (both enforced by ESLint).
 | Vitest 5, Testing Library, jsdom 30                         |                                                                  | unit and component tests                                                                    |
 | Base UI                                                     | 1.9.0 (**recorded, installed with the first primitive in #270**) | headless dialogs, tabs, menus; no unused dependency until then                              |
 
-Initial entry bundle: **106 kB gzip** (React, Router, Query). The provisional budget of 200 kB gzip for the entry
-chunk is ratified here and enforced in #286.
+### Bundle budget
+
+Enforced by `pnpm check:dist` (`check-dist.mjs`, RM-312), gzip level 9, which is what a visitor downloads:
+
+| Measure                                           | Budget | At RM-312            |
+| ------------------------------------------------- | ------ | -------------------- |
+| Initial JS (entry + chunks `index.html` preloads) | 200 kB | 148.6 kB             |
+| Any lazily loaded chunk                           | 120 kB | 16.6 kB (the report) |
+| All JS                                            | 450 kB | 171 kB               |
+| CSS                                               | 40 kB  | 7.4 kB               |
+
+The analysis pages (new analysis, collection, report) load on first visit (`React.lazy` in `routes.tsx`); while
+their code loads the page says "Wczytuję stronę…", and a chunk gone after a deploy shows the "new version" notice
+with a reload. Raise a budget only in a PR that says why.
 
 ## Browser support
 
