@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/auth/signout-all",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/signout-all",
+    "method": "POST",
+    "operation_id": "sign_out_everywhere_api_auth_signout_all_post",
+    "path": "/api/auth/signout-all"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/auth/signout-all"
+  },
+  "scenario": "no_session",
+  "status": 401
+}

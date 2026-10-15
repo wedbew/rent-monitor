@@ -1,0 +1,301 @@
+{
+  "body": {
+    "asking_price_pln": "445000.00",
+    "audit_id": "00000000-0000-4000-8000-000000000037",
+    "capex_pln": "18744.00",
+    "charge_state": "captured",
+    "created_at": "2026-10-01T10:00:00Z",
+    "error_code": "VISION_UNAVAILABLE",
+    "finished_at": "2026-10-01T10:00:00Z",
+    "grade": "E",
+    "irr_10y": "0.0300",
+    "max_bid_pln": "133310.93",
+    "otodom_id": "IDFIX0014",
+    "result": {
+      "assumptions_version": "2026-10-12.2",
+      "capex": {
+        "base_pln": "18744.00",
+        "catalog_version": "placeholder-2026-10-12",
+        "condition_assumed": true,
+        "condition_used": "refresh",
+        "confidence": "low",
+        "high_pln": "23430.00",
+        "low_pln": "14058.00",
+        "multiplier": "1.10",
+        "pln_per_m2": "660.00",
+        "prices_are_placeholders": true,
+        "tier": "major"
+      },
+      "capex_used_pln": "18744.00",
+      "cash_flow": {
+        "assumptions_version": "2026-10-12.2",
+        "capex_pln": "18744.00",
+        "exit": {
+          "exit_value_pln": "542452.52",
+          "net_proceeds_pln": "531603.47",
+          "sale_tax_pln": "0.00",
+          "selling_costs_pln": "10849.05"
+        },
+        "purchase": {
+          "broker_pln": "0.00",
+          "court_fee_pln": "200.00",
+          "deed_copies_pln": "150.00",
+          "notary_pln": "3136.50",
+          "pcc_pln": "8900.00",
+          "price_pln": "445000.00",
+          "total_acquisition_pln": "457386.50",
+          "total_costs_pln": "12386.50"
+        },
+        "returns": {
+          "cagr": "0.0279",
+          "gross_yield": "0.0431",
+          "irr": "0.0300",
+          "moic": "1.3173",
+          "net_yield": "0.0218"
+        },
+        "total_invested_pln": "476130.50",
+        "warnings": [],
+        "years": [
+          {
+            "costs": {
+              "admin_fee_pln": "4560.00",
+              "insurance_pln": "667.50",
+              "maintenance_pln": "2225.00",
+              "management_pln": "0.00",
+              "property_tax_pln": "33.80",
+              "total_pln": "7486.30"
+            },
+            "income_tax_pln": "1222.30",
+            "net_cash_flow_pln": "5671.46",
+            "rent_collected_pln": "14380.06",
+            "year": 1
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "4696.80",
+              "insurance_pln": "687.53",
+              "maintenance_pln": "2291.75",
+              "management_pln": "0.00",
+              "property_tax_pln": "34.81",
+              "total_pln": "7710.88"
+            },
+            "income_tax_pln": "1538.75",
+            "net_cash_flow_pln": "8853.26",
+            "rent_collected_pln": "18102.89",
+            "year": 2
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "4837.70",
+              "insurance_pln": "708.15",
+              "maintenance_pln": "2360.50",
+              "management_pln": "0.00",
+              "property_tax_pln": "35.85",
+              "total_pln": "7942.21"
+            },
+            "income_tax_pln": "1584.91",
+            "net_cash_flow_pln": "9118.86",
+            "rent_collected_pln": "18645.98",
+            "year": 3
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "4982.84",
+              "insurance_pln": "729.40",
+              "maintenance_pln": "2431.32",
+              "management_pln": "0.00",
+              "property_tax_pln": "36.93",
+              "total_pln": "8180.48"
+            },
+            "income_tax_pln": "1632.46",
+            "net_cash_flow_pln": "9392.42",
+            "rent_collected_pln": "19205.36",
+            "year": 4
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "5132.32",
+              "insurance_pln": "751.28",
+              "maintenance_pln": "2504.26",
+              "management_pln": "0.00",
+              "property_tax_pln": "38.04",
+              "total_pln": "8425.89"
+            },
+            "income_tax_pln": "1681.43",
+            "net_cash_flow_pln": "9674.20",
+            "rent_collected_pln": "19781.52",
+            "year": 5
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "5286.29",
+              "insurance_pln": "773.82",
+              "maintenance_pln": "2579.38",
+              "management_pln": "0.00",
+              "property_tax_pln": "39.18",
+              "total_pln": "8678.67"
+            },
+            "income_tax_pln": "1731.87",
+            "net_cash_flow_pln": "9964.43",
+            "rent_collected_pln": "20374.97",
+            "year": 6
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "5444.88",
+              "insurance_pln": "797.03",
+              "maintenance_pln": "2656.77",
+              "management_pln": "0.00",
+              "property_tax_pln": "40.35",
+              "total_pln": "8939.03"
+            },
+            "income_tax_pln": "1783.83",
+            "net_cash_flow_pln": "10263.35",
+            "rent_collected_pln": "20986.21",
+            "year": 7
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "5608.22",
+              "insurance_pln": "820.94",
+              "maintenance_pln": "2736.47",
+              "management_pln": "0.00",
+              "property_tax_pln": "41.56",
+              "total_pln": "9207.20"
+            },
+            "income_tax_pln": "1837.34",
+            "net_cash_flow_pln": "10571.26",
+            "rent_collected_pln": "21615.80",
+            "year": 8
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "5776.47",
+              "insurance_pln": "845.57",
+              "maintenance_pln": "2818.56",
+              "management_pln": "0.00",
+              "property_tax_pln": "42.81",
+              "total_pln": "9483.42"
+            },
+            "income_tax_pln": "1892.46",
+            "net_cash_flow_pln": "10888.39",
+            "rent_collected_pln": "22264.27",
+            "year": 9
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "5949.77",
+              "insurance_pln": "870.94",
+              "maintenance_pln": "2903.12",
+              "management_pln": "0.00",
+              "property_tax_pln": "44.10",
+              "total_pln": "9767.92"
+            },
+            "income_tax_pln": "1949.24",
+            "net_cash_flow_pln": "11215.04",
+            "rent_collected_pln": "22932.20",
+            "year": 10
+          }
+        ]
+      },
+      "confidence": "low",
+      "engine_version": "0.1.0",
+      "legal": {
+        "confidence": "medium",
+        "evidence": [],
+        "legal_class": "residential",
+        "price_basis": "unknown"
+      },
+      "listing": {
+        "admin_fee_pln": "380",
+        "area_m2": "28.4",
+        "build_year": 1998,
+        "building_floors": 5,
+        "building_ownership": null,
+        "building_type": null,
+        "city": "Gdańsk",
+        "created_at": "2026-09-01T10:00:00Z",
+        "deposit_pln": null,
+        "description": "Opis testowy ogłoszenia.",
+        "floor": "2",
+        "floor_plan_urls": [],
+        "heating": null,
+        "kind": "SALE",
+        "latitude": "54.35",
+        "location_id": null,
+        "longitude": "18.65",
+        "modified_at": "2026-10-01T08:30:00Z",
+        "otodom_id": "IDFIX0015",
+        "photo_urls": [
+          "https://example.test/fixture/5",
+          "https://example.test/fixture/6",
+          "https://example.test/fixture/7"
+        ],
+        "price_pln": "445000",
+        "rooms": 1,
+        "street": "Przykładowa",
+        "title": "Mieszkanie 1 pok., Gdańsk, 28.4 m2",
+        "url": null,
+        "warnings": ["building_type_missing", "heating_missing", "windows_missing"],
+        "windows": null
+      },
+      "ownership": {
+        "confidence": "low",
+        "evidence": [],
+        "interest": "unknown",
+        "share_denominator": null,
+        "share_numerator": null,
+        "structured_value": null,
+        "title_form": "unknown"
+      },
+      "rent": {
+        "basis": "asking",
+        "comparables": 14,
+        "confidence": "high",
+        "haircut": "0.03",
+        "input_monthly_pln": "1647.20",
+        "monthly_after_haircut_pln": "1597.78",
+        "monthly_used_pln": "1597.78"
+      },
+      "schema_version": 1,
+      "valuation": {
+        "asking_price_pln": "445000.00",
+        "discount_to_asking": "-0.7004",
+        "grade": "E",
+        "hurdle": "0.0750",
+        "irr_at_asking": "0.0300",
+        "max_bid_bounded": true,
+        "max_bid_if_appreciation_minus_1pp_pln": "120127.94",
+        "max_bid_if_appreciation_plus_1pp_pln": "151466.12",
+        "max_bid_pln": "133310.93",
+        "verdict": "pass"
+      },
+      "vision": null,
+      "warnings": [
+        "building_type_missing",
+        "heating_missing",
+        "windows_missing",
+        "capex_prices_are_placeholders",
+        "vision_unavailable"
+      ]
+    },
+    "started_at": "2026-10-01T10:00:00Z",
+    "status": "succeeded_degraded"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}",
+    "method": "GET",
+    "operation_id": "get_audit_api_audits__audit_id__get",
+    "path": "/api/audits/{audit_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/00000000-0000-4000-8000-000000000037"
+  },
+  "scenario": "succeeded_degraded",
+  "status": 200
+}

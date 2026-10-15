@@ -25,6 +25,7 @@ make migrate     # alembic upgrade head against $DATABASE_URL (postgresql+psycop
 make seed        # plans, feature flags, admin role (set ADMIN_EMAIL); idempotent
 make fe-install   # SPA dependencies (Node per frontend/.node-version, pnpm via corepack)
 make fe-check     # the SPA gate: api drift, types, lint, css, format, tests, build
+make fe-fixtures   # sanitised UI fixtures from the newest capture (frontend/test/fixtures)
 make fe-dev       # Vite dev server, /api proxied to the local API
 make api-samples  # run every API operation over loopback HTTP, keep the answers in data/api-samples/ (gitignored; POSTGRES_PORT=55432 if 5432 is taken)
 make api-samples-clean  # delete every capture

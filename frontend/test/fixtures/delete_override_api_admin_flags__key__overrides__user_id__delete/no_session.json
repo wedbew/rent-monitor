@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/admin/flags/some_flag/overrides/nobody",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "DELETE /api/admin/flags/{key}/overrides/{user_id}",
+    "method": "DELETE",
+    "operation_id": "delete_override_api_admin_flags__key__overrides__user_id__delete",
+    "path": "/api/admin/flags/{key}/overrides/{user_id}"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/admin/flags/some_flag/overrides/nobody"
+  },
+  "scenario": "no_session",
+  "status": 401
+}

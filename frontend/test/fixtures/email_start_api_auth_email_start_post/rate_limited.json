@@ -1,0 +1,29 @@
+{
+  "body": {
+    "code": "RATE_LIMITED",
+    "instance": "/api/auth/email/start",
+    "request_id": "req_fixture",
+    "status": 429,
+    "title": "Too many requests",
+    "type": "urn:rentmonitor:problem:RATE_LIMITED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json",
+    "retry-after": "297"
+  },
+  "operation": {
+    "key": "POST /api/auth/email/start",
+    "method": "POST",
+    "operation_id": "email_start_api_auth_email_start_post",
+    "path": "/api/auth/email/start"
+  },
+  "request": {
+    "body": {
+      "email": "user-4@example.test"
+    },
+    "path": "/api/auth/email/start"
+  },
+  "scenario": "rate_limited",
+  "status": 429
+}

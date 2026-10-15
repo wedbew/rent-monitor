@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "CONFIRMATION_MISMATCH",
+    "instance": "/api/me",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Type your account email address to confirm",
+    "type": "urn:rentmonitor:problem:CONFIRMATION_MISMATCH"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "DELETE /api/me",
+    "method": "DELETE",
+    "operation_id": "delete_my_account_api_me_delete",
+    "path": "/api/me"
+  },
+  "request": {
+    "body": {
+      "confirm_email": "user-1@example.test"
+    },
+    "path": "/api/me"
+  },
+  "scenario": "confirmation_mismatch",
+  "status": 422
+}

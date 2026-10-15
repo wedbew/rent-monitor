@@ -1,0 +1,29 @@
+{
+  "body": {
+    "code": "BILLING_PROVIDER_ERROR",
+    "instance": "/api/billing/checkout",
+    "purchase_id": "00000000-0000-4000-8000-000000000018",
+    "request_id": "req_fixture",
+    "status": 502,
+    "title": "The payment provider could not start this purchase",
+    "type": "urn:rentmonitor:problem:BILLING_PROVIDER_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/billing/checkout",
+    "method": "POST",
+    "operation_id": "checkout_api_billing_checkout_post",
+    "path": "/api/billing/checkout"
+  },
+  "request": {
+    "body": {
+      "pack_code": "reports_5"
+    },
+    "path": "/api/billing/checkout"
+  },
+  "scenario": "provider_refused",
+  "status": 502
+}

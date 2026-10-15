@@ -13,6 +13,8 @@ readable. The shape itself is published as [`deal-analysis.schema.json`](deal-an
   property anywhere is a JSON number. Parse with a decimal type, never `Number()`.
 - **Unknown is not zero.** A value the engine could not compute (for example Max Bid when the rent was refused) is
   explicitly nullable (`anyOf: [..., null]`). Render it as "not computed".
+- **Serialized fields are required.** `model_dump` always writes every field, defaults included, so every property
+  in the schema is `required` and a reader may rely on it being present.
 - **One version per document.** `schema_version` is a `const` in the schema; a document of another version does not
   validate against it.
 

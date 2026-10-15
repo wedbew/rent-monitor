@@ -1,0 +1,328 @@
+{
+  "body": {
+    "asking_price_pln": "890000.00",
+    "audit_id": "00000000-0000-4000-8000-000000000042",
+    "capex_pln": "0.00",
+    "charge_state": "captured",
+    "created_at": "2026-10-01T10:00:00Z",
+    "error_code": null,
+    "finished_at": "2026-10-01T10:00:00Z",
+    "grade": "E",
+    "irr_10y": "0.0355",
+    "max_bid_pln": "356345.43",
+    "otodom_id": "IDFIX0022",
+    "result": {
+      "assumptions_version": "2026-10-12.2",
+      "capex": {
+        "base_pln": "0.00",
+        "catalog_version": "placeholder-2026-10-12",
+        "condition_assumed": false,
+        "condition_used": "good",
+        "confidence": "medium",
+        "high_pln": "0.00",
+        "low_pln": "0.00",
+        "multiplier": "1.25",
+        "pln_per_m2": "0.00",
+        "prices_are_placeholders": true,
+        "tier": "metro"
+      },
+      "capex_used_pln": "0.00",
+      "cash_flow": {
+        "assumptions_version": "2026-10-12.2",
+        "capex_pln": "0.00",
+        "exit": {
+          "exit_value_pln": "1084905.03",
+          "net_proceeds_pln": "1063206.93",
+          "sale_tax_pln": "0.00",
+          "selling_costs_pln": "21698.10"
+        },
+        "purchase": {
+          "broker_pln": "0.00",
+          "court_fee_pln": "200.00",
+          "deed_copies_pln": "150.00",
+          "notary_pln": "5325.90",
+          "pcc_pln": "17800.00",
+          "price_pln": "890000.00",
+          "total_acquisition_pln": "913475.90",
+          "total_costs_pln": "23475.90"
+        },
+        "returns": {
+          "cagr": "0.0329",
+          "gross_yield": "0.0423",
+          "irr": "0.0355",
+          "moic": "1.3824",
+          "net_yield": "0.0235"
+        },
+        "total_invested_pln": "913475.90",
+        "warnings": [],
+        "years": [
+          {
+            "costs": {
+              "admin_fee_pln": "7800.00",
+              "insurance_pln": "1335.00",
+              "maintenance_pln": "4450.00",
+              "management_pln": "0.00",
+              "property_tax_pln": "57.72",
+              "total_pln": "13642.72"
+            },
+            "income_tax_pln": "2398.34",
+            "net_cash_flow_pln": "12174.65",
+            "rent_collected_pln": "28215.71",
+            "year": 1
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "8034.00",
+              "insurance_pln": "1375.05",
+              "maintenance_pln": "4583.50",
+              "management_pln": "0.00",
+              "property_tax_pln": "59.45",
+              "total_pln": "14052.00"
+            },
+            "income_tax_pln": "3019.24",
+            "net_cash_flow_pln": "18449.20",
+            "rent_collected_pln": "35520.44",
+            "year": 2
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "8275.02",
+              "insurance_pln": "1416.30",
+              "maintenance_pln": "4721.01",
+              "management_pln": "0.00",
+              "property_tax_pln": "61.23",
+              "total_pln": "14473.56"
+            },
+            "income_tax_pln": "3109.81",
+            "net_cash_flow_pln": "19002.69",
+            "rent_collected_pln": "36586.06",
+            "year": 3
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "8523.27",
+              "insurance_pln": "1458.79",
+              "maintenance_pln": "4862.64",
+              "management_pln": "0.00",
+              "property_tax_pln": "63.07",
+              "total_pln": "14907.76"
+            },
+            "income_tax_pln": "3203.11",
+            "net_cash_flow_pln": "19572.77",
+            "rent_collected_pln": "37683.64",
+            "year": 4
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "8778.97",
+              "insurance_pln": "1502.55",
+              "maintenance_pln": "5008.51",
+              "management_pln": "0.00",
+              "property_tax_pln": "64.96",
+              "total_pln": "15355.00"
+            },
+            "income_tax_pln": "3299.20",
+            "net_cash_flow_pln": "20159.95",
+            "rent_collected_pln": "38814.15",
+            "year": 5
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "9042.34",
+              "insurance_pln": "1547.63",
+              "maintenance_pln": "5158.77",
+              "management_pln": "0.00",
+              "property_tax_pln": "66.91",
+              "total_pln": "15815.65"
+            },
+            "income_tax_pln": "3398.18",
+            "net_cash_flow_pln": "20764.74",
+            "rent_collected_pln": "39978.57",
+            "year": 6
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "9313.61",
+              "insurance_pln": "1594.06",
+              "maintenance_pln": "5313.53",
+              "management_pln": "0.00",
+              "property_tax_pln": "68.91",
+              "total_pln": "16290.12"
+            },
+            "income_tax_pln": "3500.12",
+            "net_cash_flow_pln": "21387.69",
+            "rent_collected_pln": "41177.93",
+            "year": 7
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "9593.02",
+              "insurance_pln": "1641.88",
+              "maintenance_pln": "5472.94",
+              "management_pln": "0.00",
+              "property_tax_pln": "70.98",
+              "total_pln": "16778.82"
+            },
+            "income_tax_pln": "3605.13",
+            "net_cash_flow_pln": "22029.32",
+            "rent_collected_pln": "42413.27",
+            "year": 8
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "9880.81",
+              "insurance_pln": "1691.14",
+              "maintenance_pln": "5637.13",
+              "management_pln": "0.00",
+              "property_tax_pln": "73.11",
+              "total_pln": "17282.18"
+            },
+            "income_tax_pln": "3713.28",
+            "net_cash_flow_pln": "22690.20",
+            "rent_collected_pln": "43685.66",
+            "year": 9
+          },
+          {
+            "costs": {
+              "admin_fee_pln": "10177.23",
+              "insurance_pln": "1741.87",
+              "maintenance_pln": "5806.24",
+              "management_pln": "0.00",
+              "property_tax_pln": "75.30",
+              "total_pln": "17800.65"
+            },
+            "income_tax_pln": "3824.68",
+            "net_cash_flow_pln": "23370.90",
+            "rent_collected_pln": "44996.23",
+            "year": 10
+          }
+        ]
+      },
+      "confidence": "medium",
+      "engine_version": "0.1.0",
+      "legal": {
+        "confidence": "medium",
+        "evidence": [],
+        "legal_class": "residential",
+        "price_basis": "unknown"
+      },
+      "listing": {
+        "admin_fee_pln": "650",
+        "area_m2": "48.5",
+        "build_year": 1998,
+        "building_floors": 5,
+        "building_ownership": null,
+        "building_type": null,
+        "city": "Warszawa",
+        "created_at": "2026-09-01T10:00:00Z",
+        "deposit_pln": null,
+        "description": "Opis testowy ogłoszenia.",
+        "floor": "2",
+        "floor_plan_urls": ["https://example.test/fixture/70"],
+        "heating": null,
+        "kind": "SALE",
+        "latitude": "52.23",
+        "location_id": null,
+        "longitude": "21.01",
+        "modified_at": "2026-10-01T08:30:00Z",
+        "otodom_id": "IDFIX0023",
+        "photo_urls": [
+          "https://example.test/fixture/59",
+          "https://example.test/fixture/60",
+          "https://example.test/fixture/61",
+          "https://example.test/fixture/62",
+          "https://example.test/fixture/63",
+          "https://example.test/fixture/64",
+          "https://example.test/fixture/65",
+          "https://example.test/fixture/66",
+          "https://example.test/fixture/67",
+          "https://example.test/fixture/68",
+          "https://example.test/fixture/69"
+        ],
+        "price_pln": "890000",
+        "rooms": 2,
+        "street": "Przykładowa",
+        "title": "Mieszkanie 2 pok., Warszawa, 48.5 m2",
+        "url": null,
+        "warnings": ["building_type_missing", "heating_missing", "windows_missing"],
+        "windows": null
+      },
+      "ownership": {
+        "confidence": "low",
+        "evidence": [],
+        "interest": "unknown",
+        "share_denominator": null,
+        "share_numerator": null,
+        "structured_value": null,
+        "title_form": "unknown"
+      },
+      "rent": {
+        "basis": "asking",
+        "comparables": 14,
+        "confidence": "high",
+        "haircut": "0.03",
+        "input_monthly_pln": "3298.00",
+        "monthly_after_haircut_pln": "3199.06",
+        "monthly_used_pln": "3135.08"
+      },
+      "schema_version": 1,
+      "valuation": {
+        "asking_price_pln": "890000.00",
+        "discount_to_asking": "-0.5996",
+        "grade": "E",
+        "hurdle": "0.0750",
+        "irr_at_asking": "0.0355",
+        "max_bid_bounded": true,
+        "max_bid_if_appreciation_minus_1pp_pln": "321106.89",
+        "max_bid_if_appreciation_plus_1pp_pln": "404875.19",
+        "max_bid_pln": "356345.43",
+        "verdict": "pass"
+      },
+      "vision": {
+        "capex": {
+          "applied": "0.05",
+          "base": "0.00",
+          "clamped": false,
+          "proposed": "0.05",
+          "value": "0.0000"
+        },
+        "condition": "good",
+        "model": "vendor/smoke-model",
+        "photos_excluded": 1,
+        "photos_total": 11,
+        "prompt_version": "vision-v1",
+        "rent": {
+          "applied": "-0.02",
+          "base": "3199.060",
+          "clamped": false,
+          "proposed": "-0.02",
+          "value": "3135.07880"
+        }
+      },
+      "warnings": [
+        "building_type_missing",
+        "heating_missing",
+        "windows_missing",
+        "capex_prices_are_placeholders"
+      ]
+    },
+    "started_at": "2026-10-01T10:00:00Z",
+    "status": "succeeded"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}",
+    "method": "GET",
+    "operation_id": "get_audit_api_audits__audit_id__get",
+    "path": "/api/audits/{audit_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/00000000-0000-4000-8000-000000000042"
+  },
+  "scenario": "succeeded_warszawa",
+  "status": 200
+}

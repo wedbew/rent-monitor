@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "NOT_FOUND",
+    "instance": "/api/admin/users/nobody/billing-hold/clear",
+    "request_id": "req_fixture",
+    "status": 404,
+    "title": "User not found",
+    "type": "urn:rentmonitor:problem:NOT_FOUND"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/admin/users/{user_id}/billing-hold/clear",
+    "method": "POST",
+    "operation_id": "clear_hold_api_admin_users__user_id__billing_hold_clear_post",
+    "path": "/api/admin/users/{user_id}/billing-hold/clear"
+  },
+  "request": {
+    "body": {
+      "note": "Notatka testowa 7"
+    },
+    "path": "/api/admin/users/nobody/billing-hold/clear"
+  },
+  "scenario": "unknown_user",
+  "status": 404
+}

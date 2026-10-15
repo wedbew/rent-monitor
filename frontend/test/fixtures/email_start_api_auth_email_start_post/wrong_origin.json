@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/auth/email/start",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/email/start",
+    "method": "POST",
+    "operation_id": "email_start_api_auth_email_start_post",
+    "path": "/api/auth/email/start"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/auth/email/start"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

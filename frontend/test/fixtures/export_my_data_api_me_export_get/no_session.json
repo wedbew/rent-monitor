@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/me/export",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/me/export",
+    "method": "GET",
+    "operation_id": "export_my_data_api_me_export_get",
+    "path": "/api/me/export"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/me/export"
+  },
+  "scenario": "no_session",
+  "status": 401
+}

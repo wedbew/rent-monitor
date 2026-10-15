@@ -20,5 +20,12 @@ export default defineConfig({
     include: ["**/*.test.{ts,tsx}"],
     exclude: ["node_modules", "dist", "e2e"],
     css: false,
+    coverage: {
+      provider: "v8",
+      include: ["api/**/*.ts"],
+      exclude: ["api/**/*.generated.ts", "api/**/*.test.ts"],
+      reporter: ["text-summary", "text"],
+      thresholds: { lines: 97, functions: 95, branches: 93, statements: 95 },
+    },
   },
 });

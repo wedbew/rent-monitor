@@ -1,0 +1,29 @@
+{
+  "body": {
+    "audit_id": "00000000-0000-4000-8000-000000000025",
+    "code": "AUDIT_IN_PROGRESS",
+    "instance": "/api/audits",
+    "request_id": "req_fixture",
+    "status": 409,
+    "title": "An analysis of this listing is already running",
+    "type": "urn:rentmonitor:problem:AUDIT_IN_PROGRESS"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/audits",
+    "method": "POST",
+    "operation_id": "create_audit_api_audits_post",
+    "path": "/api/audits"
+  },
+  "request": {
+    "body": {
+      "listing_ref": "IDFIX0002"
+    },
+    "path": "/api/audits"
+  },
+  "scenario": "already_in_progress",
+  "status": 409
+}

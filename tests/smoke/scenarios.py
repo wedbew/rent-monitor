@@ -372,7 +372,7 @@ async def signout_all(w: World) -> Exchange:
 # ================================================================================================== me
 @scenario("GET /api/me", "with_credits_and_flags", 200)
 async def me(w: World) -> Exchange:
-    await w.add_flag(f"smoke_on_{uuid4().hex[:6]}", description="on for everyone", enabled_default=True)
+    await w.add_flag("smoke_on", description="on for everyone", enabled_default=True)
     return await w.send(await w.user(label="me", credits=7), "GET", "/api/me")
 
 
@@ -969,16 +969,15 @@ async def invoice_malformed(w: World) -> Exchange:
 # =============================================================================================== admin
 @scenario("GET /api/admin/flags", "three_flags", 200)
 async def flags(w: World) -> Exchange:
-    suffix = uuid4().hex[:6]
-    await w.add_flag(f"smoke_a_{suffix}", description="on for everyone", enabled_default=True)
-    await w.add_flag(f"smoke_b_{suffix}", description="pro plan only", enabled_default=True, min_plan="pro")
-    await w.add_flag(f"smoke_c_{suffix}", description="half rolled out", rollout_pct=50)
+    await w.add_flag("smoke_everyone", description="on for everyone", enabled_default=True)
+    await w.add_flag("smoke_pro_only", description="pro plan only", enabled_default=True, min_plan="pro")
+    await w.add_flag("smoke_half_rolled_out", description="half rolled out", rollout_pct=50)
     return await w.send(await w.user(label="admin", role="admin"), "GET", "/api/admin/flags")
 
 
 @scenario("PUT /api/admin/flags/{key}", "updated", 200)
 async def flag_update(w: World) -> Exchange:
-    key = await w.add_flag(f"smoke_{uuid4().hex[:8]}", description="rollout", rollout_pct=10)
+    key = await w.add_flag("smoke_rollout", description="rollout", rollout_pct=10)
     admin = await w.user(label="admin", role="admin")
     return await w.send(
         admin, "PUT", f"/api/admin/flags/{key}", json={"rollout_pct": 75, "enabled_default": True}
@@ -987,7 +986,7 @@ async def flag_update(w: World) -> Exchange:
 
 @scenario("PUT /api/admin/flags/{key}", "min_plan_cleared", 200)
 async def flag_clear_plan(w: World) -> Exchange:
-    key = await w.add_flag(f"smoke_{uuid4().hex[:8]}", description="pro", min_plan="pro")
+    key = await w.add_flag("smoke_min_plan", description="pro", min_plan="pro")
     admin = await w.user(label="admin", role="admin")
     return await w.send(admin, "PUT", f"/api/admin/flags/{key}", json={"clear_min_plan": True})
 
@@ -1000,14 +999,14 @@ async def flag_unknown(w: World) -> Exchange:
 
 @scenario("PUT /api/admin/flags/{key}", "rollout_out_of_range", 422)
 async def flag_range(w: World) -> Exchange:
-    key = await w.add_flag(f"smoke_{uuid4().hex[:8]}", description="rollout")
+    key = await w.add_flag("smoke_range", description="rollout")
     admin = await w.user(label="admin", role="admin")
     return await w.send(admin, "PUT", f"/api/admin/flags/{key}", json={"rollout_pct": 101})
 
 
 @scenario("PUT /api/admin/flags/{key}/overrides/{user_id}", "override_set", 200)
 async def override_put(w: World) -> Exchange:
-    key = await w.add_flag(f"smoke_{uuid4().hex[:8]}", description="beta")
+    key = await w.add_flag("smoke_override_set", description="beta")
     admin, target = await w.user(label="admin", role="admin"), await w.user(label="target")
     return await w.send(
         admin,
@@ -1019,7 +1018,7 @@ async def override_put(w: World) -> Exchange:
 
 @scenario("PUT /api/admin/flags/{key}/overrides/{user_id}", "unknown_user", 404)
 async def override_unknown(w: World) -> Exchange:
-    key = await w.add_flag(f"smoke_{uuid4().hex[:8]}", description="beta")
+    key = await w.add_flag("smoke_override_unknown", description="beta")
     admin = await w.user(label="admin", role="admin")
     return await w.send(
         admin,
@@ -1031,7 +1030,7 @@ async def override_unknown(w: World) -> Exchange:
 
 @scenario("PUT /api/admin/flags/{key}/overrides/{user_id}", "reason_too_short", 422)
 async def override_short(w: World) -> Exchange:
-    key = await w.add_flag(f"smoke_{uuid4().hex[:8]}", description="beta")
+    key = await w.add_flag("smoke_override_short", description="beta")
     admin, target = await w.user(label="admin", role="admin"), await w.user(label="target")
     return await w.send(
         admin,
@@ -1043,7 +1042,7 @@ async def override_short(w: World) -> Exchange:
 
 @scenario("DELETE /api/admin/flags/{key}/overrides/{user_id}", "override_removed", 204)
 async def override_delete(w: World) -> Exchange:
-    key = await w.add_flag(f"smoke_{uuid4().hex[:8]}", description="beta")
+    key = await w.add_flag("smoke_override_removed", description="beta")
     admin, target = await w.user(label="admin", role="admin"), await w.user(label="target")
     path = f"/api/admin/flags/{key}/overrides/{target.user_id}"
     await w.send(admin, "PUT", path, json={"enabled": True, "reason": "design partner"})

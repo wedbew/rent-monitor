@@ -1,0 +1,17 @@
+{
+  "body": null,
+  "content_type": "",
+  "headers": {},
+  "operation": {
+    "key": "DELETE /api/admin/flags/{key}/overrides/{user_id}",
+    "method": "DELETE",
+    "operation_id": "delete_override_api_admin_flags__key__overrides__user_id__delete",
+    "path": "/api/admin/flags/{key}/overrides/{user_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/admin/flags/none_here/overrides/nobody"
+  },
+  "scenario": "no_such_override",
+  "status": 204
+}

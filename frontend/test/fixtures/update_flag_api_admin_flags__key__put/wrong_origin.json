@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/admin/flags/some_flag",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "PUT /api/admin/flags/{key}",
+    "method": "PUT",
+    "operation_id": "update_flag_api_admin_flags__key__put",
+    "path": "/api/admin/flags/{key}"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/admin/flags/some_flag"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

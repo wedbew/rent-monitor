@@ -1,0 +1,27 @@
+{
+  "body": {
+    "code": "RATE_LIMITED",
+    "instance": "/api/me/export",
+    "request_id": "req_fixture",
+    "status": 429,
+    "title": "Too many requests",
+    "type": "urn:rentmonitor:problem:RATE_LIMITED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json",
+    "retry-after": "295"
+  },
+  "operation": {
+    "key": "GET /api/me/export",
+    "method": "GET",
+    "operation_id": "export_my_data_api_me_export_get",
+    "path": "/api/me/export"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/me/export"
+  },
+  "scenario": "rate_limited",
+  "status": 429
+}

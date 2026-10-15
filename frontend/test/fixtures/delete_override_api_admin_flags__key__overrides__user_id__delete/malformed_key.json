@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["path", "key"],
+        "msg": "String should match pattern '^[a-z][a-z0-9_]{0,63}$'",
+        "type": "string_pattern_mismatch"
+      }
+    ],
+    "instance": "/api/admin/flags/BAD-KEY/overrides/nobody",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "DELETE /api/admin/flags/{key}/overrides/{user_id}",
+    "method": "DELETE",
+    "operation_id": "delete_override_api_admin_flags__key__overrides__user_id__delete",
+    "path": "/api/admin/flags/{key}/overrides/{user_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/admin/flags/BAD-KEY/overrides/nobody"
+  },
+  "scenario": "malformed_key",
+  "status": 422
+}

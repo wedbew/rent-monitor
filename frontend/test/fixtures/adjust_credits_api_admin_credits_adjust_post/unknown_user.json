@@ -1,0 +1,31 @@
+{
+  "body": {
+    "code": "NOT_FOUND",
+    "instance": "/api/admin/credits/adjust",
+    "request_id": "req_fixture",
+    "status": 404,
+    "title": "User not found",
+    "type": "urn:rentmonitor:problem:NOT_FOUND"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/admin/credits/adjust",
+    "method": "POST",
+    "operation_id": "adjust_credits_api_admin_credits_adjust_post",
+    "path": "/api/admin/credits/adjust"
+  },
+  "request": {
+    "body": {
+      "delta": 1,
+      "idempotency_key": "00000000-0000-4000-8000-000000000005",
+      "note": "Notatka testowa 1",
+      "user_id": "nobody"
+    },
+    "path": "/api/admin/credits/adjust"
+  },
+  "scenario": "unknown_user",
+  "status": 404
+}

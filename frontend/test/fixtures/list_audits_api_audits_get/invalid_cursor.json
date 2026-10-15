@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["query", "cursor"],
+        "msg": "Not a cursor from this API",
+        "type": "invalid_cursor"
+      }
+    ],
+    "instance": "/api/audits",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Invalid cursor",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/audits",
+    "method": "GET",
+    "operation_id": "list_audits_api_audits_get",
+    "path": "/api/audits"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits?cursor=garbage"
+  },
+  "scenario": "invalid_cursor",
+  "status": 422
+}

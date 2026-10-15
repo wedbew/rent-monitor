@@ -29,8 +29,22 @@ def build_schema() -> Schema:
     schema["x-schema-version"] = SCHEMA_VERSION
     version = schema["properties"]["schema_version"]
     version["const"] = SCHEMA_VERSION  # a document validates against the schema of its own version only
-    schema["required"] = sorted({*schema.get("required", []), "schema_version"})
+    _require_serialized_fields(schema)
     return schema
+
+
+def _require_serialized_fields(node: Any) -> None:
+    """`model_dump` always writes every field, defaults included, so the stored document always has them:
+    a reader may rely on `warnings` or `engine_version` being present. (Pydantic only marks defaultless
+    fields as required; `json_schema_serialization_defaults_required` would do the same per model.)"""
+    if isinstance(node, dict):
+        if isinstance(node.get("properties"), dict):
+            node["required"] = sorted(node["properties"])
+        for value in node.values():
+            _require_serialized_fields(value)
+    elif isinstance(node, list):
+        for item in node:
+            _require_serialized_fields(item)
 
 
 def render(schema: Schema) -> str:

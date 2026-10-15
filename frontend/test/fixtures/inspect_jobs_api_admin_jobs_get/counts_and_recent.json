@@ -1,0 +1,246 @@
+{
+  "body": {
+    "counts": {
+      "audit": {
+        "succeeded": 24
+      },
+      "ops": {
+        "todo": 3
+      }
+    },
+    "recent": [
+      {
+        "attempts": 1,
+        "id": 27,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 26,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 25,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 24,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 23,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 22,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 21,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 20,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 19,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 18,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 17,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 16,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 15,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 14,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 13,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 12,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 11,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 10,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 9,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 8,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 7,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 6,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 5,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 0,
+        "id": 4,
+        "queue": "ops",
+        "scheduled_at": null,
+        "status": "todo",
+        "task": "reconcile_queued_audits"
+      },
+      {
+        "attempts": 0,
+        "id": 3,
+        "queue": "ops",
+        "scheduled_at": null,
+        "status": "todo",
+        "task": "monitor"
+      },
+      {
+        "attempts": 0,
+        "id": 2,
+        "queue": "ops",
+        "scheduled_at": null,
+        "status": "todo",
+        "task": "billing_sweep"
+      },
+      {
+        "attempts": 1,
+        "id": 1,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      }
+    ]
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/admin/jobs",
+    "method": "GET",
+    "operation_id": "inspect_jobs_api_admin_jobs_get",
+    "path": "/api/admin/jobs"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/admin/jobs"
+  },
+  "scenario": "counts_and_recent",
+  "status": 200
+}

@@ -1,0 +1,27 @@
+{
+  "body": {
+    "applied": false,
+    "balance": 5
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "POST /api/admin/credits/adjust",
+    "method": "POST",
+    "operation_id": "adjust_credits_api_admin_credits_adjust_post",
+    "path": "/api/admin/credits/adjust"
+  },
+  "request": {
+    "body": {
+      "delta": 3,
+      "idempotency_key": "00000000-0000-4000-8000-000000000004",
+      "note": "Notatka testowa 1",
+      "user_id": "00000000-0000-4000-8000-000000000003"
+    },
+    "path": "/api/admin/credits/adjust"
+  },
+  "scenario": "repeat_changes_nothing",
+  "status": 200
+}

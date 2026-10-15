@@ -25,10 +25,10 @@
         }
       },
       "required": [
-        "base",
-        "proposed",
         "applied",
+        "base",
         "clamped",
+        "proposed",
         "value"
       ],
       "title": "Applied",
@@ -87,16 +87,17 @@
         }
       },
       "required": [
-        "condition_used",
+        "base_pln",
+        "catalog_version",
         "condition_assumed",
-        "tier",
+        "condition_used",
+        "confidence",
+        "high_pln",
+        "low_pln",
         "multiplier",
         "pln_per_m2",
-        "base_pln",
-        "low_pln",
-        "high_pln",
-        "confidence",
-        "catalog_version"
+        "prices_are_placeholders",
+        "tier"
       ],
       "title": "CapexEstimate",
       "type": "object"
@@ -143,12 +144,14 @@
         }
       },
       "required": [
-        "purchase",
+        "assumptions_version",
         "capex_pln",
-        "total_invested_pln",
-        "years",
         "exit",
-        "returns"
+        "purchase",
+        "returns",
+        "total_invested_pln",
+        "warnings",
+        "years"
       ],
       "title": "CashFlowResult",
       "type": "object"
@@ -195,9 +198,9 @@
       },
       "required": [
         "exit_value_pln",
-        "selling_costs_pln",
+        "net_proceeds_pln",
         "sale_tax_pln",
-        "net_proceeds_pln"
+        "selling_costs_pln"
       ],
       "title": "ExitBreakdown",
       "type": "object"
@@ -231,9 +234,10 @@
         }
       },
       "required": [
+        "confidence",
+        "evidence",
         "legal_class",
-        "price_basis",
-        "confidence"
+        "price_basis"
       ],
       "title": "LegalAssessment",
       "type": "object"
@@ -535,13 +539,33 @@
         }
       },
       "required": [
-        "otodom_id",
-        "title",
-        "description",
-        "kind",
-        "price_pln",
+        "admin_fee_pln",
         "area_m2",
-        "rooms"
+        "build_year",
+        "building_floors",
+        "building_ownership",
+        "building_type",
+        "city",
+        "created_at",
+        "deposit_pln",
+        "description",
+        "floor",
+        "floor_plan_urls",
+        "heating",
+        "kind",
+        "latitude",
+        "location_id",
+        "longitude",
+        "modified_at",
+        "otodom_id",
+        "photo_urls",
+        "price_pln",
+        "rooms",
+        "street",
+        "title",
+        "url",
+        "warnings",
+        "windows"
       ],
       "title": "Listing",
       "type": "object"
@@ -640,15 +664,15 @@
         }
       },
       "required": [
-        "hurdle",
         "asking_price_pln",
-        "max_bid_pln",
-        "max_bid_bounded",
         "discount_to_asking",
+        "grade",
+        "hurdle",
         "irr_at_asking",
+        "max_bid_bounded",
         "max_bid_if_appreciation_minus_1pp_pln",
         "max_bid_if_appreciation_plus_1pp_pln",
-        "grade",
+        "max_bid_pln",
         "verdict"
       ],
       "title": "MaxBidResult",
@@ -729,9 +753,13 @@
         }
       },
       "required": [
-        "title_form",
+        "confidence",
+        "evidence",
         "interest",
-        "confidence"
+        "share_denominator",
+        "share_numerator",
+        "structured_value",
+        "title_form"
       ],
       "title": "OwnershipAssessment",
       "type": "object"
@@ -773,14 +801,14 @@
         }
       },
       "required": [
-        "price_pln",
-        "pcc_pln",
-        "notary_pln",
-        "deed_copies_pln",
-        "court_fee_pln",
         "broker_pln",
-        "total_costs_pln",
-        "total_acquisition_pln"
+        "court_fee_pln",
+        "deed_copies_pln",
+        "notary_pln",
+        "pcc_pln",
+        "price_pln",
+        "total_acquisition_pln",
+        "total_costs_pln"
       ],
       "title": "PurchaseCosts",
       "type": "object"
@@ -821,13 +849,13 @@
         }
       },
       "required": [
-        "input_monthly_pln",
         "basis",
-        "haircut",
-        "monthly_after_haircut_pln",
-        "monthly_used_pln",
         "comparables",
-        "confidence"
+        "confidence",
+        "haircut",
+        "input_monthly_pln",
+        "monthly_after_haircut_pln",
+        "monthly_used_pln"
       ],
       "title": "RentApplied",
       "type": "object"
@@ -871,11 +899,11 @@
         }
       },
       "required": [
+        "cagr",
         "gross_yield",
-        "net_yield",
         "irr",
         "moic",
-        "cagr"
+        "net_yield"
       ],
       "title": "Returns",
       "type": "object"
@@ -927,12 +955,12 @@
         }
       },
       "required": [
-        "model",
-        "prompt_version",
-        "condition",
-        "photos_total",
-        "photos_excluded",
         "capex",
+        "condition",
+        "model",
+        "photos_excluded",
+        "photos_total",
+        "prompt_version",
         "rent"
       ],
       "title": "VisionRecord",
@@ -962,11 +990,11 @@
         }
       },
       "required": [
-        "year",
-        "rent_collected_pln",
         "costs",
         "income_tax_pln",
-        "net_cash_flow_pln"
+        "net_cash_flow_pln",
+        "rent_collected_pln",
+        "year"
       ],
       "title": "YearRow",
       "type": "object"
@@ -1001,10 +1029,10 @@
       },
       "required": [
         "admin_fee_pln",
-        "property_tax_pln",
         "insurance_pln",
         "maintenance_pln",
         "management_pln",
+        "property_tax_pln",
         "total_pln"
       ],
       "title": "YearlyCosts",
@@ -1094,17 +1122,20 @@
     }
   },
   "required": [
+    "assumptions_version",
     "capex",
     "capex_used_pln",
     "cash_flow",
     "confidence",
+    "engine_version",
     "legal",
     "listing",
     "ownership",
     "rent",
     "schema_version",
     "valuation",
-    "vision"
+    "vision",
+    "warnings"
   ],
   "title": "DealAnalysis",
   "type": "object",

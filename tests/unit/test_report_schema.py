@@ -166,7 +166,6 @@ def _mutated(change: Any) -> dict[str, Any]:
             "no longer allows ['type:null']",
         ),
         (lambda s: s["$defs"]["Confidence"]["enum"].pop(), "enum no longer allows"),
-        (lambda s: s["required"].append("warnings"), "$.warnings: became required"),
         (
             lambda s: (
                 s["properties"].update(extra_required={"type": "string"})
@@ -179,6 +178,21 @@ def _mutated(change: Any) -> dict[str, Any]:
 def test_breaking_changes_are_detected(change: Any, expected: str) -> None:
     found = breaking_changes(build_schema(), _mutated(change))
     assert any(expected in line for line in found), found
+
+
+def test_a_field_that_becomes_required_is_breaking() -> None:
+    before = copy.deepcopy(build_schema())
+    before["required"].remove("warnings")  # as if `warnings` had been optional in the released version
+    assert any("$.warnings: became required" in line for line in breaking_changes(before, build_schema()))
+
+
+def test_every_serialized_field_is_required() -> None:
+    """model_dump always writes defaults, so a reader can rely on them (docs/REPORT-SCHEMA.md)."""
+    schema = build_schema()
+    assert {"warnings", "engine_version", "assumptions_version"} <= set(schema["required"])
+    for name, node in schema["$defs"].items():
+        if "properties" in node:
+            assert sorted(node["properties"]) == node["required"], name
 
 
 def test_additive_changes_are_not_breaking() -> None:

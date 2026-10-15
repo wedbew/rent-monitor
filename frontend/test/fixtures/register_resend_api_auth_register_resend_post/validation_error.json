@@ -1,0 +1,35 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "email"],
+        "msg": "String should match pattern '^[^@\\s<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$'",
+        "type": "string_pattern_mismatch"
+      }
+    ],
+    "instance": "/api/auth/register/resend",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/register/resend",
+    "method": "POST",
+    "operation_id": "register_resend_api_auth_register_resend_post",
+    "path": "/api/auth/register/resend"
+  },
+  "request": {
+    "body": {
+      "email": "user-23@example.test"
+    },
+    "path": "/api/auth/register/resend"
+  },
+  "scenario": "validation_error",
+  "status": 422
+}

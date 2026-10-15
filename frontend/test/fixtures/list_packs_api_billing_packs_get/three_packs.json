@@ -1,0 +1,44 @@
+{
+  "body": {
+    "enabled": true,
+    "packs": [
+      {
+        "catalog_version": 1,
+        "code": "reports_1",
+        "currency": "PLN",
+        "gross_pln": "10",
+        "reports": 1
+      },
+      {
+        "catalog_version": 1,
+        "code": "reports_5",
+        "currency": "PLN",
+        "gross_pln": "40",
+        "reports": 5
+      },
+      {
+        "catalog_version": 1,
+        "code": "reports_10",
+        "currency": "PLN",
+        "gross_pln": "70",
+        "reports": 10
+      }
+    ]
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/billing/packs",
+    "method": "GET",
+    "operation_id": "list_packs_api_billing_packs_get",
+    "path": "/api/billing/packs"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/billing/packs"
+  },
+  "scenario": "three_packs",
+  "status": 200
+}

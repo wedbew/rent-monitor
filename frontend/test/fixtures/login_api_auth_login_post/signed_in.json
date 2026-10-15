@@ -1,0 +1,29 @@
+{
+  "body": {
+    "avatar_url": null,
+    "email": "user-11@example.test",
+    "email_verified": true,
+    "id": "00000000-0000-4000-8000-000000000292",
+    "name": "Piotr Próbny",
+    "role": "user"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "POST /api/auth/login",
+    "method": "POST",
+    "operation_id": "login_api_auth_login_post",
+    "path": "/api/auth/login"
+  },
+  "request": {
+    "body": {
+      "email": "user-11@example.test",
+      "password": "[redacted]"
+    },
+    "path": "/api/auth/login"
+  },
+  "scenario": "signed_in",
+  "status": 200
+}

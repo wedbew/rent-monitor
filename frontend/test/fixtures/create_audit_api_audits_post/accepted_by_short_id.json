@@ -1,0 +1,27 @@
+{
+  "body": {
+    "audit_id": "00000000-0000-4000-8000-000000000024",
+    "credits_remaining": 2,
+    "events_url": "/api/audits/00000000-0000-4000-8000-000000000024/events",
+    "status": "queued"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "POST /api/audits",
+    "method": "POST",
+    "operation_id": "create_audit_api_audits_post",
+    "path": "/api/audits"
+  },
+  "request": {
+    "body": {
+      "lang": "en",
+      "listing_ref": "IDFIX0001"
+    },
+    "path": "/api/audits"
+  },
+  "scenario": "accepted_by_short_id",
+  "status": 202
+}

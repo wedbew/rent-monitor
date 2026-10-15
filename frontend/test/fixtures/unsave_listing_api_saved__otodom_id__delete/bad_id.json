@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["path", "otodom_id"],
+        "msg": "String should match pattern '^[A-Za-z0-9]{4,16}$'",
+        "type": "string_pattern_mismatch"
+      }
+    ],
+    "instance": "/api/saved/no",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "DELETE /api/saved/{otodom_id}",
+    "method": "DELETE",
+    "operation_id": "unsave_listing_api_saved__otodom_id__delete",
+    "path": "/api/saved/{otodom_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/saved/no"
+  },
+  "scenario": "bad_id",
+  "status": 422
+}

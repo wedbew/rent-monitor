@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["path", "purchase_id"],
+        "msg": "Input should be a valid UUID, invalid character: found `n` at 0",
+        "type": "uuid_parsing"
+      }
+    ],
+    "instance": "/api/billing/purchases/nope",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/billing/purchases/{purchase_id}",
+    "method": "GET",
+    "operation_id": "get_purchase_api_billing_purchases__purchase_id__get",
+    "path": "/api/billing/purchases/{purchase_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/billing/purchases/nope"
+  },
+  "scenario": "malformed_id",
+  "status": 422
+}

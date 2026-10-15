@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/audits/00000000-0000-4000-8000-000000000012",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}",
+    "method": "GET",
+    "operation_id": "get_audit_api_audits__audit_id__get",
+    "path": "/api/audits/{audit_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/00000000-0000-4000-8000-000000000012"
+  },
+  "scenario": "no_session",
+  "status": 401
+}

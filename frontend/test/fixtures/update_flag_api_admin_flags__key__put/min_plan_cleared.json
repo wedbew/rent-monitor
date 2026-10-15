@@ -1,0 +1,28 @@
+{
+  "body": {
+    "description": "pro",
+    "enabled_default": false,
+    "key": "smoke_min_plan",
+    "min_plan": null,
+    "overrides": 0,
+    "rollout_pct": 0
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "PUT /api/admin/flags/{key}",
+    "method": "PUT",
+    "operation_id": "update_flag_api_admin_flags__key__put",
+    "path": "/api/admin/flags/{key}"
+  },
+  "request": {
+    "body": {
+      "clear_min_plan": true
+    },
+    "path": "/api/admin/flags/smoke_min_plan"
+  },
+  "scenario": "min_plan_cleared",
+  "status": 200
+}

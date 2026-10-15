@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "BILLING_UNAVAILABLE",
+    "instance": "/api/admin/billing/purchases/00000000-0000-4000-8000-000000000300/refund",
+    "request_id": "req_fixture",
+    "status": 503,
+    "title": "Billing is not enabled",
+    "type": "urn:rentmonitor:problem:BILLING_UNAVAILABLE"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/admin/billing/purchases/{purchase_id}/refund",
+    "method": "POST",
+    "operation_id": "refund_purchase_api_admin_billing_purchases__purchase_id__refund_post",
+    "path": "/api/admin/billing/purchases/{purchase_id}/refund"
+  },
+  "request": {
+    "body": {
+      "reason": "buyer asked within 14 days, pack unused"
+    },
+    "path": "/api/admin/billing/purchases/00000000-0000-4000-8000-000000000300/refund"
+  },
+  "scenario": "billing_disabled",
+  "status": 503
+}

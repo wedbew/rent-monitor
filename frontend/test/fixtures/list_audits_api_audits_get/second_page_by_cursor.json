@@ -1,0 +1,573 @@
+{
+  "body": {
+    "items": [
+      {
+        "asking_price_pln": "525000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000234",
+        "created_at": "2026-10-13T05:55:08.440776Z",
+        "error_code": null,
+        "finished_at": "2026-10-13T05:55:38.440777Z",
+        "grade": "A",
+        "max_bid_pln": "480000.00",
+        "otodom_id": "IDFIX0203",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "529500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000235",
+        "created_at": "2026-10-13T04:55:08.441671Z",
+        "error_code": null,
+        "finished_at": "2026-10-13T04:55:38.441672Z",
+        "grade": "B",
+        "max_bid_pln": "484000.00",
+        "otodom_id": "IDFIX0204",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": null,
+        "audit_id": "00000000-0000-4000-8000-000000000236",
+        "created_at": "2026-10-13T03:55:08.442566Z",
+        "error_code": "LISTING_GONE",
+        "finished_at": "2026-10-13T03:55:38.442567Z",
+        "grade": null,
+        "max_bid_pln": null,
+        "otodom_id": "IDFIX0205",
+        "status": "failed_input"
+      },
+      {
+        "asking_price_pln": "538500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000237",
+        "created_at": "2026-10-13T02:55:08.443561Z",
+        "error_code": null,
+        "finished_at": "2026-10-13T02:55:38.443562Z",
+        "grade": "D",
+        "max_bid_pln": "492000.00",
+        "otodom_id": "IDFIX0206",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "543000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000238",
+        "created_at": "2026-10-13T01:55:08.444499Z",
+        "error_code": null,
+        "finished_at": "2026-10-13T01:55:38.444500Z",
+        "grade": "F",
+        "max_bid_pln": "496000.00",
+        "otodom_id": "IDFIX0207",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "547500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000239",
+        "created_at": "2026-10-13T00:55:08.445404Z",
+        "error_code": null,
+        "finished_at": "2026-10-13T00:55:38.445405Z",
+        "grade": "A",
+        "max_bid_pln": "500000.00",
+        "otodom_id": "IDFIX0208",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "552000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000240",
+        "created_at": "2026-10-12T23:55:08.446229Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T23:55:38.446230Z",
+        "grade": "B",
+        "max_bid_pln": "504000.00",
+        "otodom_id": "IDFIX0209",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "556500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000241",
+        "created_at": "2026-10-12T22:55:08.447586Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T22:55:38.447587Z",
+        "grade": "C",
+        "max_bid_pln": "508000.00",
+        "otodom_id": "IDFIX0210",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "561000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000242",
+        "created_at": "2026-10-12T21:55:08.448496Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T21:55:38.448496Z",
+        "grade": "D",
+        "max_bid_pln": "512000.00",
+        "otodom_id": "IDFIX0211",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": null,
+        "audit_id": "00000000-0000-4000-8000-000000000243",
+        "created_at": "2026-10-12T20:55:08.449300Z",
+        "error_code": "LISTING_GONE",
+        "finished_at": "2026-10-12T20:55:38.449301Z",
+        "grade": null,
+        "max_bid_pln": null,
+        "otodom_id": "IDFIX0212",
+        "status": "failed_input"
+      },
+      {
+        "asking_price_pln": "570000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000244",
+        "created_at": "2026-10-12T19:55:08.450110Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T19:55:38.450111Z",
+        "grade": "A",
+        "max_bid_pln": "520000.00",
+        "otodom_id": "IDFIX0213",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "574500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000245",
+        "created_at": "2026-10-12T18:55:08.451018Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T18:55:38.451019Z",
+        "grade": "B",
+        "max_bid_pln": "524000.00",
+        "otodom_id": "IDFIX0214",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "579000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000246",
+        "created_at": "2026-10-12T17:55:08.451815Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T17:55:38.451816Z",
+        "grade": "C",
+        "max_bid_pln": "528000.00",
+        "otodom_id": "IDFIX0215",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "583500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000247",
+        "created_at": "2026-10-12T16:55:08.452635Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T16:55:38.452636Z",
+        "grade": "D",
+        "max_bid_pln": "532000.00",
+        "otodom_id": "IDFIX0216",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "588000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000248",
+        "created_at": "2026-10-12T15:55:08.453469Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T15:55:38.453470Z",
+        "grade": "F",
+        "max_bid_pln": "536000.00",
+        "otodom_id": "IDFIX0217",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "592500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000249",
+        "created_at": "2026-10-12T14:55:08.454270Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T14:55:38.454270Z",
+        "grade": "A",
+        "max_bid_pln": "540000.00",
+        "otodom_id": "IDFIX0218",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": null,
+        "audit_id": "00000000-0000-4000-8000-000000000250",
+        "created_at": "2026-10-12T13:55:08.455103Z",
+        "error_code": "LISTING_GONE",
+        "finished_at": "2026-10-12T13:55:38.455104Z",
+        "grade": null,
+        "max_bid_pln": null,
+        "otodom_id": "IDFIX0219",
+        "status": "failed_input"
+      },
+      {
+        "asking_price_pln": "601500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000251",
+        "created_at": "2026-10-12T12:55:08.455988Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T12:55:38.455988Z",
+        "grade": "C",
+        "max_bid_pln": "548000.00",
+        "otodom_id": "IDFIX0220",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "606000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000252",
+        "created_at": "2026-10-12T11:55:08.457011Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T11:55:38.457013Z",
+        "grade": "D",
+        "max_bid_pln": "552000.00",
+        "otodom_id": "IDFIX0221",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "610500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000253",
+        "created_at": "2026-10-12T10:55:08.458139Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T10:55:38.458140Z",
+        "grade": "F",
+        "max_bid_pln": "556000.00",
+        "otodom_id": "IDFIX0222",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "615000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000254",
+        "created_at": "2026-10-12T09:55:08.459468Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T09:55:38.459470Z",
+        "grade": "A",
+        "max_bid_pln": "560000.00",
+        "otodom_id": "IDFIX0223",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "619500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000255",
+        "created_at": "2026-10-12T08:55:08.460334Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T08:55:38.460335Z",
+        "grade": "B",
+        "max_bid_pln": "564000.00",
+        "otodom_id": "IDFIX0224",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "624000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000256",
+        "created_at": "2026-10-12T07:55:08.461190Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T07:55:38.461191Z",
+        "grade": "C",
+        "max_bid_pln": "568000.00",
+        "otodom_id": "IDFIX0225",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": null,
+        "audit_id": "00000000-0000-4000-8000-000000000257",
+        "created_at": "2026-10-12T06:55:08.462029Z",
+        "error_code": "LISTING_GONE",
+        "finished_at": "2026-10-12T06:55:38.462030Z",
+        "grade": null,
+        "max_bid_pln": null,
+        "otodom_id": "IDFIX0226",
+        "status": "failed_input"
+      },
+      {
+        "asking_price_pln": "633000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000258",
+        "created_at": "2026-10-12T05:55:08.462865Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T05:55:38.462866Z",
+        "grade": "F",
+        "max_bid_pln": "576000.00",
+        "otodom_id": "IDFIX0227",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "637500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000259",
+        "created_at": "2026-10-12T04:55:08.463714Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T04:55:38.463714Z",
+        "grade": "A",
+        "max_bid_pln": "580000.00",
+        "otodom_id": "IDFIX0228",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "642000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000260",
+        "created_at": "2026-10-12T03:55:08.464545Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T03:55:38.464546Z",
+        "grade": "B",
+        "max_bid_pln": "584000.00",
+        "otodom_id": "IDFIX0229",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "646500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000261",
+        "created_at": "2026-10-12T02:55:08.465400Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T02:55:38.465401Z",
+        "grade": "C",
+        "max_bid_pln": "588000.00",
+        "otodom_id": "IDFIX0230",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "651000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000262",
+        "created_at": "2026-10-12T01:55:08.466178Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T01:55:38.466178Z",
+        "grade": "D",
+        "max_bid_pln": "592000.00",
+        "otodom_id": "IDFIX0231",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "655500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000263",
+        "created_at": "2026-10-12T00:55:08.466951Z",
+        "error_code": null,
+        "finished_at": "2026-10-12T00:55:38.466952Z",
+        "grade": "F",
+        "max_bid_pln": "596000.00",
+        "otodom_id": "IDFIX0232",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": null,
+        "audit_id": "00000000-0000-4000-8000-000000000264",
+        "created_at": "2026-10-11T23:55:08.467702Z",
+        "error_code": "LISTING_GONE",
+        "finished_at": "2026-10-11T23:55:38.467702Z",
+        "grade": null,
+        "max_bid_pln": null,
+        "otodom_id": "IDFIX0233",
+        "status": "failed_input"
+      },
+      {
+        "asking_price_pln": "664500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000265",
+        "created_at": "2026-10-11T22:55:08.468494Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T22:55:38.468494Z",
+        "grade": "B",
+        "max_bid_pln": "604000.00",
+        "otodom_id": "IDFIX0234",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "669000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000266",
+        "created_at": "2026-10-11T21:55:08.469266Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T21:55:38.469267Z",
+        "grade": "C",
+        "max_bid_pln": "608000.00",
+        "otodom_id": "IDFIX0235",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "673500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000267",
+        "created_at": "2026-10-11T20:55:08.470001Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T20:55:38.470002Z",
+        "grade": "D",
+        "max_bid_pln": "612000.00",
+        "otodom_id": "IDFIX0236",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "678000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000268",
+        "created_at": "2026-10-11T19:55:08.470799Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T19:55:38.470799Z",
+        "grade": "F",
+        "max_bid_pln": "616000.00",
+        "otodom_id": "IDFIX0237",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "682500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000269",
+        "created_at": "2026-10-11T18:55:08.471542Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T18:55:38.471542Z",
+        "grade": "A",
+        "max_bid_pln": "620000.00",
+        "otodom_id": "IDFIX0238",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "687000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000270",
+        "created_at": "2026-10-11T17:55:08.472293Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T17:55:38.472294Z",
+        "grade": "B",
+        "max_bid_pln": "624000.00",
+        "otodom_id": "IDFIX0239",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": null,
+        "audit_id": "00000000-0000-4000-8000-000000000271",
+        "created_at": "2026-10-11T16:55:08.473044Z",
+        "error_code": "LISTING_GONE",
+        "finished_at": "2026-10-11T16:55:38.473045Z",
+        "grade": null,
+        "max_bid_pln": null,
+        "otodom_id": "IDFIX0240",
+        "status": "failed_input"
+      },
+      {
+        "asking_price_pln": "696000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000272",
+        "created_at": "2026-10-11T15:55:08.473815Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T15:55:38.473815Z",
+        "grade": "D",
+        "max_bid_pln": "632000.00",
+        "otodom_id": "IDFIX0241",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "700500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000273",
+        "created_at": "2026-10-11T14:55:08.474564Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T14:55:38.474564Z",
+        "grade": "F",
+        "max_bid_pln": "636000.00",
+        "otodom_id": "IDFIX0242",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "705000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000274",
+        "created_at": "2026-10-11T13:55:08.475308Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T13:55:38.475308Z",
+        "grade": "A",
+        "max_bid_pln": "640000.00",
+        "otodom_id": "IDFIX0243",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "709500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000275",
+        "created_at": "2026-10-11T12:55:08.476080Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T12:55:38.476080Z",
+        "grade": "B",
+        "max_bid_pln": "644000.00",
+        "otodom_id": "IDFIX0244",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "714000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000276",
+        "created_at": "2026-10-11T11:55:08.476915Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T11:55:38.476916Z",
+        "grade": "C",
+        "max_bid_pln": "648000.00",
+        "otodom_id": "IDFIX0245",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "718500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000277",
+        "created_at": "2026-10-11T10:55:08.477703Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T10:55:38.477703Z",
+        "grade": "D",
+        "max_bid_pln": "652000.00",
+        "otodom_id": "IDFIX0246",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": null,
+        "audit_id": "00000000-0000-4000-8000-000000000278",
+        "created_at": "2026-10-11T09:55:08.478435Z",
+        "error_code": "LISTING_GONE",
+        "finished_at": "2026-10-11T09:55:38.478435Z",
+        "grade": null,
+        "max_bid_pln": null,
+        "otodom_id": "IDFIX0247",
+        "status": "failed_input"
+      },
+      {
+        "asking_price_pln": "727500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000279",
+        "created_at": "2026-10-11T08:55:08.479244Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T08:55:38.479244Z",
+        "grade": "A",
+        "max_bid_pln": "660000.00",
+        "otodom_id": "IDFIX0248",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "732000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000280",
+        "created_at": "2026-10-11T07:55:08.479952Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T07:55:38.479952Z",
+        "grade": "B",
+        "max_bid_pln": "664000.00",
+        "otodom_id": "IDFIX0249",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "736500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000281",
+        "created_at": "2026-10-11T06:55:08.480748Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T06:55:38.480749Z",
+        "grade": "C",
+        "max_bid_pln": "668000.00",
+        "otodom_id": "IDFIX0250",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "741000.00",
+        "audit_id": "00000000-0000-4000-8000-000000000282",
+        "created_at": "2026-10-11T05:55:08.481598Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T05:55:38.481599Z",
+        "grade": "D",
+        "max_bid_pln": "672000.00",
+        "otodom_id": "IDFIX0251",
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "745500.00",
+        "audit_id": "00000000-0000-4000-8000-000000000283",
+        "created_at": "2026-10-11T04:55:08.482324Z",
+        "error_code": null,
+        "finished_at": "2026-10-11T04:55:38.482324Z",
+        "grade": "F",
+        "max_bid_pln": "676000.00",
+        "otodom_id": "IDFIX0252",
+        "status": "succeeded"
+      }
+    ],
+    "next_cursor": "cursor-fixture"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/audits",
+    "method": "GET",
+    "operation_id": "list_audits_api_audits_get",
+    "path": "/api/audits"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits?limit=50&cursor=WyIyMDI2LTEwLTEzVDA2OjU1OjA4LjQzOTc5MiswMDowMCIsIjdjZTJkMzcyLWU3YjQtNDkwOS1hMTVhLTY1ZDM5ZjQzY2E1NSJd"
+  },
+  "scenario": "second_page_by_cursor",
+  "status": 200
+}

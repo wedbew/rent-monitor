@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/auth/signout",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/signout",
+    "method": "POST",
+    "operation_id": "sign_out_api_auth_signout_post",
+    "path": "/api/auth/signout"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/auth/signout"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

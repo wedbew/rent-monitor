@@ -1,0 +1,17 @@
+{
+  "body": null,
+  "content_type": "",
+  "headers": {},
+  "operation": {
+    "key": "DELETE /api/admin/flags/{key}/overrides/{user_id}",
+    "method": "DELETE",
+    "operation_id": "delete_override_api_admin_flags__key__overrides__user_id__delete",
+    "path": "/api/admin/flags/{key}/overrides/{user_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/admin/flags/smoke_override_removed/overrides/00000000-0000-4000-8000-000000000026"
+  },
+  "scenario": "override_removed",
+  "status": 204
+}

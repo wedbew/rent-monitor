@@ -1,0 +1,35 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "pack_code"],
+        "msg": "Input should be 'reports_1', 'reports_5' or 'reports_10'",
+        "type": "literal_error"
+      }
+    ],
+    "instance": "/api/billing/checkout",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/billing/checkout",
+    "method": "POST",
+    "operation_id": "checkout_api_billing_checkout_post",
+    "path": "/api/billing/checkout"
+  },
+  "request": {
+    "body": {
+      "pack_code": "reports_99"
+    },
+    "path": "/api/billing/checkout"
+  },
+  "scenario": "unknown_pack",
+  "status": 422
+}

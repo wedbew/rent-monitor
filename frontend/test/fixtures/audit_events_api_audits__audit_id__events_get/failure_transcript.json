@@ -1,0 +1,43 @@
+{
+  "body": null,
+  "content_type": "text/event-stream; charset=utf-8",
+  "events": [
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000010",
+        "message": "",
+        "pct": 5,
+        "stage": "fetch"
+      },
+      "event": "progress",
+      "id": "129"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000010",
+        "code": "UPSTREAM_BLOCKED",
+        "pct": null,
+        "stage": null,
+        "status": "failed_upstream"
+      },
+      "event": "error",
+      "id": "130"
+    }
+  ],
+  "headers": {
+    "cache-control": "no-store",
+    "content-type": "text/event-stream; charset=utf-8"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}/events",
+    "method": "GET",
+    "operation_id": "audit_events_api_audits__audit_id__events_get",
+    "path": "/api/audits/{audit_id}/events"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/00000000-0000-4000-8000-000000000010/events"
+  },
+  "scenario": "failure_transcript",
+  "status": 200
+}

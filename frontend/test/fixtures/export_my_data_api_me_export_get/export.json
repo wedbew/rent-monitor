@@ -1,0 +1,89 @@
+{
+  "body": {
+    "audits": [
+      {
+        "asking_price_pln": "304500.00",
+        "created_at": "2026-10-15T06:55:05.579338Z",
+        "error_code": null,
+        "finished_at": "2026-10-15T06:55:35.579339Z",
+        "grade": "B",
+        "id": "00000000-0000-4000-8000-000000000029",
+        "lang": "pl",
+        "max_bid_pln": "284000.00",
+        "otodom_id": "IDFIX0007",
+        "result": null,
+        "status": "succeeded"
+      },
+      {
+        "asking_price_pln": "300000.00",
+        "created_at": "2026-10-01T10:00:00Z",
+        "error_code": null,
+        "finished_at": "2026-10-01T10:00:30Z",
+        "grade": "A",
+        "id": "00000000-0000-4000-8000-000000000030",
+        "lang": "pl",
+        "max_bid_pln": "280000.00",
+        "otodom_id": "IDFIX0008",
+        "result": null,
+        "status": "succeeded"
+      }
+    ],
+    "credit_balance": 3,
+    "credit_ledger": [
+      {
+        "audit_id": null,
+        "created_at": "2026-10-01T10:00:00Z",
+        "delta": 3,
+        "note": "Notatka testowa 8",
+        "reason": "admin_adjust"
+      }
+    ],
+    "exported_at": "2026-10-01T10:00:00Z",
+    "feature_overrides": [],
+    "identities": [],
+    "profile": {
+      "avatar_url": null,
+      "created_at": "2026-10-01T10:00:00Z",
+      "email": "user-7@example.test",
+      "email_verified_at": "2026-10-01T10:00:00Z",
+      "id": "00000000-0000-4000-8000-000000000028",
+      "name": "Anna Przykładowa",
+      "role": "user"
+    },
+    "saved_listings": [
+      {
+        "created_at": "2026-10-01T10:00:00Z",
+        "note": "Notatka testowa 9",
+        "otodom_id": "IDFIX0008"
+      }
+    ],
+    "sessions": [
+      {
+        "expires_at": "2026-11-14T07:55:05.565994Z",
+        "ip": "203.0.113.1",
+        "last_seen_at": "2026-10-01T10:00:00Z",
+        "user_agent": "Mozilla/5.0 (fixture) Chrome/130"
+      }
+    ],
+    "subscriptions": [],
+    "usage_periods": []
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "no-store",
+    "content-disposition": "attachment; filename=\"rentmonitor-export.json\"",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/me/export",
+    "method": "GET",
+    "operation_id": "export_my_data_api_me_export_get",
+    "path": "/api/me/export"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/me/export"
+  },
+  "scenario": "export",
+  "status": 200
+}
