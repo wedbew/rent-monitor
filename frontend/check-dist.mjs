@@ -32,6 +32,13 @@ const files = [];
   }
 })(DIST);
 
+// Source maps are never published (audit F15: errors are readable from the release tag, not from a public `.map`).
+const maps = files.filter((path) => path.endsWith(".map"));
+if (maps.length > 0) {
+  console.error("production build publishes source maps:\n" + maps.join("\n"));
+  process.exit(1);
+}
+
 const hits = files.flatMap((path) => {
   const text = readFileSync(path, "utf8");
   return FORBIDDEN.filter((pattern) => pattern.test(text)).map((pattern) => `${path}: ${pattern}`);

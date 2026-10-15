@@ -114,6 +114,13 @@ def test_redact_text_covers_tokens_jwts_and_bearer_headers() -> None:
     assert "x=1" in redacted  # unrelated parameters survive
 
 
+def test_redact_text_covers_a_token_at_the_start_of_a_text_or_line() -> None:
+    """RM-280: `token=...` with nothing before it used to escape (the pattern needed a separator first)."""
+    cases = {"token=abc123 for x": "abc123", "first line\ncredential=xyz": "xyz", "session=s1&x=1": "s1&"}
+    for text, secret in cases.items():
+        assert secret not in redact_text(text), redact_text(text)
+
+
 def test_redact_text_leaves_ordinary_text_alone() -> None:
     text = "audit 5f2a1c9e-1111-4222-8333-444455556666 failed after 3 attempts (UPSTREAM_BLOCKED)"
     assert redact_text(text) == text

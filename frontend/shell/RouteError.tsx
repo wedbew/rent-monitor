@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { isRouteErrorResponse, useRouteError } from "react-router";
 
 import { Button, LinkButton } from "../ui/Button";
 import { InlineNotice } from "../ui/Status";
+import { reportError } from "./observability";
 import { PageHeading } from "./PageHeading";
 import { t } from "../i18n";
 
@@ -29,7 +31,12 @@ export function classifyRouteError(error: unknown): ErrorKind {
  */
 export function RouteError() {
   const error = useRouteError();
-  const copy = t.shell.routeError[classifyRouteError(error)];
+  const kind = classifyRouteError(error);
+  const copy = t.shell.routeError[kind];
+  // A screen that crashed is reported (a chunk gone after a deploy and a route's own error answer are expected).
+  useEffect(() => {
+    if (kind === "unexpected") reportError(error);
+  }, [error, kind]);
   return (
     <>
       <PageHeading title={copy.title} />
