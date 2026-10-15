@@ -3,7 +3,7 @@ import { Link } from "react-router";
 
 import { Button } from "../../ui/Button";
 import { TextField } from "../../ui/Field";
-import { FormErrorSummary, type FieldError } from "../../ui/FormErrors";
+import { FormErrorSummary, type FieldError, useFormAttempt } from "../../ui/FormErrors";
 import { InlineNotice } from "../../ui/Status";
 import { PageHeading } from "../../shell/PageHeading";
 import { emailError, newPasswordError, PASSWORD_MIN, readFailure } from "./forms";
@@ -22,7 +22,7 @@ export function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<readonly FieldError[]>([]);
-  const [submitCount, setSubmitCount] = useState(0);
+  const [attempt, markInvalid] = useFormAttempt();
   const [sentTo, setSentTo] = useState<string | null>(null);
 
   const submit = (event: React.FormEvent) => {
@@ -34,13 +34,13 @@ export function SignupPage() {
     if (p) found.push({ fieldId: IDS.password, message: p });
     setErrors(found);
     if (found.length > 0) {
-      setSubmitCount((n) => n + 1);
+      markInvalid();
       return;
     }
     const address = email.trim();
     register.mutate(
       { email: address, password },
-      { onSuccess: () => setSentTo(address), onError: () => setSubmitCount((n) => n + 1) },
+      { onSuccess: () => setSentTo(address), onError: markInvalid },
     );
   };
 
@@ -88,8 +88,8 @@ export function SignupPage() {
       {googleFailure?.general ? <ProblemNotice problem={googleFailure.general} tone="info" /> : null}
       <GoogleButton text="signup_with" onCredential={(credential) => google.mutate(credential)} />
       <form className={styles["form"]} onSubmit={submit} noValidate aria-label="Rejestracja">
-        <FormErrorSummary errors={shown} submitCount={submitCount} />
-        {failure?.general ? <ProblemNotice problem={failure.general} /> : null}
+        <FormErrorSummary errors={shown} attempt={attempt} />
+        {failure?.general ? <ProblemNotice key={attempt} problem={failure.general} /> : null}
         <TextField
           fieldId={IDS.email}
           label="Adres e-mail"
