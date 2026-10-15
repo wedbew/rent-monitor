@@ -42,6 +42,13 @@ The browser always calls relative `/api` URLs. There are no runtime variables in
 would be public** (never put a key in one). `API_ORIGIN` only configures the dev proxy and is read by Node, not the app.
 Names live in `../.env.example`; real values are never read or committed.
 
+**Dev proxy.** `API_ORIGIN` must point at a RentMonitor API (the Compose `make up` stack answers `/api/health`);
+port 8000 is the default, not a guarantee that RentMonitor is what listens there, so check `curl $API_ORIGIN/api/health`
+if every call fails. The API checks `Origin` on unsafe requests against `PUBLIC_APP_URL`, so for `make fe-dev` that
+value must equal the browser origin (`http://localhost:5173`), or sign-in and submits are refused. Vite also serves
+source modules under `/api/` (`api/query.ts`); the proxy leaves paths ending in a source extension to Vite and forwards
+everything else (`vite.config.ts`, `vite.config.test.ts`).
+
 ## Shell, tokens and primitives (RM-270)
 
 - `styles/tokens.css`: semantic tokens (surfaces, text, boundaries, actions, status, geometry, motion) for the light

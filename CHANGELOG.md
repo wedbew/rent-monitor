@@ -4,6 +4,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Fixed
+- `vite dev` no longer forwards source modules under `/api/` (such as `/api/query.ts`) to the backend, so the dev app loads; real API paths are still proxied (RM-341)
+
 ### Changed
 - Frontend: every visible text now comes from one typed Polish catalog (`frontend/i18n/pl.ts`); ESLint refuses copy written into components. No visible text changed (RM-305)
 - CI: every PR now runs the SPA checks on GitHub: `frontend` (generated API drift, types, lint, unit tests, build, bundle budget), `frontend-e2e` (mocked browser lane, interaction gate) and `frontend-journey` (the Compose stack); a nightly run covers Firefox and WebKit; `security` runs `pnpm audit --prod`; Dependabot watches npm. The obsolete check for two frontend file paths is replaced by the tested ESLint money guard. Operator action: add the three PR jobs to the `staging` required checks (RM-296)

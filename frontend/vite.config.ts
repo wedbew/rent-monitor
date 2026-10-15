@@ -1,20 +1,38 @@
 import react from "@vitejs/plugin-react";
+import type { ProxyOptions } from "vite";
 import { defineConfig } from "vitest/config";
 
 // Browser support (frontend/README.md): the last two stable Chromium, Firefox and Safari majors, iOS Safari and
 // Android Chrome. The build target is the oldest of those; raise it when the matrix moves.
 const BUILD_TARGET = ["chrome138", "firefox140", "safari18.4", "ios18.4"];
 
+// Vite dev serves source modules (`/api/query.ts`, imported by main.tsx) under the same prefix as the real API, so a
+// bare "/api" proxy forwards them to the backend (404, or 502 when it is down). A path ending in a source extension
+// stays with Vite; real API routes have none. `vite preview` serves dist/assets and never meets this.
+const SOURCE_MODULE = /\.(?:[cm]?[jt]sx?|css|map)$/;
+
+export function apiProxy(target: string): Record<string, ProxyOptions> {
+  return {
+    "/api": {
+      target,
+      changeOrigin: false,
+      bypass: (req) => (SOURCE_MODULE.test((req.url ?? "").split("?")[0] ?? "") ? req.url : undefined),
+    },
+  };
+}
+
+const API_TARGET = process.env["API_ORIGIN"] ?? "http://127.0.0.1:8000";
+
 export default defineConfig({
   plugins: [react()],
   server: {
     // The SPA always calls relative `/api` URLs (same origin as in production, behind Caddy). In development
     // the API runs on :8000 (`make up`); override with API_ORIGIN, never with a VITE_* value (those are public).
-    proxy: { "/api": { target: process.env["API_ORIGIN"] ?? "http://127.0.0.1:8000", changeOrigin: false } },
+    proxy: apiProxy(API_TARGET),
   },
   preview: {
     // The journey lane serves the built SPA with `vite preview` next to the real API (e2e/journey).
-    proxy: { "/api": { target: process.env["API_ORIGIN"] ?? "http://127.0.0.1:8000", changeOrigin: false } },
+    proxy: apiProxy(API_TARGET),
   },
   build: { target: BUILD_TARGET, sourcemap: false, cssTarget: BUILD_TARGET },
   test: {
