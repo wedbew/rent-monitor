@@ -7,31 +7,27 @@ import { formatAnalyses, formatDate, formatMoney, NOT_COMPUTED, formatCount } fr
 import { PageHeading } from "../../../shell/PageHeading";
 import { Button, LinkButton } from "../../../ui/Button";
 import { TextField } from "../../../ui/Field";
+import { Segmented } from "../../../ui/Segmented";
 import { Select } from "../../../ui/Select";
 import { Skeleton } from "../../../ui/Skeleton";
 import { InlineNotice } from "../../../ui/Status";
 import type { AuditSummary } from "../queries";
-import { statusCopy } from "../status";
 import {
   type CollectionFilters,
   GRADE_OPTIONS,
   hasActiveFilters,
   readFilters,
   STATUS_OPTIONS,
-  type View,
   writeFilters,
 } from "./filters";
+import { AnalysesTable } from "./AnalysesTable";
+import { AuditBadge } from "./AuditBadge";
 import { useAuditList } from "./useAuditList";
 import styles from "./AnalysesPage.module.css";
 import { t } from "../../../i18n";
 
 const title = (audit: AuditSummary) => t.common.listingTitle({ id: audit.otodom_id });
 const money = (value: string | null) => (value === null ? NOT_COMPUTED : formatMoney(value, { decimals: 0 }));
-
-function Badge({ audit }: { readonly audit: AuditSummary }) {
-  const copy = statusCopy(audit.status, audit.error_code);
-  return <span className={`${styles["badge"]} ${styles[copy.tone]}`}>{copy.label}</span>;
-}
 
 // LEGAL[republication]: shows listing identifiers and asking-price summaries from the tenant's analyses (RM-275)
 function Cards({ items }: { readonly items: readonly AuditSummary[] }) {
@@ -43,7 +39,7 @@ function Cards({ items }: { readonly items: readonly AuditSummary[] }) {
             <span className={styles["cardTitle"]}>
               <Link to={`/app/analyses/${audit.audit_id}`}>{title(audit)}</Link>
             </span>
-            <Badge audit={audit} />
+            <AuditBadge audit={audit} />
           </div>
           <dl className={styles["facts"]}>
             <div>
@@ -69,48 +65,6 @@ function Cards({ items }: { readonly items: readonly AuditSummary[] }) {
   );
 }
 
-// LEGAL[republication]: shows the same listing identifiers and asking-price summaries in a table (RM-275)
-function Table({ items }: { readonly items: readonly AuditSummary[] }) {
-  return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrollable region must be reachable by keyboard
-    <div className={styles["region"]} role="region" aria-label={t.analyses.list.tableLabel} tabIndex={0}>
-      <table className={styles["table"]}>
-        <caption>{t.analyses.list.tableCaption}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{t.analyses.list.columns.listing}</th>
-            <th scope="col">{t.analyses.list.columns.date}</th>
-            <th scope="col">{t.analyses.list.columns.status}</th>
-            <th scope="col">{t.analyses.list.columns.grade}</th>
-            <th scope="col" className={styles["num"]}>
-              {t.analyses.list.columns.askingPrice}
-            </th>
-            <th scope="col" className={styles["num"]}>
-              {t.analyses.list.columns.maxBid}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((audit) => (
-            <tr key={audit.audit_id}>
-              <th scope="row">
-                <Link to={`/app/analyses/${audit.audit_id}`}>{title(audit)}</Link>
-              </th>
-              <td>{formatDate(audit.created_at)}</td>
-              <td>
-                <Badge audit={audit} />
-              </td>
-              <td>{audit.grade ?? "—"}</td>
-              <td className={styles["num"]}>{money(audit.asking_price_pln)}</td>
-              <td className={styles["num"]}>{money(audit.max_bid_pln)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 function failureOf(error: unknown) {
   return error instanceof ApiError && error.code !== null
     ? describeProblem(error.code, { requestId: error.requestId })
@@ -130,7 +84,9 @@ export function AnalysesPage() {
 
   function update(patch: Partial<CollectionFilters>) {
     setParams(writeFilters({ ...filters, ...patch }));
-    setDraft(null);
+    // Only a change to the search itself discards the typed text: switching the view or a filter keeps what the
+    // person has typed and not yet sent.
+    if (patch.q !== undefined) setDraft(null);
   }
   function search(event: FormEvent) {
     event.preventDefault();
@@ -148,7 +104,7 @@ export function AnalysesPage() {
         lead={t.analyses.list.lead}
       />
 
-      <div className={styles["toolbar"]}>
+      <section className={styles["filters"]} aria-label={t.analyses.list.filtersLabel}>
         <form
           className={styles["search"]}
           onSubmit={search}
@@ -179,30 +135,36 @@ export function AnalysesPage() {
           options={GRADE_OPTIONS}
           onValueChange={(grade) => update({ grade: grade as CollectionFilters["grade"] })}
         />
-        <div className={styles["views"]} role="group" aria-label={t.analyses.list.viewLabel}>
-          {(["cards", "table"] as const satisfies readonly View[]).map((view) => (
-            <Button
-              key={view}
-              type="button"
-              small
-              variant={filters.view === view ? "primary" : "secondary"}
-              aria-pressed={filters.view === view}
-              onClick={() => update({ view })}
-            >
-              {view === "cards" ? t.analyses.list.viewCards : t.analyses.list.viewTable}
-            </Button>
-          ))}
-        </div>
-      </div>
+      </section>
 
-      {filtered ? (
-        <div className={styles["bar"]}>
-          <span className={styles["count"]}>{t.analyses.list.filtersOn}</span>
-          <Button type="button" small onClick={() => update({ status: "", grade: "", q: "" })}>
-            {t.analyses.list.clearFilters}
-          </Button>
+      <div className={styles["results"]}>
+        <div className={styles["summary"]}>
+          {items.length > 0 ? (
+            <span className={styles["count"]} role="status">
+              {refreshing
+                ? t.analyses.list.refreshing
+                : t.analyses.list.shown({ count: formatAnalyses(items.length) })}
+            </span>
+          ) : null}
+          {filtered ? (
+            <>
+              <span className={styles["count"]}>{t.analyses.list.filtersOn}</span>
+              <Button type="button" small onClick={() => update({ status: "", grade: "", q: "" })}>
+                {t.analyses.list.clearFilters}
+              </Button>
+            </>
+          ) : null}
         </div>
-      ) : null}
+        <Segmented
+          label={t.analyses.list.viewLabel}
+          value={filters.view}
+          options={[
+            { value: "cards", label: t.analyses.list.viewCards, icon: "cards" },
+            { value: "table", label: t.analyses.list.viewTable, icon: "table" },
+          ]}
+          onValueChange={(view) => update({ view })}
+        />
+      </div>
 
       {query.isPending ? (
         <div
@@ -253,14 +215,7 @@ export function AnalysesPage() {
         )
       ) : (
         <>
-          <div className={styles["bar"]}>
-            <span className={styles["count"]} role="status">
-              {refreshing
-                ? t.analyses.list.refreshing
-                : t.analyses.list.shown({ count: formatAnalyses(items.length) })}
-            </span>
-          </div>
-          {filters.view === "table" ? <Table items={items} /> : <Cards items={items} />}
+          {filters.view === "table" ? <AnalysesTable items={items} /> : <Cards items={items} />}
           <div className={styles["more"]}>
             {query.isFetchNextPageError ? (
               <InlineNotice tone="danger" title={t.analyses.list.moreFailed} live="alert">

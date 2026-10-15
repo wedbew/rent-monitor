@@ -45,14 +45,3 @@
   display: inline-flex;
   flex: none;
 }
-
-.item:hover .icon,
-.item:focus-visible .icon {
-  animation: nudge var(--motion-ui) var(--ease-out);
-}
-
-@keyframes nudge {
-  50% {
-    transform: translateY(-2px);
-  }
-}

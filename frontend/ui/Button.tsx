@@ -2,6 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import { Link, type LinkProps } from "react-router";
 
 import styles from "./Button.module.css";
+import { AnimatedIcon } from "./AnimatedIcon";
 import { Icon, type IconName } from "./Icon";
 
 type Variant = "primary" | "secondary" | "danger";
@@ -64,10 +65,12 @@ export function Button({
     >
       <span>{children}</span>
       {busy ? (
-        <span className={styles["spinner"]} aria-hidden="true" />
+        <span className={styles["spinner"]}>
+          <Icon name="loader" />
+        </span>
       ) : icon ? (
         <span className={styles["icon"]}>
-          <Icon name={icon} />
+          <AnimatedIcon name={icon} />
         </span>
       ) : null}
     </button>
@@ -88,7 +91,7 @@ export function IconButton({ label, icon, ...rest }: IconButtonProps) {
   return (
     <button {...rest} aria-label={label} className={[styles["control"], styles["iconOnly"]].join(" ")}>
       <span className={styles["icon"]}>
-        <Icon name={icon} size={20} />
+        <AnimatedIcon name={icon} size={20} />
       </span>
     </button>
   );
@@ -105,7 +108,7 @@ export function LinkButton({ variant, icon, fill, small, children, ...rest }: Li
       <span>{children}</span>
       {icon ? (
         <span className={styles["icon"]}>
-          <Icon name={icon} />
+          <AnimatedIcon name={icon} />
         </span>
       ) : null}
     </Link>

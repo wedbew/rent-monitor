@@ -112,6 +112,8 @@ export interface Popup {
   readonly trigger: string;
   readonly role: "dialog" | "alertdialog" | "menu" | "listbox" | "tooltip";
   readonly name: string | RegExp;
+  /** Modal popups trap Tab; a select list or a help popover does not (default: modal). */
+  readonly modal?: boolean;
   /** Does a click outside close it? Decided per popup and tested. */
   readonly backdrop: "closes" | "stays";
   readonly scenarios?: readonly ScenarioName[];
@@ -291,9 +293,16 @@ export const PAGES: readonly AppPage[] = [
   {
     id: "report",
     path: `/app/analyses/${SUCCEEDED_AUDITS[0]?.audit_id ?? ""}`,
-    heading: "Raport",
+    heading: /^Ogłoszenie /,
     scenarios: ["loaded"],
     states: [
+      {
+        name: "returns",
+        scenario: "loaded",
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Zwroty, wyjście i wrażliwość na wzrost cen" }).click();
+        },
+      },
       {
         name: "rejected",
         path: "/app/analyses/00000000-0000-4000-8000-000000000036",
@@ -679,24 +688,58 @@ export const INTERACTIONS: readonly Interaction[] = [
   { id: "analyses.grade", page: "analyses", role: "combobox", name: "Ocena", outcome: "url" },
   { id: "analyses.view.cards", page: "analyses", role: "button", name: "Karty", outcome: "state" },
   { id: "analyses.view.table", page: "analyses", role: "button", name: "Tabela", outcome: "url" },
-  { id: "analyses.option.all", page: "analyses", role: "option", name: "Wszystkie", outcome: "url" },
+  // The options exist only while a select is open: they are inventoried inside its popup (`POPUPS`), together with
+  // the list that holds them.
+  {
+    id: "analyses.status.listbox",
+    page: "analyses",
+    role: "listbox",
+    name: "Status",
+    outcome: "state",
+    within: "analyses.status.list",
+  },
+  {
+    id: "analyses.grade.listbox",
+    page: "analyses",
+    role: "listbox",
+    name: "Ocena",
+    outcome: "state",
+    within: "analyses.grade.list",
+  },
+  {
+    id: "analyses.option.all",
+    page: "analyses",
+    role: "option",
+    name: "Wszystkie",
+    outcome: "url",
+    within: "analyses.status.list",
+  },
+  {
+    id: "analyses.option.grade-all",
+    page: "analyses",
+    role: "option",
+    name: "Wszystkie",
+    outcome: "url",
+    within: "analyses.grade.list",
+  },
   ...[
-    ["ready", "Gotowe"],
-    ["active", "W toku"],
-    ["rejected", "Odrzucone"],
-    ["failed", "Nieudane"],
-    ["grade-A", "A"],
-    ["grade-B", "B"],
-    ["grade-C", "C"],
-    ["grade-D", "D"],
-    ["grade-E", "E"],
-    ["grade-N", "Bez oceny"],
-  ].map(([id = "", label = ""]): Interaction => ({
+    ["ready", "Gotowe", "analyses.status.list"],
+    ["active", "W toku", "analyses.status.list"],
+    ["rejected", "Odrzucone", "analyses.status.list"],
+    ["failed", "Nieudane", "analyses.status.list"],
+    ["grade-A", "A", "analyses.grade.list"],
+    ["grade-B", "B", "analyses.grade.list"],
+    ["grade-C", "C", "analyses.grade.list"],
+    ["grade-D", "D", "analyses.grade.list"],
+    ["grade-E", "E", "analyses.grade.list"],
+    ["grade-N", "Bez oceny", "analyses.grade.list"],
+  ].map(([id = "", label = "", within = ""]): Interaction => ({
     id: `analyses.option.${id}`,
     page: "analyses",
     role: "option",
     name: label,
     outcome: "url",
+    within,
   })),
   {
     id: "analyses.row",
@@ -814,7 +857,50 @@ export const INTERACTIONS: readonly Interaction[] = [
   },
 
   // One analysis (progress and result).
-  { id: "report.all", page: "report", role: "link", name: "Moje analizy", outcome: "url" },
+  {
+    id: "report.all.rejected",
+    page: "report",
+    state: "rejected",
+    role: "link",
+    name: "Moje analizy",
+    outcome: "url",
+  },
+  {
+    id: "report.all.failed",
+    page: "report",
+    state: "failed",
+    role: "link",
+    name: "Moje analizy",
+    outcome: "url",
+  },
+  {
+    id: "report.all.notfound",
+    page: "report",
+    state: "not-found",
+    role: "link",
+    name: "Moje analizy",
+    outcome: "url",
+  },
+  // Help beside a return measure: a button that opens a popover (`POPUPS`).
+  {
+    id: "report.help.asking",
+    page: "report",
+    role: "button",
+    name: "Co oznacza: Zwrot przy cenie ofertowej",
+    outcome: "dialog",
+  },
+  ...[
+    ["irr", "Roczna stopa zwrotu"],
+    ["cagr", "Średni roczny wzrost kapitału"],
+    ["moic", "Mnożnik zainwestowanego kapitału"],
+  ].map(([id = "", label = ""]): Interaction => ({
+    id: `report.help.${id}`,
+    page: "report",
+    state: "returns",
+    role: "button",
+    name: `Co oznacza: ${label}`,
+    outcome: "dialog",
+  })),
   ...[
     ["podsumowanie", "Podsumowanie"],
     ["czynsz", "Czynsz"],
@@ -1067,6 +1153,49 @@ export const INTERACTIONS: readonly Interaction[] = [
 ];
 
 export const POPUPS: readonly Popup[] = [
+  {
+    id: "analyses.status.list",
+    page: "analyses",
+    trigger: "analyses.status",
+    role: "listbox",
+    name: "Status",
+    backdrop: "closes",
+    modal: false,
+    scenarios: ["collection"],
+  },
+  {
+    id: "analyses.grade.list",
+    page: "analyses",
+    trigger: "analyses.grade",
+    role: "listbox",
+    name: "Ocena",
+    backdrop: "closes",
+    modal: false,
+    scenarios: ["collection"],
+  },
+  {
+    id: "report.help.asking",
+    page: "report",
+    trigger: "report.help.asking",
+    role: "dialog",
+    name: /^IRR, czyli wewnętrzna stopa zwrotu$/,
+    backdrop: "closes",
+    modal: false,
+  },
+  ...[
+    ["irr", /^IRR, czyli wewnętrzna stopa zwrotu$/],
+    ["cagr", /^CAGR, czyli złożona roczna stopa wzrostu$/],
+    ["moic", /^MOIC, czyli mnożnik zainwestowanego kapitału$/],
+  ].map(([id = "", name = ""]): Popup => ({
+    id: `report.help.${id}`,
+    page: "report",
+    state: "returns",
+    trigger: `report.help.${id}`,
+    role: "dialog",
+    name,
+    backdrop: "closes",
+    modal: false,
+  })),
   {
     id: "paywall",
     page: "new-analysis",

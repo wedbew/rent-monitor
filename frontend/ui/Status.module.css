@@ -1,64 +1,68 @@
+/*
+ * One notice for four tones. Restrained on purpose: a tinted ground, a hairline in the tone's colour, the tone's
+ * icon and a plain title. Meaning never rests on colour (the icon shape and the words carry it).
+ */
 .notice {
+  --tone: var(--info);
+  --tone-fill: var(--info-fill);
+
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
-  padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--tone) 30%, transparent);
+  border-radius: var(--radius-card);
+  background: var(--tone-fill);
+  color: var(--ink);
   line-height: 1.5;
 }
 
+.info {
+  --tone: var(--info);
+  --tone-fill: var(--info-fill);
+}
+
+.success {
+  --tone: var(--success);
+  --tone-fill: var(--success-fill);
+}
+
+.warning {
+  --tone: var(--warning);
+  --tone-fill: var(--warning-fill);
+}
+
+.danger {
+  --tone: var(--danger);
+  --tone-fill: var(--danger-fill);
+}
+
 .icon {
+  display: inline-flex;
   flex: none;
   margin-top: 2px;
+  color: var(--tone);
+}
+
+.text {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
 .title {
-  display: block;
+  font-size: 0.9375rem;
   font-weight: 700;
 }
 
 .body {
-  display: block;
   color: var(--muted);
-  font-size: 0.9375rem;
-}
-
-.info {
-  background: var(--info-fill);
-  border-color: var(--info);
-  color: var(--info);
-}
-
-.success {
-  background: var(--success-fill);
-  border-color: var(--success);
-  color: var(--success);
-}
-
-.warning {
-  background: var(--warning-fill);
-  border-color: var(--warning);
-  color: var(--warning);
-}
-
-.danger {
-  background: var(--danger-fill);
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
-.info .body,
-.success .body,
-.warning .body,
-.danger .body {
-  color: var(--ink);
+  font-size: 0.875rem;
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-3);
+  margin-top: var(--space-2);
 }

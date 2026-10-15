@@ -62,7 +62,7 @@ export function TextField({
       />
       {error ? (
         <p className={styles["error"]} id={errorId}>
-          <Icon name="alert" size={16} />
+          <Icon name="error" size={16} />
           <span>
             <span className="sr-only">{t.ui.errorPrefix}</span>
             {error}

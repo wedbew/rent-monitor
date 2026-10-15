@@ -30,6 +30,32 @@ async function focusIsInside(dialog: Locator): Promise<boolean> {
   });
 }
 
+/**
+ * A spot on the page that is outside the popup and not on anything a person could mean to press, so the click tests
+ * "press outside" and not "press the menu button that happens to sit in the corner". A spot on plain page is
+ * preferred. When the whole visible page is a focus target (`main`, which the skip link focuses, covers a phone
+ * screen), a click there legitimately moves focus to that region; `takesFocus` says so and the caller accepts it.
+ */
+async function pointOutside(dialog: Locator): Promise<{ x: number; y: number; takesFocus: boolean }> {
+  const point = await dialog.evaluate((popup) => {
+    const interactive = "a, button, input, select, textarea, summary, label, [role=button], [role=link]";
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    let fallback: { x: number; y: number; takesFocus: boolean } | null = null;
+    for (let y = 6; y < height; y += 24) {
+      for (let x = 6; x < width; x += 24) {
+        const hit = document.elementFromPoint(x, y);
+        if (hit === null || popup.contains(hit) || hit.closest(interactive) !== null) continue;
+        if (hit.closest("[tabindex]") === null) return { x, y, takesFocus: false };
+        fallback ??= { x, y, takesFocus: true };
+      }
+    }
+    return fallback;
+  });
+  // A native modal dialog paints its backdrop as part of itself, so nothing "outside" is ever hit: any corner will do.
+  return point ?? { x: 4, y: 4, takesFocus: false };
+}
+
 export async function expectDialogContract(page: Page, contract: DialogContract): Promise<void> {
   const { trigger, dialog, backdrop, modal = true } = contract;
 
@@ -74,15 +100,24 @@ export async function expectDialogContract(page: Page, contract: DialogContract)
   await expect(dialog).toBeVisible();
   // A popup ignores outside presses until its enter transition has started: wait for it like a person would.
   await expect(dialog).not.toHaveAttribute("data-starting-style", /.*/);
-  const box = await dialog.boundingBox();
-  const outside =
-    box === null || box.x > 24
-      ? { x: 4, y: 4 }
-      : { x: Math.min(box.x + box.width + 12, page.viewportSize()?.width ?? 1280) - 2, y: 4 };
+  const outside = await pointOutside(dialog);
   await page.mouse.click(outside.x, outside.y);
   if (backdrop === "closes") {
     await expect(dialog, "a click outside closes it").toBeHidden();
-    await expect(trigger, "focus returns to the trigger after the backdrop click").toBeFocused();
+    if (outside.takesFocus) {
+      // The press landed on a focus target (a region the page moves focus to): focus is there, not lost.
+      await expect
+        .poll(
+          () =>
+            page.evaluate(() => document.activeElement !== null && document.activeElement !== document.body),
+          {
+            message: "focus is on the pressed region, not lost",
+          },
+        )
+        .toBe(true);
+    } else {
+      await expect(trigger, "focus returns to the trigger after the backdrop click").toBeFocused();
+    }
   } else {
     await expect(dialog, "a click outside leaves it open").toBeVisible();
     await page.keyboard.press("Escape");

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { Icon } from "./Icon";
 import styles from "./FormErrors.module.css";
 import { t } from "../i18n";
 
@@ -44,8 +45,14 @@ export function FormErrorSummary({ errors, attempt }: FormErrorSummaryProps) {
   }, [attempt]);
   if (errors.length === 0) return null;
   return (
-    <div ref={ref} className={styles["summary"]} role="alert" tabIndex={-1}>
-      <h2>
+    <div
+      ref={ref}
+      className={`${styles["summary"]} ${errors.length > 1 ? styles["many"] : ""}`}
+      role="alert"
+      tabIndex={-1}
+    >
+      <h2 className={styles["title"]}>
+        <Icon name="error" size={18} />
         {errors.length === 1
           ? t.ui.formErrors.one
           : t.ui.formErrors.many({ count: COUNT.format(errors.length) })}

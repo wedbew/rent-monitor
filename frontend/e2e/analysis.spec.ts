@@ -17,6 +17,15 @@ async function expectBalance(page: Page, text: string): Promise<void> {
   await expect(page.getByText(text).first()).toBeVisible();
 }
 
+/** A finished run is the report itself: the listing, the section navigation, no banner and no result card. */
+async function expectCompletedReport(page: Page, timeout?: number): Promise<void> {
+  const wait = timeout === undefined ? {} : { timeout };
+  await expect(page.getByRole("heading", { level: 1, name: /^Ogłoszenie / })).toBeVisible(wait);
+  await expect(page.getByRole("navigation", { name: "Sekcje raportu" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Wynik analizy" })).toHaveCount(0);
+  await expect(page.getByText(/Analiza (jest )?gotowa|Raport został pobrany z konta/)).toHaveCount(0);
+}
+
 async function start(page: Page): Promise<void> {
   await page.goto("/app/analyses/new");
   await page.getByRole("textbox", { name: "Adres ogłoszenia lub numer" }).fill(LISTING);
@@ -28,24 +37,22 @@ test.describe("an analysis from click to result", () => {
   test("a success: one stream, the final state re-read from the API, the credit kept and said so", async ({
     page,
     serve,
+    isMobile,
   }) => {
     const run = createRun();
     const api = await serve(run);
     await start(page);
-    await expect(page.getByRole("region", { name: "Wynik analizy" })).toContainText("Analiza gotowa");
-    await expect(page.getByRole("region", { name: "Wynik analizy" })).toContainText(
-      "Raport został pobrany z konta.",
-    );
+    await expectCompletedReport(page);
     expect(run.state.streams).toBe(1);
     // The stream said "done"; the page asked the API again instead of trusting it.
     expect(
       api.requests.filter((r) => r.path === `/api/audits/${RUN_AUDIT_ID}`).length,
     ).toBeGreaterThanOrEqual(2);
     await expectBalance(page, "6 raportów");
-    await exercise("report.all", async () => {
-      await page.getByRole("main").getByRole("link", { name: "Moje analizy" }).click();
-      return [await outcome.url(page, /\/app\/analyses$/)];
-    });
+    // "Moje analizy" is reached through the application navigation, not through a card on the report.
+    if (isMobile) await page.getByRole("button", { name: "Otwórz menu nawigacji" }).click();
+    await page.getByRole("navigation").getByRole("link", { name: "Moje analizy" }).click();
+    await expect(page).toHaveURL(/\/app\/analyses$/);
   });
 
   test("a rental listing is rejected: said in words, the report is given back", async ({ page, serve }) => {
@@ -56,6 +63,11 @@ test.describe("an analysis from click to result", () => {
     await expect(result).toContainText("To ogłoszenie wynajmu");
     await expect(result).toContainText("Raport nie został pobrany z konta.");
     await expectBalance(page, "7 raportów");
+    await exercise("report.all.rejected", async () => {
+      await result.getByRole("link", { name: "Moje analizy" }).click();
+      return [await outcome.url(page, /\/app\/analyses$/)];
+    });
+    await page.goBack();
     await exercise("report.new.rejected", async () => {
       await result.getByRole("link", { name: "Nowa analiza" }).click();
       return [await outcome.url(page, /\/app\/analyses\/new$/)];
@@ -68,6 +80,11 @@ test.describe("an analysis from click to result", () => {
     const result = page.getByRole("region", { name: "Wynik analizy" });
     await expect(result).toContainText("Otodom zablokował pobranie");
     await expect(result).toContainText("Raport nie został pobrany z konta.");
+    await exercise("report.all.failed", async () => {
+      await result.getByRole("link", { name: "Moje analizy" }).click();
+      return [await outcome.url(page, /\/app\/analyses$/)];
+    });
+    await page.goBack();
     await exercise("report.new.failed", async () => {
       await result.getByRole("link", { name: "Nowa analiza" }).click();
       return [await outcome.url(page, /\/app\/analyses\/new$/)];
@@ -90,7 +107,7 @@ test.describe("an analysis from click to result", () => {
       "Odczyt danych z ogłoszenia",
       "Dane rynkowe i czynsze",
     ]);
-    await expect(page.getByRole("region", { name: "Wynik analizy" })).toContainText("Analiza gotowa");
+    await expectCompletedReport(page);
     expect(run.state.streams).toBe(2); // the browser reconnected once; the page never opened a second source itself
   });
 
@@ -99,9 +116,7 @@ test.describe("an analysis from click to result", () => {
     await serve(run);
     await start(page);
     await expect(page.getByText("Sprawdzam postęp co kilka sekund")).toBeVisible();
-    await expect(page.getByRole("region", { name: "Wynik analizy" })).toContainText("Analiza gotowa", {
-      timeout: 15_000,
-    });
+    await expectCompletedReport(page, 15_000);
   });
 
   test("a stream that goes silent does not leave the page stale: the API is asked again and the balance follows", async ({
@@ -116,9 +131,7 @@ test.describe("an analysis from click to result", () => {
       "aria-valuenow",
       "25",
     );
-    await expect(page.getByRole("region", { name: "Wynik analizy" })).toContainText("Analiza gotowa", {
-      timeout: 25_000,
-    });
+    await expectCompletedReport(page, 25_000);
     await expectBalance(page, "6 raportów");
   });
 
@@ -128,9 +141,7 @@ test.describe("an analysis from click to result", () => {
   }) => {
     await serve(createRun({ streamDown: "http" }));
     await start(page);
-    await expect(page.getByRole("region", { name: "Wynik analizy" })).toContainText("Analiza gotowa", {
-      timeout: 15_000,
-    });
+    await expectCompletedReport(page, 15_000);
     await expectBalance(page, "6 raportów");
   });
 
@@ -161,6 +172,10 @@ test.describe("an analysis from click to result", () => {
     await page.goto("/app/analyses/00000000-0000-4000-8000-000000000999");
     await expect(page.getByRole("alert")).toContainText("Nie znaleziono analizy");
     await expect(page.getByRole("alert")).not.toContainText(/dostęp|zabroni/i);
+    await exercise("report.all.notfound", async () => {
+      await page.getByRole("alert").getByRole("link", { name: "Moje analizy" }).click();
+      return [await outcome.url(page, /\/app\/analyses$/)];
+    });
   });
 
   test("an analysis that cannot be loaded says so and can be retried", async ({ page, serve }) => {

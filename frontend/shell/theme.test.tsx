@@ -7,11 +7,23 @@ import { applyTheme, THEME_KEY } from "./theme";
 
 const html = document.documentElement;
 
+/** Reduced motion: the static lucide icon is rendered at once (the animated one loads lazily and would race the test). */
+function preferReducedMotion() {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query.includes("reduce"),
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
+}
+
 beforeEach(() => {
+  preferReducedMotion();
   html.dataset["theme"] = "light";
   localStorage.clear();
 });
 afterEach(() => {
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
@@ -19,11 +31,11 @@ describe("ThemeControl", () => {
   it("names the mode it switches to, with the matching icon, and switches it", async () => {
     render(<ThemeControl />);
     const toDark = screen.getByRole("button", { name: "Tryb ciemny" });
-    expect(toDark.querySelector("path")?.getAttribute("d")).toMatch(/^M20\.8 13\.2/); // the moon
+    expect(toDark.querySelector("svg")).toHaveClass("lucide-moon");
     await userEvent.click(toDark);
     expect(html.dataset["theme"]).toBe("dark");
     const toLight = screen.getByRole("button", { name: "Tryb jasny" });
-    expect(toLight.querySelector("path")?.getAttribute("d")).toMatch(/^M12 8a4 4/); // the sun
+    expect(toLight.querySelector("svg")).toHaveClass("lucide-sun");
     expect(localStorage.getItem(THEME_KEY)).toBe("dark");
   });
 

@@ -74,7 +74,8 @@ test.describe("the report", () => {
       await expect(figure(page, "Kapitał na start")).toContainText(
         formatMoney(result.cash_flow.total_invested_pln, { decimals: 0 }),
       );
-      await expect(page.getByRole("region", { name: "Wynik analizy" })).toContainText("Analiza gotowa");
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Ogłoszenie ${audit.otodom_id}`);
+      await expect(page.getByRole("region", { name: "Wynik analizy" })).toHaveCount(0);
       seen.add(`${audit.audit_id}|${result.listing.title}|${result.cash_flow.total_invested_pln}`);
     }
     expect(seen.size).toBe(5);
@@ -122,7 +123,71 @@ test.describe("the report", () => {
     await serve("loaded");
     await open(page);
     await expect(page.getByText("Koszt remontu jest wstępny").first()).toBeVisible();
-    await expect(page.getByText("wstępny", { exact: true })).toBeVisible();
+    // The badge belongs to the label, so the amount stays alone in the value column.
+    const label = page.getByRole("term").filter({ hasText: /^Remont \(szacunek\)\s*wstępny$/ });
+    await expect(label).toBeVisible();
+    await expect(label.locator("xpath=following-sibling::*[1]")).not.toContainText("wstępny");
+  });
+
+  test("return measures are named in plain Polish, with help that opens by click and keyboard", async ({
+    page,
+    serve,
+  }) => {
+    await serve("loaded");
+    await open(page);
+    const body = page.locator("main");
+    await expect(body).not.toContainText(/\b(IRR|CAGR|MOIC)\b/);
+
+    // Beside "Zwrot przy cenie ofertowej" (visible without opening anything).
+    const asking = page.getByRole("button", { name: "Co oznacza: Zwrot przy cenie ofertowej" });
+    const askingPopup = page.getByRole("dialog", { name: "IRR, czyli wewnętrzna stopa zwrotu" });
+    await exercise("report.help.asking", async () => {
+      await asking.click();
+      return [await outcome.dialog(askingPopup, "open")];
+    });
+    await expect(askingPopup).toContainText("Bez kredytu, po podatku od najmu");
+    await page.keyboard.press("Escape");
+    await expect(askingPopup).toBeHidden();
+
+    await page.getByRole("button", { name: "Zwroty, wyjście i wrażliwość na wzrost cen" }).click();
+    for (const [id, label, title, fact] of [
+      ["irr", "Roczna stopa zwrotu", "IRR, czyli wewnętrzna stopa zwrotu", "wpływy ze sprzedaży"],
+      [
+        "cagr",
+        "Średni roczny wzrost kapitału",
+        "CAGR, czyli złożona roczna stopa wzrostu",
+        "pierwiastek z mnożnika",
+      ],
+      [
+        "moic",
+        "Mnożnik zainwestowanego kapitału",
+        "MOIC, czyli mnożnik zainwestowanego kapitału",
+        "nie uwzględnia czasu",
+      ],
+    ] as const) {
+      await expect(page.getByText(label, { exact: true })).toBeVisible();
+      const trigger = page.getByRole("button", { name: `Co oznacza: ${label}` });
+      const popup = page.getByRole("dialog", { name: title });
+      await exercise(`report.help.${id}`, async () => {
+        await trigger.click();
+        return [await outcome.dialog(popup, "open")];
+      });
+      await expect(popup).toContainText(fact);
+      const box = await popup.boundingBox();
+      const view = page.viewportSize() ?? { width: 1280, height: 800 };
+      expect(
+        box &&
+          box.x >= 0 &&
+          box.y >= 0 &&
+          box.x + box.width <= view.width &&
+          box.y + box.height <= view.height,
+        "the popup stays inside the viewport",
+      ).toBe(true);
+      await page.keyboard.press("Escape");
+      await expect(popup).toBeHidden();
+      await expect(trigger).toBeFocused();
+    }
+    await expect(body).not.toContainText(/\b(IRR|CAGR|MOIC)\b/);
   });
 
   test("a degraded result lists what is missing in the open and says the conclusion is less sure", async ({
@@ -132,7 +197,6 @@ test.describe("the report", () => {
     await serve("degraded");
     await page.goto("/app/analyses/00000000-0000-4000-8000-000000000037");
     await expect(page.getByRole("heading", { level: 2, name: "Podsumowanie" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Wynik analizy" })).toContainText("Gotowa, mniej pewna");
     await expect(page.getByText("wniosek jest mniej pewny")).toBeVisible();
     await expect(page.getByText("Nie oceniliśmy zdjęć").first()).toBeVisible();
     const checklist = page.getByRole("region", { name: "Co sprawdzić przed ofertą" });
@@ -171,10 +235,10 @@ test.describe("the report", () => {
   for (const [id, label, content] of [
     ["purchase", "Koszty zakupu: szczegóły", "Taksa notarialna"],
     ["owner-costs", "Koszty właściciela w roku 1", "Razem koszty rocznie"],
-    ["capex", "Remont: szacunek i założenia", "Wersja cennika"],
+    ["capex", "Remont: szacunek i założenia", "Współczynnik cen w mieście"],
     ["sensitivity", "Zwroty, wyjście i wrażliwość na wzrost cen", "Wpływy netto ze sprzedaży"],
     ["listing", "Dane z ogłoszenia", "Numer ogłoszenia"],
-    ["vision", "Ocena zdjęć", "Model i wersja instrukcji"],
+    ["vision", "Ocena zdjęć", "Korekta kosztu remontu"],
   ] as const) {
     test(`the "${label}" details show their content`, async ({ page, serve }) => {
       await serve("loaded");

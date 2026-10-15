@@ -1,4 +1,4 @@
-import { Icon } from "../ui/Icon";
+import { AnimatedIcon } from "../ui/AnimatedIcon";
 import styles from "./ThemeControl.module.css";
 import { useTheme } from "./theme";
 import { t } from "../i18n";
@@ -13,7 +13,7 @@ export function ThemeControl() {
   return (
     <button type="button" className={styles["control"]} onClick={toggle}>
       <span className={styles["icon"]}>
-        <Icon name={toDark ? "moon" : "sun"} />
+        <AnimatedIcon name={toDark ? "moon" : "sun"} />
       </span>
       <span>{toDark ? t.shell.theme.toDark : t.shell.theme.toLight}</span>
     </button>

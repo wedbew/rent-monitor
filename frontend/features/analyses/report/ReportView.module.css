@@ -1,13 +1,13 @@
 .report {
   display: grid;
-  gap: var(--space-12);
+  gap: var(--space-8);
 }
 
 .nav {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-4);
-  padding-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--border);
 }
 
@@ -132,16 +132,26 @@
   font-size: 0.8125rem;
 }
 
+/* A qualifier of the label: compact, tinted, sentence case; it never sits in the value column. */
 .prelim {
   display: inline-block;
-  padding: 0 var(--space-2);
-  border: 1px dashed var(--warning);
-  border-radius: var(--radius);
+  margin-left: var(--space-2);
+  padding: 1px var(--space-2);
+  border-radius: 999px;
+  background: var(--warning-fill);
   color: var(--warning);
   font-size: 0.75rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  line-height: 1.4;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+.labelWithTip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-1);
 }
 
 .notices {
@@ -154,13 +164,19 @@
   margin: 0;
 }
 
+/* Label left, value right: one value column, so amounts line up whatever the label carries. */
 .row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-1) var(--space-6);
+  align-items: baseline;
   padding: var(--space-3) 0;
   border-bottom: 1px solid var(--border);
+}
+
+/* Each row draws the line under itself; the last one draws none, because what follows (a disclosure, a section) owns its own top edge. */
+.row:last-child {
+  border-bottom: 0;
 }
 
 .row dt {
@@ -168,7 +184,9 @@
 }
 
 .row dd {
+  max-width: min(22rem, 60vw);
   margin: 0;
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
   text-align: right;
   overflow-wrap: anywhere;
@@ -240,11 +258,10 @@
   color: var(--muted);
 }
 
+/* The disclosure group above owns the last divider; the footer adds none. */
 .footer {
   display: grid;
   gap: var(--space-2);
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--border);
   color: var(--muted);
   font-size: 0.8125rem;
 }

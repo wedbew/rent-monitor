@@ -53,6 +53,7 @@ async function checkPopups(
       trigger: triggerLocator,
       dialog,
       backdrop: popup.backdrop,
+      modal: popup.modal ?? true,
     });
   }
 }

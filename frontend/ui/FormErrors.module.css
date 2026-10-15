@@ -1,22 +1,44 @@
+/*
+ * The summary names what to fix and links to it; the message itself stays under its field. One problem is one
+ * compact line, several are a short list, so the summary never outweighs the form.
+ */
 .summary {
-  padding: var(--space-4);
-  border: 1px solid var(--danger);
-  border-radius: var(--radius);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  align-items: baseline;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  border-radius: var(--radius-card);
   background: var(--danger-fill);
   color: var(--ink);
 }
 
-.summary h2 {
-  margin-bottom: var(--space-2);
-  font-size: 1rem;
+.title {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin: 0;
   color: var(--danger);
+  font-size: 0.9375rem;
+  font-weight: 700;
 }
 
 .summary ul {
+  display: grid;
+  gap: var(--space-1);
   margin: 0;
-  padding-left: var(--space-6);
+  padding: 0;
+  list-style: none;
 }
 
+.many ul {
+  flex-basis: 100%;
+  padding-left: calc(18px + var(--space-2));
+}
+
+/* The message itself is under its field in strong type; here it is only the way to get there. */
 .summary a {
-  font-weight: 700;
+  font-size: 0.9375rem;
+  font-weight: 400;
 }

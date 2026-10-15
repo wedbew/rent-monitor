@@ -247,6 +247,24 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** server-side errors still reach Better Stack (`SENTRY_DSN`); a person can quote the request id shown with every problem.
 - **Target:** B-020 (browser DSN), L-010 (Umami CSP), level 3 evidence per `delivery.md`.
 
+### L-034 — The report's "city" price group is a list of names, not population bands
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** `apps/deal_analyzer/capex.py` (`city_tier`, `TIER_MULTIPLIER`), the renovation assumptions in the report
+- **Evidence:** confirmed (code): `metro` is Warszawa, `major` a fixed list of eleven cities (Kraków, Wrocław, Gdańsk, Gdynia, Sopot, Poznań, Łódź, Katowice, Szczecin, Lublin, Białystok), everything else `other`. No population figure is read; the multipliers (1.25, 1.10, 1.00) are placeholders like the price list (L-007)
+- **Description:** "pozostałe miasta" meant "not on the list", not "a small town", and no authoritative population threshold backs the tiers, so the UI does not show a population range. It shows the multiplier as "Współczynnik cen w mieście"; the `tier` stays in the stored report and the calculation is unchanged
+- **Workaround:** none needed for the number itself; do not describe the tier as a population band
+- **Target:** a sourced city classification (GUS population or the market-data bootstrap, #209) and sourced multipliers with B-015
+
+### L-035 — "Moje analizy" cannot be sorted by the server
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** `GET /api/audits` (no `sort`/`order` parameter), `frontend/features/analyses/list/AnalysesTable.tsx`
+- **Evidence:** confirmed (OpenAPI parameters: `limit`, `cursor`, `status`, `grade`, `q`, `request_key`; keyset order is newest first)
+- **Description:** Filtering (status, grade, id prefix) and paging (cursor) are server requests, but ordering is fixed. The table therefore has no sort controls and says its order (`aria-sort="descending"` on the date column); sorting the loaded rows would look like ordering every analysis
+- **Workaround:** the filters narrow the list; the date column is the order
+- **Target:** an API ordering parameter with a keyset per order, then sortable headers
+
 ## Deferred
 
 ### L-025 — V2 manual analysis and creative tools are local design flows

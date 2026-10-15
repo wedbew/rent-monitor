@@ -1,7 +1,7 @@
 import type { IncomingMessage } from "node:http";
 
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { defineConfig, type Plugin } from "vitest/config";
 
 // Browser support (frontend/README.md): the last two stable Chromium, Firefox and Safari majors, iOS Safari and
 // Android Chrome. The build target is the oldest of those; raise it when the matrix moves.
@@ -24,12 +24,32 @@ const apiProxy = {
   },
 };
 
+// lucide-animated ships ~1,500 icons in one 1.4 MB module and marks none of its `forwardRef(...)` calls pure, so a
+// bundler must keep every icon once any is imported (a 700 kB chunk for the three we use). Annotating the calls lets
+// the unused icons be dropped. Touches only that package's own file; the output is checked by `check-dist.mjs`.
+function pureLucideAnimated(): Plugin {
+  return {
+    name: "pure-lucide-animated",
+    enforce: "pre",
+    transform(code, id) {
+      if (!id.includes("/node_modules/lucide-animated/dist/index.js")) return null;
+      const pure = code.replace(/= (forwardRef\d*)\(/g, "= /* @__PURE__ */ $1(");
+      // `Icon.displayName = "Icon"` is a property write a bundler must keep; the name only helps React DevTools.
+      return { code: pure.replace(/^\w+\.displayName = "\w+";$/gm, ""), map: null };
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [pureLucideAnimated(), react()],
   server: { proxy: apiProxy },
   // The journey lane serves the built SPA with `vite preview` next to the real API (e2e/journey).
   preview: { proxy: apiProxy },
-  build: { target: BUILD_TARGET, sourcemap: false, cssTarget: BUILD_TARGET },
+  build: {
+    target: BUILD_TARGET,
+    sourcemap: false,
+    cssTarget: BUILD_TARGET,
+  },
   test: {
     environment: "jsdom",
     globals: true,

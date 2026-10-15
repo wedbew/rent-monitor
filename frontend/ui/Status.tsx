@@ -5,7 +5,7 @@ import styles from "./Status.module.css";
 
 export type Tone = "info" | "success" | "warning" | "danger";
 
-const ICONS: Record<Tone, IconName> = { info: "info", success: "check", warning: "alert", danger: "alert" };
+const ICONS: Record<Tone, IconName> = { info: "info", success: "success", warning: "alert", danger: "error" };
 
 interface InlineNoticeProps {
   readonly tone: Tone;
@@ -23,9 +23,9 @@ export function InlineNotice({ tone, title, children, actions, live = "off" }: I
   return (
     <div className={`${styles["notice"]} ${styles[tone]}`} role={role}>
       <span className={styles["icon"]}>
-        <Icon name={ICONS[tone]} size={20} />
+        <Icon name={ICONS[tone]} size={18} />
       </span>
-      <div>
+      <div className={styles["text"]}>
         <strong className={styles["title"]}>{title}</strong>
         {children ? <span className={styles["body"]}>{children}</span> : null}
         {actions ? <div className={styles["actions"]}>{actions}</div> : null}
