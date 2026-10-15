@@ -226,6 +226,13 @@ export const SCENARIOS = {
       reply: { status: 200, body: { items: [], next_cursor: null } satisfies AuditPage, delayMs: 1500 },
     },
   ]),
+  unknownAudit: scenario("unknownAudit", "The audit id is not the person's: 404.", auditRoutes([])),
+  auditUnavailable: scenario("auditUnavailable", "One analysis cannot be loaded (503).", [
+    {
+      operation: "GET /api/audits/{audit_id}",
+      reply: { status: 503, body: NOT_READY, contentType: "application/problem+json" },
+    },
+  ]),
   expiredMidUse: scenario(
     "expiredMidUse",
     "The session ends while the page is in use: the next request is a 401.",
@@ -264,6 +271,142 @@ export const SCENARIOS = {
 
 export type ScenarioName = keyof typeof SCENARIOS;
 export const SCENARIO_NAMES = Object.keys(SCENARIOS) as ScenarioName[];
+
+// ------------------------------------------------------------------------------------------ a run, stateful
+export const RUN_AUDIT_ID = "00000000-0000-4000-8000-0000000000a1";
+
+export interface RunOptions {
+  /** How the analysis ends. Default: succeeded. */
+  readonly outcome?: "succeeded" | "rejected" | "failed";
+  /** The stream drops once after the first frames; the browser reconnects and the rest arrives later. */
+  readonly interrupt?: boolean;
+  /** The stream cannot be opened: the page must fall back to polling the audit. */
+  readonly streamDown?: "http" | "network";
+  /** The stream connects and delivers the first frames, then never says anything more (a silent proxy). */
+  readonly silent?: boolean;
+  /** The POST itself fails (a dropped connection, a problem body); the list then says whether it arrived. */
+  readonly post?: Reply;
+  /** The POST answers after this many milliseconds, so the busy form is there to be clicked again. */
+  readonly postDelayMs?: number;
+  /** What `GET /api/audits` answers after such a failure (default: an empty list). */
+  readonly listAfterPost?: AuditSummary[];
+  /** The list cannot be read either (the network is down): whether the POST arrived is unknowable. */
+  readonly listFails?: boolean;
+}
+
+export interface Run extends Scenario {
+  readonly state: { posts: number; streams: number; reads: number; settled: boolean };
+}
+
+const RUN_FIXTURES = {
+  succeeded: { audit: "succeeded_warszawa", events: "success_transcript" },
+  rejected: { audit: "rejected_rent_is_not_a_deal", events: "rejected_transcript" },
+  failed: { audit: "failed_upstream_blocked", events: "failure_transcript" },
+} as const;
+
+const reId = <T extends { audit_id: string }>(body: T): T => ({ ...body, audit_id: RUN_AUDIT_ID });
+
+/**
+ * One analysis from the click to its end, with the pieces that change while it runs: the balance (reserved at
+ * once, kept on success, given back otherwise), the audit (queued, then final), the stream (frames, optionally
+ * interrupted once) and the counters a test asserts on (how many POSTs, how many streams were opened).
+ */
+export function createRun(options: RunOptions = {}): Run {
+  const kind = options.outcome ?? "succeeded";
+  const fixtures = RUN_FIXTURES[kind];
+  const state = { posts: 0, streams: 0, reads: 0, settled: false };
+  const me = bodyOf<MeDetail>(fx("GET /api/me", "with_credits_and_flags"));
+  const final = reId(bodyOf<AuditOut>(fx("GET /api/audits/{audit_id}", fixtures.audit)));
+  const queued = reId(bodyOf<AuditOut>(fx("GET /api/audits/{audit_id}", "queued_not_yet_run")));
+  const transcript = fx("GET /api/audits/{audit_id}/events", fixtures.events).events ?? [];
+  const frames = transcript.map((e) => ({
+    ...e,
+    data: { ...(e.data as Record<string, unknown>), audit_id: RUN_AUDIT_ID },
+  }));
+  const partial = frames.filter((e) => e.event === "progress").slice(0, 3);
+  const withRetry = (list: typeof frames) => `retry: 50\n\n${eventStreamText(list)}`;
+  const streamReply = (): Reply => {
+    state.streams += 1;
+    if (options.streamDown === "network") return { status: 0, networkError: true };
+    if (options.streamDown === "http")
+      return { status: 503, body: NOT_READY, contentType: "application/problem+json" };
+    const headers = { "cache-control": "no-store" };
+    if (options.silent === true)
+      return {
+        status: 200,
+        text: `retry: 500\n\n${eventStreamText(partial)}`,
+        contentType: "text/event-stream",
+        headers,
+      };
+    const type = "text/event-stream";
+    if (options.interrupt === true && state.streams === 1)
+      return { status: 200, text: withRetry(partial), contentType: type, headers };
+    // The second answer repeats the last frame the first one sent: the page must show it once.
+    const rest =
+      options.interrupt === true ? [...partial.slice(-1), ...frames.slice(partial.length)] : frames;
+    state.settled = true;
+    return {
+      status: 200,
+      text: withRetry(rest),
+      contentType: type,
+      headers,
+      ...(options.interrupt === true ? { delayMs: 900 } : {}),
+    };
+  };
+  const routes: Route[] = [
+    {
+      operation: "GET /api/me",
+      reply: () => ({
+        status: 200,
+        body: {
+          ...me,
+          credit_balance:
+            me.credit_balance - (state.posts > 0 && !(state.settled && kind !== "succeeded") ? 1 : 0),
+        },
+      }),
+    },
+    {
+      operation: "POST /api/audits",
+      reply: () => {
+        state.posts += 1;
+        if (options.post !== undefined) return options.post;
+        return {
+          status: 202,
+          body: {
+            audit_id: RUN_AUDIT_ID,
+            credits_remaining: me.credit_balance - 1,
+            events_url: `/api/audits/${RUN_AUDIT_ID}/events`,
+            status: "queued",
+          },
+          ...(options.postDelayMs !== undefined ? { delayMs: options.postDelayMs } : {}),
+        };
+      },
+    },
+    {
+      operation: "GET /api/audits/{audit_id}",
+      reply: () => {
+        state.reads += 1;
+        // Without a stream the page polls: the analysis finishes between two polls.
+        if ((options.streamDown !== undefined || options.silent === true) && state.reads >= 2)
+          state.settled = true;
+        return { status: 200, body: state.settled ? final : queued };
+      },
+    },
+    { operation: "GET /api/audits/{audit_id}/events", reply: streamReply },
+    {
+      operation: "GET /api/audits",
+      reply: () =>
+        options.listFails === true
+          ? { status: 0, networkError: true }
+          : {
+              status: 200,
+              body: { items: options.listAfterPost ?? [], next_cursor: null } satisfies AuditPage,
+            },
+    },
+  ];
+  const base = scenario("run", "One analysis from the click to its end.", routes);
+  return { ...base, state };
+}
 
 // ----------------------------------------------------------------------------------------------- matching
 const PARAM = /\{([a-z_]+)\}/g;

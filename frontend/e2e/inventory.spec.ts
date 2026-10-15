@@ -9,6 +9,54 @@ import { expectDialogContract } from "./popups";
 const viewportOf = (page: Page): Viewport =>
   (page.viewportSize()?.width ?? 1280) <= 760 ? "mobile" : "desktop";
 
+async function checkPopups(
+  page: Page,
+  appPage: (typeof PAGES)[number],
+  scenario: string,
+  viewport: Viewport,
+  popups: readonly (typeof POPUPS)[number][],
+  state?: string,
+): Promise<void> {
+  for (const popup of popups) {
+    const trigger = INTERACTIONS.find((i) => i.id === popup.trigger);
+    if (trigger === undefined)
+      throw new Error(`popup ${popup.id}: trigger ${popup.trigger} is not registered`);
+    const triggerLocator = page.getByRole(trigger.role, {
+      name: trigger.name,
+      exact: typeof trigger.name === "string",
+    });
+    const dialog = page.getByRole(popup.role, { name: popup.name });
+    await triggerLocator.click();
+    await expect(dialog).toBeVisible();
+    expect(
+      (
+        await inventory(
+          page,
+          {
+            page: appPage.id,
+            scenario,
+            viewport,
+            layout: appPage.layout ?? "app",
+            within: popup.id,
+            ...(state !== undefined ? { state } : {}),
+          },
+          INTERACTIONS,
+          dialog,
+        )
+      ).map((v) => v.message),
+    ).toEqual([]);
+    await expectNoA11yViolations(page, "[role=dialog], [role=alertdialog], [role=menu], [role=listbox]");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expectDialogContract(page, {
+      id: popup.id,
+      trigger: triggerLocator,
+      dialog,
+      backdrop: popup.backdrop,
+    });
+  }
+}
+
 for (const appPage of PAGES) {
   for (const scenario of appPage.scenarios) {
     test(`${appPage.id} / ${scenario}: every interactive element is named and registered, and axe is clean`, async ({
@@ -31,44 +79,19 @@ for (const appPage of PAGES) {
       ).toEqual([]);
       await expectNoA11yViolations(page);
 
-      // A shell popup is the same on every page: it is opened and inventoried once, on the first page.
-      const popups = POPUPS.filter(
-        (p) =>
-          (p.page === appPage.id || (p.page === EVERY_PAGE && appPage === PAGES[0])) &&
-          (p.viewport === undefined || p.viewport === viewport) &&
-          (p.scenarios === undefined || p.scenarios.includes(scenario)),
+      await checkPopups(
+        page,
+        appPage,
+        scenario,
+        viewport,
+        POPUPS.filter(
+          (p) =>
+            p.state === undefined &&
+            (p.page === appPage.id || (p.page === EVERY_PAGE && appPage === PAGES[0])) &&
+            (p.viewport === undefined || p.viewport === viewport) &&
+            (p.scenarios === undefined || p.scenarios.includes(scenario)),
+        ),
       );
-      for (const popup of popups) {
-        const trigger = INTERACTIONS.find((i) => i.id === popup.trigger);
-        if (trigger === undefined)
-          throw new Error(`popup ${popup.id}: trigger ${popup.trigger} is not registered`);
-        const triggerLocator = page.getByRole(trigger.role, {
-          name: trigger.name,
-          exact: typeof trigger.name === "string",
-        });
-        const dialog = page.getByRole(popup.role, { name: popup.name });
-        await triggerLocator.click();
-        await expect(dialog).toBeVisible();
-        expect(
-          (
-            await inventory(
-              page,
-              { page: appPage.id, scenario, viewport, layout: appPage.layout ?? "app", within: popup.id },
-              INTERACTIONS,
-              dialog,
-            )
-          ).map((v) => v.message),
-        ).toEqual([]);
-        await expectNoA11yViolations(page, "[role=dialog], [role=alertdialog], [role=menu], [role=listbox]");
-        await page.keyboard.press("Escape");
-        await expect(dialog).toBeHidden();
-        await expectDialogContract(page, {
-          id: popup.id,
-          trigger: triggerLocator,
-          dialog,
-          backdrop: popup.backdrop,
-        });
-      }
     });
   }
 }
@@ -94,6 +117,19 @@ for (const appPage of PAGES) {
       };
       expect((await inventory(page, scope)).map((v) => v.message)).toEqual([]);
       await expectNoA11yViolations(page);
+      await checkPopups(
+        page,
+        appPage,
+        String(pageState.scenario),
+        viewport,
+        POPUPS.filter(
+          (p) =>
+            p.page === appPage.id &&
+            p.state === pageState.name &&
+            (p.viewport === undefined || p.viewport === viewport),
+        ),
+        pageState.name,
+      );
     });
   }
 }
@@ -125,6 +161,10 @@ test("the registry only names pages, popups and triggers that exist", () => {
         !stateNames.has(`${i.page}:${i.state}`),
     ).map((i) => i.id),
     "elements in unknown page states",
+  ).toEqual([]);
+  expect(
+    POPUPS.filter((p) => p.state !== undefined && !stateNames.has(`${p.page}:${p.state}`)).map((p) => p.id),
+    "popups in unknown page states",
   ).toEqual([]);
   const popupIds = new Set(POPUPS.map((p) => p.id));
   expect(

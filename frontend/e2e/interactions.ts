@@ -15,7 +15,15 @@
 import type { Page } from "@playwright/test";
 
 import { LEGAL, PRIMARY } from "../shell/navigation";
-import { createAuthFlow, type Scenario, type ScenarioName } from "../test/scenarios";
+import {
+  createAuthFlow,
+  createRun,
+  type Scenario,
+  type ScenarioName,
+  RUN_AUDIT_ID,
+  SUCCEEDED_AUDITS,
+} from "../test/scenarios";
+import { fx, type Fixture } from "../test/fixtures";
 import { nextGoogleCredential } from "./gis";
 
 /** What a test must assert after using the element. */
@@ -106,9 +114,46 @@ export interface Popup {
   /** Does a click outside close it? Decided per popup and tested. */
   readonly backdrop: "closes" | "stays";
   readonly scenarios?: readonly ScenarioName[];
+  /** Reached only in this page state (see PageState: `prepare` leaves the page ready for the trigger). */
+  readonly state?: string;
 }
 
 const EVERY_SCENARIO = ["empty"] as const;
+const LISTING = "https://www.otodom.pl/pl/oferta/mieszkanie-2-pokoje-ID4abcd";
+
+/** A fixture's answer as a scenario reply (for the failing variants of a run). */
+function replyOf(operation: string, name: string) {
+  const fixture: Fixture = fx(operation, name);
+  return {
+    status: fixture.status,
+    body: fixture.body,
+    contentType: fixture.content_type,
+    headers: fixture.headers,
+  };
+}
+
+/** The list row of an analysis created a moment ago (what the list says after a POST whose answer was lost). */
+function justCreated() {
+  return {
+    audit_id: RUN_AUDIT_ID,
+    otodom_id: "ID4abcd",
+    status: "queued" as const,
+    error_code: null,
+    created_at: new Date().toISOString(),
+    finished_at: null,
+    grade: null,
+    asking_price_pln: null,
+    max_bid_pln: null,
+  };
+}
+
+/** Type a listing into the new-analysis form and send it. */
+function submitListing(value: string) {
+  return async (page: Page): Promise<void> => {
+    await page.getByRole("textbox", { name: "Adres ogłoszenia lub numer" }).fill(value);
+    await page.getByRole("button", { name: "Rozpocznij analizę" }).click();
+  };
+}
 const SIGNED_OUT = ["firstVisit"] as const;
 const SAMPLE_TOKEN = "AbCdEfGhIjKlMnOpQrStUvWxYz012345";
 
@@ -127,13 +172,120 @@ export const PAGES: readonly AppPage[] = [
       "unverified",
     ],
   },
-  { id: "new-analysis", path: "/app/analyses/new", heading: "Nowa analiza", scenarios: EVERY_SCENARIO },
+  {
+    id: "new-analysis",
+    path: "/app/analyses/new",
+    heading: "Nowa analiza",
+    scenarios: ["empty", "insufficientCredits"],
+    states: [
+      {
+        name: "otodom-limited",
+        scenario: "breakerOpen",
+        prepare: async (page) => {
+          await page.getByRole("status").filter({ hasText: "Otodom ogranicza zapytania" }).waitFor();
+        },
+      },
+      {
+        name: "validation-error",
+        scenario: "empty",
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Rozpocznij analizę" }).click();
+          await page.getByRole("alert").filter({ hasText: "Popraw 1 pole" }).waitFor();
+        },
+      },
+      {
+        name: "invalid-listing",
+        scenario: () => createRun({ post: replyOf("POST /api/audits", "invalid_listing_ref") }),
+        prepare: submitListing("https://example.test/nie-otodom"),
+      },
+      {
+        name: "in-progress",
+        scenario: () => createRun({ post: replyOf("POST /api/audits", "already_in_progress") }),
+        prepare: async (page) => {
+          await submitListing(LISTING)(page);
+          await page.getByRole("status").filter({ hasText: "Ta analiza już trwa" }).waitFor();
+        },
+      },
+      {
+        name: "ambiguous-arrived",
+        scenario: () =>
+          createRun({ post: { status: 0, networkError: true }, listAfterPost: [justCreated()] }),
+        prepare: async (page) => {
+          await submitListing(LISTING)(page);
+          await page.getByRole("status").filter({ hasText: "Analiza została przyjęta" }).waitFor();
+        },
+      },
+      {
+        name: "ambiguous-unknown",
+        scenario: () => createRun({ post: { status: 0, networkError: true }, listFails: true }),
+        prepare: async (page) => {
+          await submitListing(LISTING)(page);
+          await page.getByRole("alert").filter({ hasText: "Nie wiemy, czy analiza ruszyła" }).waitFor();
+        },
+      },
+      {
+        name: "no-credits",
+        scenario: "insufficientCredits",
+        // The paywall opens from the submit button: `prepare` only fills the field in.
+        prepare: async (page) => {
+          await page.getByRole("textbox", { name: "Adres ogłoszenia lub numer" }).fill(LISTING);
+        },
+      },
+    ],
+  },
   { id: "analyses", path: "/app/analyses", heading: "Moje analizy", scenarios: EVERY_SCENARIO },
   {
     id: "report",
-    path: "/app/analyses/00000000-0000-4000-8000-000000000001",
+    path: `/app/analyses/${SUCCEEDED_AUDITS[0]?.audit_id ?? ""}`,
     heading: "Raport",
-    scenarios: EVERY_SCENARIO,
+    scenarios: ["loaded"],
+    states: [
+      {
+        name: "rejected",
+        path: "/app/analyses/00000000-0000-4000-8000-000000000036",
+        scenario: "rejectedRent",
+        prepare: async (page) => {
+          await page.getByRole("status").filter({ hasText: "To ogłoszenie wynajmu" }).waitFor();
+        },
+      },
+      {
+        name: "failed",
+        path: "/app/analyses/00000000-0000-4000-8000-000000000032",
+        scenario: "failedUpstream",
+        prepare: async (page) => {
+          await page.getByRole("status").filter({ hasText: "Otodom zablokował pobranie" }).waitFor();
+        },
+      },
+      {
+        name: "running",
+        path: `/app/analyses/${RUN_AUDIT_ID}`,
+        scenario: () => createRun({ interrupt: true }),
+        prepare: async (page) => {
+          await page.getByRole("progressbar", { name: "Postęp analizy" }).waitFor();
+        },
+      },
+      {
+        name: "not-found",
+        path: "/app/analyses/00000000-0000-4000-8000-000000000999",
+        scenario: "unknownAudit",
+        prepare: async (page) => {
+          await page.getByRole("alert").filter({ hasText: "Nie znaleziono analizy" }).waitFor();
+        },
+      },
+      {
+        name: "unavailable",
+        path: "/app/analyses/00000000-0000-4000-8000-000000000999",
+        scenario: "auditUnavailable",
+        prepare: async (page) => {
+          await page
+            .getByRole("alert")
+            .filter({ hasText: "Spróbuj ponownie" })
+            .or(page.getByRole("alert"))
+            .first()
+            .waitFor();
+        },
+      },
+    ],
   },
   { id: "market", path: "/app/market", heading: "Rynek", scenarios: EVERY_SCENARIO },
   { id: "interior", path: "/app/interior", heading: "Architekt wnętrz", scenarios: EVERY_SCENARIO },
@@ -423,6 +575,107 @@ export const INTERACTIONS: readonly Interaction[] = [
     outcome: "url",
   },
 
+  // New analysis.
+  {
+    id: "new.field",
+    page: "new-analysis",
+    role: "textbox",
+    name: "Adres ogłoszenia lub numer",
+    outcome: "state",
+  },
+  {
+    id: "new.submit",
+    page: "new-analysis",
+    role: "button",
+    name: "Rozpocznij analizę",
+    outcome: "request",
+  },
+  {
+    id: "new.error.field",
+    page: "new-analysis",
+    state: "validation-error",
+    role: "link",
+    name: "Wklej adres ogłoszenia lub jego numer.",
+    outcome: "focus",
+  },
+  {
+    id: "new.error.listing",
+    page: "new-analysis",
+    state: "invalid-listing",
+    role: "link",
+    name: "Wklej adres ogłoszenia sprzedaży z Otodom albo jego numer.",
+    outcome: "focus",
+  },
+  {
+    id: "new.existing",
+    page: "new-analysis",
+    state: "in-progress",
+    role: "link",
+    name: "Otwórz analizę",
+    outcome: "url",
+  },
+  {
+    id: "new.arrived",
+    page: "new-analysis",
+    state: "ambiguous-arrived",
+    role: "link",
+    name: "Zobacz postęp",
+    outcome: "url",
+  },
+  {
+    id: "new.check",
+    page: "new-analysis",
+    state: "ambiguous-unknown",
+    role: "link",
+    name: "Sprawdź w Moich analizach",
+    outcome: "url",
+  },
+  {
+    id: "new.paywall.close",
+    page: "new-analysis",
+    state: "no-credits",
+    within: "paywall",
+    role: "button",
+    name: "Zamknij okno",
+    outcome: "dialog",
+  },
+  {
+    id: "new.paywall.buy",
+    page: "new-analysis",
+    state: "no-credits",
+    within: "paywall",
+    role: "link",
+    name: "Kup raporty",
+    outcome: "url",
+  },
+
+  // One analysis (progress and result).
+  { id: "report.all", page: "report", role: "link", name: "Moje analizy", outcome: "url" },
+  {
+    id: "report.new.rejected",
+    page: "report",
+    state: "rejected",
+    role: "link",
+    name: "Nowa analiza",
+    outcome: "url",
+  },
+  {
+    id: "report.new.failed",
+    page: "report",
+    state: "failed",
+    role: "link",
+    name: "Nowa analiza",
+    outcome: "url",
+  },
+  {
+    id: "report.retry",
+    page: "report",
+    state: "unavailable",
+    role: "button",
+    name: "Spróbuj ponownie",
+    outcome: "request",
+  },
+
   // The signed-out frame (every public page).
   { id: "public.skip", page: EVERY_PUBLIC_PAGE, role: "link", name: "Przejdź do treści", outcome: "focus" },
   {
@@ -604,6 +857,15 @@ export const INTERACTIONS: readonly Interaction[] = [
 ];
 
 export const POPUPS: readonly Popup[] = [
+  {
+    id: "paywall",
+    page: "new-analysis",
+    state: "no-credits",
+    trigger: "new.submit",
+    role: "dialog",
+    name: "Nie masz już raportów",
+    backdrop: "closes",
+  },
   {
     id: "mobile-menu",
     page: EVERY_PAGE,

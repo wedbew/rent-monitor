@@ -57,7 +57,8 @@ export function Button({
       className={classes(variant, fill, small, busy)}
       disabled={disabled}
       aria-busy={busy || undefined}
-      onClick={busy ? undefined : onClick}
+      // A busy submit button must not submit: cancelling the click also stops Enter in a field (implicit submission).
+      onClick={busy ? (event) => event.preventDefault() : onClick}
     >
       <span>{children}</span>
       {busy ? (
