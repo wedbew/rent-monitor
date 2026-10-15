@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 
 import { createCollection } from "../test/scenarios";
 import { exercise, outcome } from "./coverage";
@@ -9,6 +9,12 @@ const more = (page: Page) => page.getByRole("button", { name: "Załaduj więcej"
 const shown = (page: Page) => page.getByRole("status").filter({ hasText: /Wyświetlono|Odświeżam/ });
 const status = (page: Page) => page.getByRole("combobox", { name: "Status" });
 const grade = (page: Page) => page.getByRole("combobox", { name: "Ocena" });
+
+/** Choose from a styled select the way a person does: open it, pick the option. */
+async function choose(select: Locator, label: string): Promise<void> {
+  await select.click();
+  await select.page().getByRole("option", { name: label, exact: true }).click();
+}
 const search = (page: Page) => page.getByRole("textbox", { name: "Numer ogłoszenia (początek)" });
 
 test.describe("the collection", () => {
@@ -128,7 +134,7 @@ test.describe("the collection", () => {
       await expect(rows(page)).toHaveCount(24);
 
       await exercise("analyses.option.ready", async () => {
-        await status(page).selectOption({ label: "Gotowe" });
+        await choose(status(page), "Gotowe");
         return [await outcome.url(page, /\?status=ready$/)];
       });
       await expect(page.getByRole("list", { name: "Analizy" })).not.toContainText("W kolejce");
@@ -136,25 +142,25 @@ test.describe("the collection", () => {
       expect(new URLSearchParams(sent).getAll("status").sort()).toEqual(["succeeded", "succeeded_degraded"]);
 
       await exercise("analyses.status", async () => {
-        await expect(status(page)).toHaveValue("ready");
+        await expect(status(page)).toHaveText("Gotowe");
         return [await outcome.url(page, /status=ready/)];
       });
       await exercise("analyses.grade", async () => {
-        await grade(page).selectOption({ label: "E" });
+        await choose(grade(page), "E");
         return [await outcome.url(page, /status=ready&grade=E$/)];
       });
 
       await page.reload();
-      await expect(status(page)).toHaveValue("ready");
-      await expect(grade(page)).toHaveValue("E");
+      await expect(status(page)).toHaveText("Gotowe");
+      await expect(grade(page)).toHaveText("E");
       await expect(rows(page).first()).toBeVisible();
 
       await page.goBack();
       await expect(page).toHaveURL(/\?status=ready$/);
-      await expect(grade(page)).toHaveValue("");
+      await expect(grade(page)).toHaveText("Wszystkie");
       await page.goBack();
       await expect(page).toHaveURL(/\/app\/analyses$/);
-      await expect(status(page)).toHaveValue("");
+      await expect(status(page)).toHaveText("Wszystkie");
     });
 
     for (const [id, label, expected] of [
@@ -166,7 +172,7 @@ test.describe("the collection", () => {
         await serve("collection");
         await page.goto("/app/analyses");
         await exercise(`analyses.option.${id}`, async () => {
-          await status(page).selectOption({ label });
+          await choose(status(page), label);
           return [await outcome.url(page, expected)];
         });
       });
@@ -177,18 +183,44 @@ test.describe("the collection", () => {
         await serve("collection");
         await page.goto("/app/analyses");
         await exercise(`analyses.option.grade-${g}`, async () => {
-          await grade(page).selectOption({ label: g === "N" ? "Bez oceny" : g });
+          await choose(grade(page), g === "N" ? "Bez oceny" : g);
           return [await outcome.url(page, new RegExp(`grade=${g}$`))];
         });
       });
     }
 
+    test("each select opens a labelled list of choices", async ({ page, serve }) => {
+      await serve("collection");
+      await page.goto("/app/analyses");
+      for (const [id, select, name] of [
+        ["status", status(page), "Status"],
+        ["grade", grade(page), "Ocena"],
+      ] as const) {
+        await exercise(`analyses.${id}.listbox`, async () => {
+          await select.click();
+          await expect(page.getByRole("listbox", { name })).toBeVisible();
+          const opened = await outcome.state(select, "aria-expanded", "true");
+          await page.keyboard.press("Escape");
+          return [opened];
+        });
+      }
+    });
+
     test("'Wszystkie' removes the filter again", async ({ page, serve }) => {
       await serve("collection");
       await page.goto("/app/analyses?status=ready&grade=E");
       await exercise("analyses.option.all", async () => {
-        await status(page).selectOption({ label: "Wszystkie" });
+        await choose(status(page), "Wszystkie");
         return [await outcome.url(page, /\?grade=E$/)];
+      });
+    });
+
+    test("'Wszystkie' in the grade list removes the grade filter again", async ({ page, serve }) => {
+      await serve("collection");
+      await page.goto("/app/analyses?status=ready&grade=E");
+      await exercise("analyses.option.grade-all", async () => {
+        await choose(grade(page), "Wszystkie");
+        return [await outcome.url(page, /\?status=ready$/)];
       });
     });
 
@@ -294,7 +326,12 @@ test.describe("the collection", () => {
       await expect(region).toBeFocused(); // reachable by keyboard
       await expect(region).toHaveCSS("outline-style", "solid");
       await expect(region).toHaveCSS("outline-width", "2px");
-      await expect(page.getByRole("columnheader", { name: "Data" })).not.toHaveAttribute("aria-sort", /.*/);
+      // The order is the server's (newest first) and is said so; no header offers a sort the API cannot do.
+      await expect(page.getByRole("columnheader", { name: "Data" })).toHaveAttribute(
+        "aria-sort",
+        "descending",
+      );
+      await expect(page.getByRole("columnheader").getByRole("button")).toHaveCount(0);
     });
   });
 
@@ -304,7 +341,7 @@ test.describe("the collection", () => {
     await page.goto("/app/analyses");
     await expect(rows(page)).toHaveCount(24);
     await rows(page).first().getByRole("link").click();
-    await expect(page.getByRole("heading", { level: 1, name: "Raport" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /^Ogłoszenie / })).toBeVisible();
     await page.clock.fastForward(60_000); // the cached list is stale by now
     await page.goBack();
     await expect(page.getByRole("heading", { level: 1, name: "Moje analizy" })).toBeVisible();

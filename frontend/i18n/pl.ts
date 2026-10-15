@@ -429,6 +429,7 @@ export const pl = {
         askingPrice: "Cena ofertowa",
         maxBid: "Cena progowa",
       },
+      filtersLabel: "Wyszukiwanie i filtry",
       searchLabel: "Szukaj analizy",
       searchField: "Numer ogłoszenia (początek)",
       search: "Szukaj",
@@ -473,7 +474,6 @@ export const pl = {
       starting: "Zaczynam",
       stagesLabel: "Etapy analizy",
       resultLabel: "Wynik analizy",
-      ready: "Analiza jest gotowa.",
       notFinished: "Analiza nie została ukończona.",
       unsupportedTitle: "Nieobsługiwana wersja raportu",
       unsupportedBody:
@@ -493,8 +493,6 @@ export const pl = {
         none: "brak",
         rooms: ["pokój", "pokoje", "pokoi"],
         offers: ["oferta", "oferty", "ofert"],
-        floor: ({ floor }: { floor: string }) => `piętro ${floor}`,
-        floorOf: ({ floor, floors }: { floor: string; floors: string }) => `piętro ${floor} z ${floors}`,
         builtIn: ({ year }: { year: string }) => `rok budowy ${year}`,
         listingUpdated: ({ id, date }: { id: string; date: string }) =>
           `Ogłoszenie ${id}, zaktualizowane ${date}`,
@@ -510,12 +508,12 @@ export const pl = {
         belowAsking: ({ size }: { size: string }) => `${size} poniżej ceny ofertowej`,
         aboveAsking: ({ size }: { size: string }) => `${size} powyżej ceny ofertowej`,
         maxBidIs: ({ price }: { price: string }) => `cena progowa ${price}`,
-        irrHint: ({ hurdle }: { hurdle: string }) => `stopa zwrotu (IRR) w 10 lat, próg ${hurdle}`,
+        irrHint: ({ years, hurdle }: { years: string; hurdle: string }) =>
+          `roczna stopa zwrotu w ${years}, próg ${hurdle}`,
         adjustmentClamped: ({ value, clamp }: { value: string; clamp: string }) =>
           `${value} (ograniczona do ${clamp})`,
         evidenceTitle: ({ count }: { count: string }) => `Fragmenty ogłoszenia użyte w ocenie (${count})`,
-        versions: ({ engine, assumptions }: { engine: string; assumptions: string }) =>
-          `Zdjęcia z ogłoszenia nie są tu wyświetlane. Wersje: silnik ${engine}, założenia ${assumptions}.`,
+        photosNotShown: "Zdjęcia z ogłoszenia nie są tu wyświetlane.",
         sekcjeRaportu: "Sekcje raportu",
         podsumowanie: "Podsumowanie",
         wynikWlascicielaRoku1: "Wynik właściciela w roku 1",
@@ -548,21 +546,19 @@ export const pl = {
         podatekNieruchomosci: "Podatek od nieruchomości",
         razemKosztyRocznie: "Razem koszty rocznie",
         stanMieszkania: "Stan mieszkania",
-        rodzajMiasta: "Rodzaj miasta",
         cenaZaMetrKwadratowy: "Cena za metr kwadratowy",
-        mnoznik: "Mnożnik",
+        mnoznik: "Współczynnik cen w mieście",
         szacunekPodstawowy: "Szacunek podstawowy",
         zakres: "Zakres",
         pewnoscSzacunku: "Pewność szacunku",
-        wersjaCennika: "Wersja cennika",
         cenaZakupu: "Cena zakupu",
         cenaOgloszeniaCenaTransakcyjna: "cena z ogłoszenia, nie cena transakcyjna",
         wynikJestTylkoGornaGranica: "Wynik jest tylko górną granicą",
         rentownoscBrutto: "Rentowność brutto",
         rentownoscNetto: "Rentowność netto",
-        stopaZwrotuIrr: "Stopa zwrotu IRR",
-        sredniRocznyWzrostKapitaluCagr: "Średni roczny wzrost kapitału (CAGR)",
-        mnoznikKapitaluMoic: "Mnożnik kapitału (MOIC)",
+        rocznaStopaZwrotu: "Roczna stopa zwrotu",
+        sredniRocznyWzrostKapitalu: "Średni roczny wzrost kapitału",
+        mnoznikZainwestowanegoKapitalu: "Mnożnik zainwestowanego kapitału",
         wartoscSprzedazy10Latach: "Wartość sprzedaży po 10 latach",
         kosztySprzedazy: "Koszty sprzedaży",
         podatekPrzySprzedazy: "Podatek przy sprzedaży",
@@ -592,7 +588,6 @@ export const pl = {
         stanWgZdjec: "Stan wg zdjęć",
         korektaCzynszu: "Korekta czynszu",
         korektaKosztuRemontu: "Korekta kosztu remontu",
-        modelWersjaInstrukcji: "Model i wersja instrukcji",
         zrodlaZalozenia: "Źródła i założenia",
         coSprawdzic: "Co sprawdzić",
         zrodla: "Źródła",
@@ -613,6 +608,8 @@ export const pl = {
           "Analiza jest gotowa, ale nie wszystkie dane były dostępne: wniosek jest mniej pewny.",
         podobneOferty: "Podobne oferty",
         wstepny: "wstępny",
+        wstepnyOpis: "Kwota jest wstępnym szacunkiem, nie wyceną wykonawcy",
+        zwrotMetrics: "Co oznacza ta miara",
         cenaProgowaOfertowa: "Cena progowa a ofertowa",
         zwrotPrzyCenieOfertowej: "Zwrot przy cenie ofertowej",
         kwotyZlotychBezKapitaluStart: "Kwoty w złotych, bez kapitału na start",
@@ -630,6 +627,73 @@ export const pl = {
           "Próg zwrotu byłby spełniony nawet przy cenie wielokrotnie wyższej od ofertowej, więc podana cena to górna granica obliczeń.",
         cenyOfertoweToCenyOgloszen:
           "Ceny ofertowe to ceny z ogłoszeń, nie ceny transakcyjne. Raport nie jest poradą inwestycyjną ani prawną.",
+      },
+      metrics: {
+        helpLabel: ({ metric }: { metric: string }) => `Co oznacza: ${metric}`,
+        yearsNoun: ["rok", "lata", "lat"],
+        meaning: "Co to jest",
+        reading: "Jak czytać wynik",
+        assumptions: "Jak to liczymy",
+        irr: {
+          title: "IRR, czyli wewnętrzna stopa zwrotu",
+          meaning:
+            "Stała roczna stopa, która sprowadza wszystkie wpływy z mieszkania do kwoty wydanej na start. Liczy się z tym, kiedy pieniądze wpływają: złotówka z czynszu za kilka lat jest warta mniej niż złotówka dziś.",
+          reading:
+            "Im wyższa, tym lepiej. Porównaj ją z progiem zwrotu z raportu albo z oprocentowaniem bezpiecznej lokaty czy obligacji.",
+          assumptions: ({ years }: { years: string }) =>
+            `Bez kredytu, po podatku od najmu. Przepływy liczymy raz w roku przez ${years}: kapitał na start (cena, koszty zakupu i remont) to wydatek, czynsze po kosztach i podatku to wpływy, a w ostatnim roku dochodzą wpływy ze sprzedaży mieszkania po kosztach i podatku.`,
+        },
+        cagr: {
+          title: "CAGR, czyli złożona roczna stopa wzrostu",
+          meaning: ({ years }: { years: string }) =>
+            `Średnie roczne tempo, w jakim urósłby kapitał z początku, gdyby wszystko, co mieszkanie przyniesie przez ${years} (czynsze po kosztach i podatku oraz sprzedaż), wpłynęło dopiero na końcu.`,
+          reading:
+            "To uproszczona, średnia wartość. Nie uwzględnia, kiedy pieniądze naprawdę wpływają, więc zwykle różni się od rocznej stopy zwrotu. Do porównania z progiem zwrotu służy roczna stopa zwrotu.",
+          assumptions:
+            "Liczymy ją z mnożnika zainwestowanego kapitału: pierwiastek z mnożnika, którego stopień to liczba lat, minus 1. Bez kredytu, po podatku od najmu.",
+        },
+        moic: {
+          title: "MOIC, czyli mnożnik zainwestowanego kapitału",
+          meaning:
+            "Ile złotych wraca na każdą złotówkę wydaną na start. Dzielimy sumę czynszów po kosztach i podatku oraz wpływów ze sprzedaży przez kapitał na start.",
+          reading:
+            "1,00 oznacza odzyskanie wydanych pieniędzy bez zysku, 2,00 oznacza dwa razy tyle. Mnożnik nie uwzględnia czasu: 2,00 po 10 latach to znacznie mniej niż 2,00 po 3 latach.",
+          assumptions: ({ years }: { years: string }) =>
+            `Horyzont ${years}, bez kredytu. Kapitał na start to cena, koszty zakupu i remont.`,
+        },
+      },
+      attributes: {
+        unrecognised: "nierozpoznana wartość",
+        floorNumber: ({ floor }: { floor: string }) => `${floor}. piętro`,
+        floorOf: ({ floor, floors }: { floor: string; floors: string }) => `${floor} z ${floors}`,
+        heating: {
+          urban: "Miejskie",
+          gas: "Gazowe",
+          electrical: "Elektryczne",
+          boiler_room: "Kotłownia",
+          tiled_stove: "Piece kaflowe",
+          other: "Inne",
+        },
+        windows: {
+          plastic: "PCV",
+          wooden: "Drewniane",
+          aluminium: "Aluminiowe",
+        },
+        buildingType: {
+          block: "Blok",
+          tenement: "Kamienica",
+          apartment: "Apartamentowiec",
+          house: "Dom wolnostojący",
+          infill: "Plomba",
+          ribbon: "Szeregowiec",
+          loft: "Loft",
+        },
+        floor: {
+          cellar: "Suterena",
+          ground_floor: "Parter",
+          garret: "Poddasze",
+          floor_higher_than_10: "Powyżej 10. piętra",
+        },
       },
       vocab: {
         verdict: {
@@ -669,11 +733,6 @@ export const pl = {
           renovation: "do remontu",
           shell: "stan deweloperski lub surowy",
           unknown: "nieznany",
-        },
-        tier: {
-          metro: "metropolia",
-          major: "duże miasto",
-          other: "pozostałe miasta",
         },
         titleForm: {
           full_ownership: "pełna własność",

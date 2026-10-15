@@ -16,7 +16,9 @@ import type { DealAnalysis } from "../../../api/report";
 import { t } from "../../../i18n";
 import { DisclosureGroup } from "../../../ui/Accordion";
 import { Icon } from "../../../ui/Icon";
+import { InfoTip } from "../../../ui/InfoTip";
 import { InlineNotice } from "../../../ui/Status";
+import { attributeLabel, floorSummary } from "./attributes";
 import {
   CONDITION,
   CONFIDENCE,
@@ -24,7 +26,6 @@ import {
   LEGAL_CLASS,
   PRICE_BASIS,
   RENT_BASIS,
-  TIER,
   TITLE_FORM,
   VERDICT,
 } from "./copy";
@@ -41,20 +42,75 @@ function Row({
   label,
   children,
   total = false,
+  badge,
 }: {
-  readonly label: string;
+  readonly label: ReactNode;
   readonly children: ReactNode;
   readonly total?: boolean;
+  /** A short qualifier that belongs to the label ("wstępny"), never to the value column. */
+  readonly badge?: string | undefined;
 }) {
   return (
     <div className={`${styles["row"]} ${total ? styles["total"] : ""}`}>
-      <dt>{label}</dt>
+      <dt>
+        {label}
+        {badge ? (
+          <span className={styles["prelim"]} title={M.wstepnyOpis}>
+            {badge}
+          </span>
+        ) : null}
+      </dt>
       <dd>{children}</dd>
     </div>
   );
 }
 
+type Metric = "irr" | "cagr" | "moic";
+
+/**
+ * The label of a return measure in plain words with its help. The acronym and its full name appear only inside the
+ * explanation; every figure is the engine's, the text only says what it means and how it is built.
+ */
+function MetricLabel({
+  metric,
+  label,
+  years,
+}: {
+  readonly metric: Metric;
+  readonly label: string;
+  /** The engine's horizon, counted from its own yearly rows. */
+  readonly years: string;
+}) {
+  const help = M_METRICS[metric];
+  const meaning = typeof help.meaning === "function" ? help.meaning({ years }) : help.meaning;
+  const assumptions = typeof help.assumptions === "function" ? help.assumptions({ years }) : help.assumptions;
+  return (
+    <span className={styles["labelWithTip"]}>
+      {label}
+      <InfoTip label={M_METRICS.helpLabel({ metric: label })} title={help.title}>
+        <dl>
+          <div>
+            <dt>{M_METRICS.meaning}</dt>
+            <dd>{meaning}</dd>
+          </div>
+          <div>
+            <dt>{M_METRICS.reading}</dt>
+            <dd>{help.reading}</dd>
+          </div>
+          <div>
+            <dt>{M_METRICS.assumptions}</dt>
+            <dd>{assumptions}</dd>
+          </div>
+        </dl>
+      </InfoTip>
+    </span>
+  );
+}
+
 const M = t.analyses.report.text;
+const M_METRICS = t.analyses.report.metrics;
+
+const horizon = (report: DealAnalysis) => formatCounted(report.cash_flow.years.length, M_METRICS.yearsNoun);
 
 /** The engine's clamp on vision adjustments (invariant 4), shown as a percentage. */
 const CLAMP = formatPercent(15);
@@ -123,7 +179,7 @@ function Figure({
   hint,
   decimals = 0,
 }: {
-  readonly label: string;
+  readonly label: ReactNode;
   readonly value: string | null;
   readonly hint?: string | undefined;
   readonly decimals?: 0 | 2;
@@ -147,11 +203,7 @@ function Overview({ report, degraded }: { readonly report: DealAnalysis; readonl
   const facts = [
     formatArea(listing.area_m2),
     formatCounted(listing.rooms, M.rooms),
-    listing.floor !== null
-      ? listing.building_floors !== null
-        ? M.floorOf({ floor: listing.floor, floors: formatCount(listing.building_floors) })
-        : M.floor({ floor: listing.floor })
-      : null,
+    floorSummary(listing.floor, listing.building_floors)?.toLocaleLowerCase("pl") ?? null,
     listing.build_year !== null ? M.builtIn({ year: String(listing.build_year) }) : null,
   ].filter(Boolean);
   return (
@@ -282,9 +334,8 @@ function CostsSection({ report }: { readonly report: DealAnalysis }) {
       <dl className={styles["rows"]}>
         <Row label={M.cenaOfertowa}>{money2(purchase.price_pln)}</Row>
         <Row label={M.kosztyZakupu}>{money2(purchase.total_costs_pln)}</Row>
-        <Row label={M.remontSzacunek}>
-          {money2(report.capex_used_pln)}{" "}
-          {capex.prices_are_placeholders ? <span className={styles["prelim"]}>{M.wstepny}</span> : null}
+        <Row label={M.remontSzacunek} badge={capex.prices_are_placeholders ? M.wstepny : undefined}>
+          {money2(report.capex_used_pln)}
         </Row>
         <Row label={M.razemStart} total>
           {money2(cash.total_invested_pln)}
@@ -336,7 +387,6 @@ function CostsSection({ report }: { readonly report: DealAnalysis }) {
                   {CONDITION[capex.condition_used]}
                   {capex.condition_assumed ? M.conditionAssumed : ""}
                 </Row>
-                <Row label={M.rodzajMiasta}>{TIER[capex.tier]}</Row>
                 <Row label={M.cenaZaMetrKwadratowy}>{money2(capex.pln_per_m2)}</Row>
                 <Row label={M.mnoznik}>{formatDecimal(capex.multiplier, 2)}</Row>
                 <Row label={M.szacunekPodstawowy}>{money2(capex.base_pln)}</Row>
@@ -344,7 +394,6 @@ function CostsSection({ report }: { readonly report: DealAnalysis }) {
                   {M.range({ low: money2(capex.low_pln), high: money2(capex.high_pln) })}
                 </Row>
                 <Row label={M.pewnoscSzacunku}>{CONFIDENCE[capex.confidence]}</Row>
-                <Row label={M.wersjaCennika}>{capex.catalog_version}</Row>
               </dl>
             ),
           },
@@ -388,7 +437,9 @@ function PriceSection({ report }: { readonly report: DealAnalysis }) {
           hint={M.cenaOgloszeniaCenaTransakcyjna}
         />
         <div className={styles["figure"]}>
-          <dt>{M.zwrotPrzyCenieOfertowej}</dt>
+          <dt>
+            <MetricLabel metric="irr" label={M.zwrotPrzyCenieOfertowej} years={horizon(report)} />
+          </dt>
           <dd>
             <span className={styles["value"]}>
               {valuation.irr_at_asking === null ? (
@@ -397,7 +448,9 @@ function PriceSection({ report }: { readonly report: DealAnalysis }) {
                 formatRatio(valuation.irr_at_asking)
               )}
             </span>
-            <span className={styles["hint"]}>{M.irrHint({ hurdle: formatRatio(valuation.hurdle) })}</span>
+            <span className={styles["hint"]}>
+              {M.irrHint({ years: horizon(report), hurdle: formatRatio(valuation.hurdle) })}
+            </span>
           </dd>
         </div>
       </dl>
@@ -415,9 +468,27 @@ function PriceSection({ report }: { readonly report: DealAnalysis }) {
               <dl className={styles["rows"]}>
                 <Row label={M.rentownoscBrutto}>{formatRatio(cash.returns.gross_yield, 2)}</Row>
                 <Row label={M.rentownoscNetto}>{formatRatio(cash.returns.net_yield, 2)}</Row>
-                <Row label={M.stopaZwrotuIrr}>{formatRatio(cash.returns.irr, 2)}</Row>
-                <Row label={M.sredniRocznyWzrostKapitaluCagr}>{formatRatio(cash.returns.cagr, 2)}</Row>
-                <Row label={M.mnoznikKapitaluMoic}>{formatDecimal(cash.returns.moic, 2)}</Row>
+                <Row label={<MetricLabel metric="irr" label={M.rocznaStopaZwrotu} years={horizon(report)} />}>
+                  {formatRatio(cash.returns.irr, 2)}
+                </Row>
+                <Row
+                  label={
+                    <MetricLabel metric="cagr" label={M.sredniRocznyWzrostKapitalu} years={horizon(report)} />
+                  }
+                >
+                  {formatRatio(cash.returns.cagr, 2)}
+                </Row>
+                <Row
+                  label={
+                    <MetricLabel
+                      metric="moic"
+                      label={M.mnoznikZainwestowanegoKapitalu}
+                      years={horizon(report)}
+                    />
+                  }
+                >
+                  {formatDecimal(cash.returns.moic, 2)}
+                </Row>
                 <Row label={M.wartoscSprzedazy10Latach}>{money2(cash.exit.exit_value_pln)}</Row>
                 <Row label={M.kosztySprzedazy}>{money2(cash.exit.selling_costs_pln)}</Row>
                 <Row label={M.podatekPrzySprzedazy}>{money2(cash.exit.sale_tax_pln)}</Row>
@@ -522,11 +593,11 @@ function SourceSection({ report }: { readonly report: DealAnalysis }) {
           <Row label={M.ulica}>{text(listing.street)}</Row>
           <Row label={M.powierzchnia}>{formatArea(listing.area_m2)}</Row>
           <Row label={M.liczbaPokoi}>{formatCount(listing.rooms)}</Row>
-          <Row label={M.pietro}>{text(listing.floor)}</Row>
+          <Row label={M.pietro}>{text(attributeLabel("floor", listing.floor))}</Row>
           <Row label={M.rokBudowy}>{text(listing.build_year)}</Row>
-          <Row label={M.rodzajBudynku}>{text(listing.building_type)}</Row>
-          <Row label={M.ogrzewanie}>{text(listing.heating)}</Row>
-          <Row label={M.okna}>{text(listing.windows)}</Row>
+          <Row label={M.rodzajBudynku}>{text(attributeLabel("buildingType", listing.building_type))}</Row>
+          <Row label={M.ogrzewanie}>{text(attributeLabel("heating", listing.heating))}</Row>
+          <Row label={M.okna}>{text(attributeLabel("windows", listing.windows))}</Row>
           <Row label={M.formaWlasnosci}>{TITLE_FORM[ownership.title_form]}</Row>
           <Row label={M.rodzajLokalu}>{LEGAL_CLASS[legal.legal_class]}</Row>
           <Row label={M.rozliczenieCeny}>{PRICE_BASIS[legal.price_basis]}</Row>
@@ -562,9 +633,6 @@ function SourceSection({ report }: { readonly report: DealAnalysis }) {
                   ? M.adjustmentClamped({ value: formatRatio(vision.capex.applied), clamp: CLAMP })
                   : formatRatio(vision.capex.applied)}
             </Row>
-            <Row label={M.modelWersjaInstrukcji}>
-              {vision.model}, {vision.prompt_version}
-            </Row>
           </dl>
         ),
     },
@@ -590,7 +658,7 @@ function SourceSection({ report }: { readonly report: DealAnalysis }) {
     <Section id="zrodla" title={M.zrodlaZalozenia}>
       <DisclosureGroup items={items} />
       <div className={styles["footer"]}>
-        <span>{M.versions({ engine: report.engine_version, assumptions: report.assumptions_version })}</span>
+        <span>{M.photosNotShown}</span>
         <span>{M.cenyOfertoweToCenyOgloszen}</span>
       </div>
     </Section>

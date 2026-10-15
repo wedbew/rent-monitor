@@ -30,7 +30,7 @@ export function DisclosureGroup({ items, defaultOpen = [] }: DisclosureGroupProp
             <BaseAccordion.Trigger className={styles["trigger"]}>
               <span>{item.title}</span>
               <span className={styles["chevron"]} aria-hidden="true">
-                <Icon name="arrow" />
+                <Icon name="chevronDown" />
               </span>
             </BaseAccordion.Trigger>
           </BaseAccordion.Header>

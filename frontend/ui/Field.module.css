@@ -48,6 +48,12 @@
   gap: var(--space-2);
   align-items: flex-start;
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
+  line-height: 1.4;
   color: var(--danger);
+}
+
+.error svg {
+  flex: none;
+  margin-top: 1px;
 }

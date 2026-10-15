@@ -18,8 +18,6 @@ export const CONFIDENCE: Readonly<Record<DealAnalysis["confidence"], string>> =
 export const CONDITION: Readonly<Record<DealAnalysis["capex"]["condition_used"], string>> =
   t.analyses.report.vocab.condition;
 
-export const TIER: Readonly<Record<DealAnalysis["capex"]["tier"], string>> = t.analyses.report.vocab.tier;
-
 export const TITLE_FORM: Readonly<Record<DealAnalysis["ownership"]["title_form"], string>> =
   t.analyses.report.vocab.titleForm;
 

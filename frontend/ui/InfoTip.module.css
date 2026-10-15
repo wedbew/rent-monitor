@@ -1,0 +1,90 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+
+  /* The visible target is 24 px; the tappable one is 44 px without moving the layout. */
+  position: relative;
+}
+
+.trigger::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+}
+
+.trigger:hover,
+.trigger[data-popup-open] {
+  border-color: var(--hover-border);
+  color: var(--ink);
+}
+
+.positioner {
+  z-index: calc(var(--layer-overlay) + 2);
+}
+
+.popup {
+  display: grid;
+  gap: var(--space-3);
+  width: min(24rem, calc(100vw - 2 * var(--space-4)));
+
+  /* Whatever room the viewport leaves: a long explanation scrolls inside the popup instead of running off screen. */
+  max-height: var(--available-height);
+  padding: var(--space-4);
+  overflow-y: auto;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-overlay);
+  box-shadow: var(--shadow-overlay);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+}
+
+.popup[data-starting-style],
+.popup[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.body {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.body dl {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.body dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.body dd {
+  margin: var(--space-1) 0 0;
+}

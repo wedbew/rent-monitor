@@ -9,13 +9,15 @@ interface PageHeadingProps {
   /** Short line above the heading (an eyebrow), optional. */
   readonly eyebrow?: string;
   readonly lead?: string;
+  /** A working page whose content is the point (a finished report): a smaller heading and less space under it. */
+  readonly compact?: boolean;
 }
 
 /**
  * Every page starts with this: the one `h1`, the document title for the route, and a focus target. After a client
  * navigation the shell moves focus to this heading, because the browser does not do it for a single-page app.
  */
-export function PageHeading({ title, eyebrow, lead }: PageHeadingProps) {
+export function PageHeading({ title, eyebrow, lead, compact = false }: PageHeadingProps) {
   const ref = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     document.title = t.shell.documentTitle({ page: title });
@@ -25,7 +27,7 @@ export function PageHeading({ title, eyebrow, lead }: PageHeadingProps) {
     takeHeadingFocus(ref.current);
   }, []);
   return (
-    <div className={styles["heading"]}>
+    <div className={`${styles["heading"]} ${compact ? styles["compact"] : ""}`}>
       {eyebrow ? <p className={styles["eyebrow"]}>{eyebrow}</p> : null}
       <h1 ref={ref} tabIndex={-1}>
         {title}

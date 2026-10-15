@@ -78,35 +78,44 @@ test.describe("hover motion", () => {
   test.skip(({ isMobile }) => isMobile, "desktop rail");
 
   test.describe("by default (reduced motion is on in this suite)", () => {
-    test("the icon does not animate", async ({ page, serve }) => {
+    test("no icon animates and the animation library is never fetched", async ({ page, serve }) => {
+      const chunks: string[] = [];
+      page.on("request", (request) => {
+        if (/animatedIcons-/.test(request.url())) chunks.push(request.url());
+      });
       await serve("empty");
       await page.goto("/app");
-      const link = page.getByRole("link", { name: "Rynek", exact: true });
-      await link.hover();
-      expect(
-        await link
-          .locator("span")
-          .first()
-          .evaluate((el) => getComputedStyle(el).animationDuration),
-      ).toBe("0s");
+      const theme = page.getByRole("button", { name: /^Tryb (ciemny|jasny)$/ });
+      await theme.hover();
+      await theme.focus();
+      await expect(theme.locator("svg")).toHaveClass(/lucide-(moon|sun)/);
+      expect(chunks).toEqual([]);
     });
   });
 
   test.describe("with motion allowed", () => {
     test.use({ reducedMotion: "no-preference" });
 
-    test("only the icon animates, briefly, on hover", async ({ page, serve }) => {
+    test("an animated icon loads on the first hover, stays decorative, and never moves the control", async ({
+      page,
+      serve,
+    }) => {
+      const chunks: string[] = [];
+      page.on("request", (request) => {
+        if (/animatedIcons-/.test(request.url())) chunks.push(request.url());
+      });
       await serve("empty");
       await page.goto("/app");
-      const link = page.getByRole("link", { name: "Rynek", exact: true });
-      const before = await link.boundingBox();
-      await link.hover();
-      const duration = await link
-        .locator("span")
-        .first()
-        .evaluate((el) => getComputedStyle(el).animationDuration);
-      expect(duration).toBe("0.24s");
-      expect(await link.boundingBox()).toEqual(before);
+      const theme = page.getByRole("button", { name: /^Tryb (ciemny|jasny)$/ });
+      await expect(theme.locator("svg")).toHaveClass(/lucide-(moon|sun)/); // static first
+      expect(chunks).toEqual([]); // nothing fetched before the person points at it
+      const before = await theme.boundingBox();
+      await theme.hover();
+      await expect.poll(() => chunks.length, { message: "the animation chunk loads on hover" }).toBe(1);
+      await expect(theme.locator("[aria-hidden=true] svg").first()).toBeVisible();
+      await expect(theme.locator("svg.lucide-moon, svg.lucide-sun")).toHaveCount(0); // the animated drawing took over
+      expect(await theme.boundingBox()).toEqual(before);
+      await expect(theme).toHaveAccessibleName(/^Tryb (ciemny|jasny)$/);
     });
   });
 });

@@ -1,6 +1,6 @@
 /*
  * Buttons and button-shaped links share one control. The border is reserved (transparent) at rest so hover and
- * focus change colour, never size; only the icon moves, briefly, and not under reduced motion (tokens zero the time).
+ * focus change colour, never size; icon motion comes from the icon library, never from CSS here.
  */
 .control {
   display: inline-flex;
@@ -61,27 +61,12 @@
   flex: none;
 }
 
-.control:hover .icon,
-.control:focus-visible .icon {
-  animation: nudge var(--motion-ui) var(--ease-out);
-}
-
-@keyframes nudge {
-  50% {
-    transform: translateX(3px);
-  }
-}
-
 .busy {
   cursor: progress;
 }
 
 .spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid currentcolor;
-  border-right-color: transparent;
-  border-radius: 50%;
+  display: inline-flex;
   animation: spin 800ms linear infinite;
 }
 
@@ -103,4 +88,10 @@
 
 .small {
   min-height: 36px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
 }

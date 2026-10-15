@@ -89,9 +89,11 @@ test("a sale listing: submitted, watched live, finished, the report kept", async
   const before = await balance(page);
   const item = plant("sale");
   await submit(page, item.ref);
-  const result = page.getByRole("region", { name: "Wynik analizy" });
-  await expect(result).toContainText(/Analiza gotowa|Gotowa, mniej pewna/, { timeout: 150_000 });
-  await expect(result).toContainText("Raport został pobrany z konta.");
+  // A finished run is the report: the listing id as heading, the section navigation, no result card.
+  await expect(page.getByRole("heading", { level: 1, name: `Ogłoszenie ${item.ref}` })).toBeVisible({
+    timeout: 150_000,
+  });
+  await expect(page.getByRole("navigation", { name: "Sekcje raportu" })).toBeVisible();
   expect(await balance(page)).toBe(before - 1);
   // The stored result, rendered: the engine's own numbers, formatted by the SPA.
   await expect(page.getByRole("heading", { level: 2, name: "Podsumowanie" })).toBeVisible();

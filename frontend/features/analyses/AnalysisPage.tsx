@@ -132,6 +132,16 @@ function Analysis({ auditId }: { readonly auditId: string }) {
 
   const data = audit.data;
   const copy = statusCopy(data.status, data.error_code);
+  // A finished report is the page: the listing and the sections, nothing about the run that produced it. The credit
+  // outcome of a finished run is on the account; "Moje analizy" is in the navigation.
+  if (hasReport(data.status)) {
+    return (
+      <div className={`${styles["page"]} ${styles["report"]}`}>
+        <PageHeading title={t.common.listingTitle({ id: data.otodom_id })} compact />
+        <ReportBody result={data.result} degraded={data.status === "succeeded_degraded"} />
+      </div>
+    );
+  }
   return (
     <div className={styles["page"]}>
       <PageHeading
@@ -187,24 +197,19 @@ function Analysis({ auditId }: { readonly auditId: string }) {
       ) : (
         <section className={styles["card"]} aria-label={t.analyses.page.resultLabel}>
           <InlineNotice tone={copy.tone === "neutral" ? "info" : copy.tone} title={copy.label} live="status">
-            {hasReport(data.status) ? t.analyses.page.ready : describeProblemFor(data.error_code)}
+            {describeProblemFor(data.error_code)}
           </InlineNotice>
           <p className={styles["meta"]}>{CHARGE[data.charge_state]}</p>
           <div className={styles["actions"]}>
-            {hasReport(data.status) ? null : (
-              <LinkButton to="/app/analyses/new" variant="primary" icon="arrow">
-                {t.shell.destinations["new-analysis"]}
-              </LinkButton>
-            )}
+            <LinkButton to="/app/analyses/new" variant="primary" icon="arrow">
+              {t.shell.destinations["new-analysis"]}
+            </LinkButton>
             <LinkButton to="/app/analyses" icon="arrow">
               {t.shell.destinations.analyses}
             </LinkButton>
           </div>
         </section>
       )}
-      {hasReport(data.status) ? (
-        <ReportBody result={data.result} degraded={data.status === "succeeded_degraded"} />
-      ) : null}
     </div>
   );
 }

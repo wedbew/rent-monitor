@@ -27,14 +27,3 @@
   display: inline-flex;
   flex: none;
 }
-
-.control:hover .icon,
-.control:focus-visible .icon {
-  animation: nudge var(--motion-ui) var(--ease-out);
-}
-
-@keyframes nudge {
-  50% {
-    transform: rotate(-12deg);
-  }
-}
