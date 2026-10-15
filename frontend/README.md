@@ -173,6 +173,15 @@ so a success is `succeeded_degraded`. The interaction gate counts the mocked lan
 journeys are the few paths worth running against the real thing. The GitHub lanes (PR, nightly Firefox and WebKit)
 are the follow-up issue #296 because they edit `.github/`.
 
+## Error reporting (`shell/observability.ts`)
+
+Off unless the build has `VITE_SENTRY_DSN` (a public Better Stack ingest DSN, B-020): then the Sentry SDK is loaded
+lazily from `shell/sentry.ts` (only four error integrations, 30.8 kB gzip, not in the first page), with no replay and
+no tracing. Route crashes and unhandled errors are sent; every event and breadcrumb is scrubbed first (no user, request
+body, query string, fragment, breadcrumb data, emails, tokens or Otodom listings) and dropped if scrubbing fails.
+API failures carry `request_id` and `problem_code` tags. `VITE_RELEASE` is the image tag; no source maps are
+published (`check-dist` refuses `.map`). The CSP allows the DSN host only through `BROWSER_ERRORS_ORIGIN`.
+
 ## Copy (`i18n/`)
 
 Every visible text is in `i18n/pl.ts` and read as `t.<area>.<key>` (RM-305). A message with values is a function of

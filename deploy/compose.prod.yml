@@ -80,6 +80,8 @@ services:
       dockerfile: deploy/web.Dockerfile
       args:
         VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_RELEASE: ${IMAGE_TAG:-local}
     image: rentmonitor-web:${IMAGE_TAG:-local}
     restart: unless-stopped
     ports: ["80:80", "443:443"]
@@ -88,6 +90,7 @@ services:
       - caddy_data:/data
     environment:
       SITE_ADDRESS: ${PUBLIC_HOST:-localhost}  # `localhost` = Caddy's internal CA; set the real domain before going public (RUNBOOK §6)
+      BROWSER_ERRORS_ORIGIN: ${BROWSER_ERRORS_ORIGIN:-}  # the DSN host, allowed in connect-src (RM-280)
     depends_on:
       api: { condition: service_healthy }
 

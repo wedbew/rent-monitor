@@ -238,6 +238,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** Preserve exact decimal strings and use existing centralized formatters; do not infer acceptance of an ambiguous request from an unrelated recent audit. Treat current automated passes as scoped evidence.
 - **Target:** open: #334 (visual snapshots), real devices and screen readers (#286); fixed: copy catalog RM-305, browser evidence and coverage scope RM-311, recovery RM-304, numbers RM-306, transport RM-307, guards RM-309 and RM-325, form errors RM-310, bundle RM-312; tracker #314; hardening #286.
 
+### L-033 — Browser error reporting is built but off; Umami analytics not built
+- **Status:** active
+- **Discovered:** 2026-10-15
+- **Affects:** `frontend/shell/observability.ts`, `deploy/Caddyfile` CSP, Better Stack
+- **Evidence:** confirmed (code and tests): without `VITE_SENTRY_DSN` the SDK is never loaded and nothing is sent; delivery to Better Stack from a browser has not been observed (no browser DSN exists yet). RM-280 also found that both scrubbers (browser and `rm_core.observability`) let a token parameter at the very start of a text through (`token=…` with nothing before it); fixed in both with tests.
+- **Description:** Unexpected browser errors are not visible to the team until the owner creates a Better Stack browser application, sets `VITE_SENTRY_DSN` (build) and `BROWSER_ERRORS_ORIGIN` (CSP) and the image is rebuilt. Umami page views (#280 acceptance 4) are not built: the Umami script host needs the CSP decision L-010.
+- **Workaround:** server-side errors still reach Better Stack (`SENTRY_DSN`); a person can quote the request id shown with every problem.
+- **Target:** B-020 (browser DSN), L-010 (Umami CSP), level 3 evidence per `delivery.md`.
+
 ## Deferred
 
 ### L-025 — V2 manual analysis and creative tools are local design flows

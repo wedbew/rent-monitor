@@ -12,6 +12,12 @@ COPY frontend/ ./
 # A public value (a Google OAuth client id is not a secret); empty means "no Google button" (GoogleButton says so).
 ARG VITE_GOOGLE_CLIENT_ID=""
 ENV VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
+# Browser error reporting (RM-280): a public Better Stack ingest DSN; empty = off and the SDK is never loaded. The
+# release groups errors per deployed image; there are no source maps (check-dist refuses them).
+ARG VITE_SENTRY_DSN=""
+ARG VITE_RELEASE="local"
+ARG VITE_ENVIRONMENT="production"
+ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN} VITE_RELEASE=${VITE_RELEASE} VITE_ENVIRONMENT=${VITE_ENVIRONMENT}
 # The production build, then the same gate CI runs: no test tooling in dist/, bundle within budget.
 RUN pnpm build && node check-dist.mjs
 
