@@ -15,6 +15,33 @@ make fe-dev                          # Vite on http://localhost:5173, /api proxi
 make fe-check                        # everything CI runs for the SPA
 ```
 
+**Check which backend answers before you debug the SPA.** Port 8000 is only a default; another project may own it.
+Confirm the identity of the process behind `API_ORIGIN`:
+
+```bash
+curl -s http://127.0.0.1:8000/openapi.json | python3 -c 'import sys,json; print(json.load(sys.stdin)["info"]["title"])'   # "Renti API"
+```
+
+Anything else (for example another project's admin API) means `make up` did not get the port or `API_ORIGIN` points
+at the wrong server: run the stack on a free port (`API_PORT=8001 make up`) and start Vite with
+`API_ORIGIN=http://127.0.0.1:8001 make fe-dev`.
+
+**`PUBLIC_APP_URL` must equal the origin the browser shows**, exactly (scheme, host and port): the API refuses every
+unsafe `/api` request whose `Origin` differs (`403 ORIGIN_NOT_ALLOWED`; `services/rm_api/origin.py`). Reads work with a
+wrong value, so sign-up, sign-in and submit are what fail.
+
+| How you open the SPA                     | Browser origin          | `PUBLIC_APP_URL` for the API                    |
+| ---------------------------------------- | ----------------------- | ----------------------------------------------- |
+| `make fe-dev` (Vite dev server)          | `http://localhost:5173` | `http://localhost:5173`                         |
+| built SPA behind the real Caddy image    | `http://localhost`      | `http://localhost` (the `.env.example` default) |
+| `pnpm test:e2e:journey` (`vite preview`) | `http://localhost:4173` | set by `deploy/compose.e2e.yml`                 |
+
+Change it in `.env`, then recreate the API (`make up`). In dev the proxy keeps the browser's `Origin`
+(`changeOrigin: false`), which is why the values must match.
+
+In dev, Vite also serves the SPA's own `api/*.ts` modules under `/api/…`; the proxy bypasses script requests so
+they are not sent to the backend (#341, regression test `vite.config.test.ts`).
+
 `make ci` runs the same stage and reports **SKIPPED** (never passed) when Node or pnpm is missing or the major version
 differs from `.node-version`.
 
