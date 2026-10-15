@@ -74,10 +74,12 @@ that touches `frontend/`, and to backend PRs that change a contract the SPA cons
 
 ## 7. Copy and numbers come from one place (F06, F07, F16)
 
-- **User-visible text belongs in the typed Polish catalog** once #305 lands: full sentences, accessible names,
-  hints, document titles and fallbacks. Until it lands, new copy goes in the feature's single copy module (one
-  file per feature, no literals spread across JSX) so extraction is mechanical. Routes, enum codes, ids,
-  diagnostics and user or provider content are never translated.
+- **User-visible text lives in the typed Polish catalog** `frontend/i18n/pl.ts` (RM-305), read as `t.<area>.<key>`:
+  full sentences, accessible names, hints, document titles and fallbacks. ESLint (`eslint.copy.mjs`) refuses
+  letters in JSX text and in visible props (`label`, `title`, `aria-label`, `hint`, `lead`, …) outside `i18n/`.
+  A value goes in as a named, already formatted parameter of a message function; a sentence that contains a
+  link is a rich message rendered with `<Rich>`. Routes, enum codes, ids, diagnostics and user or provider
+  content are never translated.
 - Never build a sentence from translated fragments. Plurals use `Intl.PluralRules` with the full Polish forms
   (one, few, many, other).
 - **Every displayed number goes through `api/format.ts`**: counts, percentages, retry times, progress and error

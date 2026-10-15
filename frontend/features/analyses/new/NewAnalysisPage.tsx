@@ -24,15 +24,16 @@ import {
   useCreateAudit,
 } from "./useCreateAudit";
 import styles from "./NewAnalysisPage.module.css";
+import { t } from "../../../i18n";
 
 export const MAX_LISTING_REF = 300; // rm_contracts.audits.MAX_LISTING_REF
 
 /** Only what can be said without asking the server; whether it is an Otodom sale listing is the server's call. */
 export function listingRefError(value: string): string | null {
   const ref = value.trim();
-  if (ref === "") return "Wklej adres ogłoszenia lub jego numer.";
+  if (ref === "") return t.analyses.new.refMissing;
   if ([...ref].length > MAX_LISTING_REF)
-    return `Adres może mieć najwyżej ${formatCount(MAX_LISTING_REF)} znaków.`;
+    return t.analyses.new.refTooLong({ max: formatCount(MAX_LISTING_REF) });
   return null;
 }
 
@@ -99,31 +100,27 @@ export function NewAnalysisPage() {
 
   return (
     <div className={styles["page"]}>
-      <PageHeading
-        title="Nowa analiza"
-        eyebrow="Od ogłoszenia do decyzji"
-        lead="Wklej adres ogłoszenia sprzedaży z Otodom. Zobaczysz, ile mieszkanie może zarabiać i do jakiej ceny warto negocjować."
-      />
+      <PageHeading title={t.analyses.new.title} eyebrow={t.analyses.new.eyebrow} lead={t.analyses.new.lead} />
 
-      <div className={styles["modes"]} aria-label="Sposób wprowadzenia">
+      <div className={styles["modes"]} aria-label={t.analyses.new.modes}>
         <span className={styles["mode"]} aria-current="true">
-          Adres z Otodom
+          {t.analyses.new.modeUrl}
         </span>
-        <span className={styles["modeSoon"]}>Dane ręcznie · wkrótce</span>
+        <span className={styles["modeSoon"]}>{t.analyses.new.modeManualSoon}</span>
       </div>
 
       {breaker ? (
-        <InlineNotice tone="warning" title="Otodom ogranicza zapytania" live="status">
-          Nowe analizy są chwilowo wstrzymane. Spróbuj {retryIn(me.upstream.retry_after_s)}. Raport nie
-          zostanie pobrany z konta.
+        <InlineNotice tone="warning" title={t.common.otodomLimited.title} live="status">
+          {t.common.otodomLimited.paused({ when: retryIn(me.upstream.retry_after_s) })}{" "}
+          {t.analyses.new.limitedNoCharge}
         </InlineNotice>
       ) : (
         <form className={styles["form"]} onSubmit={submit} noValidate>
           <FormErrorSummary errors={summary} attempt={attempt} />
           <TextField
             fieldId={FIELD_ID}
-            label="Adres ogłoszenia lub numer"
-            hint="Na przykład https://www.otodom.pl/pl/oferta/mieszkanie-3-pokoje-ID4abcd. Obsługujemy tylko ogłoszenia sprzedaży."
+            label={t.analyses.new.field}
+            hint={t.analyses.new.fieldHint}
             value={value}
             onValueChange={(next) => {
               setValue(next);
@@ -141,10 +138,10 @@ export function NewAnalysisPage() {
           ) : null}
           <div className={styles["actions"]}>
             <Button ref={submitRef} type="submit" variant="primary" icon="arrow" busy={busy}>
-              Rozpocznij analizę
+              {t.analyses.new.submit}
             </Button>
             <p className={styles["cost"]}>
-              Analiza zużywa 1 raport, ale tylko gdy się uda. Na koncie: {formatReports(me.credit_balance)}.
+              {t.analyses.new.cost({ balance: formatReports(me.credit_balance) })}
             </p>
           </div>
         </form>
@@ -154,13 +151,13 @@ export function NewAnalysisPage() {
         open={paywall}
         onOpenChange={setPaywall}
         finalFocus={submitRef}
-        title="Nie masz już raportów"
-        description="Kup pakiet raportów, aby przeanalizować to ogłoszenie. Nic nie zostało pobrane."
-        closeLabel="Zamknij okno"
+        title={t.analyses.new.paywall.title}
+        description={t.analyses.new.paywall.description}
+        closeLabel={t.analyses.new.paywall.close}
       >
         <div className={styles["paywall"]}>
           <LinkButton to="/app/credits" variant="primary" icon="arrow">
-            Kup raporty
+            {t.common.buyReports}
           </LinkButton>
         </div>
       </Dialog>
@@ -179,23 +176,22 @@ function FailureNotice({
     return (
       <InlineNotice
         tone="success"
-        title="Analiza tego ogłoszenia już istnieje"
+        title={t.analyses.new.arrived.title}
         live="status"
         actions={
           <LinkButton to={`/app/analyses/${reconciled.found.auditId}`} variant="primary" icon="arrow">
-            Zobacz postęp
+            {t.analyses.new.arrived.action}
           </LinkButton>
         }
       >
-        Połączenie przerwało się, ale ta analiza została przyjęta. Nie wysyłaj jej drugi raz.
+        {t.analyses.new.arrived.body}
       </InlineNotice>
     );
   }
   if (reconciled !== null && "notReceived" in reconciled) {
     return (
-      <InlineNotice tone="warning" title="Analiza nie dotarła do serwera" live="alert">
-        Połączenie przerwało się, zanim serwer przyjął zgłoszenie. Kliknij „Rozpocznij analizę” jeszcze raz:
-        to samo zgłoszenie nie zostanie policzone dwa razy.
+      <InlineNotice tone="warning" title={t.analyses.new.notReceived.title} live="alert">
+        {t.analyses.new.notReceived.body}
       </InlineNotice>
     );
   }
@@ -203,16 +199,15 @@ function FailureNotice({
     return (
       <InlineNotice
         tone="warning"
-        title="Nie wiemy, czy analiza ruszyła"
+        title={t.analyses.new.unknown.title}
         live="alert"
         actions={
           <Link to="/app/analyses" className={styles["link"]}>
-            Sprawdź w Moich analizach
+            {t.analyses.new.unknown.action}
           </Link>
         }
       >
-        Połączenie przerwało się i nie możemy tego teraz sprawdzić. Gdy połączenie wróci, wyślij to samo
-        ogłoszenie jeszcze raz: to samo zgłoszenie nie zostanie policzone dwa razy.
+        {t.analyses.new.unknown.body}
       </InlineNotice>
     );
   }
@@ -221,17 +216,17 @@ function FailureNotice({
     return (
       <InlineNotice
         tone="info"
-        title="Ta analiza już trwa"
+        title={t.analyses.new.inProgress.title}
         live="status"
         actions={
           typeof existing === "string" && AUDIT_ID.test(existing) ? (
             <LinkButton to={`/app/analyses/${existing}`} variant="primary" icon="arrow">
-              Otwórz analizę
+              {t.analyses.new.inProgress.action}
             </LinkButton>
           ) : undefined
         }
       >
-        Dla tego ogłoszenia analiza jest już w toku. Drugi raport nie zostanie pobrany.
+        {t.analyses.new.inProgress.body}
       </InlineNotice>
     );
   }

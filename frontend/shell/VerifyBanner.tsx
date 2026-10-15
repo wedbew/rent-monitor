@@ -4,6 +4,7 @@ import { api, unwrapEmpty } from "../api/client";
 import { Button } from "../ui/Button";
 import { InlineNotice } from "../ui/Status";
 import { useMe } from "./session";
+import { t } from "../i18n";
 
 /**
  * A signed-in account whose address is not confirmed cannot start analyses (the API refuses with
@@ -19,17 +20,15 @@ export function VerifyBanner() {
   return (
     <InlineNotice
       tone="warning"
-      title="Potwierdź adres e-mail"
+      title={t.shell.verify.title}
       live="status"
       actions={
         <Button type="button" small busy={resend.isPending} onClick={() => resend.mutate()}>
-          Wyślij link ponownie
+          {t.shell.verify.resend}
         </Button>
       }
     >
-      {resend.isSuccess
-        ? "Jeśli to możliwe, wysłaliśmy nowy link. Sprawdź skrzynkę i spam."
-        : "Dopóki adres nie jest potwierdzony, nie możesz zlecać nowych analiz."}
+      {resend.isSuccess ? t.shell.verify.sent : t.shell.verify.required}
     </InlineNotice>
   );
 }

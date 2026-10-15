@@ -1,16 +1,14 @@
 import { LinkButton } from "../ui/Button";
 import { PageHeading } from "./PageHeading";
+import { t } from "../i18n";
 
 /** An unknown path inside the app. It keeps the shell, so the person can leave with the navigation. */
 export function NotFound() {
   return (
     <>
-      <PageHeading
-        title="Nie znaleziono strony"
-        lead="Adres jest nieprawidłowy albo ta strona została przeniesiona."
-      />
+      <PageHeading title={t.shell.notFound.title} lead={t.shell.notFound.lead} />
       <LinkButton to="/app" variant="primary" icon="arrow">
-        Wróć do pulpitu
+        {t.shell.backToDashboard}
       </LinkButton>
     </>
   );

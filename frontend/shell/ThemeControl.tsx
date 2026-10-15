@@ -1,6 +1,7 @@
 import { Icon } from "../ui/Icon";
 import styles from "./ThemeControl.module.css";
 import { useTheme } from "./theme";
+import { t } from "../i18n";
 
 /**
  * One control for the appearance. Its visible text is its accessible name and always names the mode it switches
@@ -14,7 +15,7 @@ export function ThemeControl() {
       <span className={styles["icon"]}>
         <Icon name={toDark ? "moon" : "sun"} />
       </span>
-      <span>{toDark ? "Tryb ciemny" : "Tryb jasny"}</span>
+      <span>{toDark ? t.shell.theme.toDark : t.shell.theme.toLight}</span>
     </button>
   );
 }

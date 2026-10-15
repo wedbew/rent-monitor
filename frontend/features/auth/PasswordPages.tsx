@@ -12,6 +12,7 @@ import { ProblemNotice } from "./ProblemNotice";
 import { clearCapturedToken, readCapturedToken } from "./token";
 import { usePasswordForgot, usePasswordReset } from "./useAuthMutations";
 import styles from "./auth.module.css";
+import { t } from "../../i18n";
 
 const FORGOT_EMAIL_ID = "forgot-email";
 
@@ -38,21 +39,18 @@ export function ForgotPasswordPage() {
 
   return (
     <div className={styles["stack"]}>
-      <PageHeading
-        title="Nie pamiętam hasła"
-        lead="Podaj adres e-mail konta. Wyślemy link do ustawienia nowego hasła."
-      />
+      <PageHeading title={t.auth.forgot.title} lead={t.auth.forgot.lead} />
       {forgot.isSuccess ? (
-        <InlineNotice tone="success" title="Sprawdź skrzynkę" live="status">
-          Jeśli to konto istnieje, wysłaliśmy na nie link do ustawienia hasła. Jest ważny krótko i działa raz.
+        <InlineNotice tone="success" title={t.auth.checkInbox} live="status">
+          {t.auth.forgot.sentBody}
         </InlineNotice>
       ) : (
-        <form className={styles["form"]} onSubmit={submit} noValidate aria-label="Reset hasła">
+        <form className={styles["form"]} onSubmit={submit} noValidate aria-label={t.auth.forgot.form}>
           <FormErrorSummary errors={shown} attempt={attempt} />
           {failure?.general ? <ProblemNotice key={attempt} problem={failure.general} /> : null}
           <TextField
             fieldId={FORGOT_EMAIL_ID}
-            label="Adres e-mail"
+            label={t.auth.email}
             type="email"
             name="email"
             autoComplete="email"
@@ -62,12 +60,12 @@ export function ForgotPasswordPage() {
             error={message}
           />
           <Button type="submit" variant="primary" fill busy={forgot.isPending} icon="arrow">
-            Wyślij link
+            {t.auth.forgot.submit}
           </Button>
         </form>
       )}
       <p className={styles["muted"]}>
-        <Link to="/login">Wróć do logowania</Link>
+        <Link to="/login">{t.auth.backToLogin}</Link>
       </p>
     </div>
   );
@@ -107,12 +105,12 @@ export function ResetPasswordPage() {
   if (reset.isSuccess) {
     return (
       <div className={styles["stack"]}>
-        <PageHeading title="Hasło zostało zmienione" />
-        <InlineNotice tone="success" title="Możesz się zalogować" live="status">
-          Ze względów bezpieczeństwa wylogowaliśmy Cię ze wszystkich urządzeń. Zaloguj się nowym hasłem.
+        <PageHeading title={t.auth.reset.doneTitle} />
+        <InlineNotice tone="success" title={t.auth.reset.doneNotice} live="status">
+          {t.auth.reset.doneBody}
         </InlineNotice>
         <LinkButton to="/login" variant="primary" icon="arrow">
-          Zaloguj się
+          {t.auth.signIn}
         </LinkButton>
       </div>
     );
@@ -120,38 +118,38 @@ export function ResetPasswordPage() {
 
   return (
     <div className={styles["stack"]}>
-      <PageHeading title="Ustaw nowe hasło" />
+      <PageHeading title={t.auth.reset.title} />
       {invalidLink ? (
         <>
-          <InlineNotice tone="danger" title="Link jest nieprawidłowy lub wygasł" live="alert">
-            Poproś o nowy link do ustawienia hasła.
+          <InlineNotice tone="danger" title={t.auth.reset.invalidTitle} live="alert">
+            {t.auth.reset.invalidBody}
           </InlineNotice>
           <LinkButton to="/password/forgot" variant="primary" icon="arrow">
-            Poproś o nowy link
+            {t.auth.reset.requestNew}
           </LinkButton>
         </>
       ) : (
-        <form className={styles["form"]} onSubmit={submit} noValidate aria-label="Nowe hasło">
+        <form className={styles["form"]} onSubmit={submit} noValidate aria-label={t.auth.reset.form}>
           <FormErrorSummary errors={shown} attempt={attempt} />
           {failure?.general ? <ProblemNotice key={attempt} problem={failure.general} /> : null}
           <TextField
             fieldId={PASSWORD_ID}
-            label="Nowe hasło"
+            label={t.auth.reset.newPassword}
             type="password"
             name="new-password"
             autoComplete="new-password"
-            hint={`Co najmniej ${formatCount(PASSWORD_MIN)} znaków. Unikaj popularnych haseł i swojego adresu e-mail.`}
+            hint={t.auth.passwordHint({ min: formatCount(PASSWORD_MIN) })}
             value={password}
             onValueChange={setPassword}
             error={shown[0]?.message}
           />
           <Button type="submit" variant="primary" fill busy={reset.isPending} icon="arrow">
-            Zapisz hasło
+            {t.auth.reset.submit}
           </Button>
         </form>
       )}
       <p className={styles["muted"]}>
-        <Link to="/login">Wróć do logowania</Link>
+        <Link to="/login">{t.auth.backToLogin}</Link>
       </p>
     </div>
   );

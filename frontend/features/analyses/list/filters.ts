@@ -1,4 +1,5 @@
 import type { AuditState } from "../status";
+import { t } from "../../../i18n";
 
 /**
  * The state of the collection lives in the address, so Back, Refresh and a shared link restore it. Everything is
@@ -16,19 +17,19 @@ export const STATUS_GROUPS = {
 export type StatusGroup = keyof typeof STATUS_GROUPS;
 
 export const STATUS_OPTIONS: readonly { value: "" | StatusGroup; label: string }[] = [
-  { value: "", label: "Wszystkie" },
-  { value: "ready", label: "Gotowe" },
-  { value: "active", label: "W toku" },
-  { value: "rejected", label: "Odrzucone" },
-  { value: "failed", label: "Nieudane" },
+  { value: "", label: t.analyses.list.statusOptions.all },
+  { value: "ready", label: t.analyses.list.statusOptions.ready },
+  { value: "active", label: t.analyses.list.statusOptions.active },
+  { value: "rejected", label: t.analyses.list.statusOptions.rejected },
+  { value: "failed", label: t.analyses.list.statusOptions.failed },
 ];
 
 export const GRADES = ["A", "B", "C", "D", "E", "N"] as const;
 export type GradeFilter = (typeof GRADES)[number];
 
 export const GRADE_OPTIONS: readonly { value: "" | GradeFilter; label: string }[] = [
-  { value: "", label: "Wszystkie" },
-  ...GRADES.map((g) => ({ value: g, label: g === "N" ? "Bez oceny" : g })),
+  { value: "", label: t.analyses.list.gradeOptions.all },
+  ...GRADES.map((g) => ({ value: g, label: g === "N" ? t.analyses.list.gradeOptions.none : g })),
 ];
 
 /** The API's `q` is an Otodom id prefix: letters and digits only, bounded. */

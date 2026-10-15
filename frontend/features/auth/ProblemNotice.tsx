@@ -2,6 +2,7 @@ import type { DescribedProblem } from "../../api/problems";
 import { InlineNotice } from "../../ui/Status";
 import { retryIn } from "./forms";
 import styles from "./auth.module.css";
+import { t } from "../../i18n";
 
 interface ProblemNoticeProps {
   readonly problem: DescribedProblem;
@@ -14,11 +15,11 @@ export function ProblemNotice({ problem, tone = "danger", actions }: ProblemNoti
   return (
     <InlineNotice tone={tone} title={problem.title} live="alert" {...(actions ? { actions } : {})}>
       {problem.detail}
-      {problem.retryAfterS !== null ? ` Spróbuj ponownie ${retryIn(problem.retryAfterS)}.` : ""}
+      {problem.retryAfterS !== null ? t.auth.retry.tryAgain({ when: retryIn(problem.retryAfterS) }) : ""}
       {problem.requestId !== null ? (
         <span className={styles["support"]}>
           {" "}
-          Numer zgłoszenia: <code>{problem.requestId}</code>
+          {t.auth.supportNumber} <code>{problem.requestId}</code>
         </span>
       ) : null}
     </InlineNotice>

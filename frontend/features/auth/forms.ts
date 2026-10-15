@@ -2,6 +2,7 @@ import { ApiError } from "../../api/errors";
 import { describeProblem, describeTransport, type DescribedProblem } from "../../api/problems";
 import { TransportError } from "../../api/errors";
 import { formatCount, formatCounted } from "../../api/format";
+import { t } from "../../i18n";
 
 /** Loose on purpose: delivery is the real check, the server is authoritative (rm_contracts EMAIL_PATTERN). */
 const EMAIL =
@@ -12,46 +13,44 @@ export const PASSWORD_MAX = 128;
 
 export function emailError(value: string): string | null {
   const email = value.trim();
-  if (email === "") return "Wpisz adres e-mail.";
-  return email.length <= 254 && EMAIL.test(email)
-    ? null
-    : "Wpisz poprawny adres e-mail, na przykład anna@example.com.";
+  if (email === "") return t.auth.validation.emailMissing;
+  return email.length <= 254 && EMAIL.test(email) ? null : t.auth.validation.emailInvalid;
 }
 
 export function newPasswordError(value: string): string | null {
-  if (value === "") return "Wpisz hasło.";
+  if (value === "") return t.auth.validation.passwordMissing;
   if ([...value].length < PASSWORD_MIN)
-    return `Hasło musi mieć co najmniej ${formatCount(PASSWORD_MIN)} znaków.`;
+    return t.auth.validation.passwordTooShort({ min: formatCount(PASSWORD_MIN) });
   if ([...value].length > PASSWORD_MAX)
-    return `Hasło może mieć najwyżej ${formatCount(PASSWORD_MAX)} znaków.`;
+    return t.auth.validation.passwordTooLong({ max: formatCount(PASSWORD_MAX) });
   return null;
 }
 
 export function currentPasswordError(value: string): string | null {
-  return value === "" ? "Wpisz hasło." : null;
+  return value === "" ? t.auth.validation.passwordMissing : null;
 }
 
 /** The API's closed vocabulary for `WEAK_PASSWORD.reason` (services/rm_api/auth/passwords.py). */
 const REASONS: Record<string, string> = {
-  too_short: `Hasło jest za krótkie: użyj co najmniej ${formatCount(PASSWORD_MIN)} znaków.`,
-  too_long: `Hasło jest za długie: użyj najwyżej ${formatCount(PASSWORD_MAX)} znaków.`,
-  common: "To hasło jest zbyt popularne. Wybierz inne, najlepiej kilka słów.",
-  contains_email: "Hasło nie może zawierać Twojego adresu e-mail.",
+  too_short: t.auth.weakPassword.too_short({ min: formatCount(PASSWORD_MIN) }),
+  too_long: t.auth.weakPassword.too_long({ max: formatCount(PASSWORD_MAX) }),
+  common: t.auth.weakPassword.common,
+  contains_email: t.auth.weakPassword.contains_email,
 };
 
 export function weakPasswordMessage(reason: unknown): string {
   return (
     // Own keys only: a reason like "toString" must not reach the prototype (a function is not copy).
     (typeof reason === "string" && Object.hasOwn(REASONS, reason) ? REASONS[reason] : undefined) ??
-    "Hasło jest zbyt słabe. Wybierz dłuższe, mniej oczywiste hasło."
+    t.auth.weakPassword.fallback
   );
 }
 
 /** "za 42 sekundy", "za 2 minuty": how long until a throttled action may be retried. */
 export function retryIn(seconds: number): string {
-  if (seconds < 90) return `za ${formatCounted(seconds, ["sekundę", "sekundy", "sekund"])}`;
+  if (seconds < 90) return t.auth.retry.in({ duration: formatCounted(seconds, t.auth.retry.seconds) });
   const minutes = Math.ceil(seconds / 60);
-  return `za ${formatCounted(minutes, ["minutę", "minuty", "minut"])}`;
+  return t.auth.retry.in({ duration: formatCounted(minutes, t.auth.retry.minutes) });
 }
 
 export interface FailedSubmit {
@@ -82,7 +81,7 @@ export function readFailure(error: unknown): FailedSubmit {
     const fields: Record<string, string> = {};
     for (const item of problem.errors) {
       const name = String(item.loc.at(-1) ?? "");
-      fields[name] ??= "Sprawdź tę wartość.";
+      fields[name] ??= t.auth.validation.checkValue;
     }
     return { fields, general: null, code: problem.code };
   }

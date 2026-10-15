@@ -13,6 +13,7 @@ import { retryIn } from "../auth/forms";
 import { type AuditSummary, useRecentAudits } from "../analyses/queries";
 import { statusCopy } from "../analyses/status";
 import styles from "./DashboardPage.module.css";
+import { t } from "../../i18n";
 
 interface Tool {
   readonly id: string;
@@ -33,9 +34,7 @@ const TOOLS: readonly Tool[] = [
     id: "analysis",
     number: "01",
     icon: "search",
-    title: "Sprawdź mieszkanie",
-    body: "Przeanalizuj ofertę z Otodom: wynajem, koszty, remont i cena, do której inwestycja ma sens.",
-    cta: "Rozpocznij analizę",
+    ...t.dashboard.tools["analysis"],
     to: "/app/analyses/new",
     built: true,
   },
@@ -43,9 +42,7 @@ const TOOLS: readonly Tool[] = [
     id: "interior",
     number: "02",
     icon: "interior",
-    title: "Zaplanuj wnętrze",
-    body: "Uporządkuj pomysły na układ, wyposażenie i oświetlenie.",
-    cta: "Otwórz architekta",
+    ...t.dashboard.tools["interior"],
     to: "/app/interior",
     built: false,
     flag: "interior",
@@ -54,9 +51,7 @@ const TOOLS: readonly Tool[] = [
     id: "listing",
     number: "03",
     icon: "edit",
-    title: "Przygotuj ogłoszenie",
-    body: "Zbuduj opis i dowiedz się, jak lepiej pokazać mieszkanie na zdjęciach.",
-    cta: "Stwórz ogłoszenie",
+    ...t.dashboard.tools["listing"],
     to: "/app/listings/new",
     built: false,
     flag: "listing",
@@ -80,9 +75,9 @@ function ToolCard({ tool, me }: { readonly tool: Tool; readonly me: Me }) {
       <h2>{tool.title}</h2>
       <p>{tool.body}</p>
       {!available ? (
-        <span className={styles["soon"]}>Wkrótce</span>
+        <span className={styles["soon"]}>{t.common.soon}</span>
       ) : breaker ? (
-        <span className={styles["soon"]}>Chwilowo niedostępne</span>
+        <span className={styles["soon"]}>{t.dashboard.tools.temporarilyUnavailable}</span>
       ) : (
         <LinkButton to={tool.to} icon="arrow">
           {tool.cta}
@@ -93,16 +88,16 @@ function ToolCard({ tool, me }: { readonly tool: Tool; readonly me: Me }) {
 }
 
 function rowTitle(audit: AuditSummary): string {
-  return `Ogłoszenie ${audit.otodom_id}`;
+  return t.common.listingTitle({ id: audit.otodom_id });
 }
 
 function RecentRow({ audit }: { readonly audit: AuditSummary }) {
   const copy = statusCopy(audit.status, audit.error_code);
   const meta = [
     formatDate(audit.created_at),
-    audit.grade !== null ? `ocena ${audit.grade}` : null,
+    audit.grade !== null ? t.dashboard.recent.grade({ grade: audit.grade }) : null,
     audit.asking_price_pln !== null
-      ? `cena ofertowa ${formatMoney(audit.asking_price_pln, { decimals: 0 })}`
+      ? t.dashboard.recent.askingPrice({ price: formatMoney(audit.asking_price_pln, { decimals: 0 }) })
       : null,
   ].filter(Boolean);
   return (
@@ -126,7 +121,7 @@ function Recent() {
         className={styles["skeletons"]}
         role="status"
         aria-busy="true"
-        aria-label="Wczytuję ostatnie analizy"
+        aria-label={t.dashboard.recent.loading}
       >
         <Skeleton height="56px" />
         <Skeleton height="56px" />
@@ -142,7 +137,7 @@ function Recent() {
     return (
       <InlineNotice
         tone="danger"
-        title="Nie udało się wczytać ostatnich analiz"
+        title={t.dashboard.recent.failed}
         live="alert"
         actions={
           <Button
@@ -152,7 +147,7 @@ function Recent() {
             busy={recent.isFetching}
             onClick={() => void recent.refetch()}
           >
-            Spróbuj ponownie
+            {t.common.retry}
           </Button>
         }
       >
@@ -163,18 +158,18 @@ function Recent() {
   if (recent.data.items.length === 0) {
     return (
       <div className={styles["empty"]}>
-        <strong>Nie masz jeszcze żadnej analizy</strong>
-        <p>Wklej adres ogłoszenia z Otodom, a w kilkadziesiąt sekund dostaniesz raport.</p>
+        <strong>{t.dashboard.recent.emptyTitle}</strong>
+        <p>{t.dashboard.recent.emptyBody}</p>
         <div>
           <LinkButton to="/app/analyses/new" variant="primary" icon="arrow">
-            Sprawdź pierwsze mieszkanie
+            {t.dashboard.recent.emptyAction}
           </LinkButton>
         </div>
       </div>
     );
   }
   return (
-    <ul className={styles["list"]} aria-label="Ostatnie analizy">
+    <ul className={styles["list"]} aria-label={t.dashboard.recent.label}>
       {recent.data.items.map((audit) => (
         <RecentRow key={audit.audit_id} audit={audit} />
       ))}
@@ -194,18 +189,18 @@ export function DashboardPage() {
   return (
     <div className={styles["page"]}>
       <PageHeading
-        title="Pulpit"
-        eyebrow="Twoja przestrzeń"
-        lead={`${first ? `Cześć, ${first}. ` : ""}Od pierwszej oceny mieszkania po gotowe ogłoszenie, wszystko w jednym miejscu.`}
+        title={t.dashboard.title}
+        eyebrow={t.dashboard.eyebrow}
+        lead={first ? t.dashboard.greetingLead({ name: first }) : t.dashboard.lead}
       />
 
       {breaker ? (
-        <InlineNotice tone="warning" title="Otodom ogranicza zapytania" live="status">
-          Nowe analizy są chwilowo wstrzymane. Spróbuj {retryIn(me.upstream.retry_after_s)}.
+        <InlineNotice tone="warning" title={t.common.otodomLimited.title} live="status">
+          {t.common.otodomLimited.paused({ when: retryIn(me.upstream.retry_after_s) })}
         </InlineNotice>
       ) : null}
 
-      <section className={styles["tools"]} aria-label="Narzędzia renti">
+      <section className={styles["tools"]} aria-label={t.dashboard.tools.label}>
         {TOOLS.map((tool) => (
           <ToolCard key={tool.id} tool={tool} me={me} />
         ))}
@@ -215,32 +210,32 @@ export function DashboardPage() {
         <div>
           <div className={styles["heading"]}>
             <div>
-              <p className={styles["eyebrow"]}>Ostatnia aktywność</p>
-              <h2>Wróć do swojej pracy</h2>
+              <p className={styles["eyebrow"]}>{t.dashboard.recent.eyebrow}</p>
+              <h2>{t.dashboard.recent.heading}</h2>
             </div>
             <Link to="/app/analyses" className={styles["textLink"]}>
-              Moje analizy
+              {t.shell.destinations.analyses}
               <Icon name="arrow" />
             </Link>
           </div>
           <Recent />
         </div>
-        <aside className={styles["side"]} aria-label="Konto i rynek">
+        <aside className={styles["side"]} aria-label={t.dashboard.side.label}>
           <div className={styles["credit"]}>
-            <p className={styles["eyebrow"]}>Raporty na koncie</p>
+            <p className={styles["eyebrow"]}>{t.dashboard.side.reportsEyebrow}</p>
             <strong>{formatReports(me.credit_balance)}</strong>
-            <span>Raport jest pobierany dopiero, gdy analiza się uda.</span>
+            <span>{t.dashboard.side.reportsNote}</span>
             {me.credit_balance === 0 ? (
               <LinkButton to="/app/credits" variant="primary" icon="arrow">
-                Kup raporty
+                {t.common.buyReports}
               </LinkButton>
             ) : null}
           </div>
           <div>
-            <p className={styles["eyebrow"]}>Szersza perspektywa</p>
-            <h2 className={styles["marketTitle"]}>Poznaj lokalny rynek</h2>
-            <p className={styles["soonText"]}>Przegląd rynku najmu i cen pojawi się, gdy dane będą gotowe.</p>
-            <span className={styles["soon"]}>Wkrótce</span>
+            <p className={styles["eyebrow"]}>{t.dashboard.side.marketEyebrow}</p>
+            <h2 className={styles["marketTitle"]}>{t.dashboard.side.marketTitle}</h2>
+            <p className={styles["soonText"]}>{t.dashboard.side.marketBody}</p>
+            <span className={styles["soon"]}>{t.common.soon}</span>
           </div>
         </aside>
       </section>

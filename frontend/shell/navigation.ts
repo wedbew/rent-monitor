@@ -1,4 +1,5 @@
 import type { IconName } from "../ui/Icon";
+import { t } from "../i18n";
 
 /**
  * The single registry behind the desktop rail and the mobile sheet. A destination knows its own active rule, so a
@@ -22,7 +23,7 @@ const under = (prefix: string) => (pathname: string) =>
 export const PRIMARY: readonly Destination[] = [
   {
     id: "dashboard",
-    label: "Pulpit",
+    label: t.shell.destinations["dashboard"],
     to: "/app",
     icon: "home",
     availability: "building",
@@ -30,7 +31,7 @@ export const PRIMARY: readonly Destination[] = [
   },
   {
     id: "new-analysis",
-    label: "Nowa analiza",
+    label: t.shell.destinations["new-analysis"],
     to: "/app/analyses/new",
     icon: "search",
     availability: "building",
@@ -38,7 +39,7 @@ export const PRIMARY: readonly Destination[] = [
   },
   {
     id: "analyses",
-    label: "Moje analizy",
+    label: t.shell.destinations["analyses"],
     to: "/app/analyses",
     icon: "files",
     availability: "building",
@@ -46,7 +47,7 @@ export const PRIMARY: readonly Destination[] = [
   },
   {
     id: "market",
-    label: "Rynek",
+    label: t.shell.destinations["market"],
     to: "/app/market",
     icon: "market",
     availability: "unavailable",
@@ -54,7 +55,7 @@ export const PRIMARY: readonly Destination[] = [
   },
   {
     id: "interior",
-    label: "Architekt wnętrz",
+    label: t.shell.destinations["interior"],
     to: "/app/interior",
     icon: "interior",
     availability: "unavailable",
@@ -62,7 +63,7 @@ export const PRIMARY: readonly Destination[] = [
   },
   {
     id: "listing",
-    label: "Stwórz ogłoszenie",
+    label: t.shell.destinations["listing"],
     to: "/app/listings/new",
     icon: "edit",
     availability: "unavailable",
@@ -70,7 +71,7 @@ export const PRIMARY: readonly Destination[] = [
   },
   {
     id: "settings",
-    label: "Ustawienia",
+    label: t.shell.destinations["settings"],
     to: "/app/settings",
     icon: "settings",
     availability: "building",
@@ -81,7 +82,7 @@ export const PRIMARY: readonly Destination[] = [
 export const LEGAL: readonly Destination[] = [
   {
     id: "terms",
-    label: "Regulamin",
+    label: t.shell.destinations["terms"],
     to: "/terms",
     icon: "legal",
     availability: "building",
@@ -89,7 +90,7 @@ export const LEGAL: readonly Destination[] = [
   },
   {
     id: "privacy",
-    label: "Polityka prywatności",
+    label: t.shell.destinations["privacy"],
     to: "/privacy",
     icon: "shield",
     availability: "building",

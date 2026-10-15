@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import styles from "./FormErrors.module.css";
+import { t } from "../i18n";
 
 /** ui/ knows nothing of api/: the count is still laid out by Intl, in the app's locale. */
 const COUNT = new Intl.NumberFormat("pl-PL", { useGrouping: "always" });
@@ -44,7 +45,11 @@ export function FormErrorSummary({ errors, attempt }: FormErrorSummaryProps) {
   if (errors.length === 0) return null;
   return (
     <div ref={ref} className={styles["summary"]} role="alert" tabIndex={-1}>
-      <h2>{errors.length === 1 ? "Popraw 1 pole" : `Popraw pola: ${COUNT.format(errors.length)}`}</h2>
+      <h2>
+        {errors.length === 1
+          ? t.ui.formErrors.one
+          : t.ui.formErrors.many({ count: COUNT.format(errors.length) })}
+      </h2>
       <ul>
         {errors.map((error) => (
           <li key={error.fieldId}>

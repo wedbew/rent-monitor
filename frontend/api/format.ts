@@ -13,7 +13,9 @@
  * or an unreadable value is "nie obliczono" and never gets a unit. Dates are shown in Europe/Warsaw.
  */
 
-export const NOT_COMPUTED = "nie obliczono";
+import { type PluralForms, t } from "../i18n";
+
+export const NOT_COMPUTED = t.format.notComputed;
 const NBSP = "\u00a0";
 const MINUS = "\u2212";
 const DECIMAL_RE = /^(-?)(\d+)(?:\.(\d+))?$/;
@@ -167,7 +169,7 @@ export function formatDecimal(value: string | null | undefined, maxDecimals = 2)
 /** An area with the `m²` label; an unknown or unreadable value is "nie obliczono", never "nie obliczono m²". */
 export function formatArea(value: string | null | undefined): string {
   const text = formatDecimal(value, 2);
-  return text === NOT_COMPUTED ? NOT_COMPUTED : `${text}${NBSP}m²`;
+  return text === NOT_COMPUTED ? NOT_COMPUTED : `${text}${NBSP}${t.format.areaUnit}`;
 }
 
 /** A whole percentage already on the 0..100 scale (progress): the locale's percent layout, never `${n}%`. */
@@ -199,24 +201,24 @@ function toDate(iso: string | null | undefined): Date | null {
 
 export function formatDate(iso: string | null | undefined): string {
   const date = toDate(iso);
-  return date === null ? "—" : dateFormat.format(date);
+  return date === null ? t.format.noDate : dateFormat.format(date);
 }
 
 export function formatDateTime(iso: string | null | undefined): string {
   const date = toDate(iso);
-  return date === null ? "—" : dateTimeFormat.format(date);
+  return date === null ? t.format.noDate : dateTimeFormat.format(date);
 }
 
 /** "5 raportów", "1 234 raporty", "3 sekundy": the count grouped, the noun in its plural form. */
-export function formatCounted(count: number, forms: readonly [string, string, string]): string {
+export function formatCounted(count: number, forms: PluralForms): string {
   const text = formatCount(count);
   return text === NOT_COMPUTED ? NOT_COMPUTED : `${text}${NBSP}${plural(count, forms)}`;
 }
 
 export function formatReports(count: number): string {
-  return formatCounted(count, ["raport", "raporty", "raportów"]);
+  return formatCounted(count, t.format.nouns.reports);
 }
 
 export function formatAnalyses(count: number): string {
-  return formatCounted(count, ["analiza", "analizy", "analiz"]);
+  return formatCounted(count, t.format.nouns.analyses);
 }
