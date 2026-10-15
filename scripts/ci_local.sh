@@ -82,6 +82,12 @@ st_actions() {
 st_smoke() { ./scripts/smoke_docker.sh; }
 # The SPA's own gate: frozen install, then `pnpm check` (api drift, types, lint, css, format, unit tests, build).
 st_frontend() { pnpm --dir frontend install --frozen-lockfile && pnpm --dir frontend check; }
+# The browser lanes: Chromium against the built SPA with the mocked API, the interaction-coverage gate, axe.
+st_frontend_e2e() { pnpm --dir frontend test:e2e; }
+e2e_skip_reason() { # empty when Playwright's headless Chromium is installed
+  local path; path=$(cd frontend && pnpm exec playwright install --dry-run chromium 2>/dev/null | awk '/Headless Shell/{f=1} f&&/Install location/{print $3; exit}')
+  [ -n "$path" ] && [ -d "$path" ] || echo "Chromium for Playwright is not installed (cd frontend && pnpm exec playwright install chromium)"
+}
 frontend_skip_reason() { # empty when the pinned Node and pnpm are available
   have node || { echo "Node is not installed"; return; }
   have pnpm || { echo "pnpm is not installed (corepack enable)"; return; }
@@ -116,6 +122,12 @@ if want frontend normal; then
   if [ ! -d frontend ]; then skip frontend "no frontend/ yet"
   elif [ -n "$(frontend_skip_reason)" ]; then skip frontend "$(frontend_skip_reason)"
   else stage frontend st_frontend; fi
+fi
+if want frontend-e2e normal; then
+  if [ ! -d frontend ]; then skip frontend-e2e "no frontend/ yet"
+  elif [ -n "$(frontend_skip_reason)" ]; then skip frontend-e2e "$(frontend_skip_reason)"
+  elif [ -n "$(e2e_skip_reason)" ]; then skip frontend-e2e "$(e2e_skip_reason)"
+  else stage frontend-e2e st_frontend_e2e; fi
 fi
 if want smoke full; then
   if have docker && docker info >/dev/null 2>&1; then stage docker-smoke st_smoke; else skip docker-smoke "Docker is not running"; fi

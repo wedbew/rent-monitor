@@ -20,27 +20,64 @@ differs from `.node-version`.
 
 ## Scripts (run from `frontend/`)
 
-| Script                              | What it does                                                                                                                                |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                          | Vite dev server; `/api` proxied to `API_ORIGIN` (default `http://127.0.0.1:8000`)                                                           |
-| `pnpm generate:api`                 | Regenerate `api/schema.generated.ts` (from `../docs/openapi.json`) and `api/report.generated.ts` (from `../docs/deal-analysis.schema.json`) |
-| `pnpm check:api`                    | Fail when either committed file differs from its schema (never rewrites)                                                                    |
-| `pnpm typecheck`                    | `tsc` for the app and for the tooling configs (strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`)                            |
-| `pnpm lint` / `pnpm lint:css`       | ESLint (type-checked, React Hooks, a11y) and Stylelint, zero warnings                                                                       |
-| `pnpm format:check` / `pnpm format` | Prettier check / rewrite                                                                                                                    |
-| `pnpm test` / `pnpm test:watch`     | Vitest + Testing Library; `pnpm test` also enforces the coverage floor on `api/`                                                            |
-| `pnpm check:fixtures-vs-samples`    | Local only: every key path of the newest capture exists in a fixture (SKIPPED where `data/` is absent)                                      |
-| `pnpm build`                        | Production build into `dist/`                                                                                                               |
-| `pnpm check:dist`                   | `dist/` contains no mock or test tooling                                                                                                    |
-| `pnpm check`                        | All of the above in order                                                                                                                   |
+| Script                              | What it does                                                                                                                                                                                                                     |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                          | Vite dev server; `/api` proxied to `API_ORIGIN` (default `http://127.0.0.1:8000`)                                                                                                                                                |
+| `pnpm generate:api`                 | Regenerate `api/schema.generated.ts` (from `../docs/openapi.json`) and `api/report.generated.ts` (from `../docs/deal-analysis.schema.json`)                                                                                      |
+| `pnpm check:api`                    | Fail when either committed file differs from its schema (never rewrites)                                                                                                                                                         |
+| `pnpm typecheck`                    | `tsc` for the app and for the tooling configs (strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`)                                                                                                                 |
+| `pnpm lint` / `pnpm lint:css`       | ESLint (type-checked, React Hooks, a11y) and Stylelint, zero warnings                                                                                                                                                            |
+| `pnpm format:check` / `pnpm format` | Prettier check / rewrite                                                                                                                                                                                                         |
+| `pnpm test` / `pnpm test:watch`     | Vitest + Testing Library; `pnpm test` also enforces the coverage floor on `api/`                                                                                                                                                 |
+| `pnpm check:fixtures-vs-samples`    | Local only: every key path of the newest capture exists in a fixture (SKIPPED where `data/` is absent)                                                                                                                           |
+| `pnpm test:e2e`                     | Playwright, mocked lane: Chromium at 1280 and 390 px against the built SPA and the scenario registry, axe, the interaction gate; fails the run when a registered interaction or popup was not exercised with an asserted outcome |
+| `pnpm test:e2e:journey`             | Playwright, journey lane: the same SPA against the real Compose stack (see below)                                                                                                                                                |
+| `pnpm build`                        | Production build into `dist/`                                                                                                                                                                                                    |
+| `pnpm check:dist`                   | `dist/` contains no mock or test tooling                                                                                                                                                                                         |
+| `pnpm check`                        | All of the above in order                                                                                                                                                                                                        |
 
-Playwright (`test:e2e`, #269) and Storybook (#270) are added by their slices.
+Storybook (#270) is added by its slice.
 
 ## Environment
 
 The browser always calls relative `/api` URLs. There are no runtime variables in the bundle yet; **every `VITE_*` value
 would be public** (never put a key in one). `API_ORIGIN` only configures the dev proxy and is read by Node, not the app.
 Names live in `../.env.example`; real values are never read or committed.
+
+## End-to-end tests (`e2e/`)
+
+"Every page, popup and clickable element has an e2e test" is a gate, not a habit (docs/FRONTEND-PLAN.md section 4).
+
+- `e2e/interactions.ts` is the registry: `PAGES` (path, `h1`, the API scenarios to inventory it in), `INTERACTIONS`
+  (`{id, page, role, name, outcome}`) and `POPUPS` (trigger, role, name, backdrop policy). A slice adds its page,
+  its elements and its tests in the same PR.
+- `inventory.spec.ts` visits every page in every listed scenario, opens every popup, lists every visible element with an
+  interactive ARIA role (from the browser's own accessibility tree) and **fails on one that has no accessible name or is
+  not registered**, and on a registered one that is gone. axe runs on every state.
+- A test counts an element as covered only through `exercise(id, run)`: `run` must return an `outcome.*` token
+  (`url`, `request`, `dialog`, `focus`, `text`, `state`), each of which makes a real assertion, and the token kind must
+  match what the registry promises. `coverage-reporter.ts` fails the run when anything registered was not exercised.
+- `expectDialogContract` is the popup contract: opens from the keyboard, focus moves in and stays (modal), Escape
+  closes, focus returns to the trigger, the dialog has a name, the backdrop follows the registered policy.
+- `gate.spec.ts` and `gate.test.ts` test the gate itself on synthetic pages, so a broken gate cannot pass silently.
+- A test also fails on any console error or uncaught page error, and on any API request the scenario has no route for
+  (`e2e/fixtures.ts`). No retries and no `waitForTimeout` (linted).
+
+### Journey lane
+
+The same SPA against a real stack: API, Postgres, workers and fake providers. The session is seeded **inside the api
+container** by `scripts/e2e_session.py` (a synthetic user and a real session row; no HTTP bypass, no test route).
+
+```bash
+# Apple Silicon: DOCKER_DEFAULT_PLATFORM=linux/amd64 (L-021); POSTGRES_PORT=55432 if 5432 is taken
+docker compose -f deploy/compose.yml -f deploy/compose.e2e.yml up -d --build --wait api worker-audit worker-ops
+pnpm test:e2e:journey          # builds the SPA, serves it with `vite preview` (port 4173, /api proxied to :8000)
+```
+
+`deploy/compose.e2e.yml` sets `PUBLIC_APP_URL=http://localhost:4173` so the API's Origin check and Secure cookies behave
+as in production. Override the compose command with `E2E_COMPOSE`. The interaction gate counts the mocked lane;
+journeys are the few paths worth running against the real thing. The GitHub lanes (PR, nightly Firefox and WebKit)
+are the follow-up issue #296 because they edit `.github/`.
 
 ## API seam (`api/`)
 

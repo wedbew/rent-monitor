@@ -28,9 +28,29 @@ export interface Fixture {
   readonly events?: readonly FixtureEvent[];
 }
 
-const modules = import.meta.glob<Fixture>("./fixtures/*/*.json", { eager: true, import: "default" });
+/**
+ * Vite (Vitest, the catalog) globs the JSON files at build time; Playwright runs under plain Node, where
+ * `import.meta.glob` does not exist, so it reads the same directory from disk.
+ */
+const globbed: Record<string, Fixture> | undefined =
+  typeof import.meta.glob === "function"
+    ? import.meta.glob<Fixture>("./fixtures/*/*.json", { eager: true, import: "default" })
+    : undefined;
 
-export const ALL_FIXTURES: readonly Fixture[] = Object.values(modules);
+async function readFromDisk(): Promise<Fixture[]> {
+  const { readdirSync, readFileSync } = await import("node:fs");
+  const root = new URL("./fixtures/", import.meta.url);
+  return readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .flatMap((dir) =>
+      readdirSync(new URL(`${dir.name}/`, root))
+        .filter((file) => file.endsWith(".json"))
+        .map((file) => JSON.parse(readFileSync(new URL(`${dir.name}/${file}`, root), "utf8")) as Fixture),
+    );
+}
+
+export const ALL_FIXTURES: readonly Fixture[] =
+  globbed === undefined ? await readFromDisk() : Object.values(globbed);
 
 const byKey = new Map<string, Fixture>(ALL_FIXTURES.map((f) => [`${f.operation.key} :: ${f.scenario}`, f]));
 
