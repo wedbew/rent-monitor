@@ -8,8 +8,10 @@
 - **POC is reference only; build from scratch to production quality** — read `rules/poc-reference.md` before any engine work.
 - Delivery state: `docs/STATUS.md` (the only place that says what works). Orientation: `CONTEXT.md` at the repo root (summary, POC porting map, open decisions — living file, see §10). Toolchain: `docs/TOOLCHAIN.md`.
 - Spec of record: `docs/blueprint.md` (RentMonitor SaaS — Architecture & Implementation Blueprint, 11 Oct 2026).
-- Current phase: **Phase 1 — backend only.** Do not create or modify anything under `frontend/` except deleting
-  `frontend/server/*.ts`, `frontend/src/lib/cashflow.ts`, `frontend/src/lib/appreciation.ts` when the ticket says so.
+- Current phase: **Phase 2 — the SPA (`frontend/`) is authorised** (owner, 2026-10-15, #267), plan of record
+  `docs/FRONTEND-PLAN.md`, design `design/v2/`. Work on `frontend/` follows the slice issues #267-#286; Phase 1
+  backend rules still apply to every Python change. The frontend never computes finance (invariant 4): no
+  IRR, yield, tax, CAPEX, Max Bid or credit settlement in TypeScript, only display formatting.
 - If this file and the blueprint disagree, stop and ask in the issue. Do not pick one silently.
 
 ## 1. Non-negotiable invariants (each has a named test marked `@pytest.mark.invariant`)

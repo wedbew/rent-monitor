@@ -1,0 +1,7 @@
+dist
+node_modules
+api/schema.generated.ts
+pnpm-lock.yaml
+coverage
+playwright-report
+test-results
