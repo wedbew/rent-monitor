@@ -75,7 +75,8 @@ class AuditOut(BaseModel):
     irr_10y: Decimal | None
     capex_pln: Decimal | None
     result: dict[str, Any] | None = Field(
-        description="canonical DealAnalysis JSON; null until a terminal success"
+        description="canonical DealAnalysis JSON; null until a terminal success. Its shape is "
+        "docs/deal-analysis.schema.json for the version in `result.schema_version`"
     )
 
 
