@@ -5,6 +5,8 @@ import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
+import { MONEY_SYNTAX } from "./eslint.money.mjs";
+
 const HTML_SINKS = ["innerHTML", "outerHTML"];
 
 export default tseslint.config(
@@ -47,21 +49,7 @@ export default tseslint.config(
           selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
           message: "User and listing content is rendered as text (guide section 7). No raw HTML.",
         },
-        {
-          selector:
-            "CallExpression[callee.name='Number'] > MemberExpression[property.name=/_pln$|^irr|ratio$/]",
-          message:
-            "Money and ratios are decimal strings: format them with api/format.ts, never through Number().",
-        },
-        {
-          selector: "UnaryExpression[operator='+'] > MemberExpression[property.name=/_pln$|^irr|ratio$/]",
-          message: "Money and ratios are decimal strings: format them with api/format.ts, never coerce them.",
-        },
-        {
-          selector:
-            "CallExpression[callee.name='parseFloat'], CallExpression[callee.property.name='parseFloat']",
-          message: "No binary floats for money, areas or rates: use api/format.ts.",
-        },
+        ...MONEY_SYNTAX,
         ...HTML_SINKS.map((name) => ({
           selector: `AssignmentExpression[left.property.name='${name}']`,
           message: `Assigning ${name} is banned: it renders untrusted text as HTML.`,

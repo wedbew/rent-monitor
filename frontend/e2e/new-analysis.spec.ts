@@ -141,7 +141,7 @@ test.describe("new analysis", () => {
     await page.goto("/app/analyses/new");
     await field(page).fill(LISTING);
     await submit(page).click();
-    await expect(page.getByRole("alert").filter({ hasText: /za 42 sekundy/ })).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: /za 42\ssekundy/ })).toBeVisible();
     expect(run.state.posts).toBe(1);
   });
 

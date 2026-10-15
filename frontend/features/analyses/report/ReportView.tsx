@@ -2,10 +2,13 @@ import type { ReactNode } from "react";
 
 import {
   formatArea,
+  formatCount,
+  formatCounted,
   formatDate,
   formatDecimal,
   formatMoney,
   formatRatio,
+  formatPercent,
   NOT_COMPUTED,
   plural,
 } from "../../../api/format";
@@ -49,6 +52,9 @@ function Row({
     </div>
   );
 }
+
+/** The engine's clamp on vision adjustments (invariant 4), shown as a percentage. */
+const CLAMP = formatPercent(15);
 
 const money2 = (value: string | null) => formatMoney(value, { decimals: 2 });
 const text = (value: string | number | null | undefined) =>
@@ -137,9 +143,9 @@ function Overview({ report, degraded }: { readonly report: DealAnalysis; readonl
   const where = [listing.street, listing.city].filter(Boolean).join(", ");
   const facts = [
     formatArea(listing.area_m2),
-    `${listing.rooms} ${plural(listing.rooms, ["pokój", "pokoje", "pokoi"])}`,
+    formatCounted(listing.rooms, ["pokój", "pokoje", "pokoi"]),
     listing.floor !== null
-      ? `piętro ${listing.floor}${listing.building_floors !== null ? ` z ${listing.building_floors}` : ""}`
+      ? `piętro ${listing.floor}${listing.building_floors !== null ? ` z ${formatCount(listing.building_floors)}` : ""}`
       : null,
     listing.build_year !== null ? `rok budowy ${listing.build_year}` : null,
   ].filter(Boolean);
@@ -221,7 +227,7 @@ function RentSection({ report }: { readonly report: DealAnalysis }) {
         <div className={styles["figure"]}>
           <dt>Podobne oferty</dt>
           <dd>
-            <span className={styles["value"]}>{rent.comparables}</span>
+            <span className={styles["value"]}>{formatCount(rent.comparables)}</span>
             <span className={styles["hint"]}>
               {plural(rent.comparables, ["oferta", "oferty", "ofert"])} wynajmu · pewność{" "}
               {CONFIDENCE[rent.confidence]}
@@ -517,7 +523,7 @@ function SourceSection({ report }: { readonly report: DealAnalysis }) {
           <Row label="Miasto">{text(listing.city)}</Row>
           <Row label="Ulica">{text(listing.street)}</Row>
           <Row label="Powierzchnia">{formatArea(listing.area_m2)}</Row>
-          <Row label="Liczba pokoi">{listing.rooms}</Row>
+          <Row label="Liczba pokoi">{formatCount(listing.rooms)}</Row>
           <Row label="Piętro">{text(listing.floor)}</Row>
           <Row label="Rok budowy">{text(listing.build_year)}</Row>
           <Row label="Rodzaj budynku">{text(listing.building_type)}</Row>
@@ -528,8 +534,8 @@ function SourceSection({ report }: { readonly report: DealAnalysis }) {
           <Row label="Rozliczenie ceny">{PRICE_BASIS[legal.price_basis]}</Row>
           <Row label="Dodano">{formatDate(listing.created_at)}</Row>
           <Row label="Zaktualizowano">{formatDate(listing.modified_at)}</Row>
-          <Row label="Zdjęcia w ogłoszeniu">{listing.photo_urls.length}</Row>
-          <Row label="Rzuty w ogłoszeniu">{listing.floor_plan_urls.length}</Row>
+          <Row label="Zdjęcia w ogłoszeniu">{formatCount(listing.photo_urls.length)}</Row>
+          <Row label="Rzuty w ogłoszeniu">{formatCount(listing.floor_plan_urls.length)}</Row>
         </dl>
       ),
     },
@@ -541,18 +547,18 @@ function SourceSection({ report }: { readonly report: DealAnalysis }) {
           <p className={styles["muted"]}>Zdjęć nie oceniono, więc stan mieszkania jest założeniem.</p>
         ) : (
           <dl className={styles["rows"]}>
-            <Row label="Zdjęcia w ocenie">{vision.photos_total}</Row>
-            <Row label="Zdjęcia pominięte">{vision.photos_excluded}</Row>
+            <Row label="Zdjęcia w ocenie">{formatCount(vision.photos_total)}</Row>
+            <Row label="Zdjęcia pominięte">{formatCount(vision.photos_excluded)}</Row>
             <Row label="Stan wg zdjęć">{CONDITION[vision.condition]}</Row>
             <Row label="Korekta czynszu">
               {vision.rent === null
                 ? "brak"
-                : `${formatRatio(vision.rent.applied)}${vision.rent.clamped ? " (ograniczona do 15%)" : ""}`}
+                : `${formatRatio(vision.rent.applied)}${vision.rent.clamped ? ` (ograniczona do ${CLAMP})` : ""}`}
             </Row>
             <Row label="Korekta kosztu remontu">
               {vision.capex === null
                 ? "brak"
-                : `${formatRatio(vision.capex.applied)}${vision.capex.clamped ? " (ograniczona do 15%)" : ""}`}
+                : `${formatRatio(vision.capex.applied)}${vision.capex.clamped ? ` (ograniczona do ${CLAMP})` : ""}`}
             </Row>
             <Row label="Model i wersja instrukcji">
               {vision.model}, {vision.prompt_version}
@@ -564,7 +570,7 @@ function SourceSection({ report }: { readonly report: DealAnalysis }) {
       ? [
           {
             value: "evidence",
-            title: `Fragmenty ogłoszenia użyte w ocenie (${evidence.length})`,
+            title: `Fragmenty ogłoszenia użyte w ocenie (${formatCount(evidence.length)})`,
             children: (
               <div>
                 {evidence.map((quote, index) => (

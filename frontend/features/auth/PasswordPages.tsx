@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 
+import { formatCount } from "../../api/format";
 import { PageHeading } from "../../shell/PageHeading";
 import { Button, LinkButton } from "../../ui/Button";
 import { TextField } from "../../ui/Field";
@@ -139,7 +140,7 @@ export function ResetPasswordPage() {
             type="password"
             name="new-password"
             autoComplete="new-password"
-            hint={`Co najmniej ${PASSWORD_MIN} znaków. Unikaj popularnych haseł i swojego adresu e-mail.`}
+            hint={`Co najmniej ${formatCount(PASSWORD_MIN)} znaków. Unikaj popularnych haseł i swojego adresu e-mail.`}
             value={password}
             onValueChange={setPassword}
             error={shown[0]?.message}

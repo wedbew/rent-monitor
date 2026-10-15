@@ -5,6 +5,7 @@ import { Button } from "../../ui/Button";
 import { TextField } from "../../ui/Field";
 import { FormErrorSummary, type FieldError, useFormAttempt } from "../../ui/FormErrors";
 import { InlineNotice } from "../../ui/Status";
+import { formatCount } from "../../api/format";
 import { PageHeading } from "../../shell/PageHeading";
 import { emailError, newPasswordError, PASSWORD_MIN, readFailure } from "./forms";
 import { GoogleButton } from "./GoogleButton";
@@ -107,7 +108,7 @@ export function SignupPage() {
           type="password"
           name="new-password"
           autoComplete="new-password"
-          hint={`Co najmniej ${PASSWORD_MIN} znaków. Unikaj popularnych haseł i swojego adresu e-mail.`}
+          hint={`Co najmniej ${formatCount(PASSWORD_MIN)} znaków. Unikaj popularnych haseł i swojego adresu e-mail.`}
           value={password}
           onValueChange={setPassword}
           error={messageFor(IDS.password)}

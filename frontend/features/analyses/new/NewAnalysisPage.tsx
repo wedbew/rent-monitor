@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { Link } from "react-router";
 
-import { formatReports } from "../../../api/format";
+import { formatCount, formatReports } from "../../../api/format";
 import { ApiError } from "../../../api/errors";
 import { describeProblem } from "../../../api/problems";
 import { invalidateAudits } from "../../../api/query";
@@ -30,7 +30,8 @@ export const MAX_LISTING_REF = 300; // rm_contracts.audits.MAX_LISTING_REF
 export function listingRefError(value: string): string | null {
   const ref = value.trim();
   if (ref === "") return "Wklej adres ogłoszenia lub jego numer.";
-  if ([...ref].length > MAX_LISTING_REF) return `Adres może mieć najwyżej ${MAX_LISTING_REF} znaków.`;
+  if ([...ref].length > MAX_LISTING_REF)
+    return `Adres może mieć najwyżej ${formatCount(MAX_LISTING_REF)} znaków.`;
   return null;
 }
 

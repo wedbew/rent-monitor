@@ -115,7 +115,7 @@ test.describe("dashboard", () => {
     await serve("breakerOpen");
     await page.goto("/app");
     const notice = page.getByRole("status").filter({ hasText: "Otodom ogranicza zapytania" });
-    await expect(notice).toContainText(/Spróbuj za \d+ (sekund|minut)/);
+    await expect(notice).toContainText(/Spróbuj za \d+\s(sekund|minut)/);
     await expect(page.getByText("Chwilowo niedostępne")).toBeVisible();
     await expect(page.getByRole("link", { name: "Rozpocznij analizę" })).toHaveCount(0);
   });
