@@ -479,7 +479,7 @@ class World:
         json: Any = None,
         content: bytes | None = None,
         headers: Mapping[str, str] | None = None,
-        params: Mapping[str, Any] | None = None,
+        params: Mapping[str, Any] | list[tuple[str, Any]] | None = None,
     ) -> Exchange:
         client = who.client if isinstance(who, Actor) else who
         started = time.monotonic()

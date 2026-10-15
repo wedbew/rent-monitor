@@ -217,7 +217,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Status:** deferred
 - **Discovered:** 2026-10-15
 - **Affects:** `services/rm_api/audits.py` list endpoint, `packages/rm_contracts/audits.py`, Phase 2 collection/report implementation
-- **Evidence:** confirmed in source: `GET /api/audits` returns an array with only `limit` (default 50, max 100), without cursor/total/search/filter parameters; `AuditOut.result` is `dict[str, Any] | None`.
+- **Evidence:** `GET /api/audits` now pages by cursor with `status`, `grade` and `q` filters (RM-265, no total by design: an exact count under filters is a scan per request). Still open: `AuditOut.result` is `dict[str, Any] | None` (#266).
 - **Description:** Complete-history pagination/search cannot be implemented honestly by slicing the current capped response. OpenAPI generation alone does not produce typed internal report sections from the opaque result object.
 - **Workaround:** Keep collection completeness explicit; design against separately labeled contract fixtures. Use a reviewed versioned report schema/adapter before rendering internal sections; do not bypass with unchecked casts.
 - **Target:** Phase 2 frontend/API interface work (blueprint §4.8 step 6); pagination/search contract and report-version typing with integration tests. See `design/v2/implementation-guide.md` §5.

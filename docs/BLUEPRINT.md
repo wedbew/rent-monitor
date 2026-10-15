@@ -171,7 +171,7 @@ FastAPI is stateless: every byte of state — sessions, audits, credits, jobs, p
 | --- | --- | --- | --- |
 | `/api/auth/*` | FastAPI | public | Google ID-token sign-in, email magic link, email/password (`register`, `register/verify`, `register/resend`, `login`, `password/forgot`, `password/reset`; `password/change` needs a session), sign-out, session list (spec: PASSWORD-AUTH-SPEC.md) |
 | `/api/me` | FastAPI | session | Profile, plan, credit balance, feature flags; `GET /api/me/export` (access request, 5 per hour); `DELETE /api/me` (account erasure, confirmed by typing the address) |
-| `/api/audits` | FastAPI | session + entitlement | `POST` create (202), `GET` list, `GET /{id}`, `GET /{id}/events` (SSE), `POST /{id}/cancel` |
+| `/api/audits` | FastAPI | session + entitlement | `POST` create (202), `GET` list (`{items, next_cursor}`; keyset cursor; filters `status`, `grade`, `q`), `GET /{id}`, `GET /{id}/events` (SSE), `POST /{id}/cancel` |
 | `/api/saved` | FastAPI | session | Save or unsave listings, notes; only listings the caller has audited can be saved (anything else is 404), at most 500 |
 | `/api/market/*` | FastAPI | session; free tier sees top 20 | 727-city yield radar, city sidecars by grain |
 | `/api/screener/*` | FastAPI | Pro feature flag | Discovery runs, approval queue, batch generate |

@@ -4,6 +4,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING** `GET /api/audits` returns `{"items": [...], "next_cursor": "..." | null}` instead of a bare array. Pages are keyset-paged newest first over `(created_at, id)` (stable while new audits arrive; `limit` 1-100, default 50); `cursor` is the opaque `next_cursor` of the previous page (anything else is a 422 `VALIDATION_ERROR`); new filters `status` (repeatable), `grade` and `q` (Otodom id prefix). There is no total. No frontend consumes the old shape yet (RM-265)
+
 ### Added
 - OpenAPI documents errors as they are sent: a `Problem` schema (RFC 9457 `application/problem+json`, `code` as an enum of the stable problem codes), no more `HTTPValidationError`, and for every operation the error statuses it can return with the codes that come with each (`x-problem-codes`). The `202` of `POST /api/billing/checkout` and of the admin refund is documented as a success. No behaviour change; clients generated from `docs/openapi.json` get correct error types (RM-264)
 - API smoke test and sample capture: `tests/smoke/` runs one scenario registry over every operation in `docs/openapi.json` (real API, Postgres, ledger, queue worker and engine; fake providers) and checks each answer against the document, failing when a route has no scenario; `make api-samples` replays the scenarios over loopback HTTP into `data/api-samples/<UTC>/` (gitignored, 30-day retention, cookies, ids and emails redacted, `manifest.json` lists the documentation gaps) and `make api-samples-clean` deletes them. New env names `CAPTURE_ADMIN_URL` and `API_SAMPLES_LIVE_AUTHORISED` (`.env.example`). Operator action: none (RM-263)

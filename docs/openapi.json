@@ -238,6 +238,36 @@
         "title": "AuditOut",
         "type": "object"
       },
+      "AuditPage": {
+        "description": "One page of the caller's audits, newest first. There is deliberately no total: an exact count under\nfilters is a scan per request, and a cursor is all a list needs.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "opaque; pass it back as `cursor` for the next page. null: this was the last page",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "AuditPage",
+        "type": "object"
+      },
       "AuditState": {
         "description": "Mirrors `rm_core.db.models.AuditStatus`; `tests/unit/test_audit_contracts.py` fails if they drift.",
         "enum": [
@@ -3190,6 +3220,7 @@
     },
     "/api/audits": {
       "get": {
+        "description": "The caller's audits, newest first, by keyset over `(created_at, id)`: a row inserted between two\nrequests never repeats or skips a row. Another user's cursor only ever pages the caller's own rows.",
         "operationId": "list_audits_api_audits_get",
         "parameters": [
           {
@@ -3203,6 +3234,83 @@
               "title": "Limit",
               "type": "integer"
             }
+          },
+          {
+            "description": "`next_cursor` of the previous page",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`next_cursor` of the previous page",
+              "title": "Cursor"
+            }
+          },
+          {
+            "description": "repeat to match any of several",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/components/schemas/AuditState"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "repeat to match any of several",
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grade",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2,
+                  "pattern": "^[A-Za-z][+-]?$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Grade"
+            }
+          },
+          {
+            "description": "Otodom id prefix",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Za-z0-9]{1,16}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Otodom id prefix",
+              "title": "Q"
+            }
           }
         ],
         "responses": {
@@ -3210,11 +3318,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/AuditSummary"
-                  },
-                  "title": "Response List Audits Api Audits Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/AuditPage"
                 }
               }
             },

@@ -600,6 +600,48 @@ async def audits_limit(w: World) -> Exchange:
     return await w.send(who, "GET", "/api/audits", params={"limit": 100})
 
 
+@scenario("GET /api/audits", "second_page_by_cursor", 200)
+async def audits_second_page(w: World) -> Exchange:
+    who = await w.user(label="heavy")
+    await w.seed_audits(who, 120)
+    first = await w.send(who, "GET", "/api/audits", params={"limit": 50})
+    return await w.send(who, "GET", "/api/audits", params={"limit": 50, "cursor": first.body["next_cursor"]})
+
+
+@scenario("GET /api/audits", "last_page_has_no_cursor", 200)
+async def audits_last_page(w: World) -> Exchange:
+    who = await w.user(label="heavy")
+    await w.seed_audits(who, 120)
+    cursor = None
+    for _ in range(2):
+        page = await w.send(
+            who, "GET", "/api/audits", params={"limit": 50, **({"cursor": cursor} if cursor else {})}
+        )
+        cursor = page.body["next_cursor"]
+    return await w.send(who, "GET", "/api/audits", params={"limit": 50, "cursor": cursor})
+
+
+@scenario("GET /api/audits", "filtered_by_status", 200)
+async def audits_filtered(w: World) -> Exchange:
+    who = await w.user(label="heavy")
+    await w.seed_audits(who, 40)
+    return await w.send(
+        who, "GET", "/api/audits", params=[("status", "failed_input"), ("status", "rejected")]
+    )
+
+
+@scenario("GET /api/audits", "filtered_with_nothing_found", 200)
+async def audits_filtered_empty(w: World) -> Exchange:
+    who = await w.user(label="heavy")
+    await w.seed_audits(who, 5)
+    return await w.send(who, "GET", "/api/audits", params={"q": "ZZZZ"})
+
+
+@scenario("GET /api/audits", "invalid_cursor", 422)
+async def audits_bad_cursor(w: World) -> Exchange:
+    return await w.send(await w.user(label="list"), "GET", "/api/audits", params={"cursor": "garbage"})
+
+
 @scenario("GET /api/audits", "validation_error", 422)
 async def audits_validation(w: World) -> Exchange:
     return await w.send(await w.user(label="list"), "GET", "/api/audits", params={"limit": 101})
