@@ -243,9 +243,9 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Discovered:** 2026-10-15
 - **Affects:** `frontend/api`, auth and analysis forms, analysis submission recovery
 - **Evidence:** confirmed source review and focused reproductions; see `frontend/docs/AUDIT-2026-10-15.md`, F05–F13 and F16; re-verified on `staging` `5444eb8`.
-- **Description:** Copy is embedded in code, Intl display is partial and body errors escape transport normalization. Ambiguous-submission recovery matches the Otodom id within 5 minutes, so an earlier analysis of the same listing can be mistaken for the new request. (Busy-button submission and the silent-stream gap were fixed in RM-273.) Existing unit-test coverage thresholds apply only to the API directory and do not prove these behaviors.
+- **Description:** Copy is embedded in code and Intl display is partial (body errors are normalised since RM-307). Ambiguous-submission recovery matches the Otodom id within 5 minutes, so an earlier analysis of the same listing can be mistaken for the new request. (Busy-button submission and the silent-stream gap were fixed in RM-273.) Existing unit-test coverage thresholds apply only to the API directory and do not prove these behaviors.
 - **Workaround:** Preserve exact decimal strings and use existing centralized formatters; do not infer acceptance of an ambiguous request from an unrelated recent audit. Treat current automated passes as scoped evidence.
-- **Target:** Audit remediation #304–#307 and #309–#311 (recovery, localization, transport, guards, errors and tests), tracker #314; hardening #286.
+- **Target:** Audit remediation #304–#306 and #309–#311 (recovery, localization, transport, guards, errors and tests), tracker #314; hardening #286.
 
 ## Deferred
 
