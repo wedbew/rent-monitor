@@ -1,6 +1,6 @@
 """The Procrastinate application object, used as `procrastinate --app=rm_worker.app.app`.
 
-Tasks are registered by later tickets (audit, batch, ops queues). Importing this module opens no connection.
+Tasks live in rm_worker.tasks.* (audit, batch, ops queues). Importing this module opens no connection.
 """
 
 import procrastinate
@@ -17,5 +17,9 @@ app = procrastinate.App(
         "rm_worker.tasks.ai_budget",
         "rm_worker.tasks.maintenance",
         "rm_worker.tasks.email",
+        "rm_worker.tasks.audit",
+        "rm_worker.tasks.reconcile",
+        "rm_worker.tasks.billing",
+        "rm_worker.tasks.batch",
     ],
 )

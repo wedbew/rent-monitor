@@ -1,11 +1,11 @@
-# RentMonitor — Project Context
+# Renti — Project Context
 
 > Orientation for humans and agents. Read this first, then `.agent/agents.md` (rules) and the section of
 > `docs/BLUEPRINT.md` your ticket names. This file **summarises and links**; it does not replace them.
 > If it disagrees with the blueprint, the blueprint wins and this file is stale — fix it (`rules/architecture.md`).
 > **Living file:** every change that alters what is written here updates it in the same PR (`.agent/rules/context.md`).
 
-**Last updated:** 2026-10-13 · by: RM-106 (comparable-rent store); prior: RM-42 (live Otodom probe, L-005/L-002), RM-177 (delivery loop, STATUS.md); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
+**Last updated:** 2026-10-15 · by: RM-320 (frontend correctness rules); prior: RM-319 (frontend audit and re-verification); prior: RM-275 (frontend analyses collection); prior: RM-274 (frontend report page); prior: RM-273 (frontend new analysis and live progress); prior: RM-272 (frontend Pulpit); prior: RM-271 (frontend authentication and session boundary); prior: RM-270 (frontend shell, tokens, primitives, theme, navigation); prior: RM-269 (frontend e2e interaction gate, journey lane); prior: RM-268 (frontend typed client, fixtures, scenarios); prior: RM-267 (Phase 2 authorised, frontend foundation); prior: RM-266 (versioned DealAnalysis JSON Schema, REPORT-SCHEMA.md); prior: RM-265 (audit list keyset paging and filters, breaking list shape); prior: RM-264 (errors documented as problem+json in OpenAPI, L-027 resolved); prior: RM-263 (API smoke test and sample capture, `tests/smoke/`, L-028); RM-262 (V2 handoff verified, frontend plan and issues #263-#286, blueprint frontend sections); prior: owner-requested V2 light theme, renti.tech branding, navigation/hover motion, V2 frontend baseline and implementation/design-system/tooling handoff; prior: app-wide dashboard, URL/manual analysis, interior/listing workspaces, settings/legal placeholders and documentation; prior: RM-255 (owner-selected nightly new-offer imports and 90-day archive guide, #209 planning); prior: RM-246 (budget hold priced from the OpenRouter catalog); prior: RM-244 (vision and OCR stages in the audit); prior: RM-240 (rental-comparables importer, Listing.location_id); prior: RM-229 (support refunds, invoice access); prior: RM-219 (provider reversals); prior: RM-218 (Paddle webhook and grant); prior: RM-217 (pack checkout); prior: RM-216 (report credit lots); prior: RM-15 (beta deployment preparation, worker lanes); prior: RM-215 (Paddle catalog and client); prior: RM-205 (password recovery and change); prior: RM-204 (password login); prior: RM-203 (password registration); prior: RM-202 (password auth spec, ADR 0013); prior: RM-187 (real audit adapters); prior: RM-185 (audit progress SSE); prior: RM-186 (audit recovery); prior: RM-184 (audit journey slice 1); prior: RM-199 (owner-selected Paddle report-pack pilot and integration specification); prior: billing alternatives research, RM-197 (design V3), RM-106 (comparable-rent store), RM-42 (live Otodom probe, L-005/L-002), RM-177 (delivery loop, STATUS.md); prior implementation: RM-167 (OpenAPI), RM-20 (me, saved, admin), RM-82 (GDPR endpoints), RM-12 (auth), RM-157 (worker ops), RM-171 (decisions D-14, L-010)
 
 > **Greenfield (ADR 0001, `.agent/rules/poc-reference.md`):** the POC is read-only reference. Nothing is copied, moved or
 > imported from it; the app is written from scratch to production quality. Sections below that say "POC" describe
@@ -23,7 +23,7 @@ Python, nor run its tests. Items marked *(inferred)* are conclusions to verify w
 
 ## 1. What we are building
 
-RentMonitor is a paid SaaS for Polish residential **buy-to-let investors**. A user pastes an Otodom **SALE** listing URL;
+Renti is a paid SaaS for Polish residential **buy-to-let investors**. A user pastes an Otodom **SALE** listing URL;
 the system fetches it, reads the photos and floor plans with a vision LLM, anchors rent and price against market
 data, and returns a deterministic 10-year cash-flow valuation (`DealAnalysis`): yield, IRR, MOIC, CAGR, tax, CAPEX,
 **Max Bid**, and a grade. A second surface, the **727-city yield radar** and a bargain **screener**, ranks markets.
@@ -32,15 +32,15 @@ data, and returns a deterministic 10-year cash-flow valuation (`DealAnalysis`): 
 |---|---|
 | Host | One OVH VPS-3 (6 vCore, 12 GB), Docker Compose, Caddy + FastAPI + Procrastinate workers + Postgres 17, **no Redis** |
 | Server runtime | **Python only.** Node exists only to build the SPA |
-| Auth | Google ID token first (`google-auth`), email magic link second, own sessions in Postgres, **no passwords** |
-| Billing | Stripe: card + BLIK subscription (100 zł/month), 30-day BLIK pass; credit ledger; VAT invoices via Fakturownia → KSeF |
+| Auth | Google ID token first (`google-auth`), email magic link second, own sessions in Postgres; email/password added by owner request (ADR 0013; registration RM-203, login RM-204, recovery and change RM-205) |
+| Billing | Pilot direction: Paddle one-time 1/5/10-report packs, card + PLN BLIK; credit ledger. Integration spec only; product/accounting approval and final prices pending. Earlier Stripe subscription design retained as historical reference |
 | Free tier | 3 audits on verified sign-up, yield radar top 20 (proposed) |
 | Jobs / progress | Procrastinate queues; SSE via Postgres `LISTEN/NOTIFY` + `audit_event` replay |
 | Monitoring | **Better Stack** free tier (ADR 0009): errors and traces via the `sentry-sdk` client, uptime monitor, backup heartbeat; replaces Sentry |
 | Budget | ≈ $13.38 net/month infra; OpenRouter spend is COGS governed by the credit ledger |
 
-**Phase 1 = backend only** (blueprint §4.8 steps 1–5, plus step 8 batch tasks). The Vite/React SPA is Phase 2; in
-Phase 1 `frontend/` may only lose `server/*.ts`, `lib/cashflow.ts`, `lib/appreciation.ts` (`agents.md` §0).
+**Phase 1 = backend** (blueprint §4.8 steps 1–5, plus step 8 batch tasks), done offline. **Phase 2 (the Vite/React SPA in
+`frontend/`) was authorised by the owner on 2026-10-15** (`agents.md` §0, #267); delivery follows `docs/FRONTEND-PLAN.md`.
 Not launch-ready until the seven release gates in blueprint §6 pass.
 
 ## 2. Domain glossary
@@ -150,6 +150,7 @@ Per `rules/legal-tags.md`, tag the new implementations of these; features stay.
 | `price_intel/sources/moniter.py`, `cenogram.py`, `bdl.py`, `demography.py`; `deal_analyzer/nominatim.py`, `osm_distance.py` (OSM usage policy) | `LEGAL[third-party-data]` |
 | Raw `listing_snapshot.payload` (may contain seller name / phone) | `GDPR[personal-data]`, retention + erasure path |
 | Report Markdown / API results that echo listing text or photos to other tenants | `LEGAL[republication]` |
+| Frontend analyses cards/table (`frontend/features/analyses/list/AnalysesPage.tsx`), showing listing ids and asking-price summaries | `LEGAL[republication]` (RM-275) |
 
 ## 7. Pipeline to preserve (confirmed from blueprint §2 and POC `PIPELINE.md` headline)
 
@@ -173,7 +174,7 @@ rulesets for `main` and `staging` are active. Roadmap, gates and owner deadlines
 or GUS-PoC artifacts. Delivery process: `.agent/rules/delivery.md`, ADR 0012.
 
 **Design exploration (12 Oct 2026, maintainer request):** `design/` contains proposed UX principles, a documentation-state review,
-and responsive interactive home, analyses-list and separate city-context prototypes with fictional fixtures. `design/v1/` holds the warm editorial direction; `design/v2/` adds a monochrome architectural alternative with new tokens, restrained motion, and a dedicated analysis-page scaffold/UX contract (full analytic rendering deferred). Neither is selected for production. This is a Phase 2 design artifact, not a production SPA;
+and responsive interactive home, analyses-list and separate city-context prototypes with fictional fixtures. `design/v1/` holds the warm editorial direction; `design/v3/` (13 Oct) is a light-first alternative with an interactive login demo, report, market page and logo explorations; `design/v2/` is an architectural alternative, now light by default with a saved dark option, renti.tech logo/favicon, animated navigation and button/icon hover feedback with reduced-motion support, an app-wide dashboard, separate URL/manual analysis entry, local interior/listing-assistant design flows, settings/terms/privacy placeholder pages, and a dedicated analysis-page scaffold/UX contract (full analytic rendering deferred). Its analysis cards need replacement, pagination and a table-view option; Rynek is a placeholder omitting much of the available market data ([L-024](docs/LIMITATIONS.md#l-024--v2-analysis-collection-and-market-views-are-placeholders)). The owner selected V2 as the frontend starting point (2026-10-15); its principles are defined while placeholder layouts may evolve. The [implementation handoff](design/v2/implementation-guide.md) covers a proposed headless design system, tooling/CI and phased delivery. The handoff was verified against the code and turned into slice issues #263-#286 ([`docs/FRONTEND-PLAN.md`](docs/FRONTEND-PLAN.md), RM-262); the UI starts only after the API smoke test captures samples into the gitignored `data/` (#263). This remains a Phase 2 design artifact, not a production SPA;
 `frontend/` and backend contracts are unchanged.
 
 ## 9. Open decisions (owner: you)
@@ -183,10 +184,12 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 - [x] `migrations` CI job on and required (RM-68)
 - [x] `invariants` CI job on and required (RM-89): the four named tests exist (RENT, asking≠deed, admin fee, deterministic math); invariants 5 and 6 and the ±15% clamp are added by N-08/N-10
 - [x] Port the POC? **No** — greenfield (ADR 0001, RM-2)
-- [ ] Market-data bootstrap: how the 727-city sidecars are produced fresh (fetch via new importers; no corpus copy)
+- [x] Market-data import policy (owner decision, 2026-10-14; #209 planning): use the owner-verified 727 Otodom locations and existing largest-city launch subset; full bootstrap once, nightly last-24-hours new offers, immutable existing offers and 90-day age archive. SIMC validation deferred; implementation and filtered-list contract verification remain pending. [Guide](docs/OTODOM-NIGHTLY-IMPORT.md).
 - [x] Engine specification approved with amendments: `docs/ENGINE-SPEC.md` (RM-73); tax constants flagged for the accountant
 - [ ] Which POC extras ship in Phase 1: redesign, seller-questions, analyst (§4.3)
 - [x] VAT presentation: 100 zł shown gross (81.30 net + 23 %), Stripe prices tax-inclusive (D-03); accountant to confirm VAT-payer status (#41)
+- [x] Pilot product direction: owner selected one-time Paddle packs of 1/5/10 reports, without subscriptions; [PADDLE-INTEGRATION.md](docs/PADDLE-INTEGRATION.md). Implementation and provider validation remain pending; supersede ADR 0005 with implementation.
+- [ ] Pack pricing: owner suggested 5/40/70 PLN; recommended 10/40/70 PLN to make bulk packs cheaper per report and cover Paddle's fixed fee. Also decide signup reports (currently 3) and unused-unit expiry. Product/accounting unknowns: L-015/L-016.
 - [ ] Pro allowance (40 is a placeholder until COGS is measured); free-tier scope
 - [x] SQLAlchemy 2.0 and Stripe SDK pin at #14: ADR 0007 accepted (D-02)
 - [ ] Gemini and Claude auth in Actions; GitHub plan for private-repo rulesets
@@ -201,7 +204,11 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | POC-is-reference and production bar | `.agent/rules/poc-reference.md`, `docs/adr/0001-greenfield-rewrite.md` |
 | Expensive-to-reverse decisions (runtime, queue, auth, billing, host, pins) | `docs/adr/0002`–`0009` |
 | Rules, invariants, git flow, PR template | `.agent/agents.md`, `.agent/rules/*.md`, `.github/pull_request_template.md` |
+| Frontend correctness rules (session transitions, transport, copy, numbers, evidence) | `.agent/rules/frontend.md` (RM-320, from the 2026-10-15 audit) |
 | Architecture, schema, Stripe, auth, tests | `docs/BLUEPRINT.md` §2–§4 |
+| Launch-city Otodom bootstrap, nightly incremental imports, recovery and 90-day archiving | `docs/OTODOM-NIGHTLY-IMPORT.md` (#209 planning; implementation pending) |
+| Billing alternatives, MoR costs, Polish invoicing/KSeF scope and proposed Paddle evaluation | `docs/BILLING-ALTERNATIVES.md` (research, not an accepted spec) |
+| Owner-selected pilot report packs, Paddle checkout/webhooks, credit provenance, refunds and implementation tests | `docs/PADDLE-INTEGRATION.md` (specification; no implementation evidence) |
 | Google sign-in and session specification, as built (RM-12) and the owner's local setup notes | `docs/GOOGLE-AUTH-SPEC.md`; local handoff `docs/GOOGLE-AUTH-INTEGRATION.md` is gitignored |
 | Resend local configuration and mailer integration instructions | `docs/RESEND-INTEGRATION.md` (owner's local handoff, gitignored; RM-12) |
 | Umami analytics setup, verified script behaviour and the CSP finding | `docs/UMAMI-INTEGRATION.md` (owner's local handoff, gitignored; RM-143) |
@@ -213,7 +220,12 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Milestones, dependencies and launch gates | `docs/ROADMAP.md` |
 | Delivery state (journey, backlog map, owner actions) | `docs/STATUS.md` |
 | Autonomous delivery evidence, bottlenecks and proposed faster workflow (recommendations only) | `docs/DELIVERY-AUDIT.md` (RM-177) |
-| Proposed Phase 2 UX principles and interactive design alternatives (fictional data; not production frontend) | `design/README.md`, `design/v1/`, `design/v2/design-principles.md`, `design/v2/main-view.html` |
+| Proposed Phase 2 UX principles and interactive design alternatives (fictional data; not production frontend) | `design/README.md`, `design/v1/`, `design/v2/design-principles.md`, `design/v2/main-view.html`, `design/v3/README.md` |
+| V2 frontend implementation, headless components, environment/linters/CI and Claude delivery checklist | `design/v2/implementation-guide.md`, `design/v2/design-system.md`, `design/v2/frontend-tooling.md`, `design/v2/implementation-checklist.md` |
+| Frontend delivery plan: handoff verification, API smoke + samples in `data/` first, e2e interaction-coverage gate, slice issues | `docs/FRONTEND-PLAN.md` (RM-262) |
+| Frontend audit (translations, Intl, session correctness, proposed frontend pipeline) and its re-verification on `staging` | `frontend/docs/AUDIT-2026-10-15.md`; limitations L-030–L-032; tracker #314 |
+| Report (`DealAnalysis`) JSON Schema and its compatibility rule | `docs/deal-analysis.schema.json`, `docs/REPORT-SCHEMA.md` (RM-266) |
+| API smoke scenarios (every OpenAPI operation) and local response samples | `tests/smoke/`, `scripts/capture_api_samples.py`, `make api-samples` (RM-263, L-028) |
 | Phase 2 design direction (prototype, principles, spec) | `design/README.md` (#44 input; no backend or rule change) |
 | Owner-only blockers | `docs/BLOCKERS.md`, `.agent/rules/blockers.md` |
 | Agent bot setup | `docs/AGENT-BOT.md`, `scripts/setup_agent_bot.sh` |

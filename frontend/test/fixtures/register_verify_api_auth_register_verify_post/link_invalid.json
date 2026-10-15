@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "AUTH_TOKEN_INVALID",
+    "instance": "/api/auth/register/verify",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Link is invalid, used or expired",
+    "type": "urn:rentmonitor:problem:AUTH_TOKEN_INVALID"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/register/verify",
+    "method": "POST",
+    "operation_id": "register_verify_api_auth_register_verify_post",
+    "path": "/api/auth/register/verify"
+  },
+  "request": {
+    "body": {
+      "token": "[redacted]"
+    },
+    "path": "/api/auth/register/verify"
+  },
+  "scenario": "link_invalid",
+  "status": 401
+}

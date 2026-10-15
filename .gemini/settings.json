@@ -11,6 +11,7 @@
       ".agent/rules/context.md",
       ".agent/rules/blockers.md",
       ".agent/rules/delivery.md",
+      ".agent/rules/frontend.md",
       ".agent/rules/repo-layout.md",
       ".agent/rules/env-example.md",
       ".agent/rules/poc-reference.md",

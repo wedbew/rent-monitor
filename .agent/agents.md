@@ -8,8 +8,10 @@
 - **POC is reference only; build from scratch to production quality** — read `rules/poc-reference.md` before any engine work.
 - Delivery state: `docs/STATUS.md` (the only place that says what works). Orientation: `CONTEXT.md` at the repo root (summary, POC porting map, open decisions — living file, see §10). Toolchain: `docs/TOOLCHAIN.md`.
 - Spec of record: `docs/blueprint.md` (RentMonitor SaaS — Architecture & Implementation Blueprint, 11 Oct 2026).
-- Current phase: **Phase 1 — backend only.** Do not create or modify anything under `frontend/` except deleting
-  `frontend/server/*.ts`, `frontend/src/lib/cashflow.ts`, `frontend/src/lib/appreciation.ts` when the ticket says so.
+- Current phase: **Phase 2 — the SPA (`frontend/`) is authorised** (owner, 2026-10-15, #267), plan of record
+  `docs/FRONTEND-PLAN.md`, design `design/v2/`. Work on `frontend/` follows the slice issues #267-#286; Phase 1
+  backend rules still apply to every Python change. The frontend never computes finance (invariant 4): no
+  IRR, yield, tax, CAPEX, Max Bid or credit settlement in TypeScript, only display formatting. Every `frontend/` change follows `rules/frontend.md`.
 - If this file and the blueprint disagree, stop and ask in the issue. Do not pick one silently.
 
 ## 1. Non-negotiable invariants (each has a named test marked `@pytest.mark.invariant`)
@@ -56,8 +58,14 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
 - Never read OAuth client secrets (`client_secret*.json`, gitignored), `.env`, keys or CLI credential files. Stripe CLI: **test mode only**,
   never `--live`. OVH CLI: ask before any command that buys, renews, resizes, reinstalls or deletes. Never `git add -A` over an
   untracked file you did not create; add files by name.
-- Never run anything against production (VPS, live Stripe, production DB). Database tools point at the local
+- Never run anything against live Stripe or a production DB holding customer data. Database tools point at the local
   Compose Postgres or Testcontainers. Stripe tools use the sandbox only.
+- **OVH VPS-3 (`vps-d1af13a5.vps.ovh.net`, current test/beta host, `docs/INFRASTRUCTURE.md`): agents may deploy and operate it** (owner decision and target correction, 2026-10-14; the old VPS-1 is not the deployment target):
+  SSH as the `deploy` user with the owner's key, copy files, run `docker compose` and `deploy/setup-server.sh`, read logs
+  and health endpoints. Ask first before anything destructive or irreversible there (wiping volumes or the DB, reinstalling
+  the OS, firewall/SSH changes that could lock out access, DNS changes). Never read `.env` on the server or print secrets;
+  never put real customer data or live provider keys on it until `docs/PRE-DEPLOYMENT.md` §0 is done. Record each deploy
+  (date, commit, result) in `docs/STATUS.md`; deploy only from a commit merged to `staging`.
 - Tenant isolation: every tenant-owned query goes through a repository that takes a `Principal`. Foreign
   resources return **404, never 403**.
 - Stripe webhooks: verify the signature on the **raw body** before any parsing. Idempotency by event id.
@@ -114,6 +122,7 @@ Read the matching file when your change touches the area; update the doc in the 
 - `rules/repo-layout.md` — shallow repo: no single-child dirs, flat package layout (no `src/`).
 - `rules/blockers.md` — stop and record owner-only blockers in `docs/BLOCKERS.md`; work only in this checkout; pull `staging` after every merge.
 - `rules/delivery.md` — journey-first priority, ready/done levels, checkpoints, `docs/STATUS.md` upkeep.
+- `rules/frontend.md` — every `frontend/` change: evidence before claims, tested primitive promises, one door per session transition, untrusted network data, copy and numbers from one place, durable audits (audit 2026-10-15).
 - `rules/context.md` — keep root `CONTEXT.md` current: update it in the same PR as any change that makes it stale; bump its "Last updated" line.
 Cursor mirrors these in `.cursor/rules/*.mdc` as pointers only; edit the `.agent/rules/` file, never the pointer.
 

@@ -2,37 +2,53 @@
 
 **The one place that says what works.** Updated by implementation PRs (`.agent/rules/delivery.md`), not by status-only PRs.
 Hourly facts (open PRs, checks, who holds which issue) come from GitHub: `gh issue list --label ready`,
-`uv run python scripts/delivery_metrics.py`. **Last verified:** 2026-10-13 against `staging` · by RM-177.
+`uv run python scripts/delivery_metrics.py`. **Last verified:** 2026-10-14 against `staging` `fe04449` and the deployed VPS-3 · by RM-252.
 
-Levels: **1** implemented (offline tests, merged) · **2** integrated (journey test through API, queue, Postgres, engine, with named
+Written for the state after the PR that edits it merges; until then `staging` shows the previous text. Levels: **1** implemented (offline tests, merged) · **2** integrated (journey test through API, queue, Postgres, engine, with named
 fakes) · **3** provider-verified (authorised sandbox/live evidence) · **4** launch-ready (release gates). A closed issue is level 1 at most.
 
 ## Journey (P0): sign in → submit sale listing → reserve credit → queue → context → engine → persist and retrieve
 
 | Step | Level | Evidence | Missing |
 |---|---|---|---|
-| Sign in (Google ID token, magic link, sessions) | 1 | `rm_api.auth`, `tests/integration/test_auth.py` (#147) | Real Google and Resend never exercised (B-004); level 3 open |
-| Parse and bound the listing reference | 1 | `rm_core.listing_ref` | Route that accepts it: S1 #184 |
-| Reserve credit, capture/release | 1 | `rm_core.ledger`, `tests/integration/test_ledger.py`, `test_concurrency.py` | Called by no audit path yet: S1 |
-| Queue the analysis | 0 | Only the email job is deferred (`rm_api.queue`) | `run_audit` task and deferral: S1 |
-| Acquire listing and context | 1 (parts) | Otodom client, snapshots, OSM/geo, OpenRouter client with fakes | Comparables store merged (#106 slice 1, level 1), importers that fill it still missing; real adapters wired (S4 #187); live shape confirmed for one sale listing, 2026-10-13 (L-005) |
-| Run the engine | 1 | `apps/deal_analyzer.analyse_listing`, goldens, 7 invariants | CAPEX prices are placeholders (L-007); accuracy unmeasured (#94) |
-| Persist and retrieve the canonical result | 0 | `audit` table and typed columns exist | `GET /api/audits*`: S1 |
-| Failure releases the reservation; duplicates do not double-charge | 0 | `ledger.settle` is idempotent; one-active-per-listing index exists | Wired and proven end to end: S1; crash recovery: S3 #186 |
-| Progress stream | 0 | `audit_event` table | S2 #185 |
+| Sign in (Google ID token, magic link, sessions) | 1 | `rm_api.auth`, `tests/integration/test_auth.py` (#147); used by the journey test; email/password registration and verification (RM-203, `tests/integration/test_password_register.py`, 17 tests) and password login (RM-204, `tests/integration/test_password_login.py`, 9 tests) and recovery and change (RM-205, `tests/integration/test_password_recovery.py`, 12 tests) | Real Google and Resend never exercised (B-004); level 3 open |
+| Parse and bound the listing reference | 2 | `rm_core.listing_ref` behind `POST /api/audits` (422 on SSRF-style refs) | none offline |
+| Reserve credit, capture/release | 2 | `rm_core.ledger` called by the route and the worker; `tests/integration/test_audit_journey.py` | Plan-allowance path through the audit route is unit-tested in `test_ledger.py` only |
+| Queue the analysis | 2 | `ProcrastinateEmailQueue.run_audit` defers `run_audit`; the test runs a real worker on the `audit` queue | Defer failure recovered by `reconcile_queued_audits` (RM-186, real Postgres + worker); proven offline only |
+| Acquire listing and context | 2, live-checked for one city | Real Otodom client and market context behind `AUDIT_PROVIDERS=real` (RM-187); rental importer on the `batch` queue, triggered by the first audit in a city, one sidecar per city and month, a thin or blocked import never replaces data (RM-240, RM-242, `tests/integration/test_rental_importer.py`); live on VPS-3 2026-10-14: Toruń imported (181 offers, median 2000 PLN) and one real listing audited with those rents | Only cities audited once are imported and only the first 5 result pages are sampled (L-022); sustained-load blocking unmeasured (L-002); the risk-free rate is an unsourced placeholder (#210); deed and asking price anchors are not used (#48, #49, B-014) |
+| Run the engine | 2, live-checked once | `analyse_listing` runs in the worker; API result equals a direct engine run; vision and OCR stages (RM-244, `tests/integration/test_audit_vision.py`, `tests/unit/test_vision_stage.py`): photos and floor plans to OpenRouter within the AI budget (hold priced from the model catalog, RM-246), answer clamped to +/-15 %; one live call on VPS-3 2026-10-14 (11 photos, USD 0.0004) gave `succeeded` instead of `succeeded_degraded` | CAPEX placeholders (L-007); accuracy unmeasured (#94, L-023); floor-plan advert shape unverified; without an OpenRouter key every success is `succeeded_degraded` |
+| Persist and retrieve the canonical result | 2 | `audit.result` + typed columns copied from the analysis; `GET /api/audits/{id}` echoes it | none offline |
+| Failure releases the reservation; duplicates do not double-charge; tenant isolation | 2 | Failures inside the pipeline release the charge (RENT, fractional, gone, blocked, drift, crash, slow fetch hitting the deadline, unconfigured worker); 6 simultaneous submits admit one; duplicate delivery settles once; foreign audit is 404. **Recovery (RM-186, `tests/integration/test_audit_recovery.py`, `test_engine_child.py`):** failed enqueue re-deferred then completed; queued past deadline and worker death (`running` past deadline) fail `TIMEOUT` and release; healthy slow run untouched; reconciler idempotent under 3 concurrent runs; worker finish vs reconciler raced 12 times settles exactly once; a hung or dying engine is killed (process group) and releases; cancellation kills the child | Memory cap (`RLIMIT_AS`) is tested on Linux CI only (skipped on macOS); stalled Procrastinate `doing` rows are not cleaned (L-017) |
+| Progress stream | 2 | `GET /api/audits/{id}/events` (SSE): replay from `Last-Event-ID`, NOTIFY wake-up with a 15 s safety poll, terminal `done`/`error` written in the same transaction as the status and the credit settlement, finished audits without stored events synthesised, foreign audit 404 (RM-185, `tests/integration/test_audit_events.py`, 10 tests); real Postgres NOTIFY and worker, offline fakes | `vision` and `ocr` are emitted (RM-244); `anchors` is not emitted until that step exists; open-ended stream behaviour (keep-alive, lost wake-up, disconnect) is tested on the generator, not over a real socket |
 
-**Journey level today: 0** (no audit route, no audit task). Components are level 1. Target of S1: level 2 offline with fakes. That
-is not live-provider validation and not production readiness.
+**Journey level: 2, offline** (RM-184 to RM-187: `tests/integration/test_audit_journey.py`, `test_audit_recovery.py`, `test_audit_events.py`, `test_audit_context.py`; real API, Postgres, ledger, Procrastinate worker, engine child and, with `AUDIT_PROVIDERS=real`, the Otodom client and market context behind a fake HTTP transport and hand-built rental rows). The same journey ran against the amd64 Compose stack on 2026-10-14 (`scripts/journey_check.py`, fake provider data, see `docs/DEPLOYMENTS.md`); **it also ran on the private beta host VPS-3 (`vps-d1af13a5.vps.ovh.net`, commit `3cdf0be`, 2026-10-14, fake provider data) and one live Otodom request from Frankfurt returned 200 (see `docs/DEPLOYMENTS.md`).** On 2026-10-14 one real Toruń listing also ran end to end on VPS-3 through the real Otodom fetch, the imported rents and a real OpenRouter call (`scripts/live_audit_check.py`): single-listing live evidence, not load, not accuracy, and not production readiness (L-018). Sourced market data (risk-free rate, CAPEX prices) is still missing.
 
 ## Other capability
 
 | Area | Level | Note |
 |---|---|---|
 | Platform (settings, logging, problems, health, flags, admin, GDPR export/erase, retention) | 1 | Admin and privacy tools are outside the P0 path |
-| Billing (Stripe, BLIK, webhook, entitlements, VAT) | 0 | Spec only (`docs/STRIPE-SPEC.md`); sandbox access pending (B-003); `has_pro` logic exists |
-| Ops (Compose, Caddy, WAL-G, backups, monitors) | 1 partial | Local Compose + smoke (health only, **not** a journey test); Caddy/WAL-G/backups not built |
+| Ops (Compose, Caddy, WAL-G, backups, monitors) | 1 partial | Local Compose + smoke on separate audit and ops worker lanes; VPS-1 overlay with limits and hardening, secret-safe `check_env.py`, deployed-journey check (`journey_check.py`, fake-provider evidence, run on the local amd64 stack 2026-10-14, see `docs/DEPLOYMENTS.md`), logical backup and restore drill (L-014), runbook | **VPS-3 runs `fe04449` (API, two workers, Postgres, Caddy) at `https://renti.tech` with a Let's Encrypt certificate; mail from `noreply@renti.tech` (Resend domain verified, test mail delivered); Better Stack error tracking enabled (RM-250, UI receipt owner-confirmed); `AUDIT_PROVIDERS=real` with OpenRouter and the rental importer. Still missing: Google client id, sourced risk-free rate, Better Stack logs and uptime monitors, WAL-G and offsite backups, gate 4-6 evidence, repository still public (PRE-DEPLOYMENT section 0), no real customer data allowed. B-016 concerns the old VPS-1.** Caddy/TLS is the opt-in public profile; since RM-281 its image also serves the SPA (smoke-tested locally on the real image: deep links, caching, CSP, `/api` through Caddy; not yet redeployed to VPS-3); WAL-G, offsite backup, gate 4-6 evidence missing |
+| Billing (Paddle pilot report packs, BLIK, webhook, credits, accounting) | 2 offline; sandbox prepared (RM-248) | Foundation merged as RM-215 (catalog from owner-approved snapshots only, injectable Paddle client with fake, disabled by default; `tests/unit/test_paddle_catalog.py`). Credit lots with provenance and the fixed lock order merged as RM-216 (`tests/integration/test_pack_lots.py`, hypothesis over operation sequences, concurrency, backfill migration test). Checkout intents with idempotency and ambiguous-creation recovery against a fake Paddle merged as RM-217 (`tests/integration/test_billing_checkout.py`, 21 tests). Signed durable webhook, grant worker and reconciliation against a fake Paddle merged as RM-218 (`tests/integration/test_paddle_webhook.py`, 27 tests, `tests/unit/test_paddle_signature.py`, 20). Provider refunds, chargebacks and their reversals applied to granted packs, with a billing hold for spent units, merged as RM-219 (`tests/integration/test_pack_reversals.py`, 11 tests, `tests/unit/test_billing_reversal_rules.py`). Support-initiated refunds (durable intent, used packs to review) and buyer invoice access merged as RM-229 (`tests/integration/test_pack_refunds.py`, 12 tests). **Billing is level 2 offline end to end; sandbox evidence (#220), the owner's price and allowance decisions (#43), Paddle acceptance and the accountant (L-015, L-016) are open, so nothing is sellable.** Spec (`docs/PADDLE-INTEGRATION.md`): owner selected one-time 1/5/10-report packs; final pricing, Paddle approval/sandbox and accountant review pending (L-015/L-016). Existing ledger/`has_pro` code is not a Paddle integration |
 | Market data, radar, screener | 0 | #106, #48, #49, #16, #21 |
-| Frontend | 0 | Phase 2, needs explicit authorisation; design prototypes only |
+| API smoke and samples | 2, offline | `tests/smoke/` (RM-263): one scenario registry covers all 36 OpenAPI operations (174 scenarios incl. 5 distinct `succeeded` audits, degraded, RENT and fractional rejections, blocked and gone listings, 402/403/404/409/429 paths, SSE transcripts, 120-audit user, packs and purchases from a fake Paddle); `test_every_operation_has_a_scenario` fails when a route has none; `make api-samples` replays them over loopback HTTP into the gitignored `data/api-samples/` with a manifest (L-028). `GET /api/audits` pages by cursor with filters (RM-265); the report in `result` has a versioned JSON Schema (`docs/deal-analysis.schema.json`, RM-266). Since RM-264 the OpenAPI document describes every error status and `code` (`Problem` schema) and the smoke test fails on any answer it does not describe. Fake provider data: shapes, not vendor behaviour |
+| Frontend | 2 offline journey | Phase 2 authorised 2026-10-15 (RM-267). The P0 journey runs in the browser (RM-273, RM-274): submit a sale listing, watch the server's progress, read the report (summary, rent, costs, price, what to verify, sources) and see the credit outcome; `frontend/e2e/journey/analysis.spec.ts` ran against the amd64 Compose stack with fake provider data (sale succeeded and charged, rental rejected and released). Not provider evidence, not load. `frontend/` has the toolchain, the typed API seam (client, problem copy, formatters, query defaults, report parsing), sanitised fixtures validated against OpenAPI, a typed scenario registry (RM-268) and the e2e interaction gate with a journey lane against the Compose stack (RM-269, offline; GitHub lanes #296); the app shell with navigation, theme and error pages is built (RM-270); the Pulpit dashboard shows the real balance and recent analyses (RM-272); authentication works end to end offline and in the journey lane (sign up by mailed link, sign out, sign in; Google only against a stand-in) (RM-271); Moje analizy (RM-275) lists the API collection as cards or a table with URL filters and cursor paging; report and collection data pages are implemented, while remaining product destinations are explicit placeholders. Owner selected V2 as the starting point (2026-10-15). Plan of record `docs/FRONTEND-PLAN.md` (#262): the API smoke test with samples in `data/` (#263) and the three contract fixes (#264 problem schema, #265 audit paging, #266 report schema) are **merged** (RM-263 to RM-266, Phase 1 backend work); Phase 2 is authorised; the remaining UI slices follow their dependencies and owner blockers |
+
+## Frontend: screens a user can reach that are not built (release checklist, audit F18)
+
+Each is reachable today and shows the `PendingPage` notice ("w budowie" / "niedostępne"). None may remain before a
+paid launch unless its entry point is removed. Verified in `frontend/routes.tsx` and the links that lead there.
+
+| Screen | Reached from | What it needs | Issue |
+|---|---|---|---|
+| `/app/credits` (report packs, purchases) | Pulpit "Kup raporty", new-analysis paywall (402) | Paddle checkout and the owner's prices; the paywall leads to a placeholder until then | #277 (B-017, #43) |
+| `/terms`, `/privacy` | sign-in and sign-up footer; **sign-up says the person accepts the Regulamin**, which is a placeholder | the documents (counsel, B-012) and their pages | #279 |
+| `/app/settings` (account, sessions, password, export, deletion) | navigation | the settings slice; the API routes exist | #278 |
+| `/app/market` | navigation | `/api/market/*` routes | #282 (#21) |
+| `/app/interior`, `/app/listings/new` | navigation | product and backend contracts | #284, #285 |
+
+The analysis pages (new, collection, report) are built (RM-273 to RM-275). Saved listings have no screen or
+navigation entry yet (#276).
 
 ## Backlog map (reconciled 2026-10-13)
 
@@ -41,29 +57,31 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 
 | Issue | Class | Next step / blocker |
 |---|---|---|
-| #13 audits | U, P | Slices #184 (**R**, P0), #185, #186 (after #184), #187 (blocked: #184, #106, live-fetch authorisation) |
-| #14 billing | U, B | Offline code can start after #184 (needs consumption path) and a money-PR approval; sandbox proof needs B-003. Slice it before `ready` |
-| #15 ops | P | Compose done; Caddy, WAL-G, backups deferred (local-first strategy) |
+| #13 audits | closed 2026-10-14 (level 2) | Remaining pieces live in #209 (city list, coverage), #210 (risk-free rate), #211 (vision quality and cost), #94 (accuracy) |
+| #14 billing | U, P | Paddle packs per `PADDLE-INTEGRATION.md`: P1-P5b merged offline (#215-#219, #229); P6 sandbox and acceptance #220 is owner-side. Nothing is sellable until the owner's prices, Paddle acceptance and the accountant |
+| #15 ops | P | Offline preparation merged (#223: worker lanes, VPS overlay, env check, journey check, logical backup, runbook). Open: private env verification and deployment to the current VPS-3, public profile, WAL-G and offsite backup, gates 4-6 |
 | #16, #21 market batch and routes | B | Wait for #106, #48, #49 |
-| #25 worker-ops | P | Part 1 merged (#157); reconciler arrives with #186; subscription tasks with #14 |
-| #26, #27 invoices, disputes | B | Wait for #14; accountant (#41) for treatment |
-| #28 API contract | P | OpenAPI + drift done (#175); schemathesis after #184; nightly live contract test is owner-authorised only |
-| #32-#38 launch gates | B | Cannot run before their subjects exist; #38 is partly covered by auth tests (sign-out-everywhere, unverified link) but gate timing evidence is missing |
-| #44 frontend | U, B | Phase 2; owner authorisation required |
+| #25 worker-ops | closed 2026-10-14 | Reconciler, monitors, retention, mail tasks, billing sweep delivered; subscription tasks dropped with the Stripe design; disk and OOM monitors are tracked with #15 and #35 |
+| #26, #27 invoices, disputes | P | Paddle invoice access (#231) and provider reversals (#230) merged offline; `payment_issue`, dispute email and corrective invoices are not built; settlement and KSeF wait for the accountant (#41); #27 needs re-scoping from the Stripe text |
+| #28 API contract | P | OpenAPI generation and drift check done (#175); `schemathesis` is a declared dependency but no test runs it; the nightly live contract test (owner-authorised only) and the blueprint's `POST /api/audits/{id}/cancel` do not exist |
+| #32-#37 launch gates | B | Gate 7 (#38) closed with CI evidence (unverified token, collision, sign-out-everywhere under 1 s). Gate 3 (#34) closed as obsolete (no recurring billing). Gate 2 (#33) needs re-scoping to Paddle packs (the concurrency and ordering tests exist, the gate text is Stripe's). Gates 1, 4, 5, 6 need the accountant, load runs on VPS-3 or WAL-G |
+| #44 frontend | U, P | Phase 2 authorised 2026-10-15 (#267); slices #268-#286 per `docs/FRONTEND-PLAN.md`; audit remediation #314 |
 | #48, #49 market-data contracts | R (off P0 path) | Fresh-import design; no dependency on P0 |
 | #94 accuracy evaluation | B (owner) | Harness is **R** now; needs the owner's labelled listings |
-| #106 comparable-rent store | P | Store + sha256 cache done (level 1, offline, real Postgres). Open: fresh importers for rental comparables (`LEGAL[scraping\|third-party-data]`) and the hedonic refinement; slice them before `ready` |
-| #39-#43 owner | owner | See *Owner actions* |
+| #106 comparable-rent store | P | Store + sha256 cache done (level 1, offline, real Postgres). Open: rental importer live run and city list #209 (`LEGAL[scraping\|third-party-data]`), hedonic refinement |
+| #40, #41, #43 owner | owner | See *Owner actions*; #39 (Stripe BLIK) closed as not planned |
 | #12, #17, #19, #20, #22, #23, #24, #30, #82, #84-#93, #157, #167 | V or E | Closed; E for those touching Google, Resend, Otodom or OpenRouter live |
 | #6, #8, #9 headless autonomy | reopened as P | A headless run producing a merged PR is not yet demonstrated; see #177 |
 
 ## Owner actions (exact, smallest first)
 
-1. Approve or comment on the money PR for #184 (head SHA recorded in `docs/BLOCKERS.md`) when it is up.
+1. ~~Approve the money PR for #184.~~ Done: the owner gave standing authorisation for backend work including auth, ledger and billing on 2026-10-14 (`docs/BLOCKERS.md` *Approved*). Still yours: the workflow PR #191.
+1a. **Current VPS:** `vps-d1af13a5.vps.ovh.net` (`SERVER_NAME`), VPS-3 in Frankfurt, Active in the owner's 2026-10-14 screenshot. Codex authenticated as `deploy` with the existing key and inspected Docker/Compose, swap and the older checkout. Deployed 2026-10-14; remaining owner steps are in `docs/DEPLOYMENTS.md` (Resend domain, provider keys, risk-free rate, DNS and certificate for `renti.tech`). B-016 concerns the old stopped VPS-1 (`SERVER_V1_NAME`), not this target; no reboot of the new host is indicated by this evidence.
 2. ~~Authorise one live Otodom fetch (L-005) and the datacenter-IP test (#42).~~ Done 2026-10-13: one sale listing returned 200 and parsed from the dev machine and from the OVH VPS-1. Single request each; sustained-load blocking is still unmeasured (L-002).
 3. Provide the labelled listing set for #94 and CAPEX prices or a data source (B-015, L-007).
-4. Stripe: grant sandbox access (B-003); request BLIK recurring activation (#39, has lead time).
-5. Decisions still open: Pro allowance and free-tier scope (#43), market-data bootstrap (CONTEXT §9), exit-value anchor (B-014).
+4. Paddle pilot (sandbox prepared, steps in `docs/PADDLE-SANDBOX-SETUP.md`, B-017): confirm pack prices (recommended 10/40/70 PLN), obtain product/prepaid-report acceptance and sandbox access, and have the accountant review settlement/KSeF treatment. Stripe sandbox (B-003) and recurring-BLIK activation (#39, closed) are no longer pilot dependencies.
+5. Decisions still open: pilot signup-report allowance and unused-report expiry (#43), market-data bootstrap (CONTEXT §9), exit-value anchor (B-014). Monthly Pro allowance is outside this pilot.
+6a. ~~Authorise Phase 2 and choose a design direction.~~ Done 2026-10-15 (#267, V2). Still yours: put the real `GOOGLE_CLIENT_ID` on the host (B-004), and make the frontend CI jobs required checks (B-019).
 6. Approve the workflow PR (CI docs-only filter, dispatcher). Then enable the dispatcher after the canary: `gh variable set ENABLE_DISPATCH --body true`.
 
 ## Autonomy

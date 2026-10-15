@@ -1,0 +1,23 @@
+{
+  "body": {
+    "cleared": false
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "POST /api/admin/users/{user_id}/billing-hold/clear",
+    "method": "POST",
+    "operation_id": "clear_hold_api_admin_users__user_id__billing_hold_clear_post",
+    "path": "/api/admin/users/{user_id}/billing-hold/clear"
+  },
+  "request": {
+    "body": {
+      "note": "Notatka testowa 5"
+    },
+    "path": "/api/admin/users/00000000-0000-4000-8000-000000000021/billing-hold/clear"
+  },
+  "scenario": "no_hold_to_clear",
+  "status": 200
+}

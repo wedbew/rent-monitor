@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "EMAIL_CONFIRMATION_REQUIRED",
+    "instance": "/api/auth/google",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Confirm this email address with a sign-in link first",
+    "type": "urn:rentmonitor:problem:EMAIL_CONFIRMATION_REQUIRED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/google",
+    "method": "POST",
+    "operation_id": "google_sign_in_api_auth_google_post",
+    "path": "/api/auth/google"
+  },
+  "request": {
+    "body": {
+      "credential": "[redacted]"
+    },
+    "path": "/api/auth/google"
+  },
+  "scenario": "email_confirmation_required",
+  "status": 401
+}

@@ -1,0 +1,235 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { type FormEvent, useRef, useState } from "react";
+import { Link } from "react-router";
+
+import { formatCount, formatReports } from "../../../api/format";
+import { ApiError, TransportError } from "../../../api/errors";
+import { describeProblem } from "../../../api/problems";
+import { invalidateAudits } from "../../../api/query";
+import { PageHeading } from "../../../shell/PageHeading";
+import { useMe } from "../../../shell/session";
+import { isCurrentSession } from "../../../shell/tenant";
+import { Button, LinkButton } from "../../../ui/Button";
+import { Dialog } from "../../../ui/Dialog";
+import { TextField } from "../../../ui/Field";
+import { FormErrorSummary, useFormAttempt } from "../../../ui/FormErrors";
+import { InlineNotice } from "../../../ui/Status";
+import { ProblemNotice } from "../../auth/ProblemNotice";
+import { readFailure, retryIn } from "../../auth/forms";
+import {
+  reconcileAfterAmbiguousFailure,
+  type Reconciled,
+  type Submission,
+  submission,
+  useCreateAudit,
+} from "./useCreateAudit";
+import styles from "./NewAnalysisPage.module.css";
+import { t } from "../../../i18n";
+
+export const MAX_LISTING_REF = 300; // rm_contracts.audits.MAX_LISTING_REF
+
+/** Only what can be said without asking the server; whether it is an Otodom sale listing is the server's call. */
+export function listingRefError(value: string): string | null {
+  const ref = value.trim();
+  if (ref === "") return t.analyses.new.refMissing;
+  if ([...ref].length > MAX_LISTING_REF)
+    return t.analyses.new.refTooLong({ max: formatCount(MAX_LISTING_REF) });
+  return null;
+}
+
+const FIELD_ID = "listing-ref";
+/** A link is built from the problem's `audit_id` only when it is a UUID (rules/frontend.md section 5). */
+const AUDIT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The start of the journey: one URL (or Otodom id), one click, one request. The page never decides money or
+ * eligibility: 402, 409, 422 and 429 are the API's answers, shown in words, and the report balance is the server's.
+ */
+// LEGAL[url-analysis]: accepts a user-supplied Otodom listing URL or id and sends it to the API unchanged (RM-273)
+export function NewAnalysisPage() {
+  const me = useMe();
+  const client = useQueryClient();
+  const create = useCreateAudit();
+  const [value, setValue] = useState("");
+  const [clientError, setClientError] = useState<string | null>(null);
+  const [attempt, markInvalid] = useFormAttempt();
+  const [paywall, setPaywall] = useState(false);
+  // The paywall opens on the API's 402, not from a focused trigger: on close focus returns to the submit button.
+  const submitRef = useRef<HTMLButtonElement>(null);
+  const [reconciled, setReconciled] = useState<Reconciled | null>(null);
+  // The last submission whose answer was lost: sending the same listing again reuses it (same request key).
+  const [unanswered, setUnanswered] = useState<Submission | null>(null);
+  const busy = create.isPending;
+
+  const breaker = me.upstream.otodom_breaker_open;
+  const failure = create.error;
+  const code = failure instanceof ApiError ? failure.code : null;
+  const fieldError =
+    clientError ??
+    (code === "INVALID_LISTING_REF" || code === "VALIDATION_ERROR"
+      ? (readFailure(failure).fields["listing_ref"] ?? describeProblem("INVALID_LISTING_REF").detail)
+      : null);
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (busy) return;
+    const problem = listingRefError(value);
+    setClientError(problem);
+    setReconciled(null);
+    if (problem !== null) {
+      markInvalid();
+      return;
+    }
+    const submitted = submission(value.trim(), unanswered);
+    create.mutate(submitted, {
+      onSuccess: () => setUnanswered(null),
+      onError: (error) => {
+        markInvalid(); // the server's answer is here: now the summary (or the notice) is announced and focused
+        if (error instanceof ApiError && error.code === "QUOTA_EXHAUSTED") setPaywall(true);
+        if (!isCurrentSession(submitted.generation)) return;
+        const lost =
+          error instanceof TransportError && (error.kind === "network" || error.kind === "timeout");
+        setUnanswered(lost ? submitted : null);
+        void reconcileAfterAmbiguousFailure(error, submitted).then(setReconciled);
+        void invalidateAudits(client);
+      },
+    });
+  }
+
+  const summary = fieldError ? [{ fieldId: FIELD_ID, message: fieldError }] : [];
+
+  return (
+    <div className={styles["page"]}>
+      <PageHeading title={t.analyses.new.title} eyebrow={t.analyses.new.eyebrow} lead={t.analyses.new.lead} />
+
+      <div className={styles["modes"]} aria-label={t.analyses.new.modes}>
+        <span className={styles["mode"]} aria-current="true">
+          {t.analyses.new.modeUrl}
+        </span>
+        <span className={styles["modeSoon"]}>{t.analyses.new.modeManualSoon}</span>
+      </div>
+
+      {breaker ? (
+        <InlineNotice tone="warning" title={t.common.otodomLimited.title} live="status">
+          {t.common.otodomLimited.paused({ when: retryIn(me.upstream.retry_after_s) })}{" "}
+          {t.analyses.new.limitedNoCharge}
+        </InlineNotice>
+      ) : (
+        <form className={styles["form"]} onSubmit={submit} noValidate>
+          <FormErrorSummary errors={summary} attempt={attempt} />
+          <TextField
+            fieldId={FIELD_ID}
+            label={t.analyses.new.field}
+            hint={t.analyses.new.fieldHint}
+            value={value}
+            onValueChange={(next) => {
+              setValue(next);
+              setClientError(null);
+            }}
+            error={fieldError}
+            inputMode="url"
+            autoComplete="off"
+            spellCheck={false}
+            autoCapitalize="off"
+            maxLength={MAX_LISTING_REF * 4}
+          />
+          {failure !== null && fieldError === null && code !== "QUOTA_EXHAUSTED" ? (
+            <FailureNotice key={attempt} error={failure} reconciled={reconciled} />
+          ) : null}
+          <div className={styles["actions"]}>
+            <Button ref={submitRef} type="submit" variant="primary" icon="arrow" busy={busy}>
+              {t.analyses.new.submit}
+            </Button>
+            <p className={styles["cost"]}>
+              {t.analyses.new.cost({ balance: formatReports(me.credit_balance) })}
+            </p>
+          </div>
+        </form>
+      )}
+
+      <Dialog
+        open={paywall}
+        onOpenChange={setPaywall}
+        finalFocus={submitRef}
+        title={t.analyses.new.paywall.title}
+        description={t.analyses.new.paywall.description}
+        closeLabel={t.analyses.new.paywall.close}
+      >
+        <div className={styles["paywall"]}>
+          <LinkButton to="/app/credits" variant="primary" icon="arrow">
+            {t.common.buyReports}
+          </LinkButton>
+        </div>
+      </Dialog>
+    </div>
+  );
+}
+
+function FailureNotice({
+  error,
+  reconciled,
+}: {
+  readonly error: unknown;
+  readonly reconciled: Reconciled | null;
+}) {
+  if (reconciled !== null && "found" in reconciled) {
+    return (
+      <InlineNotice
+        tone="success"
+        title={t.analyses.new.arrived.title}
+        live="status"
+        actions={
+          <LinkButton to={`/app/analyses/${reconciled.found.auditId}`} variant="primary" icon="arrow">
+            {t.analyses.new.arrived.action}
+          </LinkButton>
+        }
+      >
+        {t.analyses.new.arrived.body}
+      </InlineNotice>
+    );
+  }
+  if (reconciled !== null && "notReceived" in reconciled) {
+    return (
+      <InlineNotice tone="warning" title={t.analyses.new.notReceived.title} live="alert">
+        {t.analyses.new.notReceived.body}
+      </InlineNotice>
+    );
+  }
+  if (reconciled !== null) {
+    return (
+      <InlineNotice
+        tone="warning"
+        title={t.analyses.new.unknown.title}
+        live="alert"
+        actions={
+          <Link to="/app/analyses" className={styles["link"]}>
+            {t.analyses.new.unknown.action}
+          </Link>
+        }
+      >
+        {t.analyses.new.unknown.body}
+      </InlineNotice>
+    );
+  }
+  if (error instanceof ApiError && error.code === "AUDIT_IN_PROGRESS") {
+    const existing = (error.problem as unknown as Record<string, unknown> | null)?.["audit_id"];
+    return (
+      <InlineNotice
+        tone="info"
+        title={t.analyses.new.inProgress.title}
+        live="status"
+        actions={
+          typeof existing === "string" && AUDIT_ID.test(existing) ? (
+            <LinkButton to={`/app/analyses/${existing}`} variant="primary" icon="arrow">
+              {t.analyses.new.inProgress.action}
+            </LinkButton>
+          ) : undefined
+        }
+      >
+        {t.analyses.new.inProgress.body}
+      </InlineNotice>
+    );
+  }
+  const read = readFailure(error);
+  return read.general === null ? null : <ProblemNotice problem={read.general} />;
+}

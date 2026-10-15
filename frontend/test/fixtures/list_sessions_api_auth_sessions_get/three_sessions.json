@@ -1,0 +1,44 @@
+{
+  "body": [
+    {
+      "created_hint": "2026-10-01T10:00:00Z",
+      "current": true,
+      "expires_at": "2026-11-14T07:55:05.350269Z",
+      "id": 17,
+      "ip": "203.0.113.1",
+      "user_agent": "Mozilla/5.0 (fixture) Chrome/130"
+    },
+    {
+      "created_hint": "2026-10-01T10:00:00Z",
+      "current": false,
+      "expires_at": "2026-11-14T07:55:05.350789Z",
+      "id": 18,
+      "ip": "203.0.113.2",
+      "user_agent": "Mozilla/5.0 (fixture) Chrome/130"
+    },
+    {
+      "created_hint": "2026-10-01T10:00:00Z",
+      "current": false,
+      "expires_at": "2026-11-14T07:55:05.351257Z",
+      "id": 19,
+      "ip": "203.0.113.3",
+      "user_agent": "Mozilla/5.0 (fixture) Chrome/130"
+    }
+  ],
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/auth/sessions",
+    "method": "GET",
+    "operation_id": "list_sessions_api_auth_sessions_get",
+    "path": "/api/auth/sessions"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/auth/sessions"
+  },
+  "scenario": "three_sessions",
+  "status": 200
+}

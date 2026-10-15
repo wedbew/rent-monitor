@@ -1,0 +1,35 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["header", "Idempotency-Key"],
+        "msg": "Field required",
+        "type": "missing"
+      }
+    ],
+    "instance": "/api/billing/checkout",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/billing/checkout",
+    "method": "POST",
+    "operation_id": "checkout_api_billing_checkout_post",
+    "path": "/api/billing/checkout"
+  },
+  "request": {
+    "body": {
+      "pack_code": "reports_5"
+    },
+    "path": "/api/billing/checkout"
+  },
+  "scenario": "missing_idempotency_key",
+  "status": 422
+}

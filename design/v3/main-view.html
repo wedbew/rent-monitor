@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="renti-icon.svg" type="image/svg+xml">
+<meta name="color-scheme" content="light dark">
+  <title>Renti — Twój punkt wyjścia</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="main-view.css">
+  <link rel="stylesheet" href="v3.css">
+  <script src="theme.js"></script>
+  <script src="motion.js" defer></script>
+  <script src="main-view.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Przejdź do treści</a>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z M9 20v-7h6v7"/></symbol>
+    <symbol id="i-files" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6Z M15 3v5h4 M9 12h7 M9 16h5"/></symbol>
+    <symbol id="i-market" viewBox="0 0 24 24"><path d="M3 20h18 M5 16v-5 M11 16V7 M17 16V3"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15 M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="m9 15 6-6 M7 14l-2 2a4 4 0 0 0 5 5l4-4 M10 7l4-4a4 4 0 0 1 5 5l-2 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m12 3 10 18H2Z M12 9v5 M12 17v1"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5 M12 17v1"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12 M6 18 18 6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10v7 M12 6v1"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Nawigacja aplikacji">
+      <a class="brand" href="main-view.html" aria-label="Renti — pulpit"><svg class="renti-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 115 42" aria-hidden="true" focusable="false"><g fill="currentColor" fill-rule="evenodd"><path d="M3 36V12h6v4c2-3 5-5 10-5v7h-3c-4 0-7 3-7 8v10H3Z"/><path d="M46 26H28c.6 4 3 6 7 6 3 0 5-1 7-3l4 4c-3 3-7 4-11 4-8 0-13-5-13-13s5-13 12-13c8 0 12 5 12 13v2ZM28 21h12c-.5-3-2-5-6-5-3 0-5 2-6 5Z"/><path d="M52 36V12h6v3c2-3 5-4 8-4 7 0 10 4 10 11v14h-7V23c0-4-1-6-5-6s-6 3-6 7v12h-6Z"/><path d="M84 12V5h7v7h8v6h-8v9c0 3 1 4 4 4h4v6h-5c-7 0-10-3-10-10v-9h-5v-6h5Z"/><path d="M105 12h7v24h-7V12Z"/><path d="M105 2h3v6h-3zM110 2h2v6h-2z"/></g></svg></a>
+      <p class="nav-caption">PRZESTRZEŃ DECYZJI</p>
+      <nav class="primary-nav" aria-label="Nawigacja aplikacji"><button class="nav-item active" id="home-nav" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg><span>Pulpit</span></button><a class="nav-item" href="analyses.html"><svg class="icon" aria-hidden="true"><use href="#i-files"/></svg><span>Moje analizy</span></a><a class="nav-item" href="market.html"><svg class="icon" aria-hidden="true"><use href="#i-market"/></svg><span>Rynek</span></a></nav>
+      <div class="sidebar-bottom"><button class="theme-toggle nav-item" type="button" aria-pressed="false">◐ <span>Tryb ciemny</span></button><a class="nav-item" href="login.html">↗ <span>Ekran logowania</span></a><button class="nav-item" data-action="help"><svg class="icon" aria-hidden="true"><use href="#i-help"/></svg><span>Jak to działa?</span></button><button class="account-button" data-action="account" aria-label="Moje konto"><span class="account-avatar">AK</span><span class="account-details"><strong>Anna Kowalska</strong><span id="credit-label">2 analizy do wykorzystania</span></span></button></div>
+    </aside>
+    <div class="workspace">
+      <header class="context-bar"><span>Pulpit</span><span class="context-caption">Polskie mieszkania. Pełniejszy obraz.</span><button class="theme-toggle theme-compact" type="button" aria-pressed="false">◐ <span>Tryb ciemny</span></button></header>
+      <header class="mobile-header"><a class="brand" href="main-view.html" aria-label="Renti — pulpit"><svg class="renti-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 115 42" aria-hidden="true" focusable="false"><g fill="currentColor" fill-rule="evenodd"><path d="M3 36V12h6v4c2-3 5-5 10-5v7h-3c-4 0-7 3-7 8v10H3Z"/><path d="M46 26H28c.6 4 3 6 7 6 3 0 5-1 7-3l4 4c-3 3-7 4-11 4-8 0-13-5-13-13s5-13 12-13c8 0 12 5 12 13v2ZM28 21h12c-.5-3-2-5-6-5-3 0-5 2-6 5Z"/><path d="M52 36V12h6v3c2-3 5-4 8-4 7 0 10 4 10 11v14h-7V23c0-4-1-6-5-6s-6 3-6 7v12h-6Z"/><path d="M84 12V5h7v7h8v6h-8v9c0 3 1 4 4 4h4v6h-5c-7 0-10-3-10-10v-9h-5v-6h5Z"/><path d="M105 12h7v24h-7V12Z"/><path d="M105 2h3v6h-3zM110 2h2v6h-2z"/></g></svg></a><button class="theme-toggle theme-mobile" type="button" aria-label="Włącz tryb ciemny" aria-pressed="false">◐</button><button id="navigation-toggle" class="secondary" aria-label="Otwórz menu nawigacji" aria-haspopup="dialog">Menu</button></header>
+      <main id="main">
+        <section class="hero" aria-labelledby="hero-title">
+          <div class="hero-content"><p class="hero-index">01 — NOWA ANALIZA</p><span class="overline">DZIEŃ DOBRY, ANNO</span><h1 id="hero-title">Dobry adres.<br><span>Przemyślany zakup.</span></h1><p class="hero-description">Ogłoszenie to dopiero początek. Poznaj najem, koszty<br class="desktop-break"> i pytania, które warto zadać przed zakupem.</p>
+            <form id="analysis-form" novalidate>
+              <label class="input-label" for="listing-url">Link do ogłoszenia sprzedaży na Otodom</label>
+              <div class="url-entry"><svg class="icon"><use href="#i-link"/></svg><input id="listing-url" name="listing-url" type="url" autocomplete="off" inputmode="url" placeholder="https://www.otodom.pl/pl/oferta/…" aria-describedby="url-help url-error"><button class="primary" type="submit">Sprawdź mieszkanie<svg class="icon"><use href="#i-arrow"/></svg></button></div>
+              <p id="url-error" class="field-error" role="alert" hidden></p>
+              <p class="form-foot" id="url-help"><span>1 analiza z Twojego limitu · koszt potwierdzisz przed startem</span><button type="button" class="text-link" data-action="example">Zobacz przykład<svg class="icon small"><use href="#i-arrow"/></svg></button></p>
+            </form>
+          </div>
+          <div class="architectural-note" aria-hidden="true"><span>RENTI — PRACOWNIA DECYZJI</span><img src="plan.svg" alt=""><div><b>Spójrz pod powierzchnię.</b><p>Metry to nie wszystko.</p></div><small>Rysunek koncepcyjny · nie jest planem mieszkania</small></div>
+        </section>
+
+        <div class="service-notice" id="service-notice" hidden><svg class="icon"><use href="#i-alert"/></svg><div><strong>Otodom jest chwilowo niedostępny.</strong><p>Możesz przeglądać wcześniejsze analizy. Zachowamy wpisany link, żeby łatwo spróbować ponownie.</p></div></div>
+
+        <section class="activity" id="activity" aria-label="Podsumowanie Twoich analiz">
+          <button class="activity-item" data-filter="ready"><span class="activity-icon green"><svg class="icon"><use href="#i-check"/></svg></span><span><strong>08 <span>gotowych analiz</span></strong><small>Możesz wrócić do wyników</small></span><svg class="icon end"><use href="#i-chevron"/></svg></button>
+          <button class="activity-item" data-filter="attention"><span class="activity-icon amber"><svg class="icon"><use href="#i-alert"/></svg></span><span><strong>03 <span>do wyjaśnienia</span></strong><small>Warto uzupełnić informacje</small></span><svg class="icon end"><use href="#i-chevron"/></svg></button>
+          <button class="activity-item" data-filter="running"><span class="activity-icon neutral"><svg class="icon"><use href="#i-clock"/></svg></span><span><strong>01 <span>w trakcie analizy</span></strong><small>Damy znać tutaj, gdy będzie gotowa</small></span><svg class="icon end"><use href="#i-chevron"/></svg></button>
+        </section>
+
+        <section class="recent" id="recent" aria-labelledby="recent-title">
+          <div class="section-heading"><div><p class="eyebrow">02 — ZAPISANE ANALIZY</p><h2 id="recent-title">Na Twoim radarze</h2><p id="recent-caption">Ostatnie analizy. Najważniejsze rzeczy na pierwszy rzut oka.</p></div><a class="text-link" id="all-button" href="analyses.html">Wszystkie analizy<svg class="icon"><use href="#i-arrow"/></svg></a></div>
+          <div id="filter-bar" class="filter-bar" hidden><span id="filter-label"></span><button class="text-link" id="reset-filter">Pokaż ostatnie</button></div>
+          <div class="property-grid" id="property-grid" aria-live="polite"></div>
+          <div class="empty-state" id="empty-state" hidden><span class="empty-symbol"><svg class="icon"><use href="#i-home"/></svg></span><h3>Twoje pierwsze mieszkanie czeka na sprawdzenie.</h3><p>Wklej link powyżej. Tutaj znajdziesz wynik i wrócisz do niego, kiedy zechcesz.</p><button class="secondary" data-action="example">Zobacz przykładową analizę<svg class="icon"><use href="#i-arrow"/></svg></button></div>
+        </section>
+
+        <section class="market-invitation" aria-labelledby="market-title"><span class="market-symbol"><svg class="icon"><use href="#i-market"/></svg></span><div><p class="eyebrow">03 — LOKALNY KONTEKST</p><h2 id="market-title">Każda dzielnica ma swój kontekst.</h2><p>Poznań, Warszawa, Wrocław. Zobacz poziom najmu i podstawę danych.</p></div><a class="secondary" href="market.html">Sprawdź miasto<svg class="icon"><use href="#i-arrow"/></svg></a></section>
+        <footer class="product-footer"><span>Każda dobra decyzja zaczyna się od zrozumienia.</span><button class="text-link" data-action="help">Potrzebujesz wskazówki?</button></footer>
+      </main>
+      <div class="preview-bar" aria-label="Kontrolki podglądu projektu"><span><b>Projekt V3</b> · Dane przykładowe, bez połączenia z usługą</span><label for="preview-state">Stan widoku<select id="preview-state"><option value="returning">Powracający użytkownik</option><option value="empty">Pierwsza analiza</option><option value="loading">Ładowanie</option><option value="unavailable">Otodom niedostępny</option><option value="no-credits">Brak analiz w limicie</option></select></label></div>
+    </div>
+  </div>
+
+  <dialog id="navigation-dialog" class="drawer navigation-drawer" aria-labelledby="navigation-title"><div class="overlay-heading"><h2 id="navigation-title">Nawigacja</h2><button class="icon-button" data-close aria-label="Zamknij nawigację"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button></div><nav class="primary-nav" aria-label="Nawigacja mobilna"><a class="nav-item active" href="main-view.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg><span>Pulpit</span></a><a class="nav-item" href="analyses.html"><svg class="icon" aria-hidden="true"><use href="#i-files"/></svg><span>Moje analizy</span></a><a class="nav-item" href="market.html"><svg class="icon" aria-hidden="true"><use href="#i-market"/></svg><span>Rynek</span></a><a class="nav-item" href="login.html">Ekran logowania ↗</a></nav></dialog>
+  <dialog id="general-dialog" class="modal" aria-labelledby="modal-title"><div class="overlay-heading"><span class="overline" id="modal-eyebrow"></span><button class="icon-button" data-close aria-label="Zamknij okno"><svg class="icon"><use href="#i-close"/></svg></button></div><div id="modal-content"></div></dialog>
+  <div class="sr-only" id="announcement" role="status" aria-live="polite"></div>
+<a class="version-link" href="../v2/main-view.html">Porównaj z V2 ↗</a>
+</body>
+</html>

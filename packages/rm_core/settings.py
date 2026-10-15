@@ -7,10 +7,15 @@ from typing import Literal
 from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+DEFAULT_APP_NAME = "Renti"  # the product name users see; override with APP_NAME
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    app_name: str = Field(
+        default=DEFAULT_APP_NAME, min_length=1, max_length=40
+    )  # shown in mail and the API docs
     app_env: Literal["development", "test", "production"] = "development"
     public_app_url: str = "http://localhost"
     log_level: str = "INFO"
@@ -26,6 +31,14 @@ class Settings(BaseSettings):
     session_cookie_name: str = "rm_session"  # production adds the `__Host-` prefix (cookie_name property)
     session_ttl_days: int = Field(default=30, ge=1)
     magic_link_ttl_minutes: int = Field(default=30, ge=1)
+    # Email/password sign-in (ADR 0013, docs/PASSWORD-AUTH-SPEC.md). Argon2id defaults are the OWASP minimum;
+    # raise them after measuring on the VPS (L-019). Hashes are rehashed on login when these change.
+    password_argon2_memory_kib: int = Field(default=19456, ge=8192, le=1048576)
+    password_argon2_time_cost: int = Field(default=2, ge=1, le=10)
+    password_argon2_parallelism: int = Field(default=1, ge=1, le=8)
+    password_hash_concurrency: int = Field(default=2, ge=1, le=8)  # simultaneous hashes per API process
+    register_token_ttl_hours: int = Field(default=24, ge=1)
+    reset_token_ttl_minutes: int = Field(default=30, ge=1)
 
     free_signup_credits: int = Field(default=3, ge=0)
     pro_monthly_audit_allowance: int = Field(default=40, ge=0)  # placeholder until COGS is measured
@@ -34,6 +47,31 @@ class Settings(BaseSettings):
     worker_audit_concurrency: int = Field(default=1, ge=1)
     worker_batch_concurrency: int = Field(default=1, ge=1)
     audit_job_timeout_s: int = Field(default=900, ge=1)
+    # `real` wires the Otodom client and the market-data store into the worker; `none` (default) fails every
+    # audit closed and releases the credit, so a half-configured host never pretends to analyse (#187).
+    audit_providers: Literal["none", "real"] = "none"
+    # LEGAL[scraping]: kill switch for fetching listing pages; off ends audits `UPSTREAM_BLOCKED` (RM-187).
+    legal_images_enabled: bool = True  # LEGAL[images] kill switch: false skips vision/OCR (degraded audits)
+    legal_scraping_enabled: bool = True
+    # Owner input until the macro source exists (ENGINE-SPEC row 9, N-12): PL 10Y yield as a fraction, e.g.
+    # 0.055. Unset means audits end CONTEXT_UNAVAILABLE rather than run on an invented rate.
+    risk_free_rate: Decimal | None = Field(default=None, gt=0, lt=1)
+    # Paddle report packs (docs/PADDLE-INTEGRATION.md). `disabled` needs no credentials and is the default.
+    billing_provider: Literal["disabled", "paddle"] = "disabled"
+    paddle_environment: Literal["sandbox", "live"] = "sandbox"
+    paddle_api_key: SecretStr = SecretStr("")
+    paddle_webhook_secret: SecretStr = SecretStr("")
+    paddle_webhook_secret_previous: SecretStr = SecretStr("")  # during a secret rotation only
+    paddle_webhook_tolerance_s: int = Field(default=5, ge=1, le=300)  # Paddle SDK default
+    retention_billing_event_days: int = Field(default=90, ge=1)  # GDPR[retention]: technical event log
+    paddle_client_token: str = ""  # public Paddle.js token for the Phase 2 checkout; never the API key
+    paddle_price_reports_1: str = ""  # the environment's approved `pri_...` ids
+    paddle_price_reports_5: str = ""
+    paddle_price_reports_10: str = ""
+    # Owner-approved gross amounts in PLN minor units, e.g. "reports_1=1000,reports_5=4000,reports_10=7000".
+    # No default: prices are the owner's decision, and sales stay off until all three are approved here.
+    paddle_approved_amounts: str = ""
+    audit_child_memory_mb: int = Field(default=1024, ge=128)  # RLIMIT_AS of the engine child process (#186)
 
     openrouter_api_key: SecretStr = Field(  # blueprint §4.2 spells it OPEN_ROUTER_API_KEY
         default=SecretStr(""), validation_alias=AliasChoices("OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY")
@@ -42,9 +80,11 @@ class Settings(BaseSettings):
     openrouter_monthly_budget_usd: Decimal = Field(default=Decimal("50"), ge=0)
     openrouter_call_estimate_usd: Decimal = Field(
         default=Decimal("0.02"), ge=0
-    )  # placeholder until L-003 is measured
+    )  # fallback hold only: the normal hold is priced from the OpenRouter catalog (RM-246)
+    # Placeholder model until L-003 / #94 measure quality and cost; any OpenRouter vision model id works.
+    openrouter_vision_model: str = Field(default="google/gemini-2.5-flash-lite", min_length=1, max_length=120)
     nominatim_user_agent: str = (
-        "RentMonitor/1.0 (set-an-ops-contact)"  # OSM policy: identify yourself with a contact
+        f"{DEFAULT_APP_NAME}/1.0 (set-an-ops-contact)"  # OSM policy: identify yourself with a contact
     )
     image_host_allowlist: str = (
         "olxcdn.com,otodom.pl"  # comma-separated host suffixes photos may be fetched from
@@ -58,7 +98,7 @@ class Settings(BaseSettings):
 
     resend_api_key: SecretStr = SecretStr("")  # empty: development logs the magic link instead of sending it
     mail_from: str = (
-        "RentMonitor <onboarding@resend.dev>"  # local test sender; production needs a verified domain
+        f"{DEFAULT_APP_NAME} <onboarding@resend.dev>"  # local test sender; production needs a verified domain
     )
 
     # Better Stack heartbeat URLs carry their own secret; empty means that monitor is off

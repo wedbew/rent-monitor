@@ -1,0 +1,45 @@
+name: nightly
+# The SPA in Firefox and WebKit (Safari's engine), the full mocked suite (audit F13, #311). Scheduled runs use the
+# default branch's copy of this file and test `staging`, where the work lands; run it by hand with workflow_dispatch.
+on:
+  schedule:
+    - cron: "41 2 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+jobs:
+  frontend-browsers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      CI: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: staging
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: frontend/.node-version
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Firefox and WebKit (the versions pinned by the Playwright lockfile entry)
+        run: pnpm exec playwright install --with-deps firefox webkit
+      - name: mocked suite in Firefox and WebKit
+        run: pnpm test:e2e:browsers
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: frontend-browsers-traces
+          path: frontend/test-results
+          retention-days: 7

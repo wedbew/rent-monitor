@@ -1,0 +1,41 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "email"],
+        "msg": "String should match pattern '^[^@\\s<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$'",
+        "type": "string_pattern_mismatch"
+      },
+      {
+        "loc": ["body", "password"],
+        "msg": "String should have at least 1 character",
+        "type": "string_too_short"
+      }
+    ],
+    "instance": "/api/auth/login",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/login",
+    "method": "POST",
+    "operation_id": "login_api_auth_login_post",
+    "path": "/api/auth/login"
+  },
+  "request": {
+    "body": {
+      "email": "user-13@example.test",
+      "password": "[redacted]"
+    },
+    "path": "/api/auth/login"
+  },
+  "scenario": "validation_error",
+  "status": 422
+}

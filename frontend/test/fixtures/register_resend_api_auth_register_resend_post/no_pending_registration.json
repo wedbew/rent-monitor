@@ -1,0 +1,21 @@
+{
+  "body": {},
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "POST /api/auth/register/resend",
+    "method": "POST",
+    "operation_id": "register_resend_api_auth_register_resend_post",
+    "path": "/api/auth/register/resend"
+  },
+  "request": {
+    "body": {
+      "email": "user-26@example.test"
+    },
+    "path": "/api/auth/register/resend"
+  },
+  "scenario": "no_pending_registration",
+  "status": 202
+}

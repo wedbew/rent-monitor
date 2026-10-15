@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/auth/sessions",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/auth/sessions",
+    "method": "GET",
+    "operation_id": "list_sessions_api_auth_sessions_get",
+    "path": "/api/auth/sessions"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/auth/sessions"
+  },
+  "scenario": "no_session",
+  "status": 401
+}

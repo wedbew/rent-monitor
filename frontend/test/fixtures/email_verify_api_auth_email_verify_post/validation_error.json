@@ -1,0 +1,35 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "token"],
+        "msg": "String should have at least 20 characters",
+        "type": "string_too_short"
+      }
+    ],
+    "instance": "/api/auth/email/verify",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/email/verify",
+    "method": "POST",
+    "operation_id": "email_verify_api_auth_email_verify_post",
+    "path": "/api/auth/email/verify"
+  },
+  "request": {
+    "body": {
+      "token": "[redacted]"
+    },
+    "path": "/api/auth/email/verify"
+  },
+  "scenario": "validation_error",
+  "status": 422
+}

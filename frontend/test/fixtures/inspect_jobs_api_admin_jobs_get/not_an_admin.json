@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ADMIN_ONLY",
+    "instance": "/api/admin/jobs",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Administrators only",
+    "type": "urn:rentmonitor:problem:ADMIN_ONLY"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/admin/jobs",
+    "method": "GET",
+    "operation_id": "inspect_jobs_api_admin_jobs_get",
+    "path": "/api/admin/jobs"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/admin/jobs"
+  },
+  "scenario": "not_an_admin",
+  "status": 403
+}

@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "BILLING_UNAVAILABLE",
+    "instance": "/api/billing/checkout",
+    "request_id": "req_fixture",
+    "status": 503,
+    "title": "Purchases are not available yet",
+    "type": "urn:rentmonitor:problem:BILLING_UNAVAILABLE"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/billing/checkout",
+    "method": "POST",
+    "operation_id": "checkout_api_billing_checkout_post",
+    "path": "/api/billing/checkout"
+  },
+  "request": {
+    "body": {
+      "pack_code": "reports_5"
+    },
+    "path": "/api/billing/checkout"
+  },
+  "scenario": "billing_disabled",
+  "status": 503
+}

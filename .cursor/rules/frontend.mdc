@@ -1,0 +1,11 @@
+---
+description: Frontend correctness rules for any change under frontend/ (from the 2026-10-15 audit)
+globs: frontend/**
+alwaysApply: false
+---
+
+Canonical rule lives in `.agent/rules/frontend.md`. Follow it:
+
+@.agent/rules/frontend.md
+
+Open findings: @frontend/docs/AUDIT-2026-10-15.md

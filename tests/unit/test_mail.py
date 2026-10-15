@@ -43,9 +43,9 @@ def test_the_idempotency_key_is_stable_per_recipient_and_link() -> None:
 @pytest.mark.parametrize(
     ("sender", "expected"),
     [
-        ("RentMonitor <onboarding@resend.dev>", True),
+        ("Renti <onboarding@resend.dev>", True),
         ("onboarding@RESEND.DEV", True),
-        ("RentMonitor <no-reply@rentmonitor.pl>", False),
+        ("Renti <no-reply@rentmonitor.pl>", False),
         ("x@notresend.dev.example.test", False),
     ],
 )
@@ -61,7 +61,7 @@ def test_production_refuses_the_onboarding_sender_and_a_missing_key() -> None:
     keyed = Settings(
         app_env="production",
         resend_api_key=SecretStr("re_x"),
-        mail_from="RentMonitor <onboarding@resend.dev>",
+        mail_from="Renti <onboarding@resend.dev>",
     )
     with pytest.raises(MailError) as onboarding:
         build_mailer(keyed, http)
@@ -69,7 +69,7 @@ def test_production_refuses_the_onboarding_sender_and_a_missing_key() -> None:
     verified = Settings(
         app_env="production",
         resend_api_key=SecretStr("re_x"),
-        mail_from="RentMonitor <no-reply@rentmonitor.pl>",
+        mail_from="Renti <no-reply@rentmonitor.pl>",
     )
     assert isinstance(build_mailer(verified, http), ResendMailer)
 
@@ -88,7 +88,7 @@ def mailer(handler: object) -> ResendMailer:
     return ResendMailer(
         httpx.AsyncClient(transport=httpx.MockTransport(handler)),  # type: ignore[arg-type]
         "re_secret_key",
-        "RentMonitor <no-reply@rentmonitor.pl>",
+        "Renti <no-reply@rentmonitor.pl>",
     )
 
 
@@ -160,3 +160,21 @@ def test_the_job_gives_up_after_four_attempts() -> None:
 
 def test_an_unexpected_exception_is_not_retried() -> None:
     assert _decision(RuntimeError("bug"), 1) is None
+
+
+def test_every_mail_names_the_product_from_the_setting_not_a_hardcoded_name() -> None:
+    from rm_core.settings import Settings  # noqa: PLC0415
+    from rm_worker.tasks.email import auth_message  # noqa: PLC0415
+
+    default = Settings(app_env="test", database_url="")
+    assert default.app_name == "Renti"
+    renamed = Settings(app_env="test", database_url="", app_name="Acme")
+    for app in (default, renamed):
+        messages = [magic_link_message("a@example.test", URL, 30, app.app_name)] + [
+            auth_message(kind, "a@example.test", URL if kind != "account_exists" else None, app)
+            for kind in ("register", "reset", "account_exists")
+        ]
+        for m in messages:
+            assert app.app_name in m.subject + m.text
+            assert "RentMonitor" not in m.subject + m.text + m.html
+    assert "Acme" not in magic_link_message("a@example.test", URL, 30).subject  # the default stays Renti

@@ -7,6 +7,8 @@ The engine (`deal_analyzer.rent.estimate_rent`) stays pure; callers map `StoredC
 """
 
 import hashlib
+import re
+import unicodedata
 from collections import OrderedDict
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -20,6 +22,17 @@ from rm_core.db.models import MarketSidecar, RentComparableRow, SidecarKind
 
 DEFAULT_CACHE_ENTRIES = 256
 _KEY = tuple[str, str]  # (city_slug, digest of the sidecar sha256 values)
+
+
+_POLISH_FOLD = str.maketrans({"ł": "l", "Ł": "L"})  # NFKD does not decompose the stroked l
+
+
+def city_slug(name: str) -> str:
+    """The one spelling of a city in `market_sidecar.city_slug` ('Łódź' -> 'lodz'). Importers and the audit
+    context both use this, so a listing's city finds the rows an importer wrote."""
+    folded = unicodedata.normalize("NFKD", name.translate(_POLISH_FOLD))
+    ascii_only = folded.encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", ascii_only.lower()).strip("-")
 
 
 class SidecarNotRentalError(ValueError):

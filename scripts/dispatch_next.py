@@ -130,7 +130,9 @@ def decide(  # noqa: PLR0911
             "block", issue.number, f"no activity after {n} attempts; owner must look at the run log"
         )
     if not staging_green:
-        return Decision("idle", None, "staging CI is red: fix it before starting new work")
+        return Decision(
+            "idle", None, "staging CI is red or not verified: no new work until its latest run passed"
+        )
     ready = [
         i
         for i in issues
@@ -156,14 +158,20 @@ def _ts(value: str) -> datetime:
 
 
 FAILED = {"FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "STARTUP_FAILURE"}
+PASSED = {"SUCCESS", "NEUTRAL", "SKIPPED"}
 
 
 def _checks(rollup: list[dict[str, str]]) -> str:
-    """failing if any check failed, pending if any is unfinished, else passing (skipped is passing)."""
-    if any((c.get("conclusion") or c.get("state")) in FAILED for c in rollup):
+    """failing if any check failed; passing only when checks exist and every one finished well.
+
+    No checks yet, an unfinished check or a conclusion we do not know (ACTION_REQUIRED, STALE, empty) is
+    `pending`: unverified is never mistaken for success. Skipped counts as passing.
+    """
+    outcomes = [c.get("conclusion") or c.get("state") or "" for c in rollup]
+    if any(o in FAILED for o in outcomes):
         return "failing"
-    done = all(c.get("status") == "COMPLETED" or c.get("state") == "SUCCESS" for c in rollup)
-    return "passing" if done else "pending"
+    finished = all(c.get("status") == "COMPLETED" or c.get("state") == "SUCCESS" for c in rollup)
+    return "passing" if rollup and finished and all(o in PASSED for o in outcomes) else "pending"
 
 
 def claude_active() -> bool:
@@ -176,7 +184,23 @@ def claude_active() -> bool:
     return False
 
 
+def staging_verified(runs: list[dict[str, str]], head_sha: str) -> bool:
+    """True only when the latest `ci` push run finished successfully on staging's current head.
+
+    A missing, queued, running, cancelled, timed-out or failed run, or one of an older commit, is unverified.
+    """
+    if not runs:
+        return False
+    latest = runs[0]
+    return (
+        latest.get("status") == "completed"
+        and latest.get("conclusion") == "success"
+        and (latest.get("headSha") == head_sha)
+    )
+
+
 def staging_is_green() -> bool:
+    head = _gh("api", "repos/{owner}/{repo}/branches/staging", "--jq", ".commit.sha").strip()
     runs = json.loads(
         _gh(
             "run",
@@ -190,10 +214,10 @@ def staging_is_green() -> bool:
             "--limit",
             "1",
             "--json",
-            "conclusion,status",
+            "conclusion,status,headSha",
         )
     )
-    return not runs or runs[0]["conclusion"] != "failure"
+    return staging_verified(runs, head)
 
 
 def load() -> tuple[list[Issue], set[int], list[Pr]]:
@@ -232,6 +256,8 @@ def load() -> tuple[list[Issue], set[int], list[Pr]]:
                 "list",
                 "--state",
                 "open",
+                "--limit",
+                "200",
                 "--json",
                 "number,headRefName,updatedAt,title,statusCheckRollup",
             )
@@ -268,7 +294,26 @@ def apply(d: Decision) -> None:
         )
 
 
+def failure_message(exc: subprocess.CalledProcessError) -> str:
+    """One line for the log: the failed `gh` subcommand and the first stderr line, credentials redacted."""
+    cmd = " ".join(str(a) for a in exc.cmd[:3])
+    first = (exc.stderr or "").strip().splitlines()[:1]
+    detail = re.sub(
+        r"(?i)\b(?:gh[pousr]_\w+|github_pat_\w+|bearer\s+\S+)", "[redacted]", first[0] if first else ""
+    )
+    return f"`{cmd}` failed (exit {exc.returncode}): {detail[:200]}"
+
+
 def main(argv: list[str] | None = None) -> int:
+    try:
+        return _main(argv)
+    except subprocess.CalledProcessError as exc:
+        # Fail once and visibly (no traceback with stderr); the next schedule tick is the only retry.
+        print(f"dispatcher stopped: {failure_message(exc)}", file=sys.stderr)
+        return 1
+
+
+def _main(argv: list[str] | None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true", help="perform the action (default: print it)")
     ap.add_argument("--stale-minutes", type=int, default=60)

@@ -1,0 +1,21 @@
+{
+  "body": {},
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "POST /api/auth/password/forgot",
+    "method": "POST",
+    "operation_id": "password_forgot_api_auth_password_forgot_post",
+    "path": "/api/auth/password/forgot"
+  },
+  "request": {
+    "body": {
+      "email": "user-20@example.test"
+    },
+    "path": "/api/auth/password/forgot"
+  },
+  "scenario": "unknown_address",
+  "status": 202
+}

@@ -49,7 +49,7 @@ skip() { echo; echo "=== $1: skipped ($2) ==="; RESULTS+=("SKIPPED  $1: $2"); }
 have() { command -v "$1" >/dev/null 2>&1; }
 
 st_commits() { python3 scripts/check_commit_msg.py --range "$BASE..HEAD"; }
-st_lint() { uv run ruff check . && uv run ruff format --check . && test ! -e frontend/src/lib/cashflow.ts && test ! -e frontend/src/lib/appreciation.ts; }
+st_lint() { uv run ruff check . && uv run ruff format --check .; } # SPA finance guard: ESLint in `frontend` (eslint.money.mjs)
 st_types() { uv run pyright; }
 st_types_ty() { uvx ty check packages services; }
 st_unit() { uv run pytest -m "not e2e and not integration" -q; }
@@ -80,6 +80,20 @@ st_actions() {
   else docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color; fi
 }
 st_smoke() { ./scripts/smoke_docker.sh; }
+# The SPA's own gate: frozen install, then `pnpm check` (api drift, types, lint, css, format, unit tests, build).
+st_frontend() { pnpm --dir frontend install --frozen-lockfile && pnpm --dir frontend check; }
+# The browser lanes: Chromium against the built SPA with the mocked API, the interaction-coverage gate, axe.
+st_frontend_e2e() { pnpm --dir frontend test:e2e; }
+e2e_skip_reason() { # empty when Playwright's headless Chromium is installed
+  local path; path=$(cd frontend && pnpm exec playwright install --dry-run chromium 2>/dev/null | awk '/Headless Shell/{f=1} f&&/Install location/{print $3; exit}')
+  [ -n "$path" ] && [ -d "$path" ] || echo "Chromium for Playwright is not installed (cd frontend && pnpm exec playwright install chromium)"
+}
+frontend_skip_reason() { # empty when the pinned Node and pnpm are available
+  have node || { echo "Node is not installed"; return; }
+  have pnpm || { echo "pnpm is not installed (corepack enable)"; return; }
+  local want have_v; want=$(cut -d. -f1 frontend/.node-version); have_v=$(node -p 'process.versions.node.split(".")[0]')
+  [ "$want" = "$have_v" ] || echo "Node $have_v active, frontend/.node-version wants $want"
+}
 
 have uv || { echo "uv is required (https://docs.astral.sh/uv/)" >&2; exit 2; }
 uv sync --all-packages --group dev -q || exit 2
@@ -104,6 +118,17 @@ if want gitleaks normal; then
   if have gitleaks || { have docker && docker info >/dev/null 2>&1; }; then stage gitleaks st_gitleaks; else skip gitleaks "install gitleaks or start Docker"; fi
 fi
 want actions normal && stage actionlint+zizmor st_actions
+if want frontend normal; then
+  if [ ! -d frontend ]; then skip frontend "no frontend/ yet"
+  elif [ -n "$(frontend_skip_reason)" ]; then skip frontend "$(frontend_skip_reason)"
+  else stage frontend st_frontend; fi
+fi
+if want frontend-e2e normal; then
+  if [ ! -d frontend ]; then skip frontend-e2e "no frontend/ yet"
+  elif [ -n "$(frontend_skip_reason)" ]; then skip frontend-e2e "$(frontend_skip_reason)"
+  elif [ -n "$(e2e_skip_reason)" ]; then skip frontend-e2e "$(e2e_skip_reason)"
+  else stage frontend-e2e st_frontend_e2e; fi
+fi
 if want smoke full; then
   if have docker && docker info >/dev/null 2>&1; then stage docker-smoke st_smoke; else skip docker-smoke "Docker is not running"; fi
 fi

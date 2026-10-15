@@ -10,7 +10,7 @@ if (!analysis) {
   document.querySelector('#analysis-status').hidden = true;
 } else {
   title.textContent = analysis.name;
-  document.title = `${analysis.name} — RentMonitor`;
+  document.title = `${analysis.name} — renti.tech`;
   document.querySelector('#analysis-identity').textContent = `${analysis.city} · ${analysis.meta}`;
   document.querySelector('#analysis-price').textContent = analysis.price;
   const status = document.querySelector('#analysis-status');

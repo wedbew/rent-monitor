@@ -1,6 +1,21 @@
+import json
+import subprocess
 from datetime import UTC, datetime, timedelta
 
-from dispatch_next import MARKER, RETRY, Decision, Issue, Pr, _checks, decide, depends_on
+import dispatch_next
+import pytest
+from dispatch_next import (
+    MARKER,
+    RETRY,
+    Decision,
+    Issue,
+    Pr,
+    _checks,
+    decide,
+    depends_on,
+    failure_message,
+    staging_verified,
+)
 
 NOW = datetime(2026, 10, 13, 12, 0, tzinfo=UTC)
 
@@ -121,3 +136,79 @@ def test_check_rollup_states() -> None:
     assert _checks([ok, {"status": "IN_PROGRESS", "conclusion": ""}]) == "pending"
     assert _checks([ok, {"status": "COMPLETED", "conclusion": "FAILURE"}]) == "failing"
     assert _checks([{"state": "SUCCESS"}]) == "passing"
+
+
+@pytest.mark.parametrize(
+    "rollup",
+    [
+        [],  # no check reported yet is not a pass
+        [{"status": "COMPLETED", "conclusion": "SUCCESS"}, {"status": "COMPLETED", "conclusion": ""}],
+        [{"status": "COMPLETED", "conclusion": "ACTION_REQUIRED"}],
+        [{"status": "COMPLETED", "conclusion": "STALE"}],
+        [{"status": "QUEUED", "conclusion": ""}],
+        [{"state": "PENDING"}],
+        [{"state": "EXPECTED"}],
+    ],
+)
+def test_unverified_check_rollups_are_never_passing(rollup: list[dict[str, str]]) -> None:
+    assert _checks(rollup) != "passing"
+
+
+@pytest.mark.parametrize("conclusion", ["FAILURE", "TIMED_OUT", "CANCELLED", "STARTUP_FAILURE"])
+def test_failed_check_conclusions_are_failing(conclusion: str) -> None:
+    assert _checks([{"status": "COMPLETED", "conclusion": conclusion}]) == "failing"
+
+
+def run(conclusion: str, status: str = "completed", sha: str = "abc") -> dict[str, str]:
+    return {"conclusion": conclusion, "status": status, "headSha": sha}
+
+
+@pytest.mark.parametrize(
+    "runs",
+    [
+        [],  # no run at all: nothing verified
+        [run("", "in_progress")],
+        [run("", "queued")],
+        [run("cancelled")],
+        [run("timed_out")],
+        [run("startup_failure")],
+        [run("failure")],
+        [run("success", sha="older")],  # green, but for a commit that is no longer staging's head
+    ],
+)
+def test_staging_is_verified_only_by_a_successful_run_of_its_head(runs: list[dict[str, str]]) -> None:
+    assert not staging_verified(runs, "abc")
+
+
+def test_staging_verified_by_success_on_the_head_commit() -> None:
+    assert staging_verified([run("success")], "abc")
+
+
+def test_unverified_staging_blocks_new_work_but_not_the_reason_text() -> None:
+    d = decide([issue(8, "ready")], set(), [], NOW, staging_green=False)
+    assert (d.action, "not verified" in d.reason) == ("idle", True)
+
+
+def test_failure_message_hides_credentials_and_bodies() -> None:
+    token = "ghp_" + "a" * 36
+    err = subprocess.CalledProcessError(
+        1, ["gh", "issue", "list"], stderr=f"HTTP 401: Bad credentials ({token})\nsecond line with detail"
+    )
+    msg = failure_message(err)
+    assert token not in msg
+    assert "gh issue list" in msg
+    assert "second line" not in msg
+
+
+def test_listing_open_pull_requests_is_not_capped_at_the_gh_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[str, ...]] = []
+
+    def fake(*args: str) -> str:
+        calls.append(args)
+        return json.dumps([])
+
+    monkeypatch.setattr(dispatch_next, "_gh", fake)
+    dispatch_next.load()
+    pr_call = next(c for c in calls if c[:2] == ("pr", "list"))
+    assert "--limit" in pr_call
+    assert int(pr_call[pr_call.index("--limit") + 1]) >= 200

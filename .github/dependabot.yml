@@ -24,3 +24,12 @@ updates:
     target-branch: staging
     schedule: { interval: weekly }
     commit-message: { prefix: build, include: scope }
+  - package-ecosystem: npm # the SPA (pnpm lockfile); build and test tooling only, no Node at runtime
+    directory: /frontend
+    target-branch: staging
+    schedule: { interval: weekly, day: monday, time: "06:00", timezone: Europe/Warsaw }
+    cooldown: { default-days: 7 }
+    commit-message: { prefix: build, prefix-development: build, include: scope }
+    groups:
+      frontend-minor-patch:
+        update-types: [minor, patch]

@@ -1,0 +1,17 @@
+{
+  "body": null,
+  "content_type": "",
+  "headers": {},
+  "operation": {
+    "key": "POST /api/auth/signout-all",
+    "method": "POST",
+    "operation_id": "sign_out_everywhere_api_auth_signout_all_post",
+    "path": "/api/auth/signout-all"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/auth/signout-all"
+  },
+  "scenario": "signed_out_everywhere",
+  "status": 204
+}

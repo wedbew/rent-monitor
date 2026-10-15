@@ -1,0 +1,29 @@
+{
+  "body": {
+    "code": "INVALID_CREDENTIALS",
+    "instance": "/api/auth/login",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Invalid email or password",
+    "type": "urn:rentmonitor:problem:INVALID_CREDENTIALS"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/login",
+    "method": "POST",
+    "operation_id": "login_api_auth_login_post",
+    "path": "/api/auth/login"
+  },
+  "request": {
+    "body": {
+      "email": "user-12@example.test",
+      "password": "[redacted]"
+    },
+    "path": "/api/auth/login"
+  },
+  "scenario": "unknown_address",
+  "status": 401
+}

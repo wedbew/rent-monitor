@@ -1,0 +1,70 @@
+{
+  "body": {
+    "counts": {
+      "audit": {
+        "succeeded": 25
+      },
+      "ops": {
+        "todo": 3
+      }
+    },
+    "recent": [
+      {
+        "attempts": 1,
+        "id": 28,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 27,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 26,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 25,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      },
+      {
+        "attempts": 1,
+        "id": 24,
+        "queue": "audit",
+        "scheduled_at": null,
+        "status": "succeeded",
+        "task": "rm_worker.tasks.audit.run_audit"
+      }
+    ]
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/admin/jobs",
+    "method": "GET",
+    "operation_id": "inspect_jobs_api_admin_jobs_get",
+    "path": "/api/admin/jobs"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/admin/jobs?queue=audit&status=succeeded&limit=5"
+  },
+  "scenario": "filtered_by_queue_and_status",
+  "status": 200
+}

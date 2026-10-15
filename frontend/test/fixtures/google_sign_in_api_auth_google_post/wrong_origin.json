@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/auth/google",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/google",
+    "method": "POST",
+    "operation_id": "google_sign_in_api_auth_google_post",
+    "path": "/api/auth/google"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/auth/google"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

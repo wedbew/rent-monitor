@@ -1,0 +1,34 @@
+{
+  "body": {
+    "asking_price_pln": null,
+    "audit_id": "00000000-0000-4000-8000-000000000032",
+    "capex_pln": null,
+    "charge_state": "released",
+    "created_at": "2026-10-01T10:00:00Z",
+    "error_code": "UPSTREAM_BLOCKED",
+    "finished_at": "2026-10-01T10:00:00Z",
+    "grade": null,
+    "irr_10y": null,
+    "max_bid_pln": null,
+    "otodom_id": "IDFIX0010",
+    "result": null,
+    "started_at": "2026-10-01T10:00:00Z",
+    "status": "failed_upstream"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}",
+    "method": "GET",
+    "operation_id": "get_audit_api_audits__audit_id__get",
+    "path": "/api/audits/{audit_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/00000000-0000-4000-8000-000000000032"
+  },
+  "scenario": "failed_upstream_blocked",
+  "status": 200
+}

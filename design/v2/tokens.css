@@ -1,15 +1,38 @@
-/* V2 / Precision — monochrome foundations, semantic signals and motion. */
+/* V2 / renti — light default, optional dark palette, shared geometry and motion. */
 :root{
+  color-scheme:light;
+  --canvas:#f5f7f4;--surface:#ffffff;--surface-hover:#edf2ee;--surface-raised:#e5ede7;
+  --ink:#182c28;--muted:#52625c;--subtle:#65746c;--border:#d1dbd4;--control-border:#7a8b80;
+  --accent:#182c28;--accent-ink:#ffffff;--accent-hover:#29473d;
+  --green:#24643e;--green-fill:#e6f1e8;--amber:#775016;--amber-fill:#faf0d9;--error:#a12c24;
+  --font-ui:Arial,Helvetica,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-6:24px;--space-8:32px;--space-12:48px;--space-16:64px;
+  --radius:3px;--radius-overlay:6px;--content-width:1280px;
+  --analysis-surface:#ffffff;--analysis-border:#c9d6cc;--radius-card:8px;--sidebar-width:232px;
+  --motion-fast:160ms;--motion-ui:240ms;--motion-enter:560ms;--motion-overlay:320ms;
+  --ease-out:cubic-bezier(.16,1,.3,1);--ease-standard:cubic-bezier(.2,.65,.3,1);
+  --shadow:0 24px 90px #182c2826;
+  --sidebar-bg:#edf2ed;--nav-active:#dfe9e1;--nav-border:#c3d3c6;
+  --card-hover:#f5f9f5;--card-hover-border:#7c9786;--symbol-bg:#edf3ee;--symbol-border:#c9d8cd;--symbol-ink:#466354;
+  --running-bg:#e9eeeb;--running-ink:#52645b;--card-divider:#d5dfd7;--card-action-hover:#e7efe8;
+  --hero-scrim:linear-gradient(90deg,#f5f7f4fc 0%,#f5f7f4eb 35%,#f5f7f475 70%,#f5f7f430),linear-gradient(0deg,#f5f7f4 0%,#f5f7f400 40%);
+  --hero-mobile-scrim:linear-gradient(90deg,#f5f7f4f5,#f5f7f4d9),linear-gradient(0deg,#f5f7f4 0%,#f5f7f400 65%);
+  --hero-text:#42574b;--image-caption:#344d40;--input-bg:#fffffff2;--placeholder:#65746c;
+  --brand-dot:#10b981;
+
+}
+
+:root[data-theme="dark"]{
   color-scheme:dark;
   --canvas:#08090a;--surface:#111315;--surface-hover:#181b1e;--surface-raised:#1a1d20;
   --ink:#f5f6f7;--muted:#a9aeb4;--subtle:#818891;--border:#353a40;--control-border:#7f8790;
   --accent:#f5f6f7;--accent-ink:#0a0b0c;--accent-hover:#dce1e5;
   --green:#b1d5bc;--green-fill:#17241d;--amber:#efcf98;--amber-fill:#2b2318;--error:#ffc0b4;
-  --font-ui:Arial,Helvetica,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-6:24px;--space-8:32px;--space-12:48px;--space-16:64px;
-  --radius:3px;--radius-overlay:6px;--content-width:1280px;
-  --analysis-surface:#14181c;--analysis-border:#46505a;--radius-card:8px;--sidebar-width:232px;
-  --motion-fast:160ms;--motion-ui:240ms;--motion-enter:560ms;--motion-overlay:320ms;
-  --ease-out:cubic-bezier(.16,1,.3,1);--ease-standard:cubic-bezier(.2,.65,.3,1);
-  --shadow:0 24px 90px #0009;
+  --analysis-surface:#14181c;--analysis-border:#46505a;--shadow:0 24px 90px #0009;
+  --sidebar-bg:#0e1012;--nav-active:#20252a;--nav-border:#41484f;
+  --card-hover:#171c21;--card-hover-border:#85909c;--symbol-bg:#222930;--symbol-border:#404b56;--symbol-ink:#c9d1da;
+  --running-bg:#262d34;--running-ink:#c4cbd3;--card-divider:#343e48;--card-action-hover:#29313a;
+  --hero-scrim:linear-gradient(90deg,#08090af5 0%,#08090ac9 35%,#08090a45 70%,#08090a20),linear-gradient(0deg,#08090a 0%,#08090a00 40%);
+  --hero-mobile-scrim:linear-gradient(90deg,#08090aee,#08090aab),linear-gradient(0deg,#08090a 0%,#08090a00 65%);
+  --hero-text:#d0d4da;--image-caption:#c1c8cf;--input-bg:#0d0f12e8;--placeholder:#a6aeb7;
 }

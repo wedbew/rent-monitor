@@ -1,0 +1,19 @@
+{
+  "body": null,
+  "content_type": "",
+  "headers": {},
+  "operation": {
+    "key": "POST /api/auth/email/start",
+    "method": "POST",
+    "operation_id": "email_start_api_auth_email_start_post",
+    "path": "/api/auth/email/start"
+  },
+  "request": {
+    "body": {
+      "email": "user-3@example.test"
+    },
+    "path": "/api/auth/email/start"
+  },
+  "scenario": "accepted",
+  "status": 204
+}

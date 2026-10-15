@@ -111,6 +111,17 @@ class CreditAdjustOut(BaseModel):
     balance: int
 
 
+class BillingHoldClear(BaseModel):
+    """Staff resolved a billing review; the note is the record of why (logged with the admin's id)."""
+
+    model_config = ConfigDict(extra="forbid")
+    note: str = Field(min_length=10, max_length=300)
+
+
+class BillingHoldOut(BaseModel):
+    cleared: bool
+
+
 class JobOut(BaseModel):
     """Metadata only: job arguments are never returned (they can hold addresses and login tokens, L-011)."""
 

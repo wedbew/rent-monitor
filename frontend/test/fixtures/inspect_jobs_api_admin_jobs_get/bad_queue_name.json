@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["query", "queue"],
+        "msg": "String should match pattern '^[a-z][a-z0-9_]{0,31}$'",
+        "type": "string_pattern_mismatch"
+      }
+    ],
+    "instance": "/api/admin/jobs",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/admin/jobs",
+    "method": "GET",
+    "operation_id": "inspect_jobs_api_admin_jobs_get",
+    "path": "/api/admin/jobs"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/admin/jobs?queue=NOT+OK"
+  },
+  "scenario": "bad_queue_name",
+  "status": 422
+}

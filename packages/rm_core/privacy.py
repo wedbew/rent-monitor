@@ -38,6 +38,9 @@ from rm_core.db.models import (
     Audit,
     AuditEvent,
     AuthIdentity,
+    AuthToken,
+    BillingEvent,
+    BillingPurchase,
     CreditAccount,
     CreditLedger,
     ErasureLog,
@@ -78,6 +81,8 @@ class PurgeReport:
     erasure_log: int = 0
     geo_cache: int = 0
     rate_limit: int = 0
+    auth_tokens: int = 0
+    billing_events: int = 0
 
 
 async def _until_drained(
@@ -119,6 +124,36 @@ async def purge_expired(sessionmaker: async_sessionmaker[AsyncSession], settings
                 .limit(BATCH_SIZE)
             )
         ),
+    )
+    auth_tokens = await _until_drained(  # GDPR[retention]: registration and reset tokens (ADR 0013)
+        sessionmaker,
+        lambda: delete(AuthToken).where(
+            AuthToken.token_hash.in_(
+                select(AuthToken.token_hash)
+                .where(
+                    or_(
+                        AuthToken.expires_at < _ago(settings.retention_login_token_days),
+                        AuthToken.used_at < _ago(settings.retention_login_token_days),
+                    )
+                )
+                .limit(BATCH_SIZE)
+            )
+        ),
+    )
+    billing_events = (
+        await _until_drained(  # GDPR[retention]: the technical event log, not the accounting record
+            sessionmaker,
+            lambda: delete(BillingEvent).where(
+                BillingEvent.id.in_(
+                    select(BillingEvent.id)
+                    .where(
+                        BillingEvent.status != "pending",
+                        BillingEvent.received_at < _ago(settings.retention_billing_event_days),
+                    )
+                    .limit(BATCH_SIZE)
+                )
+            ),
+        )
     )
     referenced = exists().where(Audit.snapshot_id == ListingSnapshot.id)
     cutoff = _ago(settings.retention_snapshot_days)
@@ -188,7 +223,18 @@ async def purge_expired(sessionmaker: async_sessionmaker[AsyncSession], settings
             )
         ),
     )
-    return PurgeReport(sessions, tokens, snapshots_deleted, snapshots_scrubbed, events, erasure, geo, limits)
+    return PurgeReport(
+        sessions,
+        tokens,
+        snapshots_deleted,
+        snapshots_scrubbed,
+        events,
+        erasure,
+        geo,
+        limits,
+        auth_tokens,
+        billing_events,
+    )
 
 
 # ---------- erasure ----------
@@ -203,10 +249,18 @@ async def delete_account(session: AsyncSession, user_id: str) -> ErasureReport:
     stripe_id = await session.scalar(
         select(StripeCustomer.stripe_customer_id).where(StripeCustomer.user_id == user_id)
     )
+    email = await session.scalar(select(User.email).where(User.id == user_id))
+    # The purchase is an accounting record that outlives the account (its `user_id` becomes NULL), but the
+    # ledger rows it points at are erased with the account: drop that one reference first (GDPR[erasure]).
+    await session.execute(
+        update(BillingPurchase).where(BillingPurchase.user_id == user_id).values(grant_ledger_id=None)
+    )
     # FK cascade removes every tenant-owned row; RETURNING tells us whether this call really deleted the user.
     deleted_id = await session.scalar(delete(User).where(User.id == user_id).returning(User.id))
     if deleted_id is None:
         return ErasureReport(False, None)
+    if email is not None:  # GDPR[erasure]: pending registrations hold the address without a user row yet
+        await session.execute(delete(AuthToken).where(AuthToken.email == email))
     await session.execute(insert(ErasureLog).values(user_hash=user_hash(user_id)).on_conflict_do_nothing())
     return ErasureReport(True, stripe_id)
 

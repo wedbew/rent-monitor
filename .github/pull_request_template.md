@@ -15,6 +15,7 @@ Closes #
 - [ ] Migration is expand-only (contract comes in a later PR), pytest-alembic and squawk pass
 - [ ] Golden DealAnalysis snapshots unchanged, or each diff explained below
 - [ ] No new dependency, or the reason is given below
+- [ ] **Frontend:** `.agent/rules/frontend.md` checklist holds (`make fe-check` summary pasted), or no `frontend/` change
 - [ ] **Legal / GDPR:** tags added / changed / removed, or none (`.agent/rules/legal-tags.md`)
 - [ ] **Context:** `CONTEXT.md` updated (§n), or not affected and why (`.agent/rules/context.md`)
 

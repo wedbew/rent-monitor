@@ -1,0 +1,29 @@
+{
+  "body": {
+    "code": "QUOTA_EXHAUSTED",
+    "instance": "/api/audits",
+    "request_id": "req_fixture",
+    "status": 402,
+    "title": "No analyses left",
+    "type": "urn:rentmonitor:problem:QUOTA_EXHAUSTED",
+    "upgrade_url": "/billing"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/audits",
+    "method": "POST",
+    "operation_id": "create_audit_api_audits_post",
+    "path": "/api/audits"
+  },
+  "request": {
+    "body": {
+      "listing_ref": "IDFIX0005"
+    },
+    "path": "/api/audits"
+  },
+  "scenario": "no_credits",
+  "status": 402
+}

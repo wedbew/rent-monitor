@@ -4,7 +4,11 @@ from changed_paths import docs_only
 
 @pytest.mark.parametrize(
     "files",
-    [["README.md"], ["docs/STATUS.md", ".agent/rules/delivery.md"], ["design/v2/main-view.html", "CHANGELOG.md"]],
+    [
+        ["README.md"],
+        ["docs/STATUS.md", ".agent/rules/delivery.md"],
+        ["design/v2/main-view.html", "CHANGELOG.md"],
+    ],
 )
 def test_documentation_only(files: list[str]) -> None:
     assert docs_only(files)

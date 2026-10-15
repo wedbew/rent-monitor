@@ -1,0 +1,53 @@
+{
+  "body": null,
+  "content_type": "text/event-stream; charset=utf-8",
+  "events": [
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000013",
+        "message": "",
+        "pct": 5,
+        "stage": "fetch"
+      },
+      "event": "progress",
+      "id": "126"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000013",
+        "message": "",
+        "pct": 15,
+        "stage": "extract"
+      },
+      "event": "progress",
+      "id": "127"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000013",
+        "code": "RENT_NOT_DEAL",
+        "pct": null,
+        "stage": null,
+        "status": "rejected"
+      },
+      "event": "error",
+      "id": "128"
+    }
+  ],
+  "headers": {
+    "cache-control": "no-store",
+    "content-type": "text/event-stream; charset=utf-8"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}/events",
+    "method": "GET",
+    "operation_id": "audit_events_api_audits__audit_id__events_get",
+    "path": "/api/audits/{audit_id}/events"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/00000000-0000-4000-8000-000000000013/events"
+  },
+  "scenario": "rejected_transcript",
+  "status": 200
+}

@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "NOT_FOUND",
+    "instance": "/api/billing/purchases/00000000-0000-4000-8000-000000000051",
+    "request_id": "req_fixture",
+    "status": 404,
+    "title": "Purchase not found",
+    "type": "urn:rentmonitor:problem:NOT_FOUND"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/billing/purchases/{purchase_id}",
+    "method": "GET",
+    "operation_id": "get_purchase_api_billing_purchases__purchase_id__get",
+    "path": "/api/billing/purchases/{purchase_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/billing/purchases/00000000-0000-4000-8000-000000000051"
+  },
+  "scenario": "foreign_purchase",
+  "status": 404
+}

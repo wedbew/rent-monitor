@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["query", "limit"],
+        "msg": "Input should be less than or equal to 100",
+        "type": "less_than_equal"
+      }
+    ],
+    "instance": "/api/audits",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/audits",
+    "method": "GET",
+    "operation_id": "list_audits_api_audits_get",
+    "path": "/api/audits"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits?limit=101"
+  },
+  "scenario": "validation_error",
+  "status": 422
+}

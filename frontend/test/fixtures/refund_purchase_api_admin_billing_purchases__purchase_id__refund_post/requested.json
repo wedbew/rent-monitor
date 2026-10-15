@@ -1,0 +1,24 @@
+{
+  "body": {
+    "adjustment_id": "adj_fixture0008",
+    "status": "requested"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "POST /api/admin/billing/purchases/{purchase_id}/refund",
+    "method": "POST",
+    "operation_id": "refund_purchase_api_admin_billing_purchases__purchase_id__refund_post",
+    "path": "/api/admin/billing/purchases/{purchase_id}/refund"
+  },
+  "request": {
+    "body": {
+      "reason": "buyer asked within 14 days, pack unused"
+    },
+    "path": "/api/admin/billing/purchases/00000000-0000-4000-8000-000000000304/refund"
+  },
+  "scenario": "requested",
+  "status": 202
+}

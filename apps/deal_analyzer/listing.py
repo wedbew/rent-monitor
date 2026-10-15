@@ -1,9 +1,12 @@
 """The typed, bounded listing the engine works on. Money is `Decimal` PLN; no market data here."""
 
 from decimal import Decimal
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstraints
+
+MAX_MEDIA_URLS = 40
+MediaUrl = Annotated[str, StringConstraints(max_length=500)]
 
 
 class Listing(BaseModel):
@@ -27,6 +30,13 @@ class Listing(BaseModel):
     windows: str | None = Field(default=None, max_length=64)
     building_ownership: str | None = Field(default=None, max_length=64)  # portal's structured ownership value
     city: str | None = Field(default=None, max_length=120)
+    # Otodom's own path for the city (e.g. "kujawsko--pomorskie/torun/torun/torun"): lets the market importer
+    # find rental comparables. Lower-case slugs only, so it can be appended to a fixed search URL safely.
+    location_id: str | None = Field(default=None, max_length=160, pattern=r"^[a-z0-9-]+(/[a-z0-9-]+){0,3}$")
+    # Image URLs from the advert (large size, https only, bounded). They are only ever fetched by the worker's
+    # image pipeline, which re-validates the host against an allow-list (LEGAL[images]).
+    photo_urls: tuple[MediaUrl, ...] = Field(default=(), max_length=MAX_MEDIA_URLS)
+    floor_plan_urls: tuple[MediaUrl, ...] = Field(default=(), max_length=MAX_MEDIA_URLS)
     street: str | None = Field(default=None, max_length=160)
     latitude: Decimal | None = None
     longitude: Decimal | None = None

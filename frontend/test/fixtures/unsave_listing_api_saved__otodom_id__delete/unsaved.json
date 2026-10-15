@@ -1,0 +1,17 @@
+{
+  "body": null,
+  "content_type": "",
+  "headers": {},
+  "operation": {
+    "key": "DELETE /api/saved/{otodom_id}",
+    "method": "DELETE",
+    "operation_id": "unsave_listing_api_saved__otodom_id__delete",
+    "path": "/api/saved/{otodom_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/saved/ID66523DD4"
+  },
+  "scenario": "unsaved",
+  "status": 204
+}

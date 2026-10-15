@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/auth/register",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/register",
+    "method": "POST",
+    "operation_id": "register_api_auth_register_post",
+    "path": "/api/auth/register"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/auth/register"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

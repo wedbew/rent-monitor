@@ -111,6 +111,55 @@ class LoginToken(Base):
     used_at: Mapped[datetime | None]
 
 
+class UserCredential(Base):
+    """Email/password credential (ADR 0013). One row per account that has a password.
+
+    GDPR[personal-data]: `password_hash` is an Argon2id PHC string, never the password. Retention: until
+    account deletion (cascade on `app_user`, so erasure removes it); replaced on reset or change.
+    """
+
+    __tablename__ = "user_credential"
+
+    user_id: Mapped[str] = mapped_column(Text, user_fk(), primary_key=True)
+    password_hash: Mapped[str] = mapped_column(Text, comment="GDPR[personal-data]: Argon2id PHC string")
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class AuthToken(Base):
+    """Single-use, purpose-bound link token for registration and password reset (ADR 0013).
+
+    GDPR[personal-data]: email, and for `register` the Argon2id hash of the chosen password. Only the SHA-256
+    of the token is stored. Retention: purged `RETENTION_LOGIN_TOKEN_DAYS` after expiry or use (RM-30).
+    Erasure: `user_id` cascades; pending registrations (no user yet) are deleted by address on erasure.
+    """
+
+    __tablename__ = "auth_token"
+    __table_args__ = (
+        CheckConstraint("purpose IN ('register','reset')", name="purpose_vocab"),
+        CheckConstraint("email = lower(email)", name="email_lowercase"),
+        CheckConstraint("(purpose = 'register') = (password_hash IS NOT NULL)", name="register_carries_hash"),
+        Index(
+            "uq_auth_token_live",
+            "email",
+            "purpose",
+            unique=True,
+            postgresql_where=text("used_at IS NULL"),
+        ),
+        Index("ix_auth_token_expires", "expires_at"),
+    )
+
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    purpose: Mapped[str] = mapped_column(String(16))
+    email: Mapped[str] = mapped_column(Text, comment="GDPR[personal-data]")
+    user_id: Mapped[str | None] = mapped_column(Text, user_fk())
+    password_hash: Mapped[str | None] = mapped_column(
+        Text, comment="GDPR[personal-data]: Argon2id PHC string"
+    )
+    expires_at: Mapped[datetime]
+    used_at: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
 # ---------- Plans, Stripe, subscriptions ----------
 class SubStatus(StrEnum):
     incomplete = "incomplete"
@@ -219,6 +268,8 @@ class CreditReason(StrEnum):
     topup = "topup"
     reserve = "reserve"
     release = "release"
+    refund_revoke = "refund_revoke"  # units taken back after a provider refund or chargeback
+    refund_restore = "refund_restore"  # units given back after a chargeback was reversed
 
 
 class CreditAccount(Base):
@@ -229,6 +280,9 @@ class CreditAccount(Base):
 
     user_id: Mapped[str] = mapped_column(Text, user_fk(), primary_key=True)
     balance: Mapped[int] = mapped_column(default=0, server_default="0")
+    # Set when units were already consumed by the time a purchase was reversed (PADDLE-INTEGRATION.md §6):
+    # new reservations and purchases are refused until staff resolve it. Existing reports stay readable.
+    billing_hold: Mapped[str | None] = mapped_column(String(40))
 
 
 class CreditLedger(Base):
@@ -245,6 +299,226 @@ class CreditLedger(Base):
     audit_id: Mapped[UUID | None] = mapped_column(ForeignKey("audit.id"))
     note: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class LotSource(StrEnum):
+    signup = "signup"
+    admin = "admin"
+    purchase = "purchase"
+    migration = (
+        "migration"  # units that existed before lots did, or a balance changed outside the ledger service
+    )
+
+
+class ReportCreditLot(Base):
+    """Provenance of spendable report units (docs/PADDLE-INTEGRATION.md section 4): one lot per grant.
+
+    Not a second balance authority: `sum(available)` over a user's lots equals `credit_account.balance`
+    (frozen lots included) and `granted = available + reserved + consumed + revoked` always. Lets one pack be
+    refunded without touching signup grants or another pack. Rows cascade with the account (erasure).
+    """
+
+    __tablename__ = "report_credit_lot"
+    __table_args__ = (
+        CheckConstraint("granted > 0", name="granted_positive"),
+        CheckConstraint(
+            "available >= 0 AND reserved >= 0 AND consumed >= 0 AND revoked >= 0",
+            name="counters_non_negative",
+        ),
+        CheckConstraint("granted = available + reserved + consumed + revoked", name="counters_add_up"),
+        CheckConstraint("source IN ('signup','admin','purchase','migration')", name="source_vocab"),
+        Index("ix_lot_spend_order", "user_id", "created_at", "id", postgresql_where=text("available > 0")),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    user_id: Mapped[str] = mapped_column(Text, user_fk())
+    source: Mapped[str] = mapped_column(String(16))
+    grant_key: Mapped[str] = mapped_column(
+        String(120), unique=True, comment="the grant's ledger idempotency key"
+    )
+    purchase_id: Mapped[UUID | None] = mapped_column(ForeignKey("billing_purchase.id"), unique=True)
+    granted: Mapped[int]
+    available: Mapped[int]
+    reserved: Mapped[int] = mapped_column(default=0, server_default="0")
+    consumed: Mapped[int] = mapped_column(default=0, server_default="0")
+    revoked: Mapped[int] = mapped_column(default=0, server_default="0")
+    frozen: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    reversed_at: Mapped[datetime | None] = mapped_column(comment="set while a refund or chargeback stands")
+    reversal_epoch: Mapped[int] = mapped_column(default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class ReportCreditAllocation(Base):
+    """Which units of which lot an audit holds. Restored to the same lot on release."""
+
+    __tablename__ = "report_credit_allocation"
+    __table_args__ = (
+        UniqueConstraint("audit_id", "lot_id", name="uq_allocation_audit_lot"),
+        CheckConstraint("units > 0", name="units_positive"),
+        CheckConstraint("state IN ('reserved','captured','released','revoked')", name="state_vocab"),
+        Index("ix_allocation_lot_state", "lot_id", "state"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    audit_id: Mapped[UUID] = mapped_column(ForeignKey("audit.id", ondelete="CASCADE"))
+    lot_id: Mapped[int] = mapped_column(ForeignKey("report_credit_lot.id", ondelete="CASCADE"))
+    units: Mapped[int]
+    state: Mapped[str] = mapped_column(String(10))
+
+
+class BillingPack(Base):
+    """One approved, immutable catalog version of a report pack (docs/PADDLE-INTEGRATION.md section 4).
+
+    A price or id change is a new `catalog_version`; sold versions are kept so historical payments can be
+    recognised. At most one active version per pack and environment.
+    """
+
+    __tablename__ = "billing_pack"
+    __table_args__ = (
+        CheckConstraint("code IN ('reports_1','reports_5','reports_10')", name="code_vocab"),
+        CheckConstraint(
+            "reports = CASE code WHEN 'reports_1' THEN 1 WHEN 'reports_5' THEN 5 ELSE 10 END",
+            name="reports_match_code",
+        ),
+        CheckConstraint("amount_minor > 0 AND currency = 'PLN'", name="price_positive_pln"),
+        CheckConstraint("environment IN ('sandbox','live')", name="environment_vocab"),
+        UniqueConstraint("environment", "price_id", name="uq_billing_pack_env_price"),
+        Index(
+            "uq_billing_pack_active",
+            "code",
+            "environment",
+            unique=True,
+            postgresql_where=text("active"),
+        ),
+    )
+
+    code: Mapped[str] = mapped_column(String(16), primary_key=True)
+    catalog_version: Mapped[int] = mapped_column(primary_key=True)
+    environment: Mapped[str] = mapped_column(String(8), primary_key=True)
+    reports: Mapped[int]
+    price_id: Mapped[str] = mapped_column(String(64))
+    amount_minor: Mapped[int] = mapped_column(comment="approved gross price in grosze")
+    currency: Mapped[str] = mapped_column(String(3), default="PLN", server_default="PLN")
+    active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class PurchaseState(StrEnum):
+    intent = "intent"
+    creating = "creating"
+    created = "created"
+    creation_unknown = "creation_unknown"
+    failed = "failed"
+    paid = "paid"
+    granted = "granted"
+    review = "review"
+    refunded = "refunded"
+
+
+class BillingPurchase(Base):
+    """One intent to buy a pack, from checkout creation to grant and refund (PADDLE-INTEGRATION.md §3-§6).
+
+    GDPR[personal-data]: `user_id` (nullable, SET NULL on account erasure so the accounting record survives),
+    `owner_ref` (sha256 of the user id, kept for accounting) and the provider's customer id. No buyer name,
+    address or NIP is stored here: Paddle's checkout collects them.
+    """
+
+    __tablename__ = "billing_purchase"
+    __table_args__ = (
+        CheckConstraint(
+            "state IN ('intent','creating','created','creation_unknown','failed','paid','granted','review',"
+            "'refunded')",
+            name="state_vocab",
+        ),
+        UniqueConstraint("user_id", "request_key", name="uq_purchase_user_request"),
+        UniqueConstraint("environment", "provider_txn_id", name="uq_purchase_env_txn"),
+        Index("ix_purchase_user_created", "user_id", text("created_at DESC")),
+        Index("ix_purchase_pending", "state", "lease_until"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4, server_default=_UUID_DEFAULT)
+    user_id: Mapped[str | None] = mapped_column(
+        Text, ForeignKey("app_user.id", ondelete="SET NULL"), comment="GDPR[personal-data]"
+    )
+    owner_ref: Mapped[str] = mapped_column(String(64), comment="GDPR[personal-data]: sha256 of the user id")
+    request_key: Mapped[UUID]
+    environment: Mapped[str] = mapped_column(String(8))
+    pack_code: Mapped[str] = mapped_column(String(16))
+    catalog_version: Mapped[int]
+    reports: Mapped[int]
+    amount_minor: Mapped[int]
+    currency: Mapped[str] = mapped_column(String(3), default="PLN", server_default="PLN")
+    price_id: Mapped[str] = mapped_column(String(64))
+    binding_hash: Mapped[str] = mapped_column(String(64))
+    state: Mapped[str] = mapped_column(String(20), default="intent", server_default="intent")
+    provider_txn_id: Mapped[str | None] = mapped_column(String(64))
+    checkout_url: Mapped[str | None] = mapped_column(Text)
+    customer_id: Mapped[str | None] = mapped_column(String(64), comment="GDPR[personal-data]")
+    provider_status: Mapped[str | None] = mapped_column(String(32))
+    grant_ledger_id: Mapped[int | None] = mapped_column(ForeignKey("credit_ledger.id"), unique=True)
+    error_code: Mapped[str | None] = mapped_column(String(40))
+    lease_until: Mapped[datetime | None]
+    paid_at: Mapped[datetime | None]
+    granted_at: Mapped[datetime | None]
+    refunded_at: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class BillingEvent(Base):
+    """A verified Paddle notification, stored durably before any work is done (PADDLE-INTEGRATION.md §5).
+
+    Only what processing needs is kept (ids, type, status, our purchase reference): never buyer details.
+    Unique per environment and event id, so duplicates and replays are no-ops. Purged after
+    `RETENTION_BILLING_EVENT_DAYS` (GDPR[retention]).
+    """
+
+    __tablename__ = "billing_event"
+    __table_args__ = (
+        UniqueConstraint("environment", "event_id", name="uq_billing_event_env_event"),
+        CheckConstraint("status IN ('pending','processed','ignored','review','failed')", name="status_vocab"),
+        CheckConstraint("environment IN ('sandbox','live')", name="environment_vocab"),
+        Index("ix_billing_event_pending", "lease_until", postgresql_where=text("status = 'pending'")),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    environment: Mapped[str] = mapped_column(String(8))
+    event_id: Mapped[str] = mapped_column(String(64))
+    notification_id: Mapped[str | None] = mapped_column(String(64))
+    event_type: Mapped[str] = mapped_column(String(64))
+    occurred_at: Mapped[datetime | None]
+    received_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    payload: Mapped[dict[str, Any]] = mapped_column(default=dict, server_default=text("'{}'::jsonb"))
+    status: Mapped[str] = mapped_column(String(10), default="pending", server_default="pending")
+    attempts: Mapped[int] = mapped_column(default=0, server_default="0")
+    lease_until: Mapped[datetime | None]
+    error_code: Mapped[str | None] = mapped_column(String(40))
+    purchase_id: Mapped[UUID | None] = mapped_column(ForeignKey("billing_purchase.id", ondelete="SET NULL"))
+
+
+class BillingAdjustment(Base):
+    """An adjustment (refund, chargeback, credit) as Paddle last reported it for one of our purchases.
+
+    The effect on units is recomputed from the current set of adjustments, never from a single event, with
+    unique ledger keys per reversal epoch (docs/PADDLE-INTEGRATION.md section 6).
+    """
+
+    __tablename__ = "billing_adjustment"
+    __table_args__ = (
+        UniqueConstraint("environment", "adjustment_id", name="uq_billing_adjustment_env_id"),
+        Index("ix_billing_adjustment_purchase", "purchase_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    environment: Mapped[str] = mapped_column(String(8))
+    adjustment_id: Mapped[str] = mapped_column(String(64))
+    purchase_id: Mapped[UUID] = mapped_column(ForeignKey("billing_purchase.id"))
+    action: Mapped[str] = mapped_column(String(32))
+    type: Mapped[str] = mapped_column(String(16))
+    status: Mapped[str] = mapped_column(String(24))
+    total_minor: Mapped[int | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
 # ---------- Listings, audits, progress, saved ----------
@@ -317,6 +591,15 @@ class Audit(Base):
             unique=True,
             postgresql_where=text("status IN ('queued','running')"),
         ),
+        # One audit per client request (`Idempotency-Key`): a repeated POST returns the same audit, never a
+        # second reservation; the browser can ask whether a request whose answer it lost arrived (RM-304).
+        Index(
+            "uq_audit_user_request_key",
+            "user_id",
+            "request_key",
+            unique=True,
+            postgresql_where=text("request_key IS NOT NULL"),
+        ),
         CheckConstraint("(charge_source = 'plan') = (usage_period_id IS NOT NULL)", name="plan_has_period"),
         CheckConstraint("lang IN ('pl','en')", name="lang_vocab"),
     )
@@ -332,6 +615,9 @@ class Audit(Base):
     usage_period_id: Mapped[int | None] = mapped_column(ForeignKey("usage_period.id"))
     lang: Mapped[str] = mapped_column(String(2), default="pl", server_default="pl")
     analyst: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    request_key: Mapped[UUID | None] = mapped_column(
+        comment="client Idempotency-Key of the POST that created it; random, not personal data"
+    )
     engine_version: Mapped[str] = mapped_column(String(40))
     schema_version: Mapped[int]
     result: Mapped[dict[str, Any] | None] = mapped_column(comment="canonical DealAnalysis JSON")

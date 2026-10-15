@@ -1,0 +1,36 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "reason"],
+        "msg": "String should have at least 3 characters",
+        "type": "string_too_short"
+      }
+    ],
+    "instance": "/api/admin/flags/smoke_override_short/overrides/00000000-0000-4000-8000-000000000299",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "PUT /api/admin/flags/{key}/overrides/{user_id}",
+    "method": "PUT",
+    "operation_id": "put_override_api_admin_flags__key__overrides__user_id__put",
+    "path": "/api/admin/flags/{key}/overrides/{user_id}"
+  },
+  "request": {
+    "body": {
+      "enabled": true,
+      "reason": "x"
+    },
+    "path": "/api/admin/flags/smoke_override_short/overrides/00000000-0000-4000-8000-000000000299"
+  },
+  "scenario": "reason_too_short",
+  "status": 422
+}

@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "BILLING_HOLD",
+    "instance": "/api/billing/checkout",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Your account is on a billing review; contact support",
+    "type": "urn:rentmonitor:problem:BILLING_HOLD"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/billing/checkout",
+    "method": "POST",
+    "operation_id": "checkout_api_billing_checkout_post",
+    "path": "/api/billing/checkout"
+  },
+  "request": {
+    "body": {
+      "pack_code": "reports_5"
+    },
+    "path": "/api/billing/checkout"
+  },
+  "scenario": "billing_hold",
+  "status": 403
+}

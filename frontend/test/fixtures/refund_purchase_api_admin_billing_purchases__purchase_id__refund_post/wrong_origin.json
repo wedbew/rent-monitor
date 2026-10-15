@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/admin/billing/purchases/00000000-0000-4000-8000-000000000047/refund",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/admin/billing/purchases/{purchase_id}/refund",
+    "method": "POST",
+    "operation_id": "refund_purchase_api_admin_billing_purchases__purchase_id__refund_post",
+    "path": "/api/admin/billing/purchases/{purchase_id}/refund"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/admin/billing/purchases/00000000-0000-4000-8000-000000000047/refund"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

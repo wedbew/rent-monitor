@@ -1,0 +1,24 @@
+{
+  "body": {
+    "created_at": "2026-10-01T10:00:00Z",
+    "latest_audit_id": "00000000-0000-4000-8000-000000000307",
+    "note": null,
+    "otodom_id": "IDFIX0259"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "PUT /api/saved/{otodom_id}",
+    "method": "PUT",
+    "operation_id": "save_listing_api_saved__otodom_id__put",
+    "path": "/api/saved/{otodom_id}"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/saved/ID11551C3F"
+  },
+  "scenario": "saved_without_note",
+  "status": 200
+}

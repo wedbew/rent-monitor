@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["query", "limit"],
+        "msg": "Input should be greater than or equal to 1",
+        "type": "greater_than_equal"
+      }
+    ],
+    "instance": "/api/billing/purchases",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/billing/purchases",
+    "method": "GET",
+    "operation_id": "list_purchases_api_billing_purchases_get",
+    "path": "/api/billing/purchases"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/billing/purchases?limit=0"
+  },
+  "scenario": "validation_error",
+  "status": 422
+}

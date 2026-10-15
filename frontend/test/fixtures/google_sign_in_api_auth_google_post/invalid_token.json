@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "INVALID_GOOGLE_TOKEN",
+    "instance": "/api/auth/google",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Invalid Google token",
+    "type": "urn:rentmonitor:problem:INVALID_GOOGLE_TOKEN"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/google",
+    "method": "POST",
+    "operation_id": "google_sign_in_api_auth_google_post",
+    "path": "/api/auth/google"
+  },
+  "request": {
+    "body": {
+      "credential": "[redacted]"
+    },
+    "path": "/api/auth/google"
+  },
+  "scenario": "invalid_token",
+  "status": 401
+}

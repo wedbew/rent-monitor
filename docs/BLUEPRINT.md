@@ -1,10 +1,17 @@
-# RentMonitor SaaS — Architecture & Implementation Blueprint
+# Renti SaaS — Architecture & Implementation Blueprint
 
 Oct 11, 2026 · @Marcin B
 
+> **Pilot billing direction, owner 2026-10-13:** use one-time Paddle packs of 1, 5 and 10 reports,
+> without subscriptions or 30-day passes. [PADDLE-INTEGRATION.md](PADDLE-INTEGRATION.md) defines
+> the implementation design and recommended pricing (final prices pending). Older Stripe subscription,
+> pass, invoice-outbox and associated billing-gate sections below are historical for this pilot;
+> reconcile their detailed schemas/routes/tests in the implementation PR. Product approval and Polish
+> accounting/KSeF review remain required; other architecture and engine invariants are unchanged.
+
 ## Executive verdict
 
-Ship RentMonitor as a single 12 GB VPS running Docker Compose, with Postgres as the only stateful service — no Redis. Infrastructure lands at 52.20 zł net/month (≈ $13.38) against a $20 ceiling, dropping to 44.37 zł (≈ $11.37) once committed for 12 months. OpenRouter vision spend is cost of goods, not infrastructure, and is governed by the credit ledger.
+Ship Renti as a single 12 GB VPS running Docker Compose, with Postgres as the only stateful service — no Redis. Infrastructure lands at 52.20 zł net/month (≈ $13.38) against a $20 ceiling, dropping to 44.37 zł (≈ $11.37) once committed for 12 months. OpenRouter vision spend is cost of goods, not infrastructure, and is governed by the credit ledger.
 
 **Not launch-ready until the seven release gates in Section 6 pass.** The architecture holds; the remaining work is proving its guarantees under concurrency, load and a real restore.
 
@@ -13,13 +20,13 @@ Ship RentMonitor as a single 12 GB VPS running Docker Compose, with Postgres as 
 | Host | One OVHcloud VPS-3 (6 vCore, 12 GB, 100 GB NVMe), Poland location, 52.20 zł net/month without commitment; commit to 12 months (44.37 zł) in the Black Friday window | Most RAM per złoty of the options checked, monthly exit, daily backup included. Splitting Postgres and the app across two cheaper VPS costs more for the same 6 vCore / 12 GB (Section 1) |
 | Runtime | **Python only** on the server: FastAPI, Procrastinate workers, Postgres. Node exists only at build time to bundle the SPA | One language, one image, one migration tool, one test suite |
 | Topology | Option B: Caddy + FastAPI + 2 worker pools + Postgres 17 | One bill, one failure domain you control, no cold starts, no per-invocation pricing |
-| Frontend | Keep the existing Vite + React 19 SPA, served by Caddy on the same origin | Same-origin cookies, no CORS, no SSR runtime to host |
-| Sign-in | **Google first**: "Zaloguj się przez Google" button at the top of every auth screen plus One Tap on the landing page; email magic link as the secondary path; no passwords | One click for most users, nothing to reset or leak; Google-verified emails unlock the 3 free audits at once |
+| Frontend | A new Vite + React 19 SPA (none exists yet; built from scratch per ADR 0001 after the API smoke test, `FRONTEND-PLAN.md`), served by Caddy on the same origin | Same-origin cookies, no CORS, no SSR runtime to host |
+| Sign-in | **Google first**: "Zaloguj się przez Google" button at the top of every auth screen plus One Tap on the landing page; email magic link as the secondary path; email and password added by owner request (ADR 0013) | One click for most users, nothing to reset or leak; Google-verified emails unlock the 3 free audits at once |
 | Auth engine | In FastAPI: Google ID-token verification with `google-auth`, own sessions in Postgres | No second runtime; FastAPI-Users is in maintenance mode and password-centric; cookies work with `EventSource` |
-| Payments | **Card + BLIK from day one.** BLIK recurring mandates for the 100 zł/month subscription; a one-off BLIK "Pro 30 days" pass for customers whose bank does not support BLIK recurring | Stripe supports BLIK in Checkout subscription mode on API `2026-09-30.endive`, but only 9 banks support recurring BLIK |
+| Payments | Pilot: **one-time Paddle packs of 1, 5 or 10 reports**, card + one-time PLN BLIK; no subscription | Owner direction 2026-10-13; see `PADDLE-INTEGRATION.md`. Provider/product acceptance and final pricing pending |
 | Job queue | Procrastinate (Postgres-backed, async) | arq is in maintenance-only mode; Celery + Redis costs a stateful service for no gain at this scale |
 | Progress | SSE fed by Postgres `LISTEN/NOTIFY` + an `audit_event` table for replay | Survives reconnects via `Last-Event-ID`; no broker |
-| Billing ledger | Stripe Checkout + Customer Portal, allowance granted on `invoice.paid` (or on the paid pass), append-only credit ledger | Grants keyed by invoice id are idempotent by construction |
+| Billing ledger | Pilot: completed Paddle transaction grants report credits; append-only ledger with purchase provenance | Transaction-keyed idempotency; report packs replace monthly allowances and timed passes; see `PADDLE-INTEGRATION.md` |
 | Persistence | SQLAlchemy 2.0 (async, psycopg 3) + Alembic, one `app` schema; JSONB for `DealAnalysis` and sidecars, typed columns for what you filter on | One store for users, business data, documents and the queue |
 
 **Confirmed vs inferred.** Prices, quotas and library status below were read from vendor pages on 11 Oct 2026 and are linked in Sources. Memory caps, latency figures and per-audit cost are engineering estimates — each is labelled *estimate* and has a measurement step in the blueprint.
@@ -162,13 +169,13 @@ FastAPI is stateless: every byte of state — sessions, audits, credits, jobs, p
 
 | Prefix | Owner | Auth | Purpose |
 | --- | --- | --- | --- |
-| `/api/auth/*` | FastAPI | public | Google ID-token sign-in, email magic link, sign-out, session list |
+| `/api/auth/*` | FastAPI | public | Google ID-token sign-in, email magic link, email/password (`register`, `register/verify`, `register/resend`, `login`, `password/forgot`, `password/reset`; `password/change` needs a session), sign-out, session list (spec: PASSWORD-AUTH-SPEC.md) |
 | `/api/me` | FastAPI | session | Profile, plan, credit balance, feature flags; `GET /api/me/export` (access request, 5 per hour); `DELETE /api/me` (account erasure, confirmed by typing the address) |
-| `/api/audits` | FastAPI | session + entitlement | `POST` create (202), `GET` list, `GET /{id}`, `GET /{id}/events` (SSE), `POST /{id}/cancel` |
+| `/api/audits` | FastAPI | session + entitlement | `POST` create (202; optional `Idempotency-Key` UUID: a repeat returns the audit it created, never a second reservation, RM-304), `GET` list (`{items, next_cursor}`; keyset cursor; filters `status`, `grade`, `q`, `request_key`), `GET /{id}`, `GET /{id}/events` (SSE), `POST /{id}/cancel` |
 | `/api/saved` | FastAPI | session | Save or unsave listings, notes; only listings the caller has audited can be saved (anything else is 404), at most 500 |
 | `/api/market/*` | FastAPI | session; free tier sees top 20 | 727-city yield radar, city sidecars by grain |
 | `/api/screener/*` | FastAPI | Pro feature flag | Discovery runs, approval queue, batch generate |
-| `/api/billing/checkout`, `/api/billing/portal` | FastAPI | session | Create Stripe Checkout or Portal session, return URL |
+| `/api/billing/checkout`, `/api/billing/portal` | FastAPI | session | Create Stripe Checkout or Portal session, return URL. **Pilot (ADR 0005 successor in progress):** `GET /api/billing/packs`, `POST /api/billing/checkout` (pack code + `Idempotency-Key`), `GET /api/billing/purchases[/{id}]`, Paddle packs per `PADDLE-INTEGRATION.md` §3 (RM-217); no portal |
 | `/api/billing/webhook` | FastAPI | Stripe signature | Webhook state machine (Section 3) |
 | `/api/admin/*` | FastAPI | `user.role = 'admin'` | Flags, overrides, credit adjustments (idempotent by a caller-chosen UUID), job inspection (metadata only, never arguments) |
 | `/healthz`, `/readyz` | FastAPI | internal only (Caddy blocks external) | Liveness; readiness checks DB and queue. A separate public \`/api/health\` (no DB) serves the uptime monitor |
@@ -178,7 +185,10 @@ FastAPI is stateless: every byte of state — sessions, audits, credits, jobs, p
 - The SPA talks only to `/api/*` on its own origin. Caddy serves `index.html` for every non-API path.
 - Types are generated, not hand-written: FastAPI's OpenAPI schema → `openapi-typescript` → `openapi-fetch` client, wrapped in TanStack Query. A Pydantic change that the UI does not handle fails `tsc` in CI.
 - **Delete `frontend/src/lib/cashflow.ts` and `appreciation.ts`.** The API returns every number; a null renders as an explicit "not computed" state. This enforces the deterministic-math invariant at the boundary (audit P0.3).
-- Progress uses `EventSource` on `/api/audits/{id}/events`; if the stream drops, the browser reconnects with `Last-Event-ID` and the server replays from `audit_event`.
+- Progress uses `EventSource` on `/api/audits/{id}/events`; if the stream drops, the browser reconnects with `Last-Event-ID` and the server replays from `audit_event`. A *new* `EventSource` (remount, reload) cannot set that header: it replays from the start and the SPA dedupes by event id, then re-reads `GET /api/audits/{id}`.
+- **Data first (owner decision, 2026-10-15).** No UI slice starts until an API smoke test has exercised every OpenAPI operation and stored response samples in the gitignored `data/api-samples/` (#263). Committed UI fixtures are sanitised derivations of those samples, validated against OpenAPI; every data view renders at least 5 distinct examples. Errors are typed from a `Problem` schema in OpenAPI (#264); the report is typed from a published, versioned `DealAnalysis` JSON Schema (#266).
+- **Every page, popup and clickable element has an e2e test** (Playwright), enforced by an interaction registry, an inventory test and a coverage reporter; mocked-API lanes run on every PR, a journey lane against the Compose stack (`FRONTEND-PLAN.md` §4, #269).
+- Fixed SPA routes the API depends on: the email links `/login/email#t=`, `/signup/verify#t=`, `/password/reset#t=` (fragment read once, then removed), and Paddle's default payment-link page `/pay` (`PADDLE-INTEGRATION.md` §5). The theme bootstrap is an external script, so the CSP needs no inline allowance.
 
 ### Listing-analysis contract
 
@@ -245,7 +255,15 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `UPSTREAM_BLOCKED` | 403, 429, captcha or challenge HTML, missing `__NEXT_DATA__` | `failed_upstream` | tenacity: 4 attempts, exponential 2–60 s with jitter, honour `Retry-After`; then trip a 15-minute host circuit breaker | released |
 | `UPSTREAM_SCHEMA_DRIFT` | `_next/data` payload fails Pydantic | `failed_upstream` + Better Stack alert | none (needs a code fix) | released |
 | `VISION_UNAVAILABLE` | OpenRouter 5xx or timeout after retries | `succeeded_degraded`: CAPEX marked unknown, confidence lowered | 3 attempts | captured |
+| `CONTEXT_UNAVAILABLE` | a market input the engine cannot run without is not configured (risk-free rate) or the market-data store failed (RM-187) | `failed_internal` + Better Stack error | none until the input exists | released |
 | `INTERNAL` | anything else | `failed_internal` + Better Stack error | Procrastinate retry once | released |
+| `BILLING_UNAVAILABLE` | billing is switched off or no approved catalog is loaded (the default) | 503 | none | n/a |
+| `IDEMPOTENCY_CONFLICT` | an `Idempotency-Key` was reused for a different pack, or (`POST /api/audits`) for a different listing | 409 | use a new key | n/a; no audit reserved |
+| `BILLING_PROVIDER_ERROR` | the payment provider refused to start a purchase | 502 | try again with a new key | n/a |
+| `INVALID_WEBHOOK_SIGNATURE` | the Paddle notification is not signed by the configured secret, or its timestamp is outside the tolerance | 400 | Paddle retries | n/a |
+| `BILLING_HOLD` | units were already spent when a purchase was reversed: new reservations and purchases wait for staff | 403 | contact support | n/a |
+| `PURCHASE_NOT_REFUNDABLE` | a refund was asked for a purchase that is not granted (or has no owner or lot) | 409 | none | n/a |
+| `REFUND_NEEDS_REVIEW` | the pack has spent or running units, so support decides manually | 409 | none | n/a |
 | `VALIDATION_ERROR` | request body, query or path fails Pydantic (`extra="forbid"`) | 422, field errors without echoing input | none | never reserved |
 | `NOT_FOUND` | unknown route, or a resource of another tenant (never 403) | 404 | none | never reserved |
 | `HTTP_ERROR` | other transport errors (405, 413, …) | as raised | none | never reserved |
@@ -255,6 +273,10 @@ Errors return RFC 9457 `application/problem+json` with a stable `code`. Terminal
 | `EMAIL_CONFIRMATION_REQUIRED` | verified Google token for an address Google cannot vouch for (not `@gmail.com`, no matching `hd`) and no existing identity | 401 (the SPA offers the magic link) | confirm with a magic link | n/a |
 | `GOOGLE_EMAIL_UNVERIFIED` | valid Google token whose `email_verified` is false | 401 (the SPA offers the magic link) | none | n/a |
 | `MAGIC_LINK_INVALID` | magic-link token unknown, already used or expired | 401 | request a new link | n/a |
+| `INVALID_CREDENTIALS` | password login failed for any reason (wrong password, unknown address, no password set) | 401 | none; throttled | n/a |
+| `WEAK_PASSWORD` | password fails the policy (`reason`: too_short, too_long, common, contains_email) | 422 | choose another | n/a |
+| `ACCOUNT_EXISTS` | a registration link was used but the address already has an account (nothing is attached; use "forgot password") | 409 | sign in or recover | n/a |
+| `AUTH_TOKEN_INVALID` | registration or reset token unknown, used, expired or wrong purpose | 401 | request a new link | n/a |
 | `RATE_LIMITED` | atomic per-address or per-IP counter exceeded | 429 with `Retry-After` | after the window | n/a |
 | `ADMIN_ONLY` | `require_admin` dependency: caller's role is not `admin` | 403 | none | n/a |
 | `CREDIT_BELOW_ZERO` | admin credit adjustment would make the balance negative | 409 | none | n/a |
@@ -277,7 +299,7 @@ One runtime. The Better Auth Node sidecar from the earlier draft is removed. Wit
 | --- | --- | --- |
 | Better Auth Node sidecar (previous draft) | Rejected | A second runtime, container, migration tool and schema owner for one feature |
 | Everything in Node | Rejected | The engine, workers and DCF math are Python and stay Python; Node would add a runtime, not remove one |
-| FastAPI-Users | Rejected | Maintenance mode, and built around passwords, which we no longer store |
+| FastAPI-Users | Rejected | Maintenance mode; passwords are now ours (ADR 0013) and we use `pwdlib[argon2]` directly |
 | Managed provider (Clerk, Auth0) | Rejected | Another vendor on the login path; the user table leaves your Postgres |
 | **FastAPI + Google Identity Services + `google-auth`, own sessions** | **Chosen** | Google authenticates the person; FastAPI verifies Google's signed token and issues its own session |
 
@@ -286,7 +308,7 @@ Sign-in methods:
 1. **Google (primary).** The "Zaloguj się przez Google" button and One Tap both come from Google Identity Services (GIS) in the SPA. GIS hands the SPA a signed ID token (`credential`), which the SPA posts to `POST /api/auth/google`. No OAuth redirect and no client secret on the server.
 2. **Email magic link (secondary).** For users without Google: `POST /api/auth/email/start` emails a single-use link valid 30 minutes; `POST /api/auth/email/verify` signs in after the user presses "Kontynuuj" on the page the link opens, so mail scanners that prefetch links cannot use up the token. Using the link proves the address, so the 3 free audits unlock.
 
-**Hard call: no passwords.** Nothing to hash, reset or leak, and no reset flow to build. If a B2B customer demands passwords later, `pwdlib[argon2]` is an additive change.
+**Passwords (amended by ADR 0013, 2026-10-14):** the original hard call was no passwords. The owner asked for email and password sign-in, so it is added next to Google and the magic link with `pwdlib[argon2]`, mailbox proof before an account exists, hashed single-use tokens, throttling and non-enumerating responses. The contract is [PASSWORD-AUTH-SPEC.md](PASSWORD-AUTH-SPEC.md); implementation tracked in #203, #204, #205.
 
 How it protects FastAPI:
 
@@ -423,7 +445,7 @@ Screen rules: `/login` and `/signup` are one screen — the Google button first,
 
 Google Cloud setup:
 
-1. OAuth consent screen: External, app name RentMonitor, support email, scopes `openid`, `email`, `profile` only.
+1. OAuth consent screen: External, app name Renti, support email, scopes `openid`, `email`, `profile` only.
 2. OAuth client, type Web application. Authorized JavaScript origins: `https://app.rentmonitor.pl` and `http://localhost`. No redirect URIs and no client secret are used.
 3. Move the app from Testing to In production before launch; in Testing only listed test users can sign in.
 4. The Caddy CSP in 4.3 already allows `accounts.google.com` for scripts, styles, frames and connections.
@@ -687,10 +709,13 @@ class Audit(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     started_at: Mapped[datetime | None]
     finished_at: Mapped[datetime | None]
+    request_key: Mapped[UUID | None]      # client Idempotency-Key of the creating POST (RM-304)
     __table_args__ = (
         Index("ix_audit_user_created", "user_id", text("created_at DESC")),
         Index("uq_audit_one_active_per_listing", "user_id", "otodom_id", unique=True,
               postgresql_where=text("status IN ('queued','running')")),
+        Index("uq_audit_user_request_key", "user_id", "request_key", unique=True,
+              postgresql_where=text("request_key IS NOT NULL")),
         CheckConstraint("(charge_source = 'plan') = (usage_period_id IS NOT NULL)", name="plan_has_period"),
         APP,
     )
@@ -880,7 +905,7 @@ Confirmed in Stripe's docs (11 Oct 2026):
 
 Paywall disclosure, shown above the "Zapłać" button when BLIK is likely (Polish locale):
 
-> Subskrypcja RentMonitor Pro: 100 zł miesięcznie, pierwsza płatność dziś, kolejne automatycznie co miesiąc w tym samym dniu, bez ponownego kodu BLIK. Autoryzujesz płatności cykliczne BLIK w aplikacji banku; możesz je anulować w dowolnym momencie w ustawieniach konta. Obsługiwane banki: Alior, Credit Agricole, ING, Millennium, mBank, Nest Bank, PKO BP, Santander, banki SGB. Inny bank? Kup karnet Pro na 30 dni BLIK-iem.
+> Subskrypcja Renti Pro: 100 zł miesięcznie, pierwsza płatność dziś, kolejne automatycznie co miesiąc w tym samym dniu, bez ponownego kodu BLIK. Autoryzujesz płatności cykliczne BLIK w aplikacji banku; możesz je anulować w dowolnym momencie w ustawieniach konta. Obsługiwane banki: Alior, Credit Agricole, ING, Millennium, mBank, Nest Bank, PKO BP, Santander, banki SGB. Inny bank? Kup karnet Pro na 30 dni BLIK-iem.
 
 Schema and code changes for the pass:
 
@@ -967,8 +992,8 @@ rentmonitor/
 ├── services/
 │   ├── rm_api/                   # main.py, deps.py, problems.py, sse.py, auth/, routers/, billing/
 │   └── rm_worker/                # app.py, progress.py, tasks/audit.py, tasks/market.py, tasks/maintenance.py
-├── frontend/                     # existing Vite SPA; server/plugin.ts and server/redesign.ts deleted
-│   └── src/api/{schema.d.ts (generated), client.ts}
+├── frontend/                     # new Vite SPA (Phase 2), flat layout: api/, ui/, shell/, features/, e2e/ (FRONTEND-PLAN.md)
+│   └── api/{schema.generated.ts, report.generated.ts, client.ts}
 ├── migrations/                   # Alembic, schema "app" only
 ├── scripts/{import_agent_context.py, import_legacy_reports.py, seed.py, gen_openapi.py}
 ├── tests/                        # cross-service integration tests + fixtures/
@@ -1009,7 +1034,7 @@ MAGIC_LINK_TTL_MINUTES=30                          # corporate mail can delay de
 
 # --- Email (Resend) ---
 RESEND_API_KEY=re_xxx
-MAIL_FROM="RentMonitor <no-reply@rentmonitor.pl>"
+MAIL_FROM="Renti <no-reply@rentmonitor.pl>"
 
 # --- Stripe ---
 STRIPE_SECRET_KEY=sk_test_xxx
@@ -1029,7 +1054,7 @@ IMAGE_HOST_ALLOWLIST=olxcdn.com,otodom.pl           # photo hosts we may fetch f
 BDL_API_KEY=
 OTODOM_HTTP_BACKEND=curl_cffi
 OTODOM_MAX_RPS=1
-NOMINATIM_USER_AGENT="RentMonitor/1.0 (ops@rentmonitor.pl)"
+NOMINATIM_USER_AGENT="Renti/1.0 (ops@rentmonitor.pl)"
 
 # --- Workers ---
 WORKER_AUDIT_CONCURRENCY=1                          # raise to 2 only after the memory load test
@@ -1162,10 +1187,14 @@ volumes: { pgdata: {}, caddy_data: {}, caddy_config: {} }
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
         X-Content-Type-Options nosniff
         Referrer-Policy strict-origin-when-cross-origin
-        Content-Security-Policy "default-src 'self'; script-src 'self' https://cloud.umami.is https://accounts.google.com; style-src 'self' https://accounts.google.com/gsi/style; connect-src 'self' https://cloud.umami.is <Better Stack ingesting host from SENTRY_DSN> https://accounts.google.com; img-src 'self' data: https:; frame-src https://accounts.google.com https://checkout.stripe.com https://billing.stripe.com"
+        # As built (RM-281, deploy/Caddyfile): only 'self' and Google sign-in. Paddle (#277) and browser error
+        # reporting (#280) add their hosts in their own PRs; Umami waits on L-010; the Stripe entries are gone.
+        Content-Security-Policy "default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://accounts.google.com/gsi/style; img-src 'self' data:; font-src 'self'; connect-src 'self' https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'; frame-ancestors 'none'"
     }
     @internal path /healthz /readyz
-    respond @internal 404
+    handle @internal {
+        respond 404                    # inside a handle: a bare respond runs after the handle blocks
+    }
 
     @sse path_regexp sse ^/api/audits/[0-9a-f-]+/events$
     handle @sse {
@@ -1191,11 +1220,11 @@ Local development (Docker Desktop or Linux):
 ```bash
 # 0. Toolchain
 curl -LsSf https://astral.sh/uv/install.sh | sh
-# Node 22 LTS, only to build the frontend
+# Node active LTS pinned in frontend/.node-version, only to build the frontend; pnpm via packageManager
 
 # 1. Dependencies
 uv sync --all-packages --group dev
-npm ci --prefix frontend
+pnpm --dir frontend install --frozen-lockfile
 cp .env.example .env    # fill test keys; APP_ENV=development
 
 # 2. Data plane
@@ -1211,8 +1240,9 @@ uv run python scripts/import_agent_context.py apps/agent-context/reports   # sid
 uv run python scripts/import_legacy_reports.py apps/deal_analyzer/reports/final --owner admin@rentmonitor.pl
 
 # 5. Generate the typed frontend client
-uv run python scripts/gen_openapi.py > frontend/openapi.json
-npx --prefix frontend openapi-typescript openapi.json -o src/api/schema.d.ts
+uv run python scripts/gen_openapi.py                # writes docs/openapi.json
+pnpm --dir frontend generate:api                     # -> frontend/api/schema.generated.ts (pinned openapi-typescript)
+make api-samples                                     # smoke every endpoint; samples -> data/api-samples/ (gitignored)
 
 # 6. Everything else
 docker compose -f deploy/compose.yml -f deploy/compose.dev.yml up -d --build
@@ -1974,6 +2004,8 @@ Run the worker in-process for integration tests with `await app.run_worker_async
 | `test_invariant_admin_fee_is_opex` | A fixture with `characteristics.rent = 600` shows 600 PLN/month in OPEX and 0 in income |
 | `test_invariant_deterministic_math` | Same snapshot + same vision stub → byte-identical `returns` block across two runs; LLM adjustment outside ±15% is clamped |
 | `test_no_frontend_finance` | CI step fails if `frontend/src/lib/cashflow.ts` or `appreciation.ts` exist |
+| `test_every_operation_has_a_scenario` | Every OpenAPI operation has a smoke scenario for success and each documented error status (#263) |
+| frontend interaction coverage | Playwright inventory fails on any unregistered or nameless interactive element; the reporter fails on any registered element no test exercised (#269) |
 | `test_quota_race` | 10 concurrent `POST /api/audits` with 3 credits → exactly 3 × 202 and 7 × 402; balance 0; `SUM(delta)` equals balance |
 | `test_duplicate_active_audit` | Second submit of the same listing while queued → 409 with the first `audit_id` |
 | `test_failed_audit_releases` | `UPSTREAM_BLOCKED` fake → credit back, ledger has `reserve` + `release` |
@@ -2002,7 +2034,8 @@ Run the worker in-process for integration tests with `await app.run_worker_async
 ```bash
 uv run pytest -m "not e2e" -q                         # unit + integration, offline
 uv run pytest -m invariant -q                         # the four invariants alone
-npx --prefix frontend tsc --noEmit                    # catches API contract drift
+pnpm --dir frontend check                            # API drift, tsc, lint, unit, build
+pnpm --dir frontend test:e2e                         # every page, popup and clickable element
 ```
 
 **Manual auth check** (in development the mailer logs the magic link instead of sending it; check Google sign-in in the browser with your own account against `http://localhost`):
@@ -2157,7 +2190,7 @@ Record the drill's wall-clock time; if it exceeds 30 minutes, the 1-hour RTO is 
 3. **Auth** (Python only): Google ID-token sign-in and One Tap first, then email magic link; sessions, `current_principal`, Origin check, signup grant. Tenant-isolation, Google-token and magic-link tests.
 4. **Audits**: submit route, worker task, SSE hub, reconciler. Quota race, release and SSE resume tests. Delete `frontend/server/*.ts`.
 5. **Billing**: Checkout (card + BLIK recurring), the 30-day BLIK pass, Portal, webhook, entitlements, grace. All webhook and pass tests plus a test-clock run. Request BLIK recurring activation from Stripe on day one of this step. Add the Fakturownia invoice task and confirm on a trial account that API-created invoices reach KSeF.
-6. **Frontend**: generated client, TanStack Query hooks, progress view on SSE, paywall on 402, removal of TS finance code.
+6. **Frontend** (Phase 2, plan and issues in `FRONTEND-PLAN.md`): first the API smoke test with samples in `data/` and the contract fixes (problem schema, audit paging, report schema); then generated client and sample-derived fixtures, the e2e coverage gate, shell, auth pages, URL analysis with SSE progress, report, collection, saved, Paddle packs (paywall on 402), settings, public pages, Caddy/CSP deploy, release hardening. No TS finance code.
 7. **Ops**: compose, Caddy, backups, monitors, WAL-G archiving to R2, restore drill (a point-in-time restore) executed once and timed.
 8. **Market and screener**: city refresh and ranking as `worker-batch` periodic tasks; screener approval queue behind the `screener` flag.
 

@@ -1,0 +1,28 @@
+{
+  "body": {
+    "avatar_url": null,
+    "email": "user-27@example.test",
+    "email_verified": true,
+    "id": "00000000-0000-4000-8000-000000000305",
+    "name": null,
+    "role": "user"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "POST /api/auth/register/verify",
+    "method": "POST",
+    "operation_id": "register_verify_api_auth_register_verify_post",
+    "path": "/api/auth/register/verify"
+  },
+  "request": {
+    "body": {
+      "token": "[redacted]"
+    },
+    "path": "/api/auth/register/verify"
+  },
+  "scenario": "account_created",
+  "status": 200
+}

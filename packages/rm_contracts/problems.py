@@ -2,6 +2,8 @@
 
 from enum import StrEnum
 
+from pydantic import BaseModel, ConfigDict, Field
+
 
 class ProblemCode(StrEnum):
     # Blueprint §2 error contract
@@ -14,6 +16,7 @@ class ProblemCode(StrEnum):
     UPSTREAM_BLOCKED = "UPSTREAM_BLOCKED"
     UPSTREAM_SCHEMA_DRIFT = "UPSTREAM_SCHEMA_DRIFT"
     VISION_UNAVAILABLE = "VISION_UNAVAILABLE"
+    CONTEXT_UNAVAILABLE = "CONTEXT_UNAVAILABLE"
     INTERNAL = "INTERNAL"
     # Generic transport-level codes (RM-18); documented in the blueprint §2 error table
     VALIDATION_ERROR = "VALIDATION_ERROR"
@@ -25,6 +28,17 @@ class ProblemCode(StrEnum):
     GOOGLE_EMAIL_UNVERIFIED = "GOOGLE_EMAIL_UNVERIFIED"
     EMAIL_CONFIRMATION_REQUIRED = "EMAIL_CONFIRMATION_REQUIRED"
     MAGIC_LINK_INVALID = "MAGIC_LINK_INVALID"
+    INVALID_CREDENTIALS = "INVALID_CREDENTIALS"
+    WEAK_PASSWORD = "WEAK_PASSWORD"
+    AUTH_TOKEN_INVALID = "AUTH_TOKEN_INVALID"
+    ACCOUNT_EXISTS = "ACCOUNT_EXISTS"
+    BILLING_UNAVAILABLE = "BILLING_UNAVAILABLE"
+    IDEMPOTENCY_CONFLICT = "IDEMPOTENCY_CONFLICT"
+    BILLING_PROVIDER_ERROR = "BILLING_PROVIDER_ERROR"
+    INVALID_WEBHOOK_SIGNATURE = "INVALID_WEBHOOK_SIGNATURE"
+    BILLING_HOLD = "BILLING_HOLD"
+    PURCHASE_NOT_REFUNDABLE = "PURCHASE_NOT_REFUNDABLE"
+    REFUND_NEEDS_REVIEW = "REFUND_NEEDS_REVIEW"
     EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED"
     FEATURE_NOT_IN_PLAN = "FEATURE_NOT_IN_PLAN"
     ADMIN_ONLY = "ADMIN_ONLY"
@@ -37,3 +51,27 @@ class ProblemCode(StrEnum):
     CONFIRMATION_MISMATCH = "CONFIRMATION_MISMATCH"
     CREDIT_BELOW_ZERO = "CREDIT_BELOW_ZERO"
     SAVED_LIMIT_REACHED = "SAVED_LIMIT_REACHED"
+
+
+class ProblemField(BaseModel):
+    """One rejected input in a 422: where (`loc`), the rule (`type`) and a message. Never the value itself."""
+
+    loc: list[str]
+    type: str
+    msg: str
+
+
+class Problem(BaseModel):
+    """The body of every error response (RFC 9457, `application/problem+json`). `code` is the stable part a
+    client branches on; `title` and `detail` are for people. Some codes add fields of their own (for example
+    `audit_id` on `AUDIT_IN_PROGRESS`, `upgrade_url` on `QUOTA_EXHAUSTED`), so extra keys are allowed."""
+
+    model_config = ConfigDict(extra="allow")
+    type: str = Field(description="`urn:rentmonitor:problem:<code>`")
+    title: str
+    status: int
+    code: ProblemCode
+    instance: str = Field(description="the request path")
+    detail: str | None = None
+    request_id: str | None = None
+    errors: list[ProblemField] | None = Field(default=None, description="validation errors, 422 only")

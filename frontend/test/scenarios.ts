@@ -1,0 +1,745 @@
+/**
+ * The scenario registry: named, typed states of the API that screens are built and tested against (#268).
+ * A scenario is plain data (routes and replies), so the same registry feeds Vitest (through MSW, test/handlers.ts),
+ * the component catalog and the Playwright mocked lane. A request no route matches is a test failure, never an
+ * empty success.
+ *
+ * Replies come from sanitised fixtures. The loaded states are built from the five distinct `succeeded` audits of the
+ * capture so a list row, its detail and its progress stream tell one consistent story.
+ */
+import type { components } from "../api/schema.generated";
+import { bodyOf, eventStreamText, fx, type Fixture, type HttpMethod } from "./fixtures";
+
+type AuditOut = components["schemas"]["AuditOut"];
+type AuditPage = components["schemas"]["AuditPage"];
+type AuditSummary = components["schemas"]["AuditSummary"];
+type MeDetail = components["schemas"]["MeDetailOut"];
+
+export interface MockRequest {
+  readonly method: HttpMethod;
+  readonly url: URL;
+  readonly params: Readonly<Record<string, string>>;
+  readonly body: unknown;
+  /** Request headers, lower-case names (an `Idempotency-Key`, for example). */
+  readonly headers: Readonly<Record<string, string>>;
+}
+
+export interface Reply {
+  readonly status: number;
+  readonly body?: unknown;
+  readonly text?: string;
+  readonly contentType?: string;
+  readonly headers?: Readonly<Record<string, string>>;
+  /** The request fails before any answer, like a dropped connection. */
+  readonly networkError?: true;
+  /** Answer after this many milliseconds (a loading state worth looking at). */
+  readonly delayMs?: number;
+}
+
+export interface Route {
+  /** `"GET /api/audits/{audit_id}"`: the OpenAPI operation key. */
+  readonly operation: string;
+  readonly reply: Reply | ((request: MockRequest) => Reply);
+}
+
+export interface Scenario {
+  readonly name: string;
+  readonly description: string;
+  readonly routes: readonly Route[];
+}
+
+export function replyFrom(fixture: Fixture): Reply {
+  if (fixture.events !== undefined) {
+    return {
+      status: fixture.status,
+      text: eventStreamText(fixture.events),
+      contentType: "text/event-stream",
+      headers: fixture.headers,
+    };
+  }
+  return {
+    status: fixture.status,
+    body: fixture.body,
+    contentType: fixture.content_type,
+    headers: fixture.headers,
+  };
+}
+
+const fromFixture = (operation: string, scenario: string): Route => ({
+  operation,
+  reply: replyFrom(fx(operation, scenario)),
+});
+
+// ------------------------------------------------------------------------------------------------ audits
+export const SUCCEEDED_SCENARIOS = ["warszawa", "krakow", "lodz", "gdansk", "torun"].map(
+  (c) => `succeeded_${c}`,
+);
+
+/** Spread creation times so ordering is visible: audit 0 is the newest. */
+function stamped(audit: AuditOut, index: number): AuditOut {
+  const base = Date.parse("2026-10-01T10:00:00Z") - index * 3_600_000;
+  const at = (offsetS: number) => new Date(base + offsetS * 1000).toISOString().replace(".000Z", "Z");
+  return { ...audit, created_at: at(0), started_at: at(2), finished_at: at(38) };
+}
+
+export function summaryOf(audit: AuditOut): AuditSummary {
+  return {
+    audit_id: audit.audit_id,
+    otodom_id: audit.otodom_id,
+    status: audit.status,
+    error_code: audit.error_code,
+    created_at: audit.created_at,
+    finished_at: audit.finished_at,
+    grade: audit.grade,
+    asking_price_pln: audit.asking_price_pln,
+    max_bid_pln: audit.max_bid_pln,
+  };
+}
+
+/** Five distinct finished audits, newest first, each with its progress stream. */
+export const SUCCEEDED_AUDITS: readonly AuditOut[] = SUCCEEDED_SCENARIOS.map((name, i) =>
+  stamped(bodyOf<AuditOut>(fx("GET /api/audits/{audit_id}", name)), i),
+);
+
+function page(audits: readonly AuditOut[]): AuditPage {
+  return { items: audits.map(summaryOf), next_cursor: null };
+}
+
+function auditRoutes(audits: readonly AuditOut[]): Route[] {
+  return [
+    {
+      operation: "GET /api/audits",
+      reply: (request) => {
+        const limit = Number(request.url.searchParams.get("limit") ?? "50");
+        return { status: 200, body: { ...page(audits), items: page(audits).items.slice(0, limit) } };
+      },
+    },
+    {
+      operation: "GET /api/audits/{audit_id}",
+      reply: (request) => {
+        const found = audits.find((a) => a.audit_id === request.params["audit_id"]);
+        return found === undefined
+          ? replyFrom(fx("GET /api/audits/{audit_id}", "unknown_audit"))
+          : { status: 200, body: found };
+      },
+    },
+    fromFixture("GET /api/audits/{audit_id}/events", "success_transcript"),
+  ];
+}
+
+// -------------------------------------------------------------------------------------------------- base
+const me = (scenario: string): Route => fromFixture("GET /api/me", scenario);
+
+function withMe(patch: (body: MeDetail) => MeDetail, scenario = "with_credits_and_flags"): Route {
+  const body = patch(bodyOf<MeDetail>(fx("GET /api/me", scenario)));
+  return { operation: "GET /api/me", reply: { status: 200, body } };
+}
+
+const PACKS = fromFixture("GET /api/billing/packs", "three_packs");
+const SAVED_EMPTY = fromFixture("GET /api/saved", "empty");
+export const EMPTY_PAGE: Route = {
+  operation: "GET /api/audits",
+  reply: { status: 200, body: { items: [], next_cursor: null } satisfies AuditPage },
+};
+
+/** Routes any signed-in screen needs. A scenario replaces a route by repeating its operation. */
+const SIGNED_IN: readonly Route[] = [me("with_credits_and_flags"), PACKS, SAVED_EMPTY, EMPTY_PAGE];
+
+function scenario(
+  name: string,
+  description: string,
+  routes: readonly Route[],
+  base: readonly Route[] = SIGNED_IN,
+): Scenario {
+  const replaced = new Set(routes.map((r) => r.operation));
+  return { name, description, routes: [...routes, ...base.filter((r) => !replaced.has(r.operation))] };
+}
+
+const MIXED_SCENARIOS = [
+  "queued_not_yet_run",
+  "succeeded_degraded",
+  "rejected_rent_is_not_a_deal",
+  "failed_upstream_blocked",
+  "failed_input_listing_gone",
+  "succeeded_krakow",
+] as const;
+
+/** Six analyses in six different states, newest first: what a real, busy account looks like. */
+export const MIXED_AUDITS: readonly AuditOut[] = MIXED_SCENARIOS.map((name, i) =>
+  stamped(bodyOf<AuditOut>(fx("GET /api/audits/{audit_id}", name)), i),
+);
+
+const NOT_READY = {
+  type: "urn:rentmonitor:problem:NOT_READY",
+  title: "Service not ready",
+  status: 503,
+  code: "NOT_READY",
+  instance: "/api/audits",
+  detail: null,
+  errors: null,
+  request_id: "req_fixture",
+};
+
+/** The first finished audit with its stored result changed: for the report states a capture cannot show. */
+function withResult(
+  patch: (result: Record<string, unknown>) => Record<string, unknown>,
+): readonly AuditOut[] {
+  const [first] = SUCCEEDED_AUDITS;
+  if (first === undefined) throw new Error("no succeeded audit fixture");
+  return [{ ...first, result: patch(structuredClone(first.result as Record<string, unknown>)) }];
+}
+
+const RICH_URL = "https://www.otodom.pl/pl/oferta/mieszkanie-2-pokoje-ID4abcd";
+
+export const SCENARIOS = {
+  firstVisit: scenario(
+    "firstVisit",
+    "Nobody is signed in: every session route answers 401.",
+    [me("no_session")],
+    [],
+  ),
+  empty: scenario("empty", "Signed in with credits and no analyses yet.", [EMPTY_PAGE]),
+  loaded: scenario("loaded", "Five distinct finished analyses, newest first.", auditRoutes(SUCCEEDED_AUDITS)),
+  pending: scenario("pending", "An analysis was accepted and has not run yet.", [
+    EMPTY_PAGE,
+    fromFixture("GET /api/audits/{audit_id}", "queued_not_yet_run"),
+    fromFixture("POST /api/audits", "accepted"),
+  ]),
+  degraded: scenario("degraded", "A finished analysis without photo assessment.", [
+    fromFixture("GET /api/audits/{audit_id}", "succeeded_degraded"),
+  ]),
+  rejectedRent: scenario("rejectedRent", "The listing is a rental: rejected, no charge.", [
+    fromFixture("GET /api/audits/{audit_id}", "rejected_rent_is_not_a_deal"),
+    fromFixture("GET /api/audits/{audit_id}/events", "rejected_transcript"),
+  ]),
+  rejectedFractional: scenario("rejectedFractional", "A fractional share: rejected, no charge.", [
+    fromFixture("GET /api/audits/{audit_id}", "rejected_fractional_ownership"),
+  ]),
+  failedUpstream: scenario("failedUpstream", "Otodom blocked the fetch: failed, charge released.", [
+    fromFixture("GET /api/audits/{audit_id}", "failed_upstream_blocked"),
+    fromFixture("GET /api/audits/{audit_id}/events", "failure_transcript"),
+  ]),
+  failedInput: scenario("failedInput", "The listing is gone: failed input, charge released.", [
+    fromFixture("GET /api/audits/{audit_id}", "failed_input_listing_gone"),
+  ]),
+  insufficientCredits: scenario("insufficientCredits", "No reports left: submitting answers 402.", [
+    withMe((m) => ({ ...m, credit_balance: 0 })),
+    fromFixture("POST /api/audits", "no_credits"),
+  ]),
+  mixed: scenario("mixed", "Six analyses in six different states.", auditRoutes(MIXED_AUDITS)),
+  auditsFailing: scenario("auditsFailing", "The list of analyses cannot be loaded (503).", [
+    {
+      operation: "GET /api/audits",
+      reply: { status: 503, body: NOT_READY, contentType: "application/problem+json" },
+    },
+  ]),
+  slow: scenario("slow", "The list of analyses takes a while: the loading state.", [
+    {
+      operation: "GET /api/audits",
+      reply: { status: 200, body: { items: [], next_cursor: null } satisfies AuditPage, delayMs: 1500 },
+    },
+  ]),
+  collection: createCollection(),
+  unsupportedReport: scenario(
+    "unsupportedReport",
+    "A finished audit whose stored result has a schema version this build does not know.",
+    auditRoutes(withResult((r) => ({ ...r, schema_version: 2, valuation: { secret: "hidden" } }))),
+  ),
+  invalidReport: scenario(
+    "invalidReport",
+    "A finished audit whose stored result lacks required parts.",
+    auditRoutes(withResult((r) => ({ schema_version: r["schema_version"] }))),
+  ),
+  richReport: scenario(
+    "richReport",
+    "A report with a link to the listing, quoted evidence and a hostile-looking excerpt.",
+    auditRoutes(
+      withResult((r) => {
+        const listing = r["listing"] as Record<string, unknown>;
+        const legal = r["legal"] as Record<string, unknown>;
+        const ownership = r["ownership"] as Record<string, unknown>;
+        return {
+          ...r,
+          listing: { ...listing, url: RICH_URL },
+          legal: { ...legal, evidence: ["Cena zawiera podatek VAT 23%."] },
+          ownership: { ...ownership, evidence: ["<img src=x onerror=alert(1)> własność"] },
+        };
+      }),
+    ),
+  ),
+  unknownAudit: scenario("unknownAudit", "The audit id is not the person's: 404.", auditRoutes([])),
+  auditUnavailable: scenario("auditUnavailable", "One analysis cannot be loaded (503).", [
+    {
+      operation: "GET /api/audits/{audit_id}",
+      reply: { status: 503, body: NOT_READY, contentType: "application/problem+json" },
+    },
+  ]),
+  expiredMidUse: scenario(
+    "expiredMidUse",
+    "The session ends while the page is in use: the next request is a 401.",
+    [fromFixture("GET /api/audits", "no_session")],
+  ),
+  unverified: scenario("unverified", "Signed in, but the e-mail address is not confirmed yet.", [
+    withMe((m) => ({ ...m, email_verified: false })),
+    EMPTY_PAGE,
+    fromFixture("POST /api/auth/register/resend", "accepted"),
+  ]),
+  breakerOpen: scenario("breakerOpen", "Otodom is rate-limiting us: the breaker is open.", [
+    fromFixture("GET /api/me", "upstream_breaker_open"),
+  ]),
+  billingDisabled: scenario("billingDisabled", "Purchases are not enabled yet.", [
+    fromFixture("GET /api/billing/packs", "billing_disabled"),
+    fromFixture("POST /api/billing/checkout", "billing_disabled"),
+  ]),
+  sessionExpired: scenario("sessionExpired", "The session ended: every session route answers 401.", [
+    me("no_session"),
+    fromFixture("GET /api/audits", "no_session"),
+  ]),
+  offline: scenario(
+    "offline",
+    "The network is down: every request fails before any answer.",
+    ["GET /api/me", "GET /api/audits", "GET /api/billing/packs", "GET /api/saved"].map((operation) => ({
+      operation,
+      reply: { status: 0, networkError: true },
+    })),
+    [],
+  ),
+  reconnecting: scenario("reconnecting", "The progress stream is interrupted.", [
+    ...auditRoutes(SUCCEEDED_AUDITS).filter((r) => r.operation !== "GET /api/audits/{audit_id}/events"),
+    { operation: "GET /api/audits/{audit_id}/events", reply: { status: 0, networkError: true } },
+  ]),
+} as const satisfies Record<string, Scenario>;
+
+export type ScenarioName = keyof typeof SCENARIOS;
+export const SCENARIO_NAMES = Object.keys(SCENARIOS) as ScenarioName[];
+
+// ------------------------------------------------------------------------------------------- a collection
+export interface CollectionOptions {
+  /** How many analyses the person has (default 120). */
+  readonly count?: number;
+  /** Requests for pages after the first fail with a 503 until `state.failing` is set false. */
+  readonly failPage?: number;
+  /** A repeated read of the first page (a refresh) answers after this many milliseconds. */
+  readonly refreshDelayMs?: number;
+}
+
+export interface Collection extends Scenario {
+  readonly state: { requests: string[]; failing: boolean };
+  readonly audits: readonly AuditSummary[];
+}
+
+/**
+ * A heavy account: `count` analyses built from the captured shapes (five finished, plus queued, degraded,
+ * rejected and failed ones), newest first, with the server's list semantics: filters by status, grade and
+ * Otodom-id prefix, `limit`, and an opaque cursor that ends with `null`. The mock pages exactly like the API so
+ * the page can be tested against paging, not against a fixed array.
+ */
+export function createCollection(options: CollectionOptions = {}): Collection {
+  const count = options.count ?? 120;
+  const pool = [...SUCCEEDED_AUDITS, ...MIXED_AUDITS.filter((a) => a.status !== "succeeded")];
+  const audits: AuditSummary[] = Array.from({ length: count }, (_, i) => {
+    const base = summaryOf(pool[i % pool.length] as AuditOut);
+    const at = new Date(Date.parse("2026-10-14T12:00:00Z") - i * 5_400_000)
+      .toISOString()
+      .replace(".000Z", "Z");
+    return {
+      ...base,
+      audit_id: `00000000-0000-4000-8000-${(0x100000 + i).toString(16).padStart(12, "0")}`,
+      otodom_id: `IDLST${String(i).padStart(4, "0")}`,
+      created_at: at,
+      finished_at: base.finished_at === null ? null : at,
+    };
+  });
+  const state = { requests: [] as string[], failing: options.failPage !== undefined };
+  const list: Route = {
+    operation: "GET /api/audits",
+    reply: (request) => {
+      const q = request.url.searchParams;
+      state.requests.push(request.url.search);
+      const cursor = q.get("cursor");
+      // While `failing`, every request for a further page fails (set it false to let the retry through).
+      if (cursor !== null && state.failing)
+        return { status: 503, body: NOT_READY, contentType: "application/problem+json" };
+      const statuses = q.getAll("status");
+      const grade = q.get("grade");
+      const prefix = q.get("q");
+      const limit = Math.min(Number(q.get("limit") ?? "50"), 100);
+      const matching = audits.filter(
+        (a) =>
+          (statuses.length === 0 || statuses.includes(a.status)) &&
+          (grade === null || a.grade === grade) &&
+          (prefix === null || a.otodom_id.startsWith(prefix)),
+      );
+      const start = cursor === null ? 0 : Number(atob(cursor).replace("cursor:", ""));
+      if (!Number.isInteger(start) || start < 0) return replyFrom(fx("GET /api/audits", "invalid_cursor"));
+      const items = matching.slice(start, start + limit);
+      const next = start + limit < matching.length ? btoa(`cursor:${start + limit}`) : null;
+      const slow = options.refreshDelayMs !== undefined && cursor === null && state.requests.length > 1;
+      return {
+        status: 200,
+        body: { items, next_cursor: next } satisfies AuditPage,
+        ...(slow ? { delayMs: options.refreshDelayMs } : {}),
+      };
+    },
+  };
+  const detail: Route = {
+    operation: "GET /api/audits/{audit_id}",
+    reply: (request) => ({
+      status: 200,
+      body: { ...(SUCCEEDED_AUDITS[0] as AuditOut), audit_id: request.params["audit_id"] ?? "" },
+    }),
+  };
+  const base = scenario("collection", `A heavy account: ${count} analyses over cursor paging.`, [
+    list,
+    detail,
+  ]);
+  return { ...base, state, audits };
+}
+
+// ------------------------------------------------------------------------------------------ a run, stateful
+export const RUN_AUDIT_ID = "00000000-0000-4000-8000-0000000000a1";
+
+export interface RunOptions {
+  /** How the analysis ends. Default: succeeded. */
+  readonly outcome?: "succeeded" | "rejected" | "failed";
+  /** The stream drops once after the first frames; the browser reconnects and the rest arrives later. */
+  readonly interrupt?: boolean;
+  /** The stream cannot be opened: the page must fall back to polling the audit. */
+  readonly streamDown?: "http" | "network";
+  /** The stream connects and delivers the first frames, then never says anything more (a silent proxy). */
+  readonly silent?: boolean;
+  /** The POST itself fails (a dropped connection, a problem body); the list then says whether it arrived. */
+  readonly post?: Reply;
+  /** The POST answers after this many milliseconds, so the busy form is there to be clicked again. */
+  readonly postDelayMs?: number;
+  /** What `GET /api/audits` answers after such a failure (default: an empty list). */
+  readonly listAfterPost?: AuditSummary[];
+  /** The list cannot be read either (the network is down): whether the POST arrived is unknowable. */
+  readonly listFails?: boolean;
+  /**
+   * With `post` failing: the server DID create the audit for that `Idempotency-Key` and only the answer was lost.
+   * The list then finds it by `request_key`, and a resend with the same key gets the same audit back.
+   */
+  readonly lostAnswer?: boolean;
+  /** `post` fails only the first time (the connection comes back for the resend). */
+  readonly postFailsOnce?: boolean;
+}
+
+export interface Run extends Scenario {
+  /** `keys`: the `Idempotency-Key` of every POST, in order. */
+  readonly state: { posts: number; streams: number; reads: number; settled: boolean; keys: string[] };
+}
+
+const RUN_FIXTURES = {
+  succeeded: { audit: "succeeded_warszawa", events: "success_transcript" },
+  rejected: { audit: "rejected_rent_is_not_a_deal", events: "rejected_transcript" },
+  failed: { audit: "failed_upstream_blocked", events: "failure_transcript" },
+} as const;
+
+const reId = <T extends { audit_id: string }>(body: T): T => ({ ...body, audit_id: RUN_AUDIT_ID });
+
+/**
+ * One analysis from the click to its end, with the pieces that change while it runs: the balance (reserved at
+ * once, kept on success, given back otherwise), the audit (queued, then final), the stream (frames, optionally
+ * interrupted once) and the counters a test asserts on (how many POSTs, how many streams were opened).
+ */
+/** The list row of an analysis created a moment ago. */
+function queuedSummary(): AuditSummary {
+  return {
+    audit_id: RUN_AUDIT_ID,
+    otodom_id: "ID4abcd",
+    status: "queued",
+    error_code: null,
+    created_at: new Date().toISOString(),
+    finished_at: null,
+    grade: null,
+    asking_price_pln: null,
+    max_bid_pln: null,
+  };
+}
+
+export function createRun(options: RunOptions = {}): Run {
+  const kind = options.outcome ?? "succeeded";
+  const fixtures = RUN_FIXTURES[kind];
+  const state = { posts: 0, streams: 0, reads: 0, settled: false, keys: [] as string[] };
+  /** Request keys the server has recorded an audit for (what `?request_key=` finds). */
+  const recorded = new Set<string>();
+  const me = bodyOf<MeDetail>(fx("GET /api/me", "with_credits_and_flags"));
+  const final = reId(bodyOf<AuditOut>(fx("GET /api/audits/{audit_id}", fixtures.audit)));
+  const queued = reId(bodyOf<AuditOut>(fx("GET /api/audits/{audit_id}", "queued_not_yet_run")));
+  const transcript = fx("GET /api/audits/{audit_id}/events", fixtures.events).events ?? [];
+  const frames = transcript.map((e) => ({
+    ...e,
+    data: { ...(e.data as Record<string, unknown>), audit_id: RUN_AUDIT_ID },
+  }));
+  const partial = frames.filter((e) => e.event === "progress").slice(0, 3);
+  const withRetry = (list: typeof frames) => `retry: 50\n\n${eventStreamText(list)}`;
+  const streamReply = (): Reply => {
+    state.streams += 1;
+    if (options.streamDown === "network") return { status: 0, networkError: true };
+    if (options.streamDown === "http")
+      return { status: 503, body: NOT_READY, contentType: "application/problem+json" };
+    const headers = { "cache-control": "no-store" };
+    if (options.silent === true)
+      return {
+        status: 200,
+        text: `retry: 500\n\n${eventStreamText(partial)}`,
+        contentType: "text/event-stream",
+        headers,
+      };
+    const type = "text/event-stream";
+    if (options.interrupt === true && state.streams === 1)
+      return { status: 200, text: withRetry(partial), contentType: type, headers };
+    // The second answer repeats the last frame the first one sent: the page must show it once.
+    const rest =
+      options.interrupt === true ? [...partial.slice(-1), ...frames.slice(partial.length)] : frames;
+    state.settled = true;
+    return {
+      status: 200,
+      text: withRetry(rest),
+      contentType: type,
+      headers,
+      ...(options.interrupt === true ? { delayMs: 900 } : {}),
+    };
+  };
+  const routes: Route[] = [
+    {
+      operation: "GET /api/me",
+      reply: () => ({
+        status: 200,
+        body: {
+          ...me,
+          credit_balance:
+            me.credit_balance - (state.posts > 0 && !(state.settled && kind !== "succeeded") ? 1 : 0),
+        },
+      }),
+    },
+    {
+      operation: "POST /api/audits",
+      reply: (request) => {
+        state.posts += 1;
+        const key = request.headers["idempotency-key"] ?? "";
+        state.keys.push(key);
+        const failed =
+          options.post !== undefined &&
+          (options.postFailsOnce === true
+            ? state.posts === 1
+            : !(options.lostAnswer === true && recorded.has(key)));
+        if (options.lostAnswer === true || !failed) recorded.add(key);
+        if (failed && options.post !== undefined) return options.post;
+        return {
+          status: 202,
+          body: {
+            audit_id: RUN_AUDIT_ID,
+            credits_remaining: me.credit_balance - 1,
+            events_url: `/api/audits/${RUN_AUDIT_ID}/events`,
+            status: "queued",
+          },
+          ...(options.postDelayMs !== undefined ? { delayMs: options.postDelayMs } : {}),
+        };
+      },
+    },
+    {
+      operation: "GET /api/audits/{audit_id}",
+      reply: () => {
+        state.reads += 1;
+        // Without a stream the page polls: the analysis finishes between two polls.
+        if ((options.streamDown !== undefined || options.silent === true) && state.reads >= 2)
+          state.settled = true;
+        return { status: 200, body: state.settled ? final : queued };
+      },
+    },
+    { operation: "GET /api/audits/{audit_id}/events", reply: streamReply },
+    {
+      operation: "GET /api/audits",
+      reply: (request) => {
+        if (options.listFails === true) return { status: 0, networkError: true };
+        const key = request.url.searchParams.get("request_key");
+        const items =
+          key === null
+            ? (options.listAfterPost ?? [])
+            : recorded.has(key)
+              ? [{ ...queuedSummary(), audit_id: RUN_AUDIT_ID }]
+              : [];
+        return { status: 200, body: { items, next_cursor: null } satisfies AuditPage };
+      },
+    },
+  ];
+  const base = scenario("run", "One analysis from the click to its end.", routes);
+  return { ...base, state };
+}
+
+// ----------------------------------------------------------------------------------------------- matching
+const PARAM = /\{([a-z_]+)\}/g;
+
+/** `/api/audits/{audit_id}` -> a matcher that also returns the path parameters. */
+export function compileTemplate(template: string): (path: string) => Record<string, string> | null {
+  const names: string[] = [];
+  const pattern = new RegExp(
+    `^${template.replace(PARAM, (_, name: string) => (names.push(name), "([^/]+)"))}$`,
+  );
+  return (path) => {
+    const match = pattern.exec(path);
+    if (match === null) return null;
+    return Object.fromEntries(names.map((name, i) => [name, decodeURIComponent(match[i + 1] ?? "")]));
+  };
+}
+
+export interface Matched {
+  readonly route: Route;
+  readonly params: Record<string, string>;
+}
+
+/** The scenario's route for a request, or null: the caller turns null into a loud failure. */
+export function matchRoute(scenario: Scenario, method: string, path: string): Matched | null {
+  for (const route of scenario.routes) {
+    const [routeMethod, template] = route.operation.split(" ", 2);
+    if (routeMethod !== method || template === undefined) continue;
+    const params = compileTemplate(template)(path);
+    if (params !== null) return { route, params };
+  }
+  return null;
+}
+
+export function resolveReply(matched: Matched, request: MockRequest): Reply {
+  const { reply } = matched.route;
+  return typeof reply === "function" ? reply(request) : reply;
+}
+
+// ------------------------------------------------------------------------------------------- auth flow
+const wrongPassword = "wrong-password-1";
+const WEAK = "password1234";
+
+export interface AuthFlow extends Scenario {
+  /** Mutable: a successful sign-in flips it, so a following GET /api/me answers like the real API would. */
+  readonly state: { signedIn: boolean };
+  readonly calls: string[];
+}
+
+/**
+ * The sign-in surface as one stateful scenario: GET /api/me answers 401 until a sign-in succeeds, then the
+ * signed-in profile, and 401 again after sign-out. Tokens and passwords steer the answer: a token starting with
+ * `invalid` is refused, `exists` is an account that already exists, `wrong-password-1` is a bad password and
+ * `password1234` a weak one. Built fresh per test (the state is the point), from the same fixtures as the others.
+ */
+export function createAuthFlow(overrides: Record<string, Reply> = {}): AuthFlow {
+  const state = { signedIn: false };
+  const calls: string[] = [];
+  const me = bodyOf<MeDetail>(fx("GET /api/me", "with_credits_and_flags"));
+  const reply = (operation: string, scenarioName: string): Reply =>
+    overrides[operation] ?? replyFrom(fx(operation, scenarioName));
+  const signIn = (operation: string, scenarioName: string): Reply => {
+    state.signedIn = true;
+    return reply(operation, scenarioName);
+  };
+  const tokenOf = (request: MockRequest): string => {
+    const token = (request.body as { token?: unknown } | null)?.token;
+    return typeof token === "string" ? token : "";
+  };
+  const routes: Route[] = [
+    {
+      operation: "GET /api/me",
+      reply: () => (state.signedIn ? { status: 200, body: me } : replyFrom(fx("GET /api/me", "no_session"))),
+    },
+    {
+      operation: "POST /api/auth/login",
+      reply: (request) => {
+        calls.push("login");
+        const password = (request.body as { password?: string } | null)?.password;
+        if (overrides["POST /api/auth/login"] !== undefined) return overrides["POST /api/auth/login"];
+        return password === wrongPassword
+          ? replyFrom(fx("POST /api/auth/login", "wrong_password"))
+          : signIn("POST /api/auth/login", "signed_in");
+      },
+    },
+    {
+      operation: "POST /api/auth/google",
+      reply: (request) => {
+        calls.push("google");
+        const credential = (request.body as { credential?: string } | null)?.credential ?? "";
+        if (credential.includes("unverified"))
+          return replyFrom(fx("POST /api/auth/google", "email_unverified"));
+        if (credential.includes("confirm"))
+          return replyFrom(fx("POST /api/auth/google", "email_confirmation_required"));
+        return signIn("POST /api/auth/google", "new_account");
+      },
+    },
+    {
+      operation: "POST /api/auth/email/start",
+      reply: () => (calls.push("email-start"), reply("POST /api/auth/email/start", "accepted")),
+    },
+    {
+      operation: "POST /api/auth/email/verify",
+      reply: (request) => {
+        calls.push(`email-verify:${tokenOf(request)}`);
+        return tokenOf(request).startsWith("invalid")
+          ? replyFrom(fx("POST /api/auth/email/verify", "link_invalid"))
+          : signIn("POST /api/auth/email/verify", "signed_in");
+      },
+    },
+    {
+      operation: "POST /api/auth/register",
+      reply: (request) => {
+        calls.push("register");
+        const password = (request.body as { password?: string } | null)?.password;
+        return password === WEAK
+          ? replyFrom(fx("POST /api/auth/register", "weak_password"))
+          : reply("POST /api/auth/register", "accepted");
+      },
+    },
+    {
+      operation: "POST /api/auth/register/resend",
+      reply: () => (calls.push("register-resend"), reply("POST /api/auth/register/resend", "accepted")),
+    },
+    {
+      operation: "POST /api/auth/register/verify",
+      reply: (request) => {
+        const token = tokenOf(request);
+        calls.push(`register-verify:${token}`);
+        if (token.startsWith("invalid"))
+          return replyFrom(fx("POST /api/auth/register/verify", "link_invalid"));
+        if (token.startsWith("exists"))
+          return replyFrom(fx("POST /api/auth/register/verify", "account_exists"));
+        return signIn("POST /api/auth/register/verify", "account_created");
+      },
+    },
+    {
+      operation: "POST /api/auth/password/forgot",
+      reply: () => (calls.push("forgot"), reply("POST /api/auth/password/forgot", "accepted")),
+    },
+    {
+      operation: "POST /api/auth/password/reset",
+      reply: (request) => {
+        const token = tokenOf(request);
+        calls.push(`reset:${token}`);
+        const password = (request.body as { password?: string } | null)?.password;
+        if (token.startsWith("invalid"))
+          return replyFrom(fx("POST /api/auth/password/reset", "link_invalid"));
+        return password === WEAK
+          ? replyFrom(fx("POST /api/auth/password/reset", "weak_password"))
+          : reply("POST /api/auth/password/reset", "password_set");
+      },
+    },
+    {
+      operation: "POST /api/auth/signout",
+      reply: () => {
+        calls.push("signout");
+        // An override (a dropped connection, a 5xx) is a sign-out the server never performed: the session stays.
+        const failed = overrides["POST /api/auth/signout"];
+        if (failed !== undefined) return failed;
+        state.signedIn = false;
+        return reply("POST /api/auth/signout", "signed_out");
+      },
+    },
+    SAVED_EMPTY,
+    PACKS,
+    EMPTY_PAGE,
+  ];
+  return {
+    name: "authFlow",
+    description: "Sign-in methods against a stateful session.",
+    routes,
+    state,
+    calls,
+  };
+}

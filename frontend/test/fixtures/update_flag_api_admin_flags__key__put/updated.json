@@ -1,0 +1,29 @@
+{
+  "body": {
+    "description": "rollout",
+    "enabled_default": true,
+    "key": "smoke_rollout",
+    "min_plan": null,
+    "overrides": 0,
+    "rollout_pct": 75
+  },
+  "content_type": "application/json",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "PUT /api/admin/flags/{key}",
+    "method": "PUT",
+    "operation_id": "update_flag_api_admin_flags__key__put",
+    "path": "/api/admin/flags/{key}"
+  },
+  "request": {
+    "body": {
+      "enabled_default": true,
+      "rollout_pct": 75
+    },
+    "path": "/api/admin/flags/smoke_rollout"
+  },
+  "scenario": "updated",
+  "status": 200
+}

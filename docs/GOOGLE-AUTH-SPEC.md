@@ -13,7 +13,7 @@ exercised against live Google.
 2. `POST /api/auth/google {credential}` (Origin must equal `PUBLIC_APP_URL`).
 3. The server verifies the token, finds or creates the user, creates a session, ensures the credit account and sets the
    session cookie. The response is `MeOut` (id, email, name, avatar_url, role, email_verified).
-4. Email is the second method: `POST /api/auth/email/start` then `POST /api/auth/email/verify` (section 5).
+4. Email/password sign-in was added later by ADR 0013 ([PASSWORD-AUTH-SPEC.md](PASSWORD-AUTH-SPEC.md)). Email is the second method: `POST /api/auth/email/start` then `POST /api/auth/email/verify` (section 5).
 
 ## 2. Verification rules (confirmed: `tests/unit/test_google_verifier.py`, `test_auth.py`)
 

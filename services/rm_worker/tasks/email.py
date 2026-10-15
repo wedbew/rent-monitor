@@ -11,8 +11,8 @@ from html import escape
 import httpx
 import structlog
 from procrastinate import RetryStrategy
-from rm_contracts.jobs import OPS_QUEUE, SEND_MAGIC_LINK_TASK
-from rm_core.settings import Settings, get_settings
+from rm_contracts.jobs import OPS_QUEUE, SEND_AUTH_MAIL_TASK, SEND_MAGIC_LINK_TASK
+from rm_core.settings import DEFAULT_APP_NAME, Settings, get_settings
 
 from rm_worker.app import app
 from rm_worker.clients.resend import (
@@ -28,15 +28,15 @@ from rm_worker.clients.resend import (
 log = structlog.get_logger(__name__)
 
 
-def magic_link_message(email: str, url: str, ttl_minutes: int) -> Message:
+def magic_link_message(email: str, url: str, ttl_minutes: int, app_name: str = DEFAULT_APP_NAME) -> Message:
     """Polish transactional mail; plain text and minimal HTML, no tracking pixels, one link."""
-    subject = "Twój link do logowania w RentMonitor"
+    subject = f"Twój link do logowania w {app_name}"
     text = (
-        f"Kliknij, aby zalogować się do RentMonitor:\n\n{url}\n\n"
+        f"Kliknij, aby zalogować się do {app_name}:\n\n{url}\n\n"
         f"Link działa jednorazowo przez {ttl_minutes} minut. Jeśli to nie Ty, zignoruj tę wiadomość.\n"
     )
     html = (
-        "<p>Kliknij, aby zalogować się do RentMonitor:</p>"
+        f"<p>Kliknij, aby zalogować się do {app_name}:</p>"
         f'<p><a href="{escape(url, quote=True)}">Zaloguj się</a></p>'
         f"<p>Link działa jednorazowo przez {ttl_minutes} minut. Jeśli to nie Ty, zignoruj tę wiadomość.</p>"
     )
@@ -56,7 +56,7 @@ def build_mailer(settings: Settings, http: httpx.AsyncClient) -> Mailer:
 
 
 async def deliver_magic_link(mailer: Mailer, settings: Settings, email: str, url: str) -> None:
-    await mailer.send(magic_link_message(email, url, settings.magic_link_ttl_minutes))
+    await mailer.send(magic_link_message(email, url, settings.magic_link_ttl_minutes, settings.app_name))
     if settings.app_env == "development" and isinstance(mailer, LogMailer):
         # Development convenience only (blueprint §4.6 manual auth check); production never reaches this line.
         log.info("magic_link_dev", url=url)
@@ -75,3 +75,63 @@ async def send_magic_link(email: str, url: str) -> None:
         mailer = build_mailer(settings, http)
         await deliver_magic_link(mailer, settings, email, url)
     log.info("magic_link_sent")
+
+
+def auth_message(kind: str, email: str, url: str | None, settings: Settings) -> Message:
+    """Password-auth mail (ADR 0013): Polish, plain text plus minimal HTML, at most one link."""
+    app_name = settings.app_name
+    if kind == "register" and url:
+        hours = settings.register_token_ttl_hours
+        subject = f"Potwierdź rejestrację w {app_name}"
+        text = (
+            f"Kliknij, aby potwierdzić adres e-mail i założyć konto w {app_name}:\n\n{url}\n\n"
+            f"Link działa jednorazowo przez {hours} godz. Jeśli to nie Ty, zignoruj tę wiadomość.\n"
+        )
+        html = (
+            f"<p>Kliknij, aby potwierdzić adres e-mail i założyć konto w {app_name}:</p>"
+            f'<p><a href="{escape(url, quote=True)}">Potwierdź rejestrację</a></p>'
+            f"<p>Link działa jednorazowo przez {hours} godz. Jeśli to nie Ty, zignoruj tę wiadomość.</p>"
+        )
+        key = hashlib.sha256(f"register:{email}:{url}".encode()).hexdigest()
+    elif kind == "reset" and url:
+        minutes = settings.reset_token_ttl_minutes
+        subject = f"Ustaw nowe hasło w {app_name}"
+        text = (
+            f"Kliknij, aby ustawić nowe hasło do {app_name}:\n\n{url}\n\n"
+            f"Link działa jednorazowo przez {minutes} minut. Jeśli to nie Ty, zignoruj tę wiadomość.\n"
+        )
+        html = (
+            f"<p>Kliknij, aby ustawić nowe hasło do {app_name}:</p>"
+            f'<p><a href="{escape(url, quote=True)}">Ustaw nowe hasło</a></p>'
+            f"<p>Link działa jednorazowo przez {minutes} minut. Jeśli to nie Ty, zignoruj tę wiadomość.</p>"
+        )
+        key = hashlib.sha256(f"reset:{email}:{url}".encode()).hexdigest()
+    elif kind == "account_exists":
+        subject = f"Masz już konto w {app_name}"
+        text = (
+            f"Ktoś próbował założyć konto w {app_name} na ten adres, ale konto już istnieje.\n"
+            "Zaloguj się albo użyj opcji „Nie pamiętam hasła”. Jeśli to nie Ty, zignoruj tę wiadomość.\n"
+        )
+        html = "".join(f"<p>{escape(line)}</p>" for line in text.strip().split("\n"))
+        key = hashlib.sha256(f"exists:{email}".encode()).hexdigest()
+    else:
+        raise PermanentMailError(f"unknown auth mail kind {kind!r}")
+    return Message(to=email, subject=subject, text=text, html=html, idempotency_key=key)
+
+
+@app.task(
+    queue=OPS_QUEUE,
+    name=SEND_AUTH_MAIL_TASK,
+    retry=RetryStrategy(max_attempts=4, exponential_wait=3, retry_exceptions=[TransientMailError]),
+)
+async def send_auth_mail(kind: str, email: str, url: str | None = None) -> None:
+    """GDPR[processor]: Resend receives the address and, for `register`, the single-use link. The token is
+    hashed in the database and its plaintext lives only in this job's arguments until the job is removed
+    (docs/LIMITATIONS.md L-011)."""
+    settings = get_settings()
+    async with httpx.AsyncClient() as http:
+        mailer = build_mailer(settings, http)
+        await mailer.send(auth_message(kind, email, url, settings))
+        if settings.app_env == "development" and isinstance(mailer, LogMailer) and url:
+            log.info("auth_mail_dev", kind=kind, url=url)  # development only; production never logs a link
+    log.info("auth_mail_sent", kind=kind)

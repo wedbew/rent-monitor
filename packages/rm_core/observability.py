@@ -24,9 +24,10 @@ REDACTED = "[redacted]"
 _EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
 _JWT = re.compile(r"\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*")
 _BEARER = re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]+")
-# `#t=<magic-link token>`, `token=...`, `credential=...`, `code=...`, `session=...` in URLs or messages
+# `#t=<magic-link token>`, `token=...`, `credential=...`, `code=...`, `session=...` in URLs or messages,
+# also at the very start of a text or a line (RM-280 found `token=...` at the start escaping)
 _PARAM = re.compile(
-    r"(?i)([#?&;\s](?:t|token|id_token|credential|code|session|key|secret|password)=)[^&\s\"'#]+"
+    r"(?im)((?:^|[#?&;\s])(?:t|token|id_token|credential|code|session|key|secret|password)=)[^&\s\"'#]+"
 )
 
 

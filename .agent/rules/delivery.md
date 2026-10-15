@@ -44,6 +44,8 @@ Never describe an offline-fake run as live-provider validation.
 
 ## Pull requests and shared files
 
+- `docs/STATUS.md` edited in a PR describes the state **after that PR merges**; `staging` keeps the old text until then. A PR body must not present branch results as already on `staging`.
+- Label `ready` only when each prerequisite is merged, not merely open in a PR.
 - Update `CHANGELOG.md`, `CONTEXT.md`, README, `docs/STATUS.md` and `docs/LIMITATIONS.md` **in the implementation PR**. No
   docs-only PR for status housekeeping; a docs PR is for a spec, an ADR, or an owner decision.
 - Rebase on `staging` to resolve shared-file conflicts. Do not open a replacement PR unless the old one cannot be fixed; say

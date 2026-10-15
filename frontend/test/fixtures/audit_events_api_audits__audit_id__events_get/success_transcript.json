@@ -1,0 +1,104 @@
+{
+  "body": null,
+  "content_type": "text/event-stream; charset=utf-8",
+  "events": [
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000015",
+        "message": "",
+        "pct": 5,
+        "stage": "fetch"
+      },
+      "event": "progress",
+      "id": "118"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000015",
+        "message": "",
+        "pct": 15,
+        "stage": "extract"
+      },
+      "event": "progress",
+      "id": "119"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000015",
+        "message": "",
+        "pct": 25,
+        "stage": "context"
+      },
+      "event": "progress",
+      "id": "120"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000015",
+        "message": "",
+        "pct": 35,
+        "stage": "vision"
+      },
+      "event": "progress",
+      "id": "121"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000015",
+        "message": "",
+        "pct": 60,
+        "stage": "ocr"
+      },
+      "event": "progress",
+      "id": "122"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000015",
+        "message": "",
+        "pct": 85,
+        "stage": "synthesize"
+      },
+      "event": "progress",
+      "id": "123"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000015",
+        "message": "",
+        "pct": 95,
+        "stage": "persist"
+      },
+      "event": "progress",
+      "id": "124"
+    },
+    {
+      "data": {
+        "audit_id": "00000000-0000-4000-8000-000000000015",
+        "grade": "E",
+        "pct": 100,
+        "result_url": "/api/audits/00000000-0000-4000-8000-000000000015",
+        "stage": "persist",
+        "status": "succeeded"
+      },
+      "event": "done",
+      "id": "125"
+    }
+  ],
+  "headers": {
+    "cache-control": "no-store",
+    "content-type": "text/event-stream; charset=utf-8"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}/events",
+    "method": "GET",
+    "operation_id": "audit_events_api_audits__audit_id__events_get",
+    "path": "/api/audits/{audit_id}/events"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/00000000-0000-4000-8000-000000000015/events"
+  },
+  "scenario": "success_transcript",
+  "status": 200
+}

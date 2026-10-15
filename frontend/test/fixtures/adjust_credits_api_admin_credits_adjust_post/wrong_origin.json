@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/admin/credits/adjust",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/admin/credits/adjust",
+    "method": "POST",
+    "operation_id": "adjust_credits_api_admin_credits_adjust_post",
+    "path": "/api/admin/credits/adjust"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/admin/credits/adjust"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

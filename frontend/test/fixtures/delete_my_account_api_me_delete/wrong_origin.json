@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/me",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "DELETE /api/me",
+    "method": "DELETE",
+    "operation_id": "delete_my_account_api_me_delete",
+    "path": "/api/me"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/me"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

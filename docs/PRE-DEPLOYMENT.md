@@ -19,7 +19,9 @@ blueprint §6; risks are blueprint §5; limits are `docs/LIMITATIONS.md`.
 - [ ] Coverage floor met; pyright strict clean for `packages/` and `services/`; ruff, semgrep, gitleaks, zizmor, actionlint clean.
 - [ ] `tests/migrations` (pytest-alembic) and `squawk` pass; migrations are expand→contract; rollback/restore path documented.
 - [ ] Contract test against one live listing passes (schema-drift detector); the `UPSTREAM_SCHEMA_DRIFT` alert is verified.
-- [ ] `frontend/src/lib/cashflow.ts` and `appreciation.ts` do not exist.
+- [ ] The SPA computes no finance: the tested ESLint money guard (`frontend/eslint.money.mjs`) passes in the `frontend` job. (Replaces the old check that two `frontend/src/lib/*` files do not exist, which could not fail in the flat layout.)
+- [ ] No reachable placeholder screen: every row of `docs/STATUS.md` *Frontend: screens a user can reach that are not built* is built or its entry point removed (in particular `/terms` and `/privacy`, which sign-up says the person accepts).
+- [ ] `frontend`, `frontend-e2e` and `frontend-journey` are required checks on `main` and `staging` (B-019).
 
 ## 2. Release gates (blueprint §6): evidence required
 - [ ] 1 KSeF end to end on a Fakturownia trial (subscription, test-clock renewal, BLIK pass, card pass, no-NIP buyer, timeout, rejection, downtime).
@@ -28,7 +30,7 @@ blueprint §6; risks are blueprint §5; limits are `docs/LIMITATIONS.md`.
 - [ ] 4 Memory: 20 representative audits with batch running; `memory.peak` recorded; concurrency 2 only if peak < 60 % of the limit.
 - [ ] 5 Connections: peak-load test, `pg_stat_activity` stays under 70.
 - [ ] 6 Restore: WAL-G point-in-time restore on a fresh VPS, timed, under 1 hour.
-- [ ] 7 Auth: unverified Google token rejected; same-email collision handled; sign-out-everywhere evicts sessions within 1 s.
+- [x] 7 Auth: unverified Google token rejected; same-email collision handled; sign-out-everywhere evicts sessions within 1 s. Evidence (offline, fake Google; CI): `tests/integration/test_auth.py::test_google_unverified_email_is_rejected_and_creates_nothing`, `::test_an_unverified_google_email_never_links_to_an_existing_user`, `::test_sign_out_everywhere_evicts_cached_sessions_in_all_processes` (asserts under 1 s), 2026-10-14, #38. Real Google sign-in is still unexercised (B-004).
 
 ## 3. Security
 - [ ] Production secrets only in the host `.env` / password manager; none in git, CI logs or images. Stripe live keys separate from test keys.

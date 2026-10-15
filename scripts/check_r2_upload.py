@@ -76,7 +76,7 @@ def main() -> int:
         return 1
     suffix = "" if args.jurisdiction == "default" else f".{args.jurisdiction}"
     key = f"connection-tests/{datetime.now(UTC):%Y%m%dT%H%M%SZ}-{uuid4().hex}.txt"
-    body = b"RentMonitor R2 upload and read-back connectivity test.\n"
+    body = b"R2 upload and read-back connectivity test.\n"
     phase = "credentials"
     access = secret = ""
     try:

@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/saved/ID00000000",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "DELETE /api/saved/{otodom_id}",
+    "method": "DELETE",
+    "operation_id": "unsave_listing_api_saved__otodom_id__delete",
+    "path": "/api/saved/{otodom_id}"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/saved/ID00000000"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

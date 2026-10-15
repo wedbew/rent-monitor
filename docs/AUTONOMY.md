@@ -35,11 +35,11 @@ A run is capped at 40 turns and 30 minutes; a ticket that does not finish leaves
 `true`** (set it with `gh variable set ENABLE_DISPATCH --body true`; unset it to stop). States it distinguishes:
 
 - **running**: a `claude` workflow run is active, or the PR's checks are pending: nothing happens;
-- **awaiting approval or merge**: an open PR with passing checks (found by branch `rm-<n>-*`, `claude/issue-<n>-*` or `RM-<n>` in the title,
+- **awaiting approval or merge**: an open PR whose checks all finished well (no checks yet, or an unknown conclusion, is `pending`, never passing; found by branch `rm-<n>-*`, `claude/issue-<n>-*` or `RM-<n>` in the title,
   labelled `agent` or not): never resumed, never blocked, and no other issue starts;
 - **failing**: PR checks failed and 60 minutes idle: one `@claude resume` comment, up to two, then `blocked`;
 - **stalled**: labelled `agent`, no PR, 60 minutes idle: same resume-then-`blocked` path with the owner action in the comment;
-- **free**: nothing in flight, the latest `ci` run on `staging` is not red and no run is active: the lowest `Priority: P0..P2`, then lowest
+- **free**: nothing in flight, the latest `ci` run on `staging` finished successfully on staging's current head (a missing, running, cancelled, timed-out, failed or older-commit run counts as unverified and idles) and no run is active: the lowest `Priority: P0..P2`, then lowest
   number, issue labelled `ready` whose `Depends on:` issues are all closed and that is not `blocked`, `umbrella`, `owner` or `in-progress`
   gets the `agent` label (which starts `claude.yml`).
 
@@ -60,5 +60,5 @@ no write access, no branch or PR; on success the one-sentence answer is shown in
 | Date | Issue | Result | Evidence |
 |---|---|---|---|
 | 2026-10-11 | #100 (labelled `agent`) | failed in ~2 s, 0 turns, $0 cost; no PR | run 38182957497: `is_error:true` before any model call, then `compare` 404 from the action's own change check |
-| 2026-10-12 22:48Z | #190 (labelled `agent`) | failed in 40 s, no model turn; no PR | run 38318725879: `claude_code_oauth_token: ""` and `ANTHROPIC_API_KEY: ""`, i.e. the OAuth secret is empty (B-016). The `claude.yml` preflight now fails fast and comments the owner action. Retry target: #106 |
-| 2026-10-13 09:47Z | read-only canary (`claude.yml` *Run workflow*, branch `rm-189-ci-dispatch`) | failed in ~2 s: `API Error: 401 OAuth access token is invalid` (`authentication_failed`, 0 turns, $0) | run 38378777564; the secret is present, the API rejects it (B-016). Earlier empty-secret runs fixed by re-setting the secret |
+| 2026-10-12 22:48Z | #190 (labelled `agent`) | failed in 40 s, no model turn; no PR | run 38318725879: `claude_code_oauth_token: ""` and `ANTHROPIC_API_KEY: ""`, i.e. the OAuth secret is empty (B-021). The `claude.yml` preflight now fails fast and comments the owner action. Retry target: #106 |
+| 2026-10-13 09:47Z | read-only canary (`claude.yml` *Run workflow*, branch `rm-189-ci-dispatch`) | failed in ~2 s: `API Error: 401 OAuth access token is invalid` (`authentication_failed`, 0 turns, $0) | run 38378777564; the secret is present, the API rejects it (B-021). Earlier empty-secret runs fixed by re-setting the secret |
