@@ -13,6 +13,8 @@ import { InlineNotice } from "../../ui/Status";
 import { useAudit } from "./queries";
 import { stageLabel } from "./progress/frames";
 import type { Connection } from "./progress/streams";
+import { parseReport } from "../../api/report";
+import { ReportView } from "./report/ReportView";
 import { useAuditProgress } from "./progress/useAuditProgress";
 import { hasReport, isActive, statusCopy } from "./status";
 import styles from "./AnalysisPage.module.css";
@@ -202,7 +204,28 @@ function Analysis({ auditId }: { readonly auditId: string }) {
           </div>
         </section>
       )}
+      {hasReport(data.status) ? (
+        <ReportBody result={data.result} degraded={data.status === "succeeded_degraded"} />
+      ) : null}
     </div>
+  );
+}
+
+/** The stored result, rendered only in a version this build knows; anything else is said so, never guessed at. */
+function ReportBody({ result, degraded }: { readonly result: unknown; readonly degraded: boolean }) {
+  const parsed = parseReport(result);
+  if (parsed.kind === "ready") return <ReportView report={parsed.report} degraded={degraded} />;
+  if (parsed.kind === "unsupported")
+    return (
+      <InlineNotice tone="warning" title="Nieobsługiwana wersja raportu" live="status">
+        Ten raport powstał w wersji, której ta aplikacja jeszcze nie potrafi wyświetlić. Dane są bezpieczne i
+        nie zostały zmienione; nic nie jest pokazywane na podstawie domysłów.
+      </InlineNotice>
+    );
+  return (
+    <InlineNotice tone="danger" title="Nie można wyświetlić raportu" live="status">
+      Zapisany wynik jest niekompletny. Napisz do pomocy, podając numer ogłoszenia.
+    </InlineNotice>
   );
 }
 
