@@ -1,9 +1,15 @@
-"""Delivery timing per merged PR, from GitHub (ADR 0012). Read-only.
+"""Delivery timing proxies per merged PR, from GitHub (ADR 0012). Read-only.
 
-*calendar* = PR created to merged. *work* = created to the last non-merge commit pushed (editing, local
-checks, fixes). *wait* = that commit to merged (CI, review, owner approval, queueing). Work done before the PR
-was opened is not visible, and CI plus approval cannot be separated from the data GitHub keeps; a long *wait*
-on a PR that needed approval is the approval wait. Not billed minutes.
+These are proxies, not measurements of execution or approval time:
+
+* `calendar`: PR created to merged;
+* `open_to_last_commit`: PR created to the *commit timestamp* of its last non-merge commit. That is the
+  committer's clock, not when GitHub received the push, and work before the PR opened is invisible;
+* `last_commit_to_merge`: that timestamp to merged. It mixes CI, review, approval and queueing, and cannot
+  separate them.
+
+Do not infer causes (agent time versus owner wait) from these numbers. For future measurements record events:
+workflow run start/finish, check completion times, and the approval comment timestamp.
 
     uv run python scripts/delivery_metrics.py [--limit 100] [--since 2026-10-13]
 """
@@ -22,8 +28,8 @@ class PrTiming:
     number: int
     title: str
     calendar_s: float
-    work_s: float | None
-    wait_s: float | None
+    open_to_last_commit_s: float | None
+    last_commit_to_merge_s: float | None
 
 
 def _ts(value: str) -> datetime:
@@ -40,9 +46,15 @@ def timing(pr: dict) -> PrTiming | None:
         if not c["messageHeadline"].startswith("Merge")
     ]
     last = max(pushed) if pushed else None
-    work = max(0.0, (last - created).total_seconds()) if last else None
-    wait = max(0.0, (merged - max(last, created)).total_seconds()) if last else None
-    return PrTiming(pr["number"], pr["title"], (merged - created).total_seconds(), work, wait)
+    open_to_last_commit = max(0.0, (last - created).total_seconds()) if last else None
+    last_commit_to_merge = max(0.0, (merged - max(last, created)).total_seconds()) if last else None
+    return PrTiming(
+        pr["number"],
+        pr["title"],
+        (merged - created).total_seconds(),
+        open_to_last_commit,
+        last_commit_to_merge,
+    )
 
 
 def percentile(values: list[float], q: float) -> float:
@@ -53,7 +65,7 @@ def percentile(values: list[float], q: float) -> float:
 
 def summarise(rows: list[PrTiming]) -> dict[str, dict[str, float]]:
     out: dict[str, dict[str, float]] = {}
-    for name in ("calendar_s", "work_s", "wait_s"):
+    for name in ("calendar_s", "open_to_last_commit_s", "last_commit_to_merge_s"):
         vals = [v for r in rows if (v := getattr(r, name)) is not None]
         if vals:
             out[name] = {

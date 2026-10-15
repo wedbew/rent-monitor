@@ -1,14 +1,18 @@
 """Pick the next ready issue for the headless agent, or resume/block a stuck one (ADR 0012, docs/AUTONOMY.md).
 
-One action per run, idempotent, and a dry run unless `--apply`:
+One action per run, idempotent, and a dry run unless `--apply`. Work is in one of these states:
 
-* an issue labelled `agent` is in flight: leave it while it has recent activity; after `--stale-minutes`
-  without activity, resume it (a comment that mentions @claude, up to `--max-attempts` times), then mark
-  it `blocked` with the owner action instead of retrying forever;
-* nothing in flight: label the first `ready` issue `agent` (which starts `.github/workflows/claude.yml`)
-  when every `Depends on: #n` is closed and it is not `blocked`, `umbrella` or `owner`.
+* running: a `claude` workflow run is queued or active, or the PR's checks are pending: leave it alone;
+* awaiting approval or merge: an open PR with passing checks: never resumed, never blocked;
+* failing: an open PR with failing checks, idle for `--stale-minutes`: resume (up to `--max-attempts`);
+* stalled: labelled `agent`, no PR, idle for `--stale-minutes`: resume, then `blocked` with the owner action;
+* nothing in flight, `staging` green, no run active: label the first `ready` issue `agent` (starts
+  `claude.yml`) when every `Depends on: #n` is closed and it is not `blocked`, `umbrella`, `owner`
+  or `in-progress`.
 
-The pure decision is `decide`; `main` only talks to `gh`. Concurrency is one issue at a time by construction.
+In flight means labelled `agent` or having an open PR (branch `rm-<n>-*`, `claude/issue-<n>-*`, or `RM-<n>`
+in the title), whoever opened it. A blocked issue is retried only after the owner comments `/retry`
+(attempts count from the latest one) and removes `blocked`. `decide` is pure; `main` talks to `gh`.
 """
 
 import argparse
@@ -20,6 +24,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
 MARKER = "<!-- rm-dispatch attempt="
+RETRY = "/retry"
 SKIP_LABELS = {"blocked", "umbrella", "owner", "agent", "in-progress"}
 BRANCH = r"^(rm-{n}-|claude/issue-{n}-)"
 
@@ -39,6 +44,8 @@ class Pr:
     number: int
     branch: str
     updated_at: datetime
+    title: str = ""
+    checks: str = "passing"  # pending | passing | failing
 
 
 @dataclass(frozen=True)
@@ -62,10 +69,21 @@ def priority(body: str) -> int:
 
 
 def attempts(issue: Issue) -> int:
-    return sum(1 for c in issue.comments if MARKER in c)
+    """Dispatch attempts since the owner's latest `/retry` comment, not over the issue's lifetime."""
+    start = 0
+    for i, c in enumerate(issue.comments):
+        if c.strip().startswith(RETRY):
+            start = i + 1
+    return sum(1 for c in issue.comments[start:] if MARKER in c)
 
 
-def decide(
+def owns(issue_number: int, pr: Pr) -> bool:
+    return bool(
+        re.match(BRANCH.format(n=issue_number), pr.branch) or re.search(rf"\bRM-{issue_number}\b", pr.title)
+    )
+
+
+def decide(  # noqa: PLR0911
     issues: list[Issue],
     closed: set[int],
     prs: list[Pr],
@@ -73,21 +91,47 @@ def decide(
     *,
     stale: timedelta = timedelta(minutes=60),
     max_attempts: int = 2,
+    claude_running: bool = False,
+    staging_green: bool = True,
 ) -> Decision:
-    for issue in sorted(
-        (i for i in issues if "agent" in i.labels and "blocked" not in i.labels), key=lambda i: i.number
-    ):
-        own = [p for p in prs if re.match(BRANCH.format(n=issue.number), p.branch)]
+    if claude_running:
+        return Decision("idle", None, "a claude workflow run is active")
+    in_flight = sorted(
+        (
+            i
+            for i in issues
+            if "blocked" not in i.labels and ("agent" in i.labels or any(owns(i.number, p) for p in prs))
+        ),
+        key=lambda i: i.number,
+    )
+    for issue in in_flight:
+        own = [p for p in prs if owns(issue.number, p)]
         last = max([issue.updated_at, *[p.updated_at for p in own]])
+        n = attempts(issue)
+        if own:
+            if any(p.checks == "pending" for p in own):
+                return Decision("idle", issue.number, f"#{issue.number}: PR checks are running")
+            if all(p.checks == "passing" for p in own):
+                return Decision("idle", issue.number, f"#{issue.number}: PR awaits approval or merge")
+            if now - last < stale:
+                return Decision("idle", issue.number, f"#{issue.number}: PR checks failed, fix in progress")
+            if n < max_attempts:
+                return Decision(
+                    "resume", issue.number, "PR checks failing and idle; resume the fix", attempt=n + 1
+                )
+            return Decision("block", issue.number, f"PR checks still failing after {n} attempts")
         if now - last < stale:
             return Decision(
                 "idle", issue.number, f"#{issue.number} is in flight (last activity {last.isoformat()})"
             )
-        n = attempts(issue)
         if n < max_attempts:
             return Decision("resume", issue.number, "no activity; resume from the checkpoint", attempt=n + 1)
         return Decision(
             "block", issue.number, f"no activity after {n} attempts; owner must look at the run log"
+        )
+    if not staging_green:
+        return Decision(
+            "idle", None, "staging CI is red or not verified: no new work until its latest run passed"
         )
     ready = [
         i
@@ -111,6 +155,69 @@ def _gh(*args: str) -> str:
 
 def _ts(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+FAILED = {"FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "STARTUP_FAILURE"}
+PASSED = {"SUCCESS", "NEUTRAL", "SKIPPED"}
+
+
+def _checks(rollup: list[dict[str, str]]) -> str:
+    """failing if any check failed; passing only when checks exist and every one finished well.
+
+    No checks yet, an unfinished check or a conclusion we do not know (ACTION_REQUIRED, STALE, empty) is
+    `pending`: unverified is never mistaken for success. Skipped counts as passing.
+    """
+    outcomes = [c.get("conclusion") or c.get("state") or "" for c in rollup]
+    if any(o in FAILED for o in outcomes):
+        return "failing"
+    finished = all(c.get("status") == "COMPLETED" or c.get("state") == "SUCCESS" for c in rollup)
+    return "passing" if rollup and finished and all(o in PASSED for o in outcomes) else "pending"
+
+
+def claude_active() -> bool:
+    for status in ("in_progress", "queued"):
+        runs = json.loads(
+            _gh("run", "list", "--workflow", "claude.yml", "--status", status, "--json", "databaseId")
+        )
+        if runs:
+            return True
+    return False
+
+
+def staging_verified(runs: list[dict[str, str]], head_sha: str) -> bool:
+    """True only when the latest `ci` push run finished successfully on staging's current head.
+
+    A missing, queued, running, cancelled, timed-out or failed run, or one of an older commit, is unverified.
+    """
+    if not runs:
+        return False
+    latest = runs[0]
+    return (
+        latest.get("status") == "completed"
+        and latest.get("conclusion") == "success"
+        and (latest.get("headSha") == head_sha)
+    )
+
+
+def staging_is_green() -> bool:
+    head = _gh("api", "repos/{owner}/{repo}/branches/staging", "--jq", ".commit.sha").strip()
+    runs = json.loads(
+        _gh(
+            "run",
+            "list",
+            "--workflow",
+            "ci.yml",
+            "--branch",
+            "staging",
+            "--event",
+            "push",
+            "--limit",
+            "1",
+            "--json",
+            "conclusion,status,headSha",
+        )
+    )
+    return staging_verified(runs, head)
 
 
 def load() -> tuple[list[Issue], set[int], list[Pr]]:
@@ -142,8 +249,19 @@ def load() -> tuple[list[Issue], set[int], list[Pr]]:
         for r in json.loads(_gh("issue", "list", "--state", "closed", "--limit", "500", "--json", "number"))
     }
     prs = [
-        Pr(r["number"], r["headRefName"], _ts(r["updatedAt"]))
-        for r in json.loads(_gh("pr", "list", "--state", "open", "--json", "number,headRefName,updatedAt"))
+        Pr(r["number"], r["headRefName"], _ts(r["updatedAt"]), r["title"], _checks(r["statusCheckRollup"]))
+        for r in json.loads(
+            _gh(
+                "pr",
+                "list",
+                "--state",
+                "open",
+                "--limit",
+                "200",
+                "--json",
+                "number,headRefName,updatedAt,title,statusCheckRollup",
+            )
+        )
     ]
     return issues, closed, prs
 
@@ -172,11 +290,30 @@ def apply(d: Decision) -> None:
         _comment(
             n,
             f"Blocked by the dispatcher: {d.reason}. Owner action: read the latest `claude` run log, fix the "
-            "cause, then remove the `blocked` label to allow another attempt.",
+            "cause, comment `/retry` and remove the `blocked` label to allow new attempts.",
         )
 
 
+def failure_message(exc: subprocess.CalledProcessError) -> str:
+    """One line for the log: the failed `gh` subcommand and the first stderr line, credentials redacted."""
+    cmd = " ".join(str(a) for a in exc.cmd[:3])
+    first = (exc.stderr or "").strip().splitlines()[:1]
+    detail = re.sub(
+        r"(?i)\b(?:gh[pousr]_\w+|github_pat_\w+|bearer\s+\S+)", "[redacted]", first[0] if first else ""
+    )
+    return f"`{cmd}` failed (exit {exc.returncode}): {detail[:200]}"
+
+
 def main(argv: list[str] | None = None) -> int:
+    try:
+        return _main(argv)
+    except subprocess.CalledProcessError as exc:
+        # Fail once and visibly (no traceback with stderr); the next schedule tick is the only retry.
+        print(f"dispatcher stopped: {failure_message(exc)}", file=sys.stderr)
+        return 1
+
+
+def _main(argv: list[str] | None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true", help="perform the action (default: print it)")
     ap.add_argument("--stale-minutes", type=int, default=60)
@@ -190,6 +327,8 @@ def main(argv: list[str] | None = None) -> int:
         datetime.now(UTC),
         stale=timedelta(minutes=args.stale_minutes),
         max_attempts=args.max_attempts,
+        claude_running=claude_active(),
+        staging_green=staging_is_green(),
     )
     print(json.dumps({"action": d.action, "issue": d.issue, "reason": d.reason, "attempt": d.attempt}))
     if args.apply and d.action != "idle":
