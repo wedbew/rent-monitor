@@ -1,35 +1,21 @@
-import { useEffect, useRef } from "react";
-import { Outlet, useLocation } from "react-router";
+import { Outlet } from "react-router";
 
+import { AccountBlock } from "./AccountBlock";
 import { Brand } from "./Brand";
 import { MobileMenu } from "./MobileMenu";
 import { LEGAL, PRIMARY } from "./navigation";
 import { NavList } from "./NavList";
 import styles from "./AppShell.module.css";
+import { useSession } from "./session";
 import { ThemeControl } from "./ThemeControl";
-
-/** A single-page app gets no focus move from the browser on navigation: put it on the new page's heading. */
-function useRouteFocus(): void {
-  const { pathname } = useLocation();
-  const first = useRef(true);
-  useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
-    const frame = requestAnimationFrame(() => {
-      document.querySelector<HTMLElement>("main h1")?.focus();
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [pathname]);
-}
+import { VerifyBanner } from "./VerifyBanner";
 
 /**
  * Landmarks: one banner (the rail on desktop, the bar on mobile), one `main`, a skip link first. The desktop rail
  * and the mobile bar are the same element, rearranged by CSS, so there is one theme control and one brand link.
  */
 export function AppShell() {
-  useRouteFocus();
+  const session = useSession();
   return (
     <div className={styles["shell"]}>
       <a className={styles["skip"]} href="#main">
@@ -47,6 +33,11 @@ export function AppShell() {
           <div className={styles["legal"]}>
             <NavList label="Dokumenty" destinations={LEGAL} />
           </div>
+          {session.status === "signedIn" ? (
+            <div className={styles["account"]}>
+              <AccountBlock />
+            </div>
+          ) : null}
         </div>
         <div className={styles["menu"]}>
           <MobileMenu />
@@ -54,6 +45,11 @@ export function AppShell() {
       </header>
       <main id="main" tabIndex={-1} className={styles["main"]}>
         <div className={styles["content"]}>
+          {session.status === "signedIn" ? (
+            <div className={styles["banner"]}>
+              <VerifyBanner />
+            </div>
+          ) : null}
           <Outlet />
         </div>
       </main>

@@ -2,7 +2,9 @@
 
     C="docker compose -f deploy/compose.yml exec -T api python scripts/e2e_session.py"
     $C create [--credits 5] [--admin]
+    $C register-token --email e2e-<x>@example.test --password <p>
     $C delete <user_id>
+    $C delete-email e2e-<x>@example.test
 
 It runs *inside* the api container, with the deployed settings and database, and writes the user, a credit
 account and a session row exactly as the sign-in routes would; the raw session token is printed once (JSON
@@ -23,8 +25,10 @@ import sys
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from rm_api.auth.password import _issue_register_token
+from rm_api.auth.passwords import PasswordHasher
 from rm_api.auth.sessions import create_session
-from rm_core.db.models import User
+from rm_core.db.models import AuthToken, User
 from rm_core.db.session import make_engine, make_sessionmaker
 from rm_core.ledger import admin_adjust, ensure_credit_account
 from rm_core.settings import get_settings
@@ -66,6 +70,39 @@ async def create(credits: int, *, admin: bool) -> dict[str, object]:
         await engine.dispose()
 
 
+async def register_token(email: str, password: str) -> dict[str, str]:
+    """The one-time token the sign-up e-mail would carry, stored exactly as registration stores it (one live
+    token per address, SHA-256 at rest, Argon2id hash of the password). The raw token is returned here instead
+    of being mailed, so a journey can open `/signup/verify#t=<token>` without a mailbox."""
+    if not email.startswith("e2e-") or not email.endswith("@example.test"):
+        msg = "refusing: only e2e-*@example.test addresses"
+        raise SystemExit(msg)
+    settings = get_settings()
+    engine = make_engine(settings, pool_size=1, max_overflow=0)
+    sm = make_sessionmaker(engine)
+    try:
+        password_hash = await PasswordHasher(settings).hash(password)
+        async with sm() as session, session.begin():
+            token = await _issue_register_token(session, settings, email, password_hash)
+        return {"email": email, "token": token}
+    finally:
+        await engine.dispose()
+
+
+async def remove_email(email: str) -> bool:
+    if not email.startswith("e2e-") or not email.endswith("@example.test"):
+        return False
+    engine = make_engine(get_settings(), pool_size=1, max_overflow=0)
+    sm = make_sessionmaker(engine)
+    try:
+        async with sm() as session, session.begin():
+            await session.execute(delete(AuthToken).where(AuthToken.email == email))
+            result = await session.execute(delete(User).where(User.email == email))
+            return bool(getattr(result, "rowcount", 0))
+    finally:
+        await engine.dispose()
+
+
 async def remove(user_id: str) -> bool:
     engine = make_engine(get_settings(), pool_size=1, max_overflow=0)
     sm = make_sessionmaker(engine)
@@ -89,9 +126,20 @@ def main() -> int:
     make.add_argument("--admin", action="store_true")
     drop = sub.add_parser("delete")
     drop.add_argument("user_id")
+    token = sub.add_parser("register-token")
+    token.add_argument("--email", required=True)
+    token.add_argument("--password", required=True)
+    drop_email = sub.add_parser("delete-email")
+    drop_email.add_argument("email")
     args = parser.parse_args()
     if args.command == "create":
         print(json.dumps(asyncio.run(create(args.credits, admin=args.admin))))
+        return 0
+    if args.command == "register-token":
+        print(json.dumps(asyncio.run(register_token(args.email, args.password))))
+        return 0
+    if args.command == "delete-email":
+        print(json.dumps({"deleted": asyncio.run(remove_email(args.email))}))
         return 0
     print(json.dumps({"deleted": asyncio.run(remove(args.user_id))}))
     return 0

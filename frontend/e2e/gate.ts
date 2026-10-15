@@ -3,7 +3,13 @@
  * comparing what was exercised with what is registered. Unit-tested in gate.test.ts; used by inventory.spec.ts and
  * coverage-reporter.ts.
  */
-import { EVERY_PAGE, type InteractiveRole, type Interaction, type Popup } from "./interactions";
+import {
+  EVERY_PAGE,
+  EVERY_PUBLIC_PAGE,
+  type InteractiveRole,
+  type Interaction,
+  type Popup,
+} from "./interactions";
 
 export const INTERACTIVE_ROLES: ReadonlySet<string> = new Set<InteractiveRole>([
   "button",
@@ -79,6 +85,9 @@ export interface Scope {
   readonly page: string;
   readonly scenario: string;
   readonly viewport?: "desktop" | "mobile";
+  readonly layout?: "app" | "public";
+  /** The page state being inspected (see PageState); undefined is the base state. */
+  readonly state?: string;
   /** Popup being inspected, or undefined for the page itself. */
   readonly within?: string;
 }
@@ -97,20 +106,28 @@ export function findViolations(
   registry: readonly Interaction[],
   scope: Scope,
 ): Violation[] {
-  const where = `${scope.page} / ${scope.scenario}${scope.within ? ` / ${scope.within}` : ""}`;
-  const expected = registry.filter(
+  const where = `${scope.page} / ${scope.scenario}${scope.state ? ` / ${scope.state}` : ""}${scope.within ? ` / ${scope.within}` : ""}`;
+  const candidates = registry.filter(
     (e) =>
-      (e.page === scope.page || e.page === EVERY_PAGE) &&
+      (e.page === scope.page ||
+        (e.page === EVERY_PAGE && scope.layout !== "public") ||
+        (e.page === EVERY_PUBLIC_PAGE && scope.layout === "public")) &&
       e.within === scope.within &&
       applies(e, scope.scenario) &&
       (e.viewport === undefined || scope.viewport === undefined || e.viewport === scope.viewport),
+  );
+  // A state inventory accepts the page's base elements too (they are usually still there) but only demands the
+  // elements registered for that very state; the base state demands only base elements.
+  const accepted = candidates.filter((e) => e.state === undefined || e.state === scope.state);
+  const expected = candidates.filter((e) =>
+    scope.state === undefined ? e.state === undefined : e.state === scope.state,
   );
   const shown = interactiveNodes(snapshot);
   const violations: Violation[] = [];
   for (const node of shown) {
     if (node.name === null || node.name.trim() === "") {
       violations.push({ kind: "unnamed", message: `${where}: ${node.role} without an accessible name` });
-    } else if (!expected.some((e) => e.role === node.role && nameMatches(e.name, node.name))) {
+    } else if (!accepted.some((e) => e.role === node.role && nameMatches(e.name, node.name))) {
       violations.push({
         kind: "unregistered",
         message: `${where}: ${node.role} "${node.name}" is not in e2e/interactions.ts`,

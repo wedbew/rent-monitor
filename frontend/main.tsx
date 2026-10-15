@@ -4,8 +4,13 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router";
 
 import { createQueryClient } from "./api/query";
+import { captureFragmentToken } from "./features/auth/token";
 import { router } from "./routes";
+import { SessionProvider } from "./shell/session";
 import "./styles/globals.css";
+
+// Mailed links carry a one-time token in the fragment: take it out of the address bar before anything renders.
+captureFragmentToken();
 
 const queryClient = createQueryClient();
 
@@ -17,7 +22,9 @@ if (root === null) {
 createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <SessionProvider>
+        <RouterProvider router={router} />
+      </SessionProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

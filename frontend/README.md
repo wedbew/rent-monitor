@@ -72,6 +72,27 @@ Storybook is deliberately not installed yet: with only these primitives a catalo
 keep in sync; the real pages in the e2e gate are the living examples. Revisit when a second feature slice shares
 patterns (decision recorded in #270).
 
+## Authentication and the session boundary (RM-271)
+
+- **Routes**: `/login`, `/signup`, `/password/forgot` and the three links the API mails, exactly:
+  `/login/email#t=`, `/signup/verify#t=`, `/password/reset#t=`. Signed-out pages use `features/auth/PublicLayout`.
+- **Tokens**: `features/auth/token.ts` takes the fragment token once at boot (before React renders), removes it with
+  `history.replaceState`, keeps it in memory only and spends it exactly once. It is never in storage, a URL, a query
+  key, analytics or error tracking.
+- **Session**: `shell/session.tsx` holds one query (`GET /api/me`; a 401 is "signed out", not a failure). `/app/*` sits
+  behind `RequireSession` (signed out: sign-in, then back to where you were; `next` accepts in-app paths only).
+  Signing out, a 401 `UNAUTHENTICATED` from any request, or a sign-out in another tab (BroadcastChannel, `storage`
+  event fallback; only a signal travels) runs `endSession`: tenant cleanups (streams, object URLs register with
+  `shell/tenant.ts`), every cache entry dropped, signed-out state shown. No token or session id exists in storage:
+  the session is an HttpOnly cookie the page cannot read.
+- **Google**: Google Identity Services in callback mode (`features/auth/gis.ts`); the button renders only when
+  `VITE_GOOGLE_CLIENT_ID` is set at build time (a public value, same as the server's `GOOGLE_CLIENT_ID`); if the script
+  is blocked a notice points to the e-mail methods. `GOOGLE_EMAIL_UNVERIFIED` and `EMAIL_CONFIRMATION_REQUIRED` lead to
+  the e-mail link. The e2e lanes use a stand-in for Google's script (`e2e/gis.ts`); real Google is unverified (L-029).
+- **Forms**: `ui/Field.tsx` (label, hint, textual error, `aria-describedby`) and `ui/FormErrors.tsx` (an error summary
+  that takes focus after a failed submit and links to each field). Values survive failures; client checks mirror the
+  server's rules but the server is authoritative (422 and `WEAK_PASSWORD` reasons map onto fields).
+
 ## End-to-end tests (`e2e/`)
 
 "Every page, popup and clickable element has an e2e test" is a gate, not a habit (docs/FRONTEND-PLAN.md section 4).
@@ -79,6 +100,9 @@ patterns (decision recorded in #270).
 - `e2e/interactions.ts` is the registry: `PAGES` (path, `h1`, the API scenarios to inventory it in), `INTERACTIONS`
   (`{id, page, role, name, outcome}`) and `POPUPS` (trigger, role, name, backdrop policy). A slice adds its page,
   its elements and its tests in the same PR.
+- A page can also list **states** (`PageState`): an error summary, a "link sent" confirmation, a banner. The
+  inventory drives the real UI there (`prepare`) and inventories the state too; elements only present in a state are
+  registered with `state`. Pages in the signed-out frame use `layout: "public"` and the `public:*` shared elements.
 - `inventory.spec.ts` visits every page in every listed scenario, opens every popup, lists every visible element with an
   interactive ARIA role (from the browser's own accessibility tree) and **fails on one that has no accessible name or is
   not registered**, and on a registered one that is gone. axe runs on every state.
@@ -103,7 +127,7 @@ pnpm test:e2e:journey          # builds the SPA, serves it with `vite preview` (
 ```
 
 `deploy/compose.e2e.yml` sets `PUBLIC_APP_URL=http://localhost:4173` so the API's Origin check and Secure cookies behave
-as in production. Override the compose command with `E2E_COMPOSE`. The interaction gate counts the mocked lane;
+as in production. Override the compose command with `E2E_COMPOSE`. The interaction gate counts the mocked lane; the journey lane runs the whole sign-up (register, mailed link via `register-token`, sign out, sign in);
 journeys are the few paths worth running against the real thing. The GitHub lanes (PR, nightly Firefox and WebKit)
 are the follow-up issue #296 because they edit `.github/`.
 

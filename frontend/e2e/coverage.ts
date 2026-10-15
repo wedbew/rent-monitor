@@ -73,6 +73,11 @@ export const outcome = {
     await expect(locator).toBeFocused();
     return { kind: "focus" };
   },
+  /** A field holds this value (what was typed is what the app has). */
+  async value(locator: Locator, expected: string): Promise<Outcome> {
+    await expect(locator).toHaveValue(expected);
+    return { kind: "state" };
+  },
   /** Visible text appeared or changed. */
   async text(locator: Locator, text: string | RegExp): Promise<Outcome> {
     await expect(locator).toContainText(text);
