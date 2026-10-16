@@ -28,7 +28,7 @@
     "test:e2e:browsers": "E2E_BROWSERS=all playwright test --project=firefox --project=webkit",
     "visual": "node visual.mjs",
     "visual:update": "node visual.mjs --update",
-    "perf": "E2E_LANE=perf playwright test --workers=1"
+    "perf": "rm -rf ${PERF_OUT:-test-results}/perf && E2E_LANE=perf playwright test --workers=1 && node perf-aggregate.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

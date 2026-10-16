@@ -212,6 +212,39 @@ jobs:
             frontend/playwright-report
           retention-days: 7
 
+  frontend-visual:
+    # Visual baselines (#334): compared inside the same pinned Playwright image `pnpm visual` uses locally (fonts and
+    # rendering are what make a picture comparable). Bump the digest together with @playwright/test and the baselines
+    # (`pnpm visual:update`, then look at every changed picture). No secrets are used.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
+      options: --ipc=host
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      CI: "1"
+      E2E_LANE: visual
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The same script `pnpm visual` runs: Node from frontend/.node-version (the image's own is older), then the install.
+      # Everything else about the stack (image digest, Playwright, Node) is checked against BASELINE.json by `pnpm test`.
+      - name: visual lane against the committed baselines
+        shell: bash
+        run: . e2e/visual-prepare.sh && pnpm exec playwright test --reporter=list
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: frontend-visual-diffs
+          path: frontend/test-results
+          retention-days: 7
+
   frontend-journey:
     # The SPA against the real Compose stack (API, Postgres, workers, fake providers). The session is seeded
     # inside the api container by scripts/e2e_session.py; no secrets are used.

@@ -265,6 +265,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** the filters narrow the list; the date column is the order
 - **Target:** an API ordering parameter with a keyset per order, then sortable headers
 
+### L-039 — Visual lane: layout findings seen in the pictures, and its colour tolerance
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** `frontend/e2e/visual.spec.ts` and its baselines; the app shell at 1280 x 800 and 390 px
+- **Evidence:** confirmed (pictures `report-failed-upstream-light.png` desktop, `dashboard-loaded-light.png` mobile; probe runs recorded in the RM-334 PR)
+- **Description:** (1) At 1280 x 800 the sidebar's "Wyloguj się" button is cut off at the bottom of the viewport (the sidebar does not scroll when the window is short). (2) At 390 px the header's "Tryb ciemny" label touches the "Menu" button. (3) In full-page pictures the fixed sidebar is drawn only for the first viewport height (a property of full-page capture, not of the app). (4) The lane tolerates small colour differences: a 3-step RGB change of `--accent` was not detected, while a visible change failed 14 pictures. The baselines record these layouts as they are
+- **Workaround:** none for 1 and 2; treat (3) and (4) as properties of the lane
+- **Target:** a UI issue for 1 and 2 (they are shown in the committed baselines, so fixing them changes pictures on purpose)
+
 ### L-037 — Saved listings: a full list is not proof of absence; concurrent note edits are last-write-wins
 - **Status:** resolved (the 200-item cap and the note-wiping save); the residual limit below stays
 - **Discovered:** 2026-10-16
@@ -274,6 +283,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Description:** The 500 cap is soft (two simultaneous saves may overshoot by one), so a list of exactly 500 may be incomplete; the SPA then treats an absent listing as unknown. The note editor sends the whole note; two tabs editing the same note are last-write-wins (no version check), so paging alone does not prevent a stale-tab overwrite of an explicit edit. Saving from a toggle can no longer touch a note
 - **Workaround:** none needed for the toggle; edit one note in one tab
 - **Target:** an `If-Match`/version on notes if concurrent editing matters
+
+### L-039 — Analysis reports lack durable visual/item evidence and seller questions
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** `apps/deal_analyzer/vision.py`, `listing.py`, `analysis.py`; `services/rm_worker/vision_stage.py`; `frontend/features/analyses/report/`
+- **Evidence:** confirmed in source at `51e45fa`; focused extraction/vision/contracts/schema tests (219 passed) and report/adapter tests (35 passed). These tests cover existing behavior, not the missing features.
+- **Description:** Listing photo and floor-plan URLs are extracted and downloaded for vision, but the report renders no gallery and has no authenticated durable media contract. The production CSP permits only same-origin/data images. `VisionRecord` retains condition, counts and financial adjustments, but drops per-image classifications, parsed floor-plan text and notes. The typed listing/vision/report models have no equipment inventory. “Co sprawdzić” is warning-derived copy; no generated seller-question artifact or operation exists. Manual input and the interior tool remain separate planned features (#283/#284), not alternative working ways to supply this evidence.
+- **Workaround:** The report links to the source listing where available; its availability and image retention are external. Use the existing checklist for known warnings; do not present it as generated seller questions or treat unobserved equipment as absent.
+- **Target:** [feature-gap audit and implementation guide](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md), proposed G-01/G-02/G-03 (not filed); existing #211, #283, #284. Implement media/evidence contracts before dependent UI and preserve historical report compatibility.
 
 ## Deferred
 
