@@ -27,7 +27,8 @@
     "test:e2e:journey": "E2E_LANE=journey playwright test",
     "test:e2e:browsers": "E2E_BROWSERS=all playwright test --project=firefox --project=webkit",
     "visual": "node visual.mjs",
-    "visual:update": "node visual.mjs --update"
+    "visual:update": "node visual.mjs --update",
+    "perf": "E2E_LANE=perf playwright test --workers=1"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
