@@ -104,6 +104,7 @@ describe("Moje analizy controls", () => {
       "Ocena",
       "Cena ofertowa",
       "Cena progowa",
+      "Zapisane",
     ]);
     expect(within(table).getByRole("columnheader", { name: "Data" })).toHaveAttribute(
       "aria-sort",

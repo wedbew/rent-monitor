@@ -313,6 +313,7 @@ test.describe("the collection", () => {
         "Ocena",
         "Cena ofertowa",
         "Cena progowa",
+        "Zapisane",
       ]);
       await expect(page.getByRole("rowheader").first()).toContainText("Ogłoszenie IDLST0000");
       const region = page.getByRole("region", { name: "Tabela analiz" });
