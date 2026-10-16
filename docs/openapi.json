@@ -5192,6 +5192,25 @@
               "title": "Limit",
               "type": "integer"
             }
+          },
+          {
+            "description": "The Idempotency-Key of a checkout: only the caller's purchase created with it (an empty list when it never arrived). Lets a client settle a lost answer without guessing.",
+            "in": "query",
+            "name": "request_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The Idempotency-Key of a checkout: only the caller's purchase created with it (an empty list when it never arrived). Lets a client settle a lost answer without guessing.",
+              "title": "Request Key"
+            }
           }
         ],
         "responses": {
