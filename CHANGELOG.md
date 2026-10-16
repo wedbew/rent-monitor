@@ -5,6 +5,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Fixed
+- Frontend (RM-362): `whileSignedIn` no longer hands a late result to the next session. A request that ignores its abort signal is now rejected with a typed `aborted` error when the session ends or the session generation moves, success and failure alike, and its listeners are always released; saved-listing changes refresh the list only if their session is still current. Abort does not undo a server mutation
 - Saved listings (RM-347): `PUT /api/saved/{otodom_id}` keeps the stored note when the body has no `note` key (an explicit `null` clears it; it used to clear the note), `GET /api/saved` accepts `limit` up to 500 (the per-account cap; it was 200), so every saved listing is reachable. The SPA asks for 500, saves without a note and shows no save toggle for a listing missing from a full list, so saving an older listing can no longer erase its note
 
 ### Changed

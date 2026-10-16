@@ -1,10 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { api, unwrap, unwrapEmpty } from "../../api/client";
 import { TransportError } from "../../api/errors";
 import { tenantKey } from "../../api/query";
 import { whileSignedIn } from "../../shell/cancellable";
+import { isCurrentSession, sessionGeneration } from "../../shell/tenant";
 import { useMe } from "../../shell/session";
 import { readSaved, type SavedItem } from "./items";
 
@@ -15,6 +16,11 @@ import { readSaved, type SavedItem } from "./items";
 export const SAVED_PAGE = 500;
 
 const savedKey = (userId: string) => tenantKey(userId, "saved");
+
+/** Ask for the list again, unless the session that made the change is gone (a late answer is not the next person's). */
+function refreshWhileCurrent(client: QueryClient, userId: string, generation: number) {
+  return isCurrentSession(generation) ? client.invalidateQueries({ queryKey: savedKey(userId) }) : undefined;
+}
 
 export type SavedState =
   | { readonly status: "loading" }
@@ -67,7 +73,9 @@ export function useSaveListing() {
           }),
         );
       }),
-    onSettled: () => client.invalidateQueries({ queryKey: savedKey(me.id) }),
+    onMutate: () => sessionGeneration(),
+    onSettled: (_data, _error, _variables, generation) =>
+      generation === undefined ? undefined : refreshWhileCurrent(client, me.id, generation),
   });
 }
 
@@ -81,6 +89,8 @@ export function useUnsaveListing() {
           await api.DELETE("/api/saved/{otodom_id}", { params: { path: { otodom_id: otodomId } }, signal }),
         ),
       ),
-    onSettled: () => client.invalidateQueries({ queryKey: savedKey(me.id) }),
+    onMutate: () => sessionGeneration(),
+    onSettled: (_data, _error, _variables, generation) =>
+      generation === undefined ? undefined : refreshWhileCurrent(client, me.id, generation),
   });
 }
