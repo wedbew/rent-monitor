@@ -236,6 +236,7 @@ jobs:
       # The same script `pnpm visual` runs: Node from frontend/.node-version (the image's own is older), then the install.
       # Everything else about the stack (image digest, Playwright, Node) is checked against BASELINE.json by `pnpm test`.
       - name: visual lane against the committed baselines
+        shell: bash
         run: . e2e/visual-prepare.sh && pnpm exec playwright test --reporter=list
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
