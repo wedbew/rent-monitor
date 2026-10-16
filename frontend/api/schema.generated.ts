@@ -1479,6 +1479,15 @@ export interface operations {
                     "application/json": components["schemas"]["RefundOut"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: UNAUTHENTICATED */
             401: {
                 headers: {
@@ -1564,6 +1573,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreditAdjustOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: UNAUTHENTICATED */
@@ -1711,6 +1729,15 @@ export interface operations {
                     "application/json": components["schemas"]["FlagOut"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: UNAUTHENTICATED */
             401: {
                 headers: {
@@ -1790,6 +1817,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OverrideOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: UNAUTHENTICATED */
@@ -2007,6 +2043,15 @@ export interface operations {
                     "application/json": components["schemas"]["BillingHoldOut"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: UNAUTHENTICATED */
             401: {
                 headers: {
@@ -2153,6 +2198,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditAccepted"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: UNAUTHENTICATED */
@@ -2376,6 +2430,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: ORIGIN_NOT_ALLOWED */
             403: {
                 headers: {
@@ -2443,6 +2506,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: MAGIC_LINK_INVALID */
@@ -2514,6 +2586,15 @@ export interface operations {
                     "application/json": components["schemas"]["MeOut"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: EMAIL_CONFIRMATION_REQUIRED, GOOGLE_EMAIL_UNVERIFIED, INVALID_GOOGLE_TOKEN */
             401: {
                 headers: {
@@ -2581,6 +2662,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: INVALID_CREDENTIALS */
@@ -2658,6 +2748,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
             };
             /** @description Problem: INVALID_CREDENTIALS, UNAUTHENTICATED */
             401: {
@@ -2737,6 +2836,15 @@ export interface operations {
                     "application/json": components["schemas"]["Accepted"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: ORIGIN_NOT_ALLOWED */
             403: {
                 headers: {
@@ -2803,6 +2911,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
             };
             /** @description Problem: AUTH_TOKEN_INVALID */
             401: {
@@ -2882,6 +2999,15 @@ export interface operations {
                     "application/json": components["schemas"]["Accepted"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: ORIGIN_NOT_ALLOWED */
             403: {
                 headers: {
@@ -2951,6 +3077,15 @@ export interface operations {
                     "application/json": components["schemas"]["Accepted"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: ORIGIN_NOT_ALLOWED */
             403: {
                 headers: {
@@ -3018,6 +3153,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: AUTH_TOKEN_INVALID */
@@ -3262,6 +3406,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PurchaseOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: UNAUTHENTICATED */
@@ -3671,6 +3824,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: UNAUTHENTICATED */
             401: {
                 headers: {
@@ -3854,6 +4016,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SavedOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: UNAUTHENTICATED */

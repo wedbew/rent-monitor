@@ -14,7 +14,7 @@
         "properties": {
           "confirm_email": {
             "maxLength": 254,
-            "pattern": "^[^@\\s<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
+            "pattern": "^[^@\\s\\x00-\\x1f\\x7f<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
             "title": "Confirm Email",
             "type": "string"
           }
@@ -382,6 +382,7 @@
           "note": {
             "maxLength": 300,
             "minLength": 10,
+            "pattern": "^[^\\x00]*$",
             "title": "Note",
             "type": "string"
           }
@@ -475,12 +476,14 @@
           "note": {
             "maxLength": 200,
             "minLength": 3,
+            "pattern": "^[^\\x00]*$",
             "title": "Note",
             "type": "string"
           },
           "user_id": {
             "maxLength": 64,
             "minLength": 1,
+            "pattern": "^[^\\x00]*$",
             "title": "User Id",
             "type": "string"
           }
@@ -517,7 +520,7 @@
         "properties": {
           "email": {
             "maxLength": 254,
-            "pattern": "^[^@\\s<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
+            "pattern": "^[^@\\s\\x00-\\x1f\\x7f<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
             "title": "Email",
             "type": "string"
           }
@@ -1090,7 +1093,7 @@
         "properties": {
           "email": {
             "maxLength": 254,
-            "pattern": "^[^@\\s<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
+            "pattern": "^[^@\\s\\x00-\\x1f\\x7f<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
             "title": "Email",
             "type": "string"
           }
@@ -1210,7 +1213,7 @@
         "properties": {
           "email": {
             "maxLength": 254,
-            "pattern": "^[^@\\s<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
+            "pattern": "^[^@\\s\\x00-\\x1f\\x7f<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
             "title": "Email",
             "type": "string"
           },
@@ -1917,7 +1920,7 @@
         "properties": {
           "email": {
             "maxLength": 254,
-            "pattern": "^[^@\\s<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
+            "pattern": "^[^@\\s\\x00-\\x1f\\x7f<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
             "title": "Email",
             "type": "string"
           },
@@ -1957,7 +1960,7 @@
         "properties": {
           "email": {
             "maxLength": 254,
-            "pattern": "^[^@\\s<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
+            "pattern": "^[^@\\s\\x00-\\x1f\\x7f<>\\\"',;()\\[\\]\\\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
             "title": "Email",
             "type": "string"
           }
@@ -2044,6 +2047,7 @@
             "anyOf": [
               {
                 "maxLength": 2000,
+                "pattern": "^[^\\x00]*$",
                 "type": "string"
               },
               {
@@ -2293,6 +2297,19 @@
             },
             "description": "Accepted"
           },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
           "401": {
             "content": {
               "application/problem+json": {
@@ -2418,6 +2435,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
           },
           "401": {
             "content": {
@@ -2630,6 +2660,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
           },
           "401": {
             "content": {
@@ -2864,6 +2907,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
           },
           "401": {
             "content": {
@@ -3131,6 +3187,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
           },
           "401": {
             "content": {
@@ -3444,6 +3513,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
           },
           "401": {
             "content": {
@@ -3775,6 +3857,19 @@
           "204": {
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
           "403": {
             "content": {
               "application/problem+json": {
@@ -3871,6 +3966,19 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
           "401": {
             "content": {
               "application/problem+json": {
@@ -3966,6 +4074,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
           },
           "401": {
             "content": {
@@ -4065,6 +4186,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
           },
           "401": {
             "content": {
@@ -4168,6 +4302,19 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
           },
           "401": {
             "content": {
@@ -4281,6 +4428,19 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
           "403": {
             "content": {
               "application/problem+json": {
@@ -4370,6 +4530,19 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
           },
           "401": {
             "content": {
@@ -4481,6 +4654,19 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
           "403": {
             "content": {
               "application/problem+json": {
@@ -4579,6 +4765,19 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
           "403": {
             "content": {
               "application/problem+json": {
@@ -4674,6 +4873,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
           },
           "401": {
             "content": {
@@ -5002,6 +5214,19 @@
               }
             },
             "description": "Accepted"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
           },
           "401": {
             "content": {
@@ -5519,6 +5744,19 @@
           "204": {
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
           "401": {
             "content": {
               "application/problem+json": {
@@ -5941,6 +6179,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
           },
           "401": {
             "content": {
