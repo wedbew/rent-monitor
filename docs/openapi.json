@@ -5727,6 +5727,7 @@
     },
     "/api/saved": {
       "get": {
+        "description": "Newest first. `limit` may reach the per-account cap, so `limit=500` returns every saved listing.",
         "operationId": "list_saved_api_saved_get",
         "parameters": [
           {
@@ -5735,7 +5736,7 @@
             "required": false,
             "schema": {
               "default": 100,
-              "maximum": 200,
+              "maximum": 500,
               "minimum": 1,
               "title": "Limit",
               "type": "integer"

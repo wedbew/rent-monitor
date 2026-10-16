@@ -47,7 +47,7 @@ paid launch unless its entry point is removed. Verified in `frontend/routes.tsx`
 | `/app/market` | navigation | `/api/market/*` routes | #282 (#21) |
 | `/app/interior`, `/app/listings/new` | navigation | product and backend contracts | #284, #285 |
 
-The analysis pages (new, collection, report) are built (RM-273 to RM-275). Saved listings (RM-276) are a toggle and note on the report, a toggle on every row and a "Zapisane" scope in Moje analizy; there is no separate navigation entry for them.
+The analysis pages (new, collection, report) are built (RM-273 to RM-275). Saved listings (RM-276; RM-347 made the list complete to the 500 cap and a save without a note keep the stored one) are a toggle and note on the report, a toggle on every row and a "Zapisane" scope in Moje analizy; there is no separate navigation entry for them.
 
 ## Backlog map (reconciled 2026-10-13)
 

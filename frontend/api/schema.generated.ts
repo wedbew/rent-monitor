@@ -585,7 +585,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Saved */
+        /**
+         * List Saved
+         * @description Newest first. `limit` may reach the per-account cap, so `limit=500` returns every saved listing.
+         */
         get: operations["list_saved_api_saved_get"];
         put?: never;
         post?: never;
