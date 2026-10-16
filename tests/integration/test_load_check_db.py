@@ -44,22 +44,22 @@ async def test_plant_creates_n_accounts_with_credit_and_a_fresh_snapshot_each_an
         await conn.execute(
             text("INSERT INTO app.listing (otodom_id, url) VALUES ('IDLCREAL1', 'https://x.test')")
         )
-    planted = await load_check._plant("abcd1234", 3)
-    assert [p["ref"] for p in planted] == ["IDLCABCD123400", "IDLCABCD123401", "IDLCABCD123402"]
+    planted = await load_check._plant("abcd12", 3)
+    assert [p["ref"] for p in planted] == ["IDLCABCD1200", "IDLCABCD1201", "IDLCABCD1202"]
     assert all(p["cookie"] for p in planted)
     assert (
         await count(engine, "SELECT count(*) FROM app.app_user WHERE email LIKE '%@load-check.invalid'") == 3
     )
-    assert await count(engine, "SELECT count(*) FROM app.listing WHERE otodom_id LIKE 'IDLCABCD1234%'") == 3
+    assert await count(engine, "SELECT count(*) FROM app.listing WHERE otodom_id LIKE 'IDLCABCD12%'") == 3
     assert (
-        await count(engine, "SELECT count(*) FROM app.listing_snapshot WHERE otodom_id LIKE 'IDLCABCD1234%'")
+        await count(engine, "SELECT count(*) FROM app.listing_snapshot WHERE otodom_id LIKE 'IDLCABCD12%'")
         == 3
     )
 
-    removed = await load_check._remove("abcd1234")
+    removed = await load_check._remove("abcd12")
     assert removed == 3
     assert await count(engine, "SELECT count(*) FROM app.app_user") == bystander
-    assert await count(engine, "SELECT count(*) FROM app.listing WHERE otodom_id LIKE 'IDLCABCD1234%'") == 0
+    assert await count(engine, "SELECT count(*) FROM app.listing WHERE otodom_id LIKE 'IDLCABCD12%'") == 0
     assert await count(engine, "SELECT count(*) FROM app.listing WHERE otodom_id = 'IDLCREAL1'") == 1
     assert (
         await count(engine, "SELECT count(*) FROM app.market_sidecar WHERE source_stem LIKE 'load-check-%'")
@@ -68,8 +68,8 @@ async def test_plant_creates_n_accounts_with_credit_and_a_fresh_snapshot_each_an
 
 
 async def test_cleanup_stale_removes_leftovers_of_every_run_and_nothing_else(engine: AsyncEngine) -> None:
-    await load_check._plant("11112222", 1)
-    await load_check._plant("33334444", 2)
+    await load_check._plant("111122", 1)
+    await load_check._plant("333344", 2)
     async with engine.begin() as conn:  # an unrelated user and listing that merely look similar must stay
         await conn.execute(
             text("INSERT INTO app.app_user (id, email) VALUES ('keep-me', 'load-keep@example.test')")
