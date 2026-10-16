@@ -41,13 +41,19 @@ describe("writeFilters", () => {
   it("writes only what differs from the default, so the plain list has a plain address", () => {
     expect(writeFilters(DEFAULT_FILTERS).toString()).toBe("");
     expect(writeFilters({ ...DEFAULT_FILTERS, status: "failed" }).toString()).toBe("status=failed");
-    expect(writeFilters({ view: "table", status: "ready", grade: "A", q: "ID1" }).toString()).toBe(
-      "view=table&status=ready&grade=A&q=ID1",
-    );
+    expect(
+      writeFilters({ ...DEFAULT_FILTERS, view: "table", status: "ready", grade: "A", q: "ID1" }).toString(),
+    ).toBe("view=table&status=ready&grade=A&q=ID1");
+    expect(writeFilters({ ...DEFAULT_FILTERS, saved: true }).toString()).toBe("saved=1");
+  });
+
+  it("reads the saved scope only from saved=1", () => {
+    expect(read("saved=1").saved).toBe(true);
+    for (const value of ["0", "true", "", "yes"]) expect(read(`saved=${value}`).saved).toBe(false);
   });
 
   it("round-trips", () => {
-    const filters = { view: "table", status: "active", grade: "N", q: "ID4x" } as const;
+    const filters = { view: "table", status: "active", grade: "N", q: "ID4x", saved: true } as const;
     expect(read(writeFilters(filters).toString())).toEqual(filters);
   });
 });
