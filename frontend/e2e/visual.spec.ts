@@ -98,6 +98,18 @@ for (const theme of THEMES) {
       await shoot(page, "signup");
     });
 
+    test("credits: the shop and a purchase history", async ({ page, serve }) => {
+      await serve("shop");
+      await page.goto("/app/credits");
+      await expect(page.getByRole("list", { name: "Dostępne pakiety" })).toBeVisible();
+      await shoot(page, "credits-shop");
+      await page.unrouteAll();
+      await serve("shopHistory");
+      await page.goto("/app/credits");
+      await expect(page.getByRole("list", { name: "Zakupy" })).toBeVisible();
+      await shoot(page, "credits-history", { fullPage: true });
+    });
+
     test("unknown address keeps the shell", async ({ page, serve }) => {
       await serve("empty");
       await page.goto("/nie-ma-takiej-strony");

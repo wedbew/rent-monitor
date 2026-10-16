@@ -18,6 +18,10 @@ ARG VITE_SENTRY_DSN=""
 ARG VITE_RELEASE="local"
 ARG VITE_ENVIRONMENT="production"
 ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN} VITE_RELEASE=${VITE_RELEASE} VITE_ENVIRONMENT=${VITE_ENVIRONMENT}
+# Paddle.js (RM-277): the public client-side token and its environment; empty token = no purchase is offered.
+ARG VITE_PADDLE_CLIENT_TOKEN=""
+ARG VITE_PADDLE_ENVIRONMENT="sandbox"
+ENV VITE_PADDLE_CLIENT_TOKEN=${VITE_PADDLE_CLIENT_TOKEN} VITE_PADDLE_ENVIRONMENT=${VITE_PADDLE_ENVIRONMENT}
 # The production build, then the same gate CI runs: no test tooling in dist/, bundle within budget.
 RUN pnpm build && node check-dist.mjs
 

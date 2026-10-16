@@ -274,6 +274,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** keep fewer than 200 saved listings
 - **Target:** API paging and a PUT that keeps an absent note (#347)
 
+### L-038 — Purchases in the SPA are exercised against a stand-in for Paddle.js only
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** `frontend/features/billing/`, `frontend/e2e/paddle.ts`, `deploy/Caddyfile` CSP, `VITE_PADDLE_CLIENT_TOKEN`
+- **Evidence:** confirmed (every browser lane replaces `window.Paddle`; the journey stack builds without a token and has billing disabled)
+- **Description:** Checkout, the `/pay` default payment link and the success page are proven offline against the fake Paddle client behind the API and a Paddle.js stub. Real Paddle.js has never been loaded by this app: the Caddy CSP does not yet allow Paddle's script, frame and connect hosts (changing it is a deliberate, owner-visible edit), there is no client-side token on any host (B-017), and BLIK timing, the overlay and the invoice link are unverified. The SPA offers no purchase without a token, and `/pay` says it is not configured
+- **Workaround:** none needed while billing is disabled; no purchase can be started
+- **Target:** #220 (sandbox evidence, owner inputs B-017), CSP change with it, then level 3 in `docs/STATUS.md`
+
 ## Deferred
 
 ### L-025 — V2 manual analysis and creative tools are local design flows

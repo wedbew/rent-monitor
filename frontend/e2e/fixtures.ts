@@ -4,8 +4,11 @@ import { expect, test as base, type Page } from "@playwright/test";
 import type { Scenario, ScenarioName } from "../test/scenarios";
 import { installFakeGis } from "./gis";
 import { mockApi, type MockApi } from "./mock";
+import { installFakePaddle, type FakePaddleHandle } from "./paddle";
 
 interface Fixtures {
+  /** The Paddle.js stand-in every mocked test gets (and the proof that Paddle's hosts were never contacted). */
+  paddle: FakePaddleHandle;
   /** Serve a registry scenario for the page; returns the recorded requests. */
   serve: (which: ScenarioName | Scenario) => Promise<MockApi>;
   /**
@@ -23,6 +26,14 @@ interface Fixtures {
 const allowances = new WeakMap<Page, RegExp[]>();
 
 export const test = base.extend<Fixtures>({
+  paddle: [
+    async ({ page }, provide) => {
+      const handle = await installFakePaddle(page);
+      await provide(handle);
+      expect(handle.hostRequests, "a mocked test must never reach Paddle's hosts").toEqual([]);
+    },
+    { auto: true },
+  ],
   allowErrors: async ({ page }, provide) => {
     await provide((...patterns) => {
       allowances.set(page, [...(allowances.get(page) ?? []), ...patterns]);

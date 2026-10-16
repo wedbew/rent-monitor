@@ -82,6 +82,8 @@ services:
         VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
         VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
         VITE_RELEASE: ${IMAGE_TAG:-local}
+        VITE_PADDLE_CLIENT_TOKEN: ${VITE_PADDLE_CLIENT_TOKEN:-}
+        VITE_PADDLE_ENVIRONMENT: ${VITE_PADDLE_ENVIRONMENT:-sandbox}
     image: rentmonitor-web:${IMAGE_TAG:-local}
     restart: unless-stopped
     ports: ["80:80", "443:443"]
