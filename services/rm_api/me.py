@@ -10,13 +10,13 @@ from fastapi import APIRouter, Request, Response
 from rm_contracts.auth import AccountDelete
 from rm_contracts.me import MeDetailOut, PeriodOut, PlanOut, UpstreamOut
 from rm_contracts.problems import ProblemCode
-from rm_core.db.models import StripeCustomer, User
+from rm_core.db.models import StripeCustomer, User, UserCredential
 from rm_core.entitlements import load_entitlements
 from rm_core.flags import resolve_flags
 from rm_core.privacy import UserDataExport, delete_account, export_user_data, user_hash
 from rm_core.ratelimit import hit
 from rm_core.throttle import OTODOM_HOST, breaker_status
-from sqlalchemy import select
+from sqlalchemy import exists, select
 
 from rm_api.auth.sessions import clear_session_cookie, revoke_all_sessions
 from rm_api.billing_erasure import BillingEraser, BillingUnavailable
@@ -88,6 +88,9 @@ async def my_profile(db: SessionDep, principal: PrincipalDep) -> MeDetailOut:
     flags = await resolve_flags(db, user_id=principal.user_id, plan=ent.plan_code)
     breaker = await breaker_status(db, OTODOM_HOST)
     period = ent.period
+    has_password = bool(
+        await db.scalar(select(exists().where(UserCredential.user_id == principal.user_id)))
+    )  # the principal's own row only
     return MeDetailOut(
         id=user.id,
         email=user.email,
@@ -95,6 +98,7 @@ async def my_profile(db: SessionDep, principal: PrincipalDep) -> MeDetailOut:
         avatar_url=user.avatar_url,
         role=user.role,
         email_verified=user.email_verified_at is not None,
+        has_password=has_password,
         plan=PlanOut(
             code=ent.plan_code,
             is_pro=ent.is_pro,

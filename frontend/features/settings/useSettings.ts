@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, unwrap, unwrapEmpty } from "../../api/client";
-import { TransportError } from "../../api/errors";
+import { isAmbiguousFailure, TransportError } from "../../api/errors";
 import { tenantKey } from "../../api/query";
 import { whileSignedIn } from "../../shell/cancellable";
-import { endSession, useMe } from "../../shell/session";
+import { endSession, recheckSession, useMe } from "../../shell/session";
 import { sendSessionSignal } from "../../shell/sessionBus";
 import { isCurrentSession, sessionGeneration } from "../../shell/tenant";
 import { saveJsonFile } from "./download";
@@ -40,6 +40,12 @@ function useEndsSession<V>(request: (variables: V, signal: AbortSignal) => Promi
       if (!isCurrentSession(started)) return;
       endSession(client, { deliberate: true });
       sendSessionSignal("signed-out");
+    },
+    // The request may have been applied and the answer lost: ask the server whether this session still exists
+    // instead of assuming either way. If it is gone, the session query takes the one sign-out door.
+    onError: (error, _variables, started) => {
+      if (started !== undefined && isCurrentSession(started) && isAmbiguousFailure(error))
+        recheckSession(client);
     },
   });
 }

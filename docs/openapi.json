@@ -1260,6 +1260,11 @@
             "title": "Flags",
             "type": "object"
           },
+          "has_password": {
+            "description": "Whether this account has an e-mail/password credential (a credential row exists). False for an account that only signs in with Google or a magic link; the SPA hides the change-password form for it.",
+            "title": "Has Password",
+            "type": "boolean"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -1293,6 +1298,7 @@
           "avatar_url",
           "role",
           "email_verified",
+          "has_password",
           "plan",
           "credit_balance",
           "flags",

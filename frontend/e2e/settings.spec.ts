@@ -150,9 +150,13 @@ test.describe("settings", () => {
     await expect(page).toHaveURL(/\/app\/settings$/);
   });
 
-  test("a person without a password is pointed to recovery", async ({ page, serve }) => {
-    await serve("settings");
+  test("a person without a password is pointed to recovery and sees no change form", async ({
+    page,
+    serve,
+  }) => {
+    await serve("settingsNoPassword");
     await page.goto("/app/settings");
+    await expect(passwordForm(page)).toHaveCount(0);
     await exercise("settings.password.recover", async () => {
       await page.getByRole("link", { name: "Ustaw hasło przez e-mail" }).click();
       return [await outcome.url(page, /\/password\/forgot$/)];

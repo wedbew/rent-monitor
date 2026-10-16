@@ -87,6 +87,8 @@ export type PageRef = string;
 export const EVERY_PAGE = "*";
 /** The same for every page of the signed-out frame (brand, theme, documents). */
 export const EVERY_PUBLIC_PAGE = "public:*";
+/** Settings scenarios whose account has a password: only those show the change-password form (RM-345). */
+const PASSWORD_ACCOUNT = ["settings", "settingsOneSession", "settingsSessionsFailing"] as const;
 
 export interface Interaction {
   readonly id: string;
@@ -182,7 +184,7 @@ export const PAGES: readonly AppPage[] = [
     id: "settings",
     path: "/app/settings",
     heading: "Ustawienia",
-    scenarios: ["settings", "settingsOneSession", "settingsSessionsFailing"],
+    scenarios: ["settings", "settingsOneSession", "settingsSessionsFailing", "settingsNoPassword"],
     states: [
       {
         name: "validation-errors",
@@ -667,14 +669,23 @@ export const INTERACTIONS: readonly Interaction[] = [
   {
     id: "settings.password.current",
     page: "settings",
+    scenarios: PASSWORD_ACCOUNT,
     role: "textbox",
     name: "Obecne hasło",
     outcome: "state",
   },
-  { id: "settings.password.next", page: "settings", role: "textbox", name: "Nowe hasło", outcome: "state" },
+  {
+    id: "settings.password.next",
+    page: "settings",
+    scenarios: PASSWORD_ACCOUNT,
+    role: "textbox",
+    name: "Nowe hasło",
+    outcome: "state",
+  },
   {
     id: "settings.password.submit",
     page: "settings",
+    scenarios: PASSWORD_ACCOUNT,
     role: "button",
     name: "Zmień hasło",
     outcome: "request",
@@ -682,6 +693,7 @@ export const INTERACTIONS: readonly Interaction[] = [
   {
     id: "settings.password.recover",
     page: "settings",
+    scenarios: ["settingsNoPassword"],
     role: "link",
     name: "Ustaw hasło przez e-mail",
     outcome: "url",

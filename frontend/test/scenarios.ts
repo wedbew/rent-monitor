@@ -288,9 +288,17 @@ export function createSaved(
 export const SETTINGS_EMAIL = "user-18@example.test";
 
 /** Signed in; the settings routes answer from the fixtures. `routes` replace a default by repeating its operation. */
-export function createSettings(routes: readonly Route[] = [], name = "settings"): Scenario {
+export function createSettings(
+  routes: readonly Route[] = [],
+  name = "settings",
+  hasPassword = true,
+): Scenario {
   return scenario(name, "Signed in on the settings page: three browsers, export, password, deletion.", [
     ...routes,
+    // The account's password flag comes from the API; a scenario sets it, a route may still replace the whole answer.
+    ...(routes.some((r) => r.operation === "GET /api/me")
+      ? []
+      : [withMe((body) => ({ ...body, has_password: hasPassword }))]),
     ...(
       [
         ["GET /api/auth/sessions", "three_sessions"],
@@ -314,6 +322,7 @@ export const SCENARIOS = {
   ),
   empty: scenario("empty", "Signed in with credits and no analyses yet.", [EMPTY_PAGE]),
   settings: createSettings(),
+  settingsNoPassword: createSettings([], "settingsNoPassword", false),
   settingsOneSession: createSettings(
     [fromFixture("GET /api/auth/sessions", "one_session")],
     "settingsOneSession",

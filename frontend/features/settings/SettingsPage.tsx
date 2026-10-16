@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 
+import { isAmbiguousFailure } from "../../api/errors";
 import { formatCount, formatDateTime } from "../../api/format";
 import { describeTransport } from "../../api/problems";
 import { PageHeading } from "../../shell/PageHeading";
@@ -105,6 +106,13 @@ function SessionsSection() {
   const signOutAll = useSignOutEverywhere();
   const [open, setOpen] = useState(false);
   const failure = signOutAll.isError ? describeFailure(signOutAll.error) : null;
+  const unknown = signOutAll.isError && isAmbiguousFailure(signOutAll.error);
+  const pending = signOutAll.isPending;
+  // Every door out of the dialog (Cancel, Escape, the backdrop, the close button) is shut while the request runs:
+  // the operation belongs to the dialog until the server answered, and its state is never reset under it.
+  const close = () => {
+    if (!pending) setOpen(false);
+  };
 
   return (
     <Section id="settings-sessions" title={t.settings.sessions.heading}>
@@ -141,28 +149,32 @@ function SessionsSection() {
       <Dialog
         open={open}
         onOpenChange={(next) => {
-          if (!signOutAll.isPending) setOpen(next);
+          if (!pending) setOpen(next);
         }}
         onClosed={() => signOutAll.reset()}
         title={t.settings.sessions.confirmTitle}
         description={t.settings.sessions.confirmBody}
       >
         <div className={styles["dialogBody"]}>
-          {failure ? (
+          {unknown ? (
+            <InlineNotice tone="warning" title={t.settings.unknown.title} live="alert">
+              {t.settings.unknown.signOutAll}
+            </InlineNotice>
+          ) : failure ? (
             <InlineNotice tone="danger" title={failure.title} live="alert">
               {failure.detail}
             </InlineNotice>
           ) : null}
           <div className={styles["dialogActions"]}>
-            <Button type="button" onClick={() => setOpen(false)}>
+            <Button type="button" disabled={pending} onClick={close}>
               {t.settings.sessions.cancel}
             </Button>
             <Button
               type="button"
               variant="danger"
-              busy={signOutAll.isPending}
+              busy={pending}
               onClick={() => {
-                if (!signOutAll.isPending) signOutAll.mutate();
+                if (!pending) signOutAll.mutate();
               }}
             >
               {t.settings.sessions.confirm}
@@ -177,7 +189,24 @@ function SessionsSection() {
 const CURRENT_ID = "settings-password-current";
 const NEXT_ID = "settings-password-new";
 
+function NoPasswordSection() {
+  return (
+    <Section id="settings-password" title={t.settings.password.heading}>
+      <InlineNotice tone="info" title={t.settings.password.noPasswordTitle}>
+        {t.settings.password.noPasswordBody}{" "}
+        <Link to="/password/forgot">{t.settings.password.noPasswordLink}</Link>
+      </InlineNotice>
+    </Section>
+  );
+}
+
+/** The change form only for an account the API says has a password; nothing is inferred from how they signed in. */
 function PasswordSection() {
+  const me = useMe();
+  return me.has_password ? <ChangePasswordSection /> : <NoPasswordSection />;
+}
+
+function ChangePasswordSection() {
   const change = useChangePassword();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -210,13 +239,19 @@ function PasswordSection() {
   if (nextServer) serverErrors.push({ fieldId: NEXT_ID, message: nextServer });
   const shown = clientErrors.length > 0 ? clientErrors : serverErrors;
   const messageFor = (fieldId: string) => shown.find((e) => e.fieldId === fieldId)?.message ?? null;
-  const general = failure?.code === "INVALID_CREDENTIALS" ? null : (failure?.general ?? null);
+  const unknown = change.isError && isAmbiguousFailure(change.error);
+  const general = failure?.code === "INVALID_CREDENTIALS" || unknown ? null : (failure?.general ?? null);
 
   return (
     <Section id="settings-password" title={t.settings.password.heading}>
       <p className={styles["note"]}>{t.settings.password.lead}</p>
       <form className={styles["form"]} onSubmit={submit} noValidate aria-label={t.settings.password.form}>
         <FormErrorSummary errors={shown} attempt={attempt} />
+        {unknown ? (
+          <InlineNotice tone="warning" title={t.settings.unknown.title} live="alert">
+            {t.settings.unknown.password}
+          </InlineNotice>
+        ) : null}
         {general ? <ProblemNotice key={attempt} problem={general} /> : null}
         <TextField
           fieldId={CURRENT_ID}
@@ -251,10 +286,6 @@ function PasswordSection() {
           </Button>
         </div>
       </form>
-      <InlineNotice tone="info" title={t.settings.password.noPasswordTitle}>
-        {t.settings.password.noPasswordBody}{" "}
-        <Link to="/password/forgot">{t.settings.password.noPasswordLink}</Link>
-      </InlineNotice>
     </Section>
   );
 }
@@ -298,7 +329,13 @@ function EraseSection() {
   const mismatch = failure?.code === "CONFIRMATION_MISMATCH" ? t.settings.erase.mismatch : null;
   const message = clientError ?? mismatch ?? failure?.fields["confirm_email"] ?? null;
   const shown: FieldError[] = message ? [{ fieldId: CONFIRM_ID, message }] : [];
-  const general = mismatch ? null : (failure?.general ?? null);
+  const unknown = erase.isError && isAmbiguousFailure(erase.error);
+  const general = mismatch || unknown ? null : (failure?.general ?? null);
+  const pending = erase.isPending;
+  // Every door out of the dialog is shut while the request runs (see the sessions dialog).
+  const close = () => {
+    if (!pending) setOpen(false);
+  };
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -323,7 +360,7 @@ function EraseSection() {
       <Dialog
         open={open}
         onOpenChange={(next) => {
-          if (!erase.isPending) setOpen(next);
+          if (!pending) setOpen(next);
         }}
         onClosed={() => {
           erase.reset();
@@ -335,6 +372,11 @@ function EraseSection() {
       >
         <form className={styles["dialogBody"]} onSubmit={submit} noValidate>
           <FormErrorSummary errors={shown} attempt={attempt} />
+          {unknown ? (
+            <InlineNotice tone="warning" title={t.settings.unknown.title} live="alert">
+              {t.settings.unknown.erase}
+            </InlineNotice>
+          ) : null}
           {general ? <ProblemNotice key={attempt} problem={general} /> : null}
           <TextField
             fieldId={CONFIRM_ID}
@@ -351,7 +393,7 @@ function EraseSection() {
             error={message}
           />
           <div className={styles["dialogActions"]}>
-            <Button type="button" onClick={() => setOpen(false)}>
+            <Button type="button" disabled={pending} onClick={close}>
               {t.settings.erase.cancel}
             </Button>
             <Button type="submit" variant="danger" busy={erase.isPending}>

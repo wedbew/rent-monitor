@@ -5,6 +5,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Fixed
+- Frontend settings (RM-346 review): Cancel, Escape, the backdrop and the close button are shut while a sign-out-everywhere or account-deletion request runs (the dialog and its state are never reset under a running request, so no second request can start); a lost answer says "Nie wiemy, czy się udało" and asks the server whether the session still exists (a 401 then takes the one sign-out door) instead of assuming either way
 - Saved listings (RM-347): `PUT /api/saved/{otodom_id}` keeps the stored note when the body has no `note` key (an explicit `null` clears it; it used to clear the note), `GET /api/saved` accepts `limit` up to 500 (the per-account cap; it was 200), so every saved listing is reachable. The SPA asks for 500, saves without a note and shows no save toggle for a listing missing from a full list, so saving an older listing can no longer erase its note
 
 ### Changed
@@ -15,6 +16,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 - **BREAKING** `GET /api/audits` returns `{"items": [...], "next_cursor": "..." | null}` instead of a bare array. Pages are keyset-paged newest first over `(created_at, id)` (stable while new audits arrive; `limit` 1-100, default 50); `cursor` is the opaque `next_cursor` of the previous page (anything else is a 422 `VALIDATION_ERROR`); new filters `status` (repeatable), `grade` and `q` (Otodom id prefix). There is no total. No frontend consumes the old shape yet (RM-265)
 
 ### Added
+- `GET /api/me` returns `has_password` (true when the account has an e-mail/password credential, false for Google-only and magic-link-only accounts); the SPA settings page shows the change-password form only for accounts that have one and the recovery notice otherwise (RM-345)
 - `GET /api/billing/purchases` accepts an optional `request_key` (the checkout `Idempotency-Key`): it returns only the caller's purchase created with that key, or an empty list when it never arrived, so a client can settle a lost checkout answer without guessing from recent rows (RM-364)
 - Frontend performance diagnostics (#286): `pnpm perf` records LCP, CLS and the slowest interaction of the main pages on the built SPA (desktop and a throttled phone); first numbers and their limits in `frontend/docs/PERFORMANCE.md`. Diagnostics, not thresholds (RM-286)
 - Frontend visual baselines (#334): `e2e/visual.spec.ts` compares 58 pictures (shell, forms with errors, paywall dialog, analyses views, report; light and dark; 1280 and 390 px) made and compared only inside the pinned Playwright Linux image (`pnpm visual`, `pnpm visual:update`); `test/css-tokens.test.ts` fails on a `var(--x)` with no definition. Not yet a GitHub check (workflow change awaiting approval) (RM-334)

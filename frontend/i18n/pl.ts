@@ -400,6 +400,15 @@ export const pl = {
     title: "Ustawienia",
     lead: "Konto, bezpieczeństwo i Twoje dane w jednym miejscu.",
     loading: "Wczytuję ustawienia",
+    unknown: {
+      title: "Nie wiemy, czy się udało",
+      signOutAll:
+        "Połączenie zostało przerwane. Sprawdzamy, czy ta sesja nadal działa; jeśli zobaczysz tę stronę, wylogowanie mogło się nie udać. Spróbuj ponownie: to bezpieczne.",
+      password:
+        "Połączenie zostało przerwane. Hasło mogło zostać zmienione. Jeśli za chwilę wylogujemy Cię, zaloguj się nowym hasłem; w przeciwnym razie spróbuj ponownie.",
+      erase:
+        "Połączenie zostało przerwane. Konto mogło zostać usunięte. Jeśli za chwilę wylogujemy Cię, konto nie istnieje; w przeciwnym razie spróbuj ponownie.",
+    },
     profile: {
       heading: "Konto",
       list: "Dane konta",
@@ -441,9 +450,9 @@ export const pl = {
       next: "Nowe hasło",
       hint: ({ min }: { min: string }) => `Co najmniej ${min} znaków.`,
       submit: "Zmień hasło",
-      noPasswordTitle: "Konto bez hasła?",
+      noPasswordTitle: "To konto nie ma hasła",
       noPasswordBody:
-        "Jeśli logujesz się przez Google lub link w mailu, nie masz jeszcze hasła. Możesz je ustawić przez odzyskiwanie hasła.",
+        "Logujesz się przez Google lub link w mailu, więc nie ma czego zmieniać. Możesz ustawić hasło przez odzyskiwanie hasła.",
       noPasswordLink: "Ustaw hasło przez e-mail",
       wrongCurrent: "To nie jest Twoje obecne hasło.",
       currentMissing: "Wpisz obecne hasło.",
