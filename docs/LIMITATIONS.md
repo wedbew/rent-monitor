@@ -265,6 +265,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** the filters narrow the list; the date column is the order
 - **Target:** an API ordering parameter with a keyset per order, then sortable headers
 
+### L-041 — Gates 4 and 5 have synthetic lower-bound numbers only
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** release gates 4 (memory) and 5 (connection budget), #35, #36, `scripts/load_check.sh`
+- **Evidence:** confirmed for the numbers (run on VPS-3, 2026-10-16, `docs/DEPLOYMENTS.md`); the representativeness gap is inferred from what the run did not exercise
+- **Description:** Twenty audits submitted together on VPS-3 used at most 28 database connections and 7.1 % of the audit worker's memory limit. They were hand-built listings without photos, so the vision stage (images are the expected memory peak) never ran, no batch import was running, there was no webhook traffic and the audit worker processes one audit at a time. The numbers cannot decide gate 4's "concurrency 2 only if peak < 60 %" or close gate 5
+- **Workaround:** none needed for a private beta without customers
+- **Target:** an owner-authorised run with real listings and photos (OpenRouter cost, one Otodom request per listing, L-002 applies), with the batch import running, recorded in #35 and #36
+
 ### L-037 — Saved listings: a full list is not proof of absence; concurrent note edits are last-write-wins
 - **Status:** resolved (the 200-item cap and the note-wiping save); the residual limit below stays
 - **Discovered:** 2026-10-16
