@@ -30,8 +30,9 @@ def _out(row: SavedListing) -> SavedOut:
 
 @router.get("", response_model=list[SavedOut])
 async def list_saved(
-    db: SessionDep, principal: PrincipalDep, limit: Annotated[int, Query(ge=1, le=200)] = 100
+    db: SessionDep, principal: PrincipalDep, limit: Annotated[int, Query(ge=1, le=MAX_SAVED)] = 100
 ) -> list[SavedOut]:
+    """Newest first. `limit` may reach the per-account cap, so `limit=500` returns every saved listing."""
     rows = (
         await db.scalars(
             select(SavedListing)
@@ -69,9 +70,12 @@ async def save_listing(
     stmt = insert(SavedListing).values(
         user_id=principal.user_id, otodom_id=otodom_id, note=body.note, latest_audit_id=latest_audit
     )
+    # A body without a `note` key keeps the stored note; an explicit null clears it (RM-347).
+    update: dict[str, object] = {"latest_audit_id": stmt.excluded.latest_audit_id}
+    if "note" in body.model_fields_set:
+        update["note"] = stmt.excluded.note
     stmt = stmt.on_conflict_do_update(
-        index_elements=[SavedListing.user_id, SavedListing.otodom_id],
-        set_={"note": stmt.excluded.note, "latest_audit_id": stmt.excluded.latest_audit_id},
+        index_elements=[SavedListing.user_id, SavedListing.otodom_id], set_=update
     ).returning(SavedListing)
     row = (await db.execute(stmt)).scalar_one()
     return _out(row)

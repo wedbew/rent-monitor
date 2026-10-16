@@ -201,7 +201,7 @@ export interface SavedFlow extends Scenario {
 }
 
 /**
- * The analyses collection with a working saved list: PUT replaces the whole row (an absent note clears it, as the
+ * The analyses collection with a working saved list: PUT keeps the stored note when the body has no note key and clears it for an explicit null (as the
  * API does), DELETE is idempotent, a listing that was never analysed is a 404. Fresh state per call.
  */
 export function createSaved(
@@ -230,8 +230,9 @@ export function createSaved(
   const routes: Route[] = [
     {
       operation: "GET /api/saved",
-      reply: () => {
+      reply: (request) => {
         calls.push("list");
+        calls.push(`list${request.url.search}`);
         return (
           overrides["GET /api/saved"] ?? {
             status: 200,
@@ -244,15 +245,16 @@ export function createSaved(
       operation: "PUT /api/saved/{otodom_id}",
       reply: (request) => {
         const id = request.params["otodom_id"] ?? "";
-        const note = (request.body as { note?: string | null } | null)?.note ?? null;
-        calls.push(`put:${id}:${note ?? ""}`);
+        const body = (request.body ?? {}) as { note?: string | null };
+        const hasNote = "note" in body; // an absent key keeps the stored note, null clears it (RM-347)
+        calls.push(`put:${id}:${hasNote ? (body.note ?? "null") : ""}`);
         const forced = overrides["PUT /api/saved/{otodom_id}"];
         if (forced !== undefined) return forced;
         const audit = latest(id);
         if (audit === undefined) return replyFrom(fx("PUT /api/saved/{otodom_id}", "never_audited"));
         const row: SavedOut = {
           otodom_id: id,
-          note,
+          note: hasNote ? (body.note ?? null) : (saved.get(id)?.note ?? null),
           latest_audit_id: audit.audit_id,
           created_at: saved.get(id)?.created_at ?? "2026-10-02T12:00:00Z",
         };
