@@ -585,7 +585,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Saved */
+        /**
+         * List Saved
+         * @description Newest first. `limit` may reach the per-account cap, so `limit=500` returns every saved listing.
+         */
         get: operations["list_saved_api_saved_get"];
         put?: never;
         post?: never;
@@ -3389,6 +3392,8 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                /** @description The Idempotency-Key of a checkout: only the caller's purchase created with it (an empty list when it never arrived). Lets a client settle a lost answer without guessing. */
+                request_key?: string | null;
             };
             header?: never;
             path?: never;
