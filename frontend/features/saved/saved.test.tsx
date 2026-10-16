@@ -175,6 +175,50 @@ describe("SaveToggle", () => {
   });
 });
 
+describe("SaveToggle with a full saved list (RM-347)", () => {
+  const fullList = (): Reply => ({
+    status: 200,
+    body: Array.from({ length: 500 }, (_, n) => ({
+      otodom_id: `9${String(n).padStart(8, "0")}`,
+      note: null,
+      latest_audit_id: null,
+      created_at: "2026-10-01T10:00:00Z",
+    })),
+  });
+
+  it("asks for the whole list in one request", async () => {
+    const { flow } = mount(<SaveToggle otodomId={NOTED} />);
+    await toggle(NOTED);
+    expect(flow.calls).toContain("list?limit=500");
+  });
+
+  it("a listing missing from a full list is unknown: no toggle, so no blind save", async () => {
+    const flow = createSaved(undefined, { "GET /api/saved": fullList() });
+    mount(
+      <>
+        <SaveToggle otodomId={UNSAVED} />
+        <SaveToggle otodomId="900000007" label="Zapisane na liście" />
+      </>,
+      flow,
+    );
+    expect(await screen.findByRole("button", { name: "Zapisane na liście" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.queryByRole("button", { name: `Zapisz ogłoszenie ${UNSAVED}` })).toBeNull();
+    expect(flow.calls.filter((c) => c.startsWith("put:"))).toEqual([]);
+  });
+
+  it("saving a listing again sends no note and keeps the stored one", async () => {
+    const flow = createSaved([[0, "stara notatka"]], { "DELETE /api/saved/{otodom_id}": { status: 204 } });
+    mount(<SaveToggle otodomId={UNSAVED} />, flow);
+    await userEvent.click(await toggle(UNSAVED));
+    await waitFor(() => expect(flow.saved.has(UNSAVED)).toBe(true));
+    expect(flow.calls).toContain(`put:${UNSAVED}:`); // no note key on the wire
+    expect(flow.saved.get(NOTED)?.note).toBe("stara notatka");
+  });
+});
+
 describe("NoteEditor", () => {
   it("shows the stored note and a counter in characters", async () => {
     mount(<Panel id={NOTED} />);

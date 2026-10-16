@@ -201,6 +201,27 @@ journeys are the few paths worth running against the real thing. On GitHub (`.gi
 runs `frontend` (`pnpm check`), `frontend-e2e` (this mocked lane) and `frontend-journey` (the Compose stack); traces
 of a failed run are kept 7 days. Firefox and WebKit lanes are #311.
 
+## Visual baselines (`e2e/visual.spec.ts`, #334)
+
+Pictures of the shell, forms with errors, the paywall dialog, the analyses views and the report, in both themes at
+1280 and 390 px (`e2e/__screenshots__/`, 58 files). A picture only means something on the stack that made it, so they
+are made and compared **only inside the pinned Playwright Linux image** (`mcr.microsoft.com/playwright:v<version>-noble`,
+the version in `package.json`), never on a Mac or a runner of another kind:
+
+- `pnpm visual` compares against the committed baselines (needs Docker; on Apple silicon it runs under emulation and
+  installs into Docker volumes, never into your `node_modules`).
+- `pnpm visual:update` rewrites them. **Look at every changed picture** before committing: a generated baseline is not
+  approved by being generated. A deliberate CSS change fails `pnpm visual` with a diff in `test-results/`.
+
+The data is the fixture scenarios, so the pictures show a fictional account. `test/css-tokens.test.ts` keeps one class of
+defect out for good: a `var(--x)` with no definition (the visual lane found `--space-5` and `--focus`).
+
+## Performance diagnostics (`e2e/perf.spec.ts`, #286)
+
+`pnpm perf` records LCP, CLS and the slowest interaction for the main pages (desktop, and a phone with 4x CPU throttling) on the
+built SPA with a mocked API. Diagnostics only, no thresholds; the recorded numbers and their limits are in
+`docs/PERFORMANCE.md`. The enforced budget is the bundle (`check-dist.mjs`).
+
 ## Error reporting (`shell/observability.ts`)
 
 Off unless the build has `VITE_SENTRY_DSN` (a public Better Stack ingest DSN, B-020): then the Sentry SDK is loaded
@@ -298,16 +319,17 @@ offline or PWA support.
 Support above is a target. This is what is tested, and where. "Emulated" is a desktop engine with a phone viewport
 and user agent, not the phone.
 
-| Engine / device                           | How                                                    | Where                                              | Evidence                                                               |
-| ----------------------------------------- | ------------------------------------------------------ | -------------------------------------------------- | ---------------------------------------------------------------------- |
-| Chromium, desktop 1280 px                 | full mocked suite, axe, interaction gate               | `pnpm test:e2e`; PR job `frontend-e2e`             | every PR (once #330 merges)                                            |
-| Chromium, Pixel 7 emulated (390 px)       | full mocked suite, axe, interaction gate               | same                                               | every PR                                                               |
-| Chromium, real stack                      | journey lane (sign-up, analysis, sign-out)             | `pnpm test:e2e:journey`; PR job `frontend-journey` | every PR                                                               |
-| Firefox, desktop 1280 px                  | full mocked suite                                      | `pnpm test:e2e:browsers`; nightly                  | nightly (once #330 merges); last local run RM-311 2026-10-15: all pass |
-| WebKit (Safari engine), desktop 1280 px   | full mocked suite                                      | same                                               | same                                                                   |
-| iOS Safari, Android Chrome (real devices) | none automated                                         | manual before release (#286)                       | **not run**                                                            |
-| Screen readers (VoiceOver, NVDA)          | none automated; focus and `role=alert` contract tested | manual before release (#286)                       | **not run**                                                            |
-| Visual regression (screenshots)           | none: baselines need a pinned Linux image to be stable | #334                                               | **not run**                                                            |
+| Engine / device                           | How                                                                    | Where                                              | Evidence                                           |
+| ----------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- |
+| Chromium, desktop 1280 px                 | full mocked suite, axe, interaction gate                               | `pnpm test:e2e`; PR job `frontend-e2e`             | every PR (once #330 merges)                        |
+| Chromium, Pixel 7 emulated (390 px)       | full mocked suite, axe, interaction gate                               | same                                               | every PR                                           |
+| Chromium, real stack                      | journey lane (sign-up, analysis, sign-out)                             | `pnpm test:e2e:journey`; PR job `frontend-journey` | every PR                                           |
+| Firefox, desktop 1280 px                  | full mocked suite                                                      | `pnpm visual` / `pnpm visual:update`               | visual baselines in the pinned Linux image (below) |
+| `pnpm test:e2e:browsers`; nightly         | nightly (once #330 merges); last local run RM-311 2026-10-15: all pass |
+| WebKit (Safari engine), desktop 1280 px   | full mocked suite                                                      | same                                               | same                                               |
+| iOS Safari, Android Chrome (real devices) | none automated                                                         | manual before release (#286)                       | **not run**                                        |
+| Screen readers (VoiceOver, NVDA)          | none automated; focus and `role=alert` contract tested                 | manual before release (#286)                       | **not run**                                        |
+| Visual regression (screenshots)           | none: baselines need a pinned Linux image to be stable                 | #334                                               | **not run**                                        |
 
 Engine differences the suite handles on purpose: Safari moves focus to links only with Option+Tab (the skip-link
 tests press it in WebKit); a clicked button takes no focus in Safari, so a dialog opened without a focused trigger

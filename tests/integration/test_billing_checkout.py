@@ -414,6 +414,25 @@ async def test_purchases_are_private_to_their_buyer(app: FastAPI, make_google_to
     assert (await b.get("/api/billing/purchases")).json() == {"purchases": []}
 
 
+async def test_a_purchase_is_found_by_its_idempotency_key_and_only_by_its_buyer(
+    app: FastAPI, make_google_token: MakeToken
+) -> None:
+    a, _ = await sign_in(app, make_google_token)
+    b, _ = await sign_in(app, make_google_token)
+    key, other = uuid4(), uuid4()
+    mine = (await checkout(a, "reports_5", key)).json()
+    await checkout(a, "reports_1", other)
+    found = (await a.get("/api/billing/purchases", params={"request_key": str(key)})).json()["purchases"]
+    assert [p["purchase_id"] for p in found] == [mine["purchase_id"]]
+    never_sent = (await a.get("/api/billing/purchases", params={"request_key": str(uuid4())})).json()
+    assert never_sent == {"purchases": []}
+    foreign = (await b.get("/api/billing/purchases", params={"request_key": str(key)})).json()
+    assert foreign == {
+        "purchases": []
+    }  # another buyer's key is indistinguishable from one that never arrived
+    assert (await a.get("/api/billing/purchases", params={"request_key": "not-a-uuid"})).status_code == 422
+
+
 async def test_erasing_the_account_keeps_the_accounting_record_without_the_user(
     app: FastAPI, make_google_token: MakeToken, engine: AsyncEngine
 ) -> None:

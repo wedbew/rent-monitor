@@ -17,8 +17,9 @@ interface SaveToggleProps {
 /**
  * Save or unsave one listing. A pressed toggle: its name stays, `aria-pressed` carries the state. Not optimistic: the
  * button is busy until the server answers and the state shown is the server's. Unsaving a listing that has a note
- * asks first, because the API removes the note with it. Nothing is shown until the list of saved listings is known:
- * saving without knowing could replace an existing note (the API replaces the whole row).
+ * asks first, because the API removes the note with it. Nothing is shown until the saved state of this listing is
+ * known: the list is loaded, and a listing missing from a full (possibly incomplete) list stays unknown. Saving sends
+ * no note, so it can never replace one.
  */
 export function SaveToggle({
   otodomId,
@@ -31,6 +32,7 @@ export function SaveToggle({
   const [confirming, setConfirming] = useState(false);
   if (state.status !== "ready") return null;
   const item = state.byId.get(otodomId);
+  if (item === undefined && state.truncated) return null;
   const saved = item !== undefined;
   const busy = save.isPending || unsave.isPending;
   const failed = save.isError ? save.error : unsave.isError ? unsave.error : null;
@@ -39,7 +41,7 @@ export function SaveToggle({
     if (busy) return;
     save.reset();
     unsave.reset();
-    if (!saved) save.mutate({ otodomId, note: null });
+    if (!saved) save.mutate({ otodomId });
     else if (item.note !== null && item.note !== "") setConfirming(true);
     else unsave.mutate(otodomId);
   };

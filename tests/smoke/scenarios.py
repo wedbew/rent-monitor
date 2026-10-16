@@ -886,6 +886,15 @@ async def purchases_mixed(w: World) -> Exchange:
     return await w.send(who, "GET", "/api/billing/purchases")
 
 
+@scenario("GET /api/billing/purchases", "by_request_key", 200)
+async def purchases_by_key(w: World) -> Exchange:
+    who = await w.user(label="buyer")
+    key = uuid4()
+    await w.buy(who, "reports_5", key)
+    await w.buy(who, "reports_1")  # another order, not returned
+    return await w.send(who, "GET", "/api/billing/purchases", params={"request_key": str(key)})
+
+
 @scenario("GET /api/billing/purchases", "validation_error", 422)
 async def purchases_validation(w: World) -> Exchange:
     return await w.send(await w.user(label="buyer"), "GET", "/api/billing/purchases", params={"limit": 0})

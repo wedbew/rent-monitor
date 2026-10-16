@@ -25,6 +25,7 @@ from rm_core.db.models import (
     FeatureFlag,
     Listing,
     Plan,
+    SavedListing,
     UsagePeriod,
     User,
 )
@@ -236,8 +237,13 @@ async def test_saved_listings_keep_a_note_the_latest_audit_and_belong_to_one_use
         assert saved["otodom_id"] == oid
         assert saved["note"] == "call the agent"
         assert saved["latest_audit_id"] == newest
-        again = (await a.put(f"/api/saved/{oid}", json={})).json()  # no note clears it, nothing duplicates
-        assert again["note"] is None
+        again = (await a.put(f"/api/saved/{oid}", json={})).json()  # no note key keeps it, nothing duplicates
+        assert again["note"] == "call the agent"
+        cleared = (await a.put(f"/api/saved/{oid}", json={"note": None})).json()  # explicit null clears
+        assert cleared["note"] is None
+        await a.put(f"/api/saved/{oid}", json={"note": "second"})
+        assert (await a.put(f"/api/saved/{oid}", json={})).json()["note"] == "second"
+        assert (await a.get("/api/saved")).json()[0]["note"] == "second"  # reload persistence
         listed = (await a.get("/api/saved")).json()
         assert [row["otodom_id"] for row in listed] == [oid]
 
@@ -297,6 +303,38 @@ async def test_the_saved_list_is_bounded_per_user(
         assert (
             await c.put(f"/api/saved/{oids[0]}", json={"note": "update"})
         ).status_code == 200  # edits still work
+
+
+async def test_the_whole_saved_list_is_reachable_and_an_older_note_survives_saving_again(
+    app: FastAPI, engine: AsyncEngine, make_google_token: MakeToken
+) -> None:
+    a, me_a = await sign_in(app, make_google_token)
+    b, me_b = await sign_in(app, make_google_token)
+    oldest = new_oid()
+    await audit_listing(engine, me_a["id"], oldest, age_s=7200)
+    await audit_listing(engine, me_b["id"], oldest)
+    sm = async_sessionmaker(engine, expire_on_commit=False)
+    async with sm() as s, s.begin():
+        ids = [new_oid() for _ in range(210)]
+        s.add_all(Listing(otodom_id=i, url="https://x.test") for i in ids)
+        await s.flush()
+        s.add(
+            SavedListing(
+                user_id=me_a["id"],
+                otodom_id=oldest,
+                note="keep me",
+                created_at=datetime.now(UTC) - timedelta(days=1),
+            )
+        )
+        s.add_all(SavedListing(user_id=me_a["id"], otodom_id=i, created_at=datetime.now(UTC)) for i in ids)
+    async with a, b:
+        assert (await a.get("/api/saved?limit=501")).status_code == 422
+        listed = (await a.get("/api/saved?limit=500")).json()
+        assert len(listed) == 211  # more than the old 200 page
+        assert oldest in {row["otodom_id"] for row in listed}  # the oldest row is reachable
+        again = await a.put(f"/api/saved/{oldest}", json={})  # a save-again without a note
+        assert again.json()["note"] == "keep me"
+        assert (await b.get("/api/saved?limit=500")).json() == []  # tenant isolation
 
 
 # ---------- /api/admin ----------
