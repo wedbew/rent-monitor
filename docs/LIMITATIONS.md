@@ -265,14 +265,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** the filters narrow the list; the date column is the order
 - **Target:** an API ordering parameter with a keyset per order, then sortable headers
 
-### L-037 — Saved listings: only the newest 200 are listed, and saving replaces the note
-- **Status:** active
+### L-037 — Saved listings: a full list is not proof of absence; concurrent note edits are last-write-wins
+- **Status:** resolved (the 200-item cap and the note-wiping save); the residual limit below stays
 - **Discovered:** 2026-10-16
-- **Affects:** `GET /api/saved` (`limit` at most 200, no cursor; the per-account cap is 500), `PUT /api/saved/{otodom_id}` (replaces the whole row), `frontend/features/saved/`
-- **Evidence:** confirmed (OpenAPI parameters, `services/rm_api/saved.py`)
-- **Description:** The SPA shows the 200 newest saved listings and says so when the list is full. A listing saved earlier than that appears as not saved, and saving it again would replace its note with none. The note editor always sends the note it holds, and unsaving a listing that has a note asks first. Beyond 200 saved listings the risk is real; below it the SPA always knows the state
-- **Workaround:** keep fewer than 200 saved listings
-- **Target:** API paging and a PUT that keeps an absent note (#347)
+- **Resolved:** 2026-10-16, RM-347 (`GET /api/saved` accepts `limit` up to the 500 per-account cap; `PUT` keeps the stored note when the body has no `note` key and only an explicit `null` clears it; the SPA asks for 500, saves with no note and shows no toggle for a listing missing from a full list)
+- **Affects:** `GET /api/saved`, `PUT /api/saved/{otodom_id}`, `frontend/features/saved/`
+- **Evidence:** confirmed (`tests/integration/test_me_saved_admin.py`, `frontend/features/saved/saved.test.tsx`)
+- **Description:** The 500 cap is soft (two simultaneous saves may overshoot by one), so a list of exactly 500 may be incomplete; the SPA then treats an absent listing as unknown. The note editor sends the whole note; two tabs editing the same note are last-write-wins (no version check), so paging alone does not prevent a stale-tab overwrite of an explicit edit. Saving from a toggle can no longer touch a note
+- **Workaround:** none needed for the toggle; edit one note in one tab
+- **Target:** an `If-Match`/version on notes if concurrent editing matters
 
 ## Deferred
 

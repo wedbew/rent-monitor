@@ -28,9 +28,7 @@ test.describe("saved listings on the report", () => {
     await exercise("report.save", async () => {
       await reportToggle(page).click();
       await expect(reportToggle(page)).toHaveAttribute("aria-pressed", "true");
-      return [
-        await outcome.request(api, { method: "PUT", path: `/api/saved/${FIRST_ID}`, body: { note: null } }),
-      ];
+      return [await outcome.request(api, { method: "PUT", path: `/api/saved/${FIRST_ID}`, body: {} })];
     });
     await expect(note(page)).toHaveValue("");
     await note(page).fill("Sprawdzić czynsz\ni piętro");
@@ -145,9 +143,7 @@ test.describe("saved listings in Moje analizy", () => {
     await exercise("analyses.save", async () => {
       await toggle.click();
       await expect(toggle).toHaveAttribute("aria-pressed", "true");
-      return [
-        await outcome.request(api, { method: "PUT", path: `/api/saved/${THIRD_ID}`, body: { note: null } }),
-      ];
+      return [await outcome.request(api, { method: "PUT", path: `/api/saved/${THIRD_ID}`, body: {} })];
     });
     await page.getByRole("button", { name: "Tabela" }).click();
     await expect(
