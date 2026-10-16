@@ -191,6 +191,96 @@ function withResult(
 
 const RICH_URL = "https://www.otodom.pl/pl/oferta/mieszkanie-2-pokoje-ID4abcd";
 
+// -------------------------------------------------------------------------------------------------- saved
+type SavedOut = components["schemas"]["SavedOut"];
+
+export interface SavedFlow extends Scenario {
+  /** What the server holds, by Otodom id; tests read it to prove what was stored. */
+  readonly saved: Map<string, SavedOut>;
+  readonly calls: string[];
+}
+
+/**
+ * The analyses collection with a working saved list: PUT replaces the whole row (an absent note clears it, as the
+ * API does), DELETE is idempotent, a listing that was never analysed is a 404. Fresh state per call.
+ */
+export function createSaved(
+  seed: readonly (readonly [index: number, note: string | null])[] = [
+    [0, "Notatka testowa"],
+    [1, null],
+  ],
+  overrides: Record<string, Reply> = {},
+  audits: readonly AuditOut[] = SUCCEEDED_AUDITS,
+): SavedFlow {
+  const saved = new Map<string, SavedOut>();
+  const calls: string[] = [];
+  const latest = (otodomId: string) => audits.find((a) => a.otodom_id === otodomId);
+  seed.forEach(([index, note], n) => {
+    const audit = audits[index];
+    if (audit === undefined) throw new Error(`no audit ${index}`);
+    saved.set(audit.otodom_id, {
+      otodom_id: audit.otodom_id,
+      note,
+      latest_audit_id: audit.audit_id,
+      created_at: new Date(Date.parse("2026-10-02T10:00:00Z") - n * 3_600_000)
+        .toISOString()
+        .replace(".000Z", "Z"),
+    });
+  });
+  const routes: Route[] = [
+    {
+      operation: "GET /api/saved",
+      reply: () => {
+        calls.push("list");
+        return (
+          overrides["GET /api/saved"] ?? {
+            status: 200,
+            body: [...saved.values()].sort((a, b) => b.created_at.localeCompare(a.created_at)),
+          }
+        );
+      },
+    },
+    {
+      operation: "PUT /api/saved/{otodom_id}",
+      reply: (request) => {
+        const id = request.params["otodom_id"] ?? "";
+        const note = (request.body as { note?: string | null } | null)?.note ?? null;
+        calls.push(`put:${id}:${note ?? ""}`);
+        const forced = overrides["PUT /api/saved/{otodom_id}"];
+        if (forced !== undefined) return forced;
+        const audit = latest(id);
+        if (audit === undefined) return replyFrom(fx("PUT /api/saved/{otodom_id}", "never_audited"));
+        const row: SavedOut = {
+          otodom_id: id,
+          note,
+          latest_audit_id: audit.audit_id,
+          created_at: saved.get(id)?.created_at ?? "2026-10-02T12:00:00Z",
+        };
+        saved.set(id, row);
+        return { status: 200, body: row };
+      },
+    },
+    {
+      operation: "DELETE /api/saved/{otodom_id}",
+      reply: (request) => {
+        const id = request.params["otodom_id"] ?? "";
+        calls.push(`delete:${id}`);
+        const forced = overrides["DELETE /api/saved/{otodom_id}"];
+        if (forced !== undefined) return forced;
+        saved.delete(id);
+        return { status: 204 };
+      },
+    },
+    ...auditRoutes(audits),
+  ];
+  const base = scenario(
+    "saved",
+    "Five analyses and a working saved list: two saved, one with a note.",
+    routes,
+  );
+  return { ...base, saved, calls };
+}
+
 export const SCENARIOS = {
   firstVisit: scenario(
     "firstVisit",
@@ -240,6 +330,7 @@ export const SCENARIOS = {
     },
   ]),
   collection: createCollection(),
+  savedLoaded: createSaved(),
   unsupportedReport: scenario(
     "unsupportedReport",
     "A finished audit whose stored result has a schema version this build does not know.",

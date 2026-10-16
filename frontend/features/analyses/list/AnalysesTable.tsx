@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { formatDate, formatMoney, NOT_COMPUTED } from "../../../api/format";
 import { t } from "../../../i18n";
 import type { AuditSummary } from "../queries";
+import { SaveToggle } from "../../saved/SaveToggle";
 import { AuditBadge } from "./AuditBadge";
 import styles from "./AnalysesPage.module.css";
 
@@ -42,6 +43,11 @@ const columns = column.columns([
     header: L.maxBid,
     cell: ({ row }) => money(row.original.max_bid_pln),
     meta: { numeric: true },
+  }),
+  column.display({
+    id: "saved",
+    header: L.saved,
+    cell: ({ row }) => <SaveToggle otodomId={row.original.otodom_id} small />,
   }),
 ]);
 

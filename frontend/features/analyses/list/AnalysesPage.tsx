@@ -20,6 +20,8 @@ import {
   STATUS_OPTIONS,
   writeFilters,
 } from "./filters";
+import { SavedList } from "../../saved/SavedList";
+import { SaveToggle } from "../../saved/SaveToggle";
 import { AnalysesTable } from "./AnalysesTable";
 import { AuditBadge } from "./AuditBadge";
 import { useAuditList } from "./useAuditList";
@@ -59,6 +61,9 @@ function Cards({ items }: { readonly items: readonly AuditSummary[] }) {
               <dd>{money(audit.max_bid_pln)}</dd>
             </div>
           </dl>
+          <div className={styles["cardAction"]}>
+            <SaveToggle otodomId={audit.otodom_id} small />
+          </div>
         </li>
       ))}
     </ul>
@@ -104,139 +109,155 @@ export function AnalysesPage() {
         lead={t.analyses.list.lead}
       />
 
-      <section className={styles["filters"]} aria-label={t.analyses.list.filtersLabel}>
-        <form
-          className={styles["search"]}
-          onSubmit={search}
-          role="search"
-          aria-label={t.analyses.list.searchLabel}
-        >
-          <TextField
-            label={t.analyses.list.searchField}
-            value={draft ?? filters.q}
-            onValueChange={setDraft}
-            autoComplete="off"
-            spellCheck={false}
-            maxLength={20}
-          />
-          <Button type="submit" icon="search">
-            {t.analyses.list.search}
-          </Button>
-        </form>
-        <Select
-          label={t.analyses.list.statusFilter}
-          value={filters.status}
-          options={STATUS_OPTIONS}
-          onValueChange={(status) => update({ status: status as CollectionFilters["status"] })}
-        />
-        <Select
-          label={t.analyses.list.gradeFilter}
-          value={filters.grade}
-          options={GRADE_OPTIONS}
-          onValueChange={(grade) => update({ grade: grade as CollectionFilters["grade"] })}
-        />
-      </section>
+      <Segmented
+        label={t.saved.filter.label}
+        value={filters.saved ? "saved" : "all"}
+        options={[
+          { value: "all", label: t.saved.filter.all },
+          { value: "saved", label: t.saved.filter.saved, icon: "bookmark" },
+        ]}
+        onValueChange={(scope) => update({ saved: scope === "saved" })}
+      />
 
-      <div className={styles["results"]}>
-        <div className={styles["summary"]}>
-          {items.length > 0 ? (
-            <span className={styles["count"]} role="status">
-              {refreshing
-                ? t.analyses.list.refreshing
-                : t.analyses.list.shown({ count: formatAnalyses(items.length) })}
-            </span>
-          ) : null}
-          {filtered ? (
-            <>
-              <span className={styles["count"]}>{t.analyses.list.filtersOn}</span>
-              <Button type="button" small onClick={() => update({ status: "", grade: "", q: "" })}>
-                {t.analyses.list.clearFilters}
-              </Button>
-            </>
-          ) : null}
-        </div>
-        <Segmented
-          label={t.analyses.list.viewLabel}
-          value={filters.view}
-          options={[
-            { value: "cards", label: t.analyses.list.viewCards, icon: "cards" },
-            { value: "table", label: t.analyses.list.viewTable, icon: "table" },
-          ]}
-          onValueChange={(view) => update({ view })}
-        />
-      </div>
-
-      {query.isPending ? (
-        <div
-          className={styles["skeletons"]}
-          role="status"
-          aria-busy="true"
-          aria-label={t.analyses.list.loading}
-        >
-          <Skeleton height="72px" />
-          <Skeleton height="72px" />
-          <Skeleton height="72px" />
-        </div>
-      ) : query.isError && items.length === 0 ? (
-        <InlineNotice
-          tone="danger"
-          title={t.analyses.list.failed}
-          live="alert"
-          actions={
-            <Button
-              type="button"
-              variant="primary"
-              icon="refresh"
-              busy={query.isFetching}
-              onClick={() => void query.refetch()}
-            >
-              {t.common.retry}
-            </Button>
-          }
-        >
-          {failureOf(query.error).detail}
-        </InlineNotice>
-      ) : items.length === 0 ? (
-        filtered ? (
-          <div className={styles["empty"]}>
-            <strong>{t.analyses.list.noMatchTitle}</strong>
-            <p>{t.analyses.list.noMatchBody}</p>
-          </div>
-        ) : (
-          <div className={styles["empty"]}>
-            <strong>{t.dashboard.recent.emptyTitle}</strong>
-            <p>{t.dashboard.recent.emptyBody}</p>
-            <div>
-              <LinkButton to="/app/analyses/new" variant="primary" icon="arrow">
-                {t.dashboard.recent.emptyAction}
-              </LinkButton>
-            </div>
-          </div>
-        )
+      {filters.saved ? (
+        <SavedList />
       ) : (
         <>
-          {filters.view === "table" ? <AnalysesTable items={items} /> : <Cards items={items} />}
-          <div className={styles["more"]}>
-            {query.isFetchNextPageError ? (
-              <InlineNotice tone="danger" title={t.analyses.list.moreFailed} live="alert">
-                {failureOf(query.error).detail}
-              </InlineNotice>
-            ) : null}
-            {query.hasNextPage ? (
-              <Button
-                type="button"
-                icon="refresh"
-                busy={query.isFetchingNextPage}
-                onClick={() => void query.fetchNextPage()}
-              >
-                {t.analyses.list.loadMore}
+          <section className={styles["filters"]} aria-label={t.analyses.list.filtersLabel}>
+            <form
+              className={styles["search"]}
+              onSubmit={search}
+              role="search"
+              aria-label={t.analyses.list.searchLabel}
+            >
+              <TextField
+                label={t.analyses.list.searchField}
+                value={draft ?? filters.q}
+                onValueChange={setDraft}
+                autoComplete="off"
+                spellCheck={false}
+                maxLength={20}
+              />
+              <Button type="submit" icon="search">
+                {t.analyses.list.search}
               </Button>
-            ) : (
-              <span className={styles["count"]}>
-                {t.analyses.list.allShown({ count: formatCount(items.length) })}
-              </span>
-            )}
+            </form>
+            <Select
+              label={t.analyses.list.statusFilter}
+              value={filters.status}
+              options={STATUS_OPTIONS}
+              onValueChange={(status) => update({ status: status as CollectionFilters["status"] })}
+            />
+            <Select
+              label={t.analyses.list.gradeFilter}
+              value={filters.grade}
+              options={GRADE_OPTIONS}
+              onValueChange={(grade) => update({ grade: grade as CollectionFilters["grade"] })}
+            />
+          </section>
+
+          <div className={styles["results"]}>
+            <div className={styles["summary"]}>
+              {items.length > 0 ? (
+                <span className={styles["count"]} role="status">
+                  {refreshing
+                    ? t.analyses.list.refreshing
+                    : t.analyses.list.shown({ count: formatAnalyses(items.length) })}
+                </span>
+              ) : null}
+              {filtered ? (
+                <>
+                  <span className={styles["count"]}>{t.analyses.list.filtersOn}</span>
+                  <Button type="button" small onClick={() => update({ status: "", grade: "", q: "" })}>
+                    {t.analyses.list.clearFilters}
+                  </Button>
+                </>
+              ) : null}
+            </div>
+            <Segmented
+              label={t.analyses.list.viewLabel}
+              value={filters.view}
+              options={[
+                { value: "cards", label: t.analyses.list.viewCards, icon: "cards" },
+                { value: "table", label: t.analyses.list.viewTable, icon: "table" },
+              ]}
+              onValueChange={(view) => update({ view })}
+            />
           </div>
+
+          {query.isPending ? (
+            <div
+              className={styles["skeletons"]}
+              role="status"
+              aria-busy="true"
+              aria-label={t.analyses.list.loading}
+            >
+              <Skeleton height="72px" />
+              <Skeleton height="72px" />
+              <Skeleton height="72px" />
+            </div>
+          ) : query.isError && items.length === 0 ? (
+            <InlineNotice
+              tone="danger"
+              title={t.analyses.list.failed}
+              live="alert"
+              actions={
+                <Button
+                  type="button"
+                  variant="primary"
+                  icon="refresh"
+                  busy={query.isFetching}
+                  onClick={() => void query.refetch()}
+                >
+                  {t.common.retry}
+                </Button>
+              }
+            >
+              {failureOf(query.error).detail}
+            </InlineNotice>
+          ) : items.length === 0 ? (
+            filtered ? (
+              <div className={styles["empty"]}>
+                <strong>{t.analyses.list.noMatchTitle}</strong>
+                <p>{t.analyses.list.noMatchBody}</p>
+              </div>
+            ) : (
+              <div className={styles["empty"]}>
+                <strong>{t.dashboard.recent.emptyTitle}</strong>
+                <p>{t.dashboard.recent.emptyBody}</p>
+                <div>
+                  <LinkButton to="/app/analyses/new" variant="primary" icon="arrow">
+                    {t.dashboard.recent.emptyAction}
+                  </LinkButton>
+                </div>
+              </div>
+            )
+          ) : (
+            <>
+              {filters.view === "table" ? <AnalysesTable items={items} /> : <Cards items={items} />}
+              <div className={styles["more"]}>
+                {query.isFetchNextPageError ? (
+                  <InlineNotice tone="danger" title={t.analyses.list.moreFailed} live="alert">
+                    {failureOf(query.error).detail}
+                  </InlineNotice>
+                ) : null}
+                {query.hasNextPage ? (
+                  <Button
+                    type="button"
+                    icon="refresh"
+                    busy={query.isFetchingNextPage}
+                    onClick={() => void query.fetchNextPage()}
+                  >
+                    {t.analyses.list.loadMore}
+                  </Button>
+                ) : (
+                  <span className={styles["count"]}>
+                    {t.analyses.list.allShown({ count: formatCount(items.length) })}
+                  </span>
+                )}
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

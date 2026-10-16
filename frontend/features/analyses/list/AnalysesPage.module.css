@@ -94,6 +94,13 @@
   position: relative;
 }
 
+/* Above the card's stretched link, so the toggle is pressable and the rest of the card still opens the report. */
+.cardAction {
+  position: relative;
+  z-index: 1;
+  justify-self: start;
+}
+
 .facts {
   display: grid;
   gap: var(--space-1);

@@ -40,9 +40,17 @@ export interface CollectionFilters {
   readonly status: "" | StatusGroup;
   readonly grade: "" | GradeFilter;
   readonly q: string;
+  /** Show the saved listings (`GET /api/saved`) instead of the analyses collection. */
+  readonly saved: boolean;
 }
 
-export const DEFAULT_FILTERS: CollectionFilters = { view: "cards", status: "", grade: "", q: "" };
+export const DEFAULT_FILTERS: CollectionFilters = {
+  view: "cards",
+  status: "",
+  grade: "",
+  q: "",
+  saved: false,
+};
 
 export function readFilters(params: URLSearchParams): CollectionFilters {
   const view = params.get("view") === "table" ? "table" : "cards";
@@ -51,7 +59,7 @@ export function readFilters(params: URLSearchParams): CollectionFilters {
   const gradeParam = params.get("grade") ?? "";
   const grade = GRADES.find((g) => g === gradeParam) ?? "";
   const q = (params.get("q") ?? "").trim();
-  return { view, status, grade, q: QUERY.test(q) ? q : "" };
+  return { view, status, grade, q: QUERY.test(q) ? q : "", saved: params.get("saved") === "1" };
 }
 
 /** Only non-default values are written, so the plain collection keeps its plain address. */
@@ -61,6 +69,7 @@ export function writeFilters(filters: CollectionFilters): URLSearchParams {
   if (filters.status !== "") params.set("status", filters.status);
   if (filters.grade !== "") params.set("grade", filters.grade);
   if (filters.q !== "") params.set("q", filters.q);
+  if (filters.saved) params.set("saved", "1");
   return params;
 }
 

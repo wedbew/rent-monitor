@@ -39,9 +39,11 @@ describe("a completed report", () => {
     expect(heading).toHaveTextContent(`Ogłoszenie ${audit.otodom_id}`);
     expect(screen.queryByRole("heading", { level: 1, name: "Raport" })).toBeNull();
 
-    // The section navigation is the very next thing after the heading.
+    // The save panel (RM-276) is the only thing between the heading and the report: the section navigation follows it.
     const nav = screen.getByRole("navigation", { name: "Sekcje raportu" });
-    expect(heading.parentElement?.nextElementSibling).toBe(nav.parentElement);
+    const panel = heading.parentElement?.nextElementSibling;
+    expect(panel).toHaveAccessibleName("Zapisane ogłoszenie i notatka");
+    expect(panel?.nextElementSibling).toBe(nav.parentElement);
     expect(within(nav).getAllByRole("link")).toHaveLength(6);
 
     // No success banner, no "gotowa" message, no result card, no credit sentence.

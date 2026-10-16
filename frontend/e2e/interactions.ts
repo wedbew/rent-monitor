@@ -19,6 +19,7 @@ import {
   createAuthFlow,
   createCollection,
   createRun,
+  createSaved,
   type Scenario,
   type ScenarioName,
   RUN_AUDIT_ID,
@@ -250,8 +251,16 @@ export const PAGES: readonly AppPage[] = [
     id: "analyses",
     path: "/app/analyses",
     heading: "Moje analizy",
-    scenarios: ["empty", "collection", "slow", "auditsFailing"],
+    scenarios: ["empty", "collection", "slow", "auditsFailing", "savedLoaded"],
     states: [
+      {
+        name: "saved-view",
+        scenario: () => createSaved(),
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Zapisane", exact: true }).click();
+          await page.getByRole("list", { name: "Zapisane ogłoszenia" }).waitFor();
+        },
+      },
       {
         name: "table",
         scenario: () => createCollection(),
@@ -296,6 +305,13 @@ export const PAGES: readonly AppPage[] = [
     heading: /^Ogłoszenie /,
     scenarios: ["loaded"],
     states: [
+      {
+        name: "saved-with-note",
+        scenario: () => createSaved([[0, "Notatka testowa"]]),
+        prepare: async (page) => {
+          await page.getByRole("textbox", { name: "Twoja notatka" }).waitFor();
+        },
+      },
       {
         name: "returns",
         scenario: "loaded",
@@ -744,9 +760,33 @@ export const INTERACTIONS: readonly Interaction[] = [
   {
     id: "analyses.row",
     page: "analyses",
-    scenarios: ["collection"],
+    scenarios: ["collection", "savedLoaded"],
     role: "link",
-    name: /^Ogłoszenie IDLST/,
+    name: /^Ogłoszenie ID(LST|FIX)/,
+    outcome: "url",
+  },
+  {
+    id: "analyses.scope.all",
+    page: "analyses",
+    role: "button",
+    name: "Wszystkie analizy",
+    outcome: "url",
+  },
+  { id: "analyses.scope.saved", page: "analyses", role: "button", name: "Zapisane", outcome: "url" },
+  {
+    id: "analyses.save",
+    page: "analyses",
+    scenarios: ["collection", "savedLoaded"],
+    role: "button",
+    name: /^Zapisz ogłoszenie ID/,
+    outcome: "request",
+  },
+  {
+    id: "analyses.saved.open",
+    page: "analyses",
+    state: "saved-view",
+    role: "link",
+    name: /^Otwórz analizę/,
     outcome: "url",
   },
   {
@@ -881,6 +921,42 @@ export const INTERACTIONS: readonly Interaction[] = [
     name: "Moje analizy",
     outcome: "url",
   },
+  {
+    id: "report.save",
+    page: "report",
+    role: "button",
+    name: "Zapisz to ogłoszenie",
+    outcome: "request",
+  },
+  {
+    id: "report.note",
+    page: "report",
+    state: "saved-with-note",
+    role: "textbox",
+    name: "Twoja notatka",
+    outcome: "state",
+  },
+  {
+    id: "report.note.save",
+    page: "report",
+    state: "saved-with-note",
+    role: "button",
+    name: "Zapisz notatkę",
+    outcome: "request",
+  },
+  ...[
+    ["close", "Zamknij", "dialog"],
+    ["cancel", "Anuluj", "dialog"],
+    ["confirm", "Usuń z zapisanych", "request"],
+  ].map(([id = "", label = "", outcome = ""]): Interaction => ({
+    id: `report.unsave.${id}`,
+    page: "report",
+    state: "saved-with-note",
+    within: "report.unsave",
+    role: "button",
+    name: label,
+    outcome: outcome as Interaction["outcome"],
+  })),
   // Help beside a return measure: a button that opens a popover (`POPUPS`).
   {
     id: "report.help.asking",
@@ -1196,6 +1272,15 @@ export const POPUPS: readonly Popup[] = [
     backdrop: "closes",
     modal: false,
   })),
+  {
+    id: "report.unsave",
+    page: "report",
+    state: "saved-with-note",
+    trigger: "report.save",
+    role: "dialog",
+    name: "Usunąć z zapisanych?",
+    backdrop: "closes",
+  },
   {
     id: "paywall",
     page: "new-analysis",

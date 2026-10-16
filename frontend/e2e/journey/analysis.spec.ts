@@ -132,3 +132,48 @@ test("an address that is not an Otodom listing is refused by the real API as a f
   await expect(page.getByRole("alert").filter({ hasText: "Popraw 1 pole" })).toBeVisible();
   expect(await balance(page)).toBe(before);
 });
+
+test("saved listings: save a finished report, keep a note, find it under Zapisane, remove it (real API)", async ({
+  page,
+  baseURL,
+}) => {
+  test.setTimeout(180_000);
+  await signIn(page, baseURL);
+  const item = plant("sale");
+  await submit(page, item.ref);
+  await expect(page.getByRole("heading", { level: 1, name: `Ogłoszenie ${item.ref}` })).toBeVisible({
+    timeout: 150_000,
+  });
+
+  const toggle = page.getByRole("button", { name: "Zapisz to ogłoszenie" });
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  const note = page.getByRole("textbox", { name: "Twoja notatka" });
+  await note.fill("Zapytać o czynsz i okna.");
+  await page.getByRole("button", { name: "Zapisz notatkę" }).click();
+  await expect(page.getByText("Notatka zapisana.")).toBeVisible();
+
+  // What the server holds survives a reload.
+  await page.reload();
+  await expect(page.getByRole("textbox", { name: "Twoja notatka" })).toHaveValue("Zapytać o czynsz i okna.");
+  expect((await (await page.request.get("/api/saved")).json()) as unknown[]).toHaveLength(1);
+
+  // The saved scope of the collection lists it, with the note, linking back to the report.
+  await page.goto("/app/analyses?saved=1");
+  const entry = page.getByRole("list", { name: "Zapisane ogłoszenia" }).getByRole("listitem");
+  await expect(entry).toHaveCount(1);
+  await expect(entry.first()).toContainText(`Ogłoszenie ${item.ref}`);
+  await expect(entry.first()).toContainText("Zapytać o czynsz i okna.");
+  await entry.first().getByRole("link").click();
+  await expect(page).toHaveURL(/\/app\/analyses\/[0-9a-f-]{36}$/);
+
+  // Removing a listing that has a note asks first; then it is gone on the server.
+  await page.getByRole("button", { name: "Zapisz to ogłoszenie" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Usuń z zapisanych" }).click();
+  await expect(page.getByRole("button", { name: "Zapisz to ogłoszenie" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  expect((await (await page.request.get("/api/saved")).json()) as unknown[]).toHaveLength(0);
+});

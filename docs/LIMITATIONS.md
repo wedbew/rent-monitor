@@ -265,6 +265,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** the filters narrow the list; the date column is the order
 - **Target:** an API ordering parameter with a keyset per order, then sortable headers
 
+### L-037 — Saved listings: only the newest 200 are listed, and saving replaces the note
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** `GET /api/saved` (`limit` at most 200, no cursor; the per-account cap is 500), `PUT /api/saved/{otodom_id}` (replaces the whole row), `frontend/features/saved/`
+- **Evidence:** confirmed (OpenAPI parameters, `services/rm_api/saved.py`)
+- **Description:** The SPA shows the 200 newest saved listings and says so when the list is full. A listing saved earlier than that appears as not saved, and saving it again would replace its note with none. The note editor always sends the note it holds, and unsaving a listing that has a note asks first. Beyond 200 saved listings the risk is real; below it the SPA always knows the state
+- **Workaround:** keep fewer than 200 saved listings
+- **Target:** API paging and a PUT that keeps an absent note (#347)
+
 ## Deferred
 
 ### L-025 — V2 manual analysis and creative tools are local design flows

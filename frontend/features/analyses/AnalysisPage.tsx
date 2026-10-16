@@ -19,6 +19,7 @@ import { parseReport } from "../../api/report";
 import { ReportView } from "./report/ReportView";
 import { useAuditProgress } from "./progress/useAuditProgress";
 import { hasReport, isActive, statusCopy } from "./status";
+import { SavedPanel } from "../saved/SavedPanel";
 import styles from "./AnalysisPage.module.css";
 
 export const RECONNECT_GRACE_MS = 8000;
@@ -138,6 +139,7 @@ function Analysis({ auditId }: { readonly auditId: string }) {
     return (
       <div className={`${styles["page"]} ${styles["report"]}`}>
         <PageHeading title={t.common.listingTitle({ id: data.otodom_id })} compact />
+        <SavedPanel otodomId={data.otodom_id} />
         <ReportBody result={data.result} degraded={data.status === "succeeded_degraded"} />
       </div>
     );
