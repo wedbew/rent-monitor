@@ -38,22 +38,29 @@ async def test_plant_creates_n_accounts_with_credit_and_a_fresh_snapshot_each_an
     engine: AsyncEngine,
 ) -> None:
     bystander = await count(engine, "SELECT count(*) FROM app.app_user")
+    async with (
+        engine.begin() as conn
+    ):  # a real-looking listing whose id merely starts alike must survive every cleanup
+        await conn.execute(
+            text("INSERT INTO app.listing (otodom_id, url) VALUES ('IDLCREAL1', 'https://x.test')")
+        )
     planted = await load_check._plant("abcd1234", 3)
-    assert [p["ref"] for p in planted] == ["IDLABCD123400", "IDLABCD123401", "IDLABCD123402"]
+    assert [p["ref"] for p in planted] == ["IDLCABCD123400", "IDLCABCD123401", "IDLCABCD123402"]
     assert all(p["cookie"] for p in planted)
     assert (
         await count(engine, "SELECT count(*) FROM app.app_user WHERE email LIKE '%@load-check.invalid'") == 3
     )
-    assert await count(engine, "SELECT count(*) FROM app.listing WHERE otodom_id LIKE 'IDLABCD1234%'") == 3
+    assert await count(engine, "SELECT count(*) FROM app.listing WHERE otodom_id LIKE 'IDLCABCD1234%'") == 3
     assert (
-        await count(engine, "SELECT count(*) FROM app.listing_snapshot WHERE otodom_id LIKE 'IDLABCD1234%'")
+        await count(engine, "SELECT count(*) FROM app.listing_snapshot WHERE otodom_id LIKE 'IDLCABCD1234%'")
         == 3
     )
 
     removed = await load_check._remove("abcd1234")
     assert removed == 3
     assert await count(engine, "SELECT count(*) FROM app.app_user") == bystander
-    assert await count(engine, "SELECT count(*) FROM app.listing WHERE otodom_id LIKE 'IDL%'") == 0
+    assert await count(engine, "SELECT count(*) FROM app.listing WHERE otodom_id LIKE 'IDLCABCD1234%'") == 0
+    assert await count(engine, "SELECT count(*) FROM app.listing WHERE otodom_id = 'IDLCREAL1'") == 1
     assert (
         await count(engine, "SELECT count(*) FROM app.market_sidecar WHERE source_stem LIKE 'load-check-%'")
         == 0

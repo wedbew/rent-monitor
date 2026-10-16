@@ -28,6 +28,7 @@ import asyncio
 import contextlib
 import json
 import math
+import re
 import sys
 import time
 from dataclasses import dataclass, field
@@ -52,7 +53,7 @@ DEADLINE_S = 900.0
 POLL_EVERY_S = 1.0
 TERMINAL = {"succeeded", "succeeded_degraded", "failed", "rejected", "cancelled"}
 EMAIL_DOMAIN = "load-check.invalid"
-REF_PREFIX = "IDL"
+REF_PREFIX = "IDLC"  # IDLC + the 8-hex run id + a 2-digit index: 14 characters, deleted only by exact match
 
 
 def percentile(values: list[float], fraction: float) -> float | None:
@@ -181,26 +182,54 @@ async def _plant(run_id: str, count: int) -> list[dict[str, str]]:
     return planted
 
 
-async def _remove(run_id: str | None) -> int:
-    """Delete everything a run (or, with `None`, every run) planted; returns the users removed."""
+def planted_refs(run_id: str) -> list[str]:
+    """Every listing reference a run can have planted: exact names, never a prefix pattern."""
+    return [f"{REF_PREFIX}{run_id.upper()}{n:02d}" for n in range(MAX_AUDITS)]
 
+
+async def _remove(run_id: str | None) -> int:
+    """Delete everything a run planted; with `None`, the leftovers of every run that still has a trace.
+
+    Rows are found through the synthetic accounts (`load-<run>-<n>@load-check.invalid`) and sidecars
+    (`load-check-<run>`) and deleted by exact reference, so a real listing whose id merely starts alike is
+    never touched. Returns the users removed."""
     engine = make_engine(get_settings(), pool_size=2, max_overflow=0)
     sm = make_sessionmaker(engine)
-    ref_like = f"{REF_PREFIX}{run_id.upper()}%" if run_id else f"{REF_PREFIX}%"
-    mail_like = f"load-{run_id}-%@{EMAIL_DOMAIN}" if run_id else f"load-%@{EMAIL_DOMAIN}"
-    stem_like = f"load-check-{run_id}" if run_id else "load-check-%"
     try:
         async with sm() as s, s.begin():
-            users = list((await s.scalars(select(User.id).where(User.email.like(mail_like)))).all())
-            await s.execute(update(Audit).where(Audit.otodom_id.like(ref_like)).values(snapshot_id=None))
+            emails = list(
+                (await s.scalars(select(User.email).where(User.email.like(f"load-%@{EMAIL_DOMAIN}")))).all()
+            )
+            stems = list(
+                (
+                    await s.scalars(
+                        select(MarketSidecar.source_stem).where(
+                            MarketSidecar.source_stem.like("load-check-%")
+                        )
+                    )
+                ).all()
+            )
+            found = {m.group(1) for e in emails if (m := re.match(r"load-([0-9a-f]{8})-\d+@", e))}
+            found |= {m.group(1) for t in stems if (m := re.fullmatch(r"load-check-([0-9a-f]{8})", t))}
+            run_ids = [run_id] if run_id else sorted(found)
+            refs = [ref for rid in run_ids for ref in planted_refs(rid)]
+            mails = [e for e in emails if any(e.startswith(f"load-{rid}-") for rid in run_ids)]
+            users = (
+                list((await s.scalars(select(User.id).where(User.email.in_(mails)))).all()) if mails else []
+            )
+            await s.execute(update(Audit).where(Audit.otodom_id.in_(refs)).values(snapshot_id=None))
             if users:
                 await s.execute(
                     delete(User).where(User.id.in_(users))
                 )  # cascades audits, events, credit, session
-            await s.execute(delete(Audit).where(Audit.otodom_id.like(ref_like)))
-            await s.execute(delete(ListingSnapshot).where(ListingSnapshot.otodom_id.like(ref_like)))
-            await s.execute(delete(Listing).where(Listing.otodom_id.like(ref_like)))
-            await s.execute(delete(MarketSidecar).where(MarketSidecar.source_stem.like(stem_like)))
+            await s.execute(delete(Audit).where(Audit.otodom_id.in_(refs)))
+            await s.execute(delete(ListingSnapshot).where(ListingSnapshot.otodom_id.in_(refs)))
+            await s.execute(delete(Listing).where(Listing.otodom_id.in_(refs)))
+            await s.execute(
+                delete(MarketSidecar).where(
+                    MarketSidecar.source_stem.in_([f"load-check-{rid}" for rid in run_ids])
+                )
+            )
         return len(users)
     finally:
         await engine.dispose()
