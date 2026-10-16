@@ -216,6 +216,12 @@ the version in `package.json`), never on a Mac or a runner of another kind:
 The data is the fixture scenarios, so the pictures show a fictional account. `test/css-tokens.test.ts` keeps one class of
 defect out for good: a `var(--x)` with no definition (the visual lane found `--space-5` and `--focus`).
 
+## Performance diagnostics (`e2e/perf.spec.ts`, #286)
+
+`pnpm perf` records LCP, CLS and the slowest interaction for the main pages (desktop, and a phone with 4x CPU throttling) on the
+built SPA with a mocked API. Diagnostics only, no thresholds; the recorded numbers and their limits are in
+`docs/PERFORMANCE.md`. The enforced budget is the bundle (`check-dist.mjs`).
+
 ## Error reporting (`shell/observability.ts`)
 
 Off unless the build has `VITE_SENTRY_DSN` (a public Better Stack ingest DSN, B-020): then the Sentry SDK is loaded

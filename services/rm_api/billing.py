@@ -160,15 +160,22 @@ async def checkout(
 
 @router.get("/purchases", response_model=PurchasesOut)
 async def list_purchases(
-    db: SessionDep, principal: PrincipalDep, limit: Annotated[int, Query(ge=1, le=100)] = 50
+    db: SessionDep,
+    principal: PrincipalDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    request_key: Annotated[
+        UUID | None,
+        Query(
+            description="The Idempotency-Key of a checkout: only the caller's purchase created with it "
+            "(an empty list when it never arrived). Lets a client settle a lost answer without guessing."
+        ),
+    ] = None,
 ) -> PurchasesOut:
+    query = select(BillingPurchase).where(BillingPurchase.user_id == principal.user_id)
+    if request_key is not None:
+        query = query.where(BillingPurchase.request_key == request_key)  # still this caller's rows only
     rows = (
-        await db.scalars(
-            select(BillingPurchase)
-            .where(BillingPurchase.user_id == principal.user_id)
-            .order_by(BillingPurchase.created_at.desc(), BillingPurchase.id)
-            .limit(limit)
-        )
+        await db.scalars(query.order_by(BillingPurchase.created_at.desc(), BillingPurchase.id).limit(limit))
     ).all()
     return PurchasesOut(purchases=[_out(p) for p in rows])
 
