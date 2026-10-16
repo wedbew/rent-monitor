@@ -4,7 +4,7 @@
  * same rendering stack (fonts, hinting). Usage (from `frontend/`):
  *   pnpm visual           compare against the committed baselines
  *   pnpm visual:update    rewrite the baselines (then review every changed picture before committing)
- * The image tag follows the Playwright version in package.json. Dependencies install into a Docker volume, never
+ * The image tag follows the Playwright version in package.json; CI pins the same image by digest (`.github/workflows/ci.yml`, job `frontend-visual`). Dependencies install into a Docker volume, never
  * into the host's node_modules (those hold macOS binaries). Needs Docker; on Apple silicon it runs under emulation.
  */
 import { execFileSync, spawnSync } from "node:child_process";
