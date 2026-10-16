@@ -10,6 +10,7 @@ import {
   formatDateTime,
   formatDecimal,
   formatMoney,
+  formatPrice,
   formatRatio,
   formatReports,
   NOT_COMPUTED,
@@ -18,6 +19,22 @@ import {
 
 const NBSP = " ";
 const MINUS = "−";
+
+describe("formatPrice", () => {
+  it("shows whole złoty plainly and keeps grosze of a fractional price", () => {
+    expect(formatPrice("10")).toBe(`10${NBSP}zł`);
+    expect(formatPrice("40.00")).toBe(`40${NBSP}zł`);
+    expect(formatPrice("10.49")).toBe(`10,49${NBSP}zł`);
+    expect(formatPrice("70.5")).toBe(`70,50${NBSP}zł`);
+    expect(formatPrice("1234")).toBe(`1${NBSP}234${NBSP}zł`);
+  });
+
+  it("never throws and never appends a unit to a fallback", () => {
+    expect(formatPrice(null)).toBe(NOT_COMPUTED);
+    expect(formatPrice("abc")).toBe(NOT_COMPUTED);
+    expect(formatPrice("-3")).toBe(formatMoney("-3", { decimals: 2 }));
+  });
+});
 
 describe("formatMoney", () => {
   it("formats złoty with grosze and a non-breaking space group separator", () => {

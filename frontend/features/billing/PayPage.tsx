@@ -5,7 +5,7 @@ import { PageHeading } from "../../shell/PageHeading";
 import { Button, LinkButton } from "../../ui/Button";
 import { InlineNotice } from "../../ui/Status";
 import { TRANSACTION_ID } from "./guards";
-import { openCheckout, paddleConfigured } from "./paddle";
+import { openCheckout, PaddleError, paddleConfigured } from "./paddle";
 import styles from "./billing.module.css";
 import { t } from "../../i18n";
 
@@ -25,13 +25,15 @@ export function PayPage() {
 
   useEffect(() => {
     if (!valid || !configured) return;
-    let live = true;
-    openCheckout(txn, `/app/credits/success?txn=${txn}`).catch(() => {
-      if (live) setFailed(true);
-    });
-    return () => {
-      live = false;
-    };
+    // The lifetime of this transaction on this page: leaving, or a different `_ptxn`, cancels an open still loading.
+    const lifetime = new AbortController();
+    openCheckout(txn, `/app/credits/success?txn=${txn}`, { signal: lifetime.signal }).catch(
+      (error: unknown) => {
+        if (error instanceof PaddleError && error.kind === "cancelled") return;
+        if (!lifetime.signal.aborted) setFailed(true);
+      },
+    );
+    return () => lifetime.abort();
   }, [valid, configured, txn, attempt]);
 
   return (

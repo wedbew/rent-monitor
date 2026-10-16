@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { formatDateTime, formatMoney, formatReports } from "../../api/format";
+import { formatDateTime, formatPrice, formatReports } from "../../api/format";
 import { PageHeading } from "../../shell/PageHeading";
 import { useMe } from "../../shell/session";
 import { isCurrentSession, sessionGeneration } from "../../shell/tenant";
@@ -10,8 +10,10 @@ import { InlineNotice } from "../../ui/Status";
 import { readFailure } from "../auth/forms";
 import { ProblemNotice } from "../auth/ProblemNotice";
 import { type Pack, type Purchase, type PurchaseState, SETTLED } from "./guards";
-import { openCheckout, paddleConfigured } from "./paddle";
-import { isAmbiguous, useCheckout, useInvoice, usePacks, usePurchases } from "./queries";
+import { useMountLifetime } from "./lifetime";
+import { openCheckout, PaddleError, paddleConfigured } from "./paddle";
+import { useCheckout, useInvoice, usePacks, usePurchases } from "./queries";
+import { useIntentRecovery } from "./recovery";
 import styles from "./billing.module.css";
 import { t } from "../../i18n";
 
@@ -50,9 +52,7 @@ function PackCard({
   return (
     <li className={styles["pack"]}>
       <strong className={styles["packTitle"]}>{t.billing.packs.title({ reports })}</strong>
-      <span className={styles["price"]}>
-        {t.billing.packs.price({ price: formatMoney(pack.grossPln, { decimals: 0 }) })}
-      </span>
+      <span className={styles["price"]}>{t.billing.packs.price({ price: formatPrice(pack.grossPln) })}</span>
       <Button
         type="button"
         variant="primary"
@@ -71,15 +71,20 @@ function PacksSection() {
   const me = useMe();
   const packs = usePacks();
   const checkout = useCheckout();
+  const mounted = useMountLifetime();
   const [opening, setOpening] = useState<string | null>(null);
   const [openError, setOpenError] = useState<Purchase | null>(null);
   const [creationUnknown, setCreationUnknown] = useState<Purchase | null>(null);
+  // A page left with an unresolved purchase asks the server about it at once (a read: it creates nothing).
+  const recovery = useIntentRecovery(checkout.intent, checkout.resolve);
+  const { outcome } = recovery;
 
   const buy = (pack: Pack) => {
     if (checkout.isPending || opening !== null) return;
     const started = sessionGeneration();
     setOpenError(null);
     setCreationUnknown(null);
+    recovery.clearOutcome();
     checkout.mutate(pack.code, {
       onSuccess: (purchase) => {
         if (!isCurrentSession(started)) return;
@@ -88,9 +93,16 @@ function PacksSection() {
           return;
         }
         if (SETTLED.has(purchase.state)) return;
+        const signal = mounted();
+        if (signal === null) return;
         setOpening(purchase.id);
-        openCheckout(purchase.transactionId, successPath(purchase.id))
-          .catch(() => {
+        openCheckout(purchase.transactionId, successPath(purchase.id), {
+          signal,
+          current: () => isCurrentSession(started),
+          closeOnSessionEnd: true,
+        })
+          .catch((error: unknown) => {
+            if (error instanceof PaddleError && error.kind === "cancelled") return;
             if (isCurrentSession(started)) setOpenError(purchase);
           })
           .finally(() => {
@@ -145,7 +157,7 @@ function PacksSection() {
             <PackCard
               key={pack.code}
               pack={pack}
-              disabled={!me.email_verified}
+              disabled={!me.email_verified || checkout.unresolved}
               busy={checkout.isPending && checkout.variables === pack.code}
               onBuy={buy}
             />
@@ -155,9 +167,9 @@ function PacksSection() {
     );
   };
 
-  const error = checkout.isError ? checkout.error : null;
-  const ambiguous = error !== null && isAmbiguous(error);
-  const failure = error !== null && !ambiguous ? failureOf(error) : null;
+  const ambiguous = checkout.unresolved;
+  const error = checkout.isError && !ambiguous ? checkout.error : null;
+  const failure = error !== null ? failureOf(error) : null;
 
   return (
     <section className={styles["section"]} aria-labelledby="billing-packs">
@@ -169,18 +181,36 @@ function PacksSection() {
           title={t.billing.checkout.unknownTitle}
           live="alert"
           actions={
-            <Button
-              type="button"
-              onClick={() => {
-                const pack = packs.data?.packs.find((p) => p.code === checkout.variables);
-                if (pack !== undefined) buy(pack);
-              }}
-            >
-              {t.billing.checkout.retry}
-            </Button>
+            <>
+              <Button type="button" busy={recovery.checking} onClick={recovery.check}>
+                {t.billing.checkout.checkOrder}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  const pack = packs.data?.packs.find((p) => p.code === checkout.intent?.pack);
+                  if (pack !== undefined) buy(pack);
+                }}
+              >
+                {t.billing.checkout.retry}
+              </Button>
+            </>
           }
         >
           {t.billing.checkout.unknownBody}
+          {recovery.checking ? ` ${t.billing.checkout.checkingOrder}` : ""}
+          {recovery.failed ? ` ${t.billing.checkout.checkFailed}` : ""}
+        </InlineNotice>
+      ) : null}
+      {outcome !== null ? (
+        <InlineNotice
+          tone={outcome.found !== null ? "info" : "warning"}
+          title={outcome.found !== null ? t.billing.checkout.foundTitle : t.billing.checkout.notArrivedTitle}
+          live="status"
+        >
+          {outcome.found !== null
+            ? `${t.billing.checkout.foundBody} ${t.billing.checkout.reference({ id: shortReference(outcome.found.id) })}`
+            : t.billing.checkout.notArrivedBody}
         </InlineNotice>
       ) : null}
       {failure !== null ? <ProblemNotice problem={failure} /> : null}
@@ -224,6 +254,7 @@ const HAS_DOCUMENT: ReadonlySet<PurchaseState> = new Set(["paid", "granted", "re
 
 function PurchaseItem({ purchase }: { readonly purchase: Purchase }) {
   const invoice = useInvoice();
+  const mounted = useMountLifetime();
   const [resumeError, setResumeError] = useState(false);
   const [resuming, setResuming] = useState(false);
   const copy = t.billing.purchases.states[purchase.state];
@@ -233,10 +264,17 @@ function PurchaseItem({ purchase }: { readonly purchase: Purchase }) {
   const resume = () => {
     if (resuming || purchase.transactionId === null) return;
     const started = sessionGeneration();
+    const signal = mounted();
+    if (signal === null) return;
     setResuming(true);
     setResumeError(false);
-    openCheckout(purchase.transactionId, successPath(purchase.id))
-      .catch(() => {
+    openCheckout(purchase.transactionId, successPath(purchase.id), {
+      signal,
+      current: () => isCurrentSession(started),
+      closeOnSessionEnd: true,
+    })
+      .catch((error: unknown) => {
+        if (error instanceof PaddleError && error.kind === "cancelled") return;
         if (isCurrentSession(started)) setResumeError(true);
       })
       .finally(() => {
@@ -244,13 +282,12 @@ function PurchaseItem({ purchase }: { readonly purchase: Purchase }) {
       });
   };
 
+  // The document opens by the person's own click on a real link, never from code after the network answered: a
+  // window opened after an asynchronous request is blocked by popup blockers and by browsers that expire the click.
   const getInvoice = () => {
     if (invoice.isPending) return;
-    invoice.mutate(purchase.id, {
-      onSuccess: (url) => {
-        window.open(url, "_blank", "noopener,noreferrer");
-      },
-    });
+    invoice.reset();
+    invoice.mutate(purchase.id);
   };
 
   return (
@@ -259,7 +296,7 @@ function PurchaseItem({ purchase }: { readonly purchase: Purchase }) {
         <strong>
           {t.billing.purchases.item({ reports: formatReports(purchase.reports) })}
           {", "}
-          {formatMoney(purchase.grossPln, { decimals: 0 })}
+          {formatPrice(purchase.grossPln)}
         </strong>
         <span className={`${styles["badge"]} ${styles[STATE_TONE[purchase.state]]}`}>{copy.label}</span>
       </div>
@@ -294,6 +331,20 @@ function PurchaseItem({ purchase }: { readonly purchase: Purchase }) {
           </Button>
         ) : null}
       </div>
+      {invoice.isSuccess ? (
+        <p className={styles["meta"]}>
+          <a
+            className={styles["external"]}
+            href={invoice.data}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t.billing.purchases.openInvoiceLabel({ id: reference })}
+          >
+            {t.billing.purchases.openInvoice}
+          </a>{" "}
+          {t.billing.purchases.invoiceReady}
+        </p>
+      ) : null}
       {resumeError ? (
         <InlineNotice tone="warning" title={t.billing.checkout.paddleFailedTitle} live="alert" />
       ) : null}

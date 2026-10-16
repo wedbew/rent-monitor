@@ -426,8 +426,16 @@ export const pl = {
       failedTitle: "Nie udało się rozpocząć zakupu",
       unknownTitle: "Nie wiemy, czy zamówienie zostało utworzone",
       unknownBody:
-        "Połączenie zostało przerwane. Spróbuj ponownie: to to samo zamówienie, więc nie zapłacisz drugi raz.",
+        "Połączenie zostało przerwane. Możesz sprawdzić, czy zamówienie dotarło, albo spróbować ponownie: to to samo zamówienie, więc nie zapłacisz drugi raz. Inny pakiet wybierzesz po rozstrzygnięciu.",
       retry: "Spróbuj ponownie",
+      checkOrder: "Sprawdź zamówienie",
+      checkingOrder: "Sprawdzamy, czy zamówienie dotarło…",
+      checkFailed: "Nie udało się sprawdzić zamówienia. Spróbuj jeszcze raz albo ponów to samo zamówienie.",
+      foundTitle: "Zamówienie dotarło",
+      foundBody: "Dokończ płatność z listy zakupów poniżej.",
+      notArrivedTitle: "Zamówienie nie dotarło",
+      notArrivedBody:
+        "Serwer nie ma takiego zamówienia i nic nie zostało pobrane. Możesz wybrać pakiet jeszcze raz.",
       processingTitle: "Zamówienie jest sprawdzane",
       processingBody:
         "Nie mamy jeszcze potwierdzenia od dostawcy płatności. Nie płać ponownie: sprawdzimy to i zamówienie pojawi się poniżej.",
@@ -451,6 +459,9 @@ export const pl = {
       invoice: "Pokaż fakturę",
       invoiceLabel: ({ id }: { id: string }) => `Pokaż fakturę, zamówienie ${id}`,
       invoiceFailedTitle: "Nie udało się pobrać faktury",
+      openInvoice: "Otwórz fakturę",
+      openInvoiceLabel: ({ id }: { id: string }) => `Otwórz fakturę w nowej karcie, zamówienie ${id}`,
+      invoiceReady: "Link jest gotowy i działa krótko.",
       invoiceNote: "Dokument sprzedaży pobieramy z Paddle na Twoje żądanie. Link jest krótkotrwały.",
       support: "Jeśli coś się nie zgadza, napisz do nas i podaj numer zamówienia.",
       states: {
@@ -491,6 +502,12 @@ export const pl = {
       unknownPurchaseBody: "Nie wiemy, o które zamówienie chodzi. Zajrzyj do listy zakupów.",
       failedLoad: "Nie udało się sprawdzić zamówienia",
       slowTitle: "Potwierdzenie trwa dłużej niż zwykle",
+      checkAgain: "Sprawdź ponownie",
+      gaveUpTitle: "Przestaliśmy sprawdzać automatycznie",
+      gaveUpBody:
+        "Potwierdzenie płatności nadal nie dotarło. Nie płać ponownie: zamówienie znajdziesz w zakupach, a stan możesz sprawdzić jeszcze raz.",
+      staleTitle: "Nie udało się odświeżyć stanu zamówienia",
+      staleBody: "Pokazujemy ostatni znany stan. Spróbujemy ponownie.",
     },
     pay: {
       title: "Płatność",

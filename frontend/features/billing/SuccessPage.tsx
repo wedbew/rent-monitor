@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router";
 
 import { formatReports } from "../../api/format";
 import { PageHeading } from "../../shell/PageHeading";
-import { LinkButton } from "../../ui/Button";
+import { Button, LinkButton } from "../../ui/Button";
 import { Skeleton } from "../../ui/Skeleton";
 import { InlineNotice } from "../../ui/Status";
 import { ProblemNotice } from "../auth/ProblemNotice";
@@ -60,12 +60,18 @@ export function SuccessPage() {
         </div>
       );
     }
-    if (purchase.isError && purchase.data === undefined) {
+    if (purchase.isError && (purchase.data === undefined || purchase.permanentFailure)) {
       const general = readFailure(purchase.error).general;
+      // A permanent answer (not found, not yours) does not change by asking again; anything else can be retried by hand.
+      const retry = purchase.permanentFailure ? undefined : (
+        <Button type="button" icon="refresh" onClick={purchase.checkAgain}>
+          {t.billing.success.checkAgain}
+        </Button>
+      );
       return general !== null ? (
-        <ProblemNotice problem={general} />
+        <ProblemNotice problem={general} actions={retry} />
       ) : (
-        <InlineNotice tone="danger" title={t.billing.success.failedLoad} live="alert" />
+        <InlineNotice tone="danger" title={t.billing.success.failedLoad} live="alert" actions={retry} />
       );
     }
     if (purchase.data === undefined)
@@ -89,8 +95,28 @@ export function SuccessPage() {
         </InlineNotice>
       );
     const slow = purchase.dataUpdatedAt - openedAt >= SLOW_AFTER_MS;
+    if (purchase.gaveUp)
+      return (
+        <InlineNotice
+          tone="warning"
+          title={t.billing.success.gaveUpTitle}
+          live="status"
+          actions={
+            <Button type="button" icon="refresh" onClick={purchase.checkAgain}>
+              {t.billing.success.checkAgain}
+            </Button>
+          }
+        >
+          {t.billing.success.gaveUpBody} {t.billing.checkout.reference({ id: shortReference(data.id) })}
+        </InlineNotice>
+      );
     return (
       <div className={styles["stack"]}>
+        {purchase.isError ? (
+          <InlineNotice tone="warning" title={t.billing.success.staleTitle} live="status">
+            {t.billing.success.staleBody}
+          </InlineNotice>
+        ) : null}
         <InlineNotice tone="info" title={slow ? t.billing.success.slowTitle : copy.label} live="status">
           {t.billing.success.waiting} {t.billing.success.doNotPayAgain}{" "}
           {t.billing.checkout.reference({ id: shortReference(data.id) })}

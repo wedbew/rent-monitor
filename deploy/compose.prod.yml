@@ -93,6 +93,11 @@ services:
     environment:
       SITE_ADDRESS: ${PUBLIC_HOST:-localhost}  # `localhost` = Caddy's internal CA; set the real domain before going public (RUNBOOK §6)
       BROWSER_ERRORS_ORIGIN: ${BROWSER_ERRORS_ORIGIN:-}  # the DSN host, allowed in connect-src (RM-280)
+      # Paddle.js hosts for the CSP (RM-277, docs/PADDLE-SANDBOX-SETUP.md section 4). Empty = no Paddle host is allowed.
+      PADDLE_CSP_SCRIPT: ${PADDLE_CSP_SCRIPT:-}
+      PADDLE_CSP_ASSETS: ${PADDLE_CSP_ASSETS:-}
+      PADDLE_CSP_FRAME: ${PADDLE_CSP_FRAME:-}
+      PADDLE_CSP_STYLE_ATTR: ${PADDLE_CSP_STYLE_ATTR:-}
     depends_on:
       api: { condition: service_healthy }
 

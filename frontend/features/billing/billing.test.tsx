@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,9 +13,10 @@ import { fx } from "../../test/fixtures";
 import { useScenario as serveScenario } from "../../test/handlers";
 import { createBilling, replyFrom, SHOP_HISTORY, type BillingFlow, type Reply } from "../../test/scenarios";
 import { RequireSession, SessionProvider } from "../../shell/session";
+import { advanceSessionGeneration, runTenantCleanups } from "../../shell/tenant";
 import { CreditsPage } from "./CreditsPage";
 import { resetPaddleForTests } from "./paddle";
-import { pollSchedule } from "./queries";
+import { pollLimits, pollSchedule } from "./queries";
 import { SuccessPage } from "./SuccessPage";
 
 const reply = (operation: string, name: string): Reply => replyFrom(fx(operation, name));
@@ -63,6 +64,7 @@ beforeEach(() => {
   window.Paddle = paddle;
   pollSchedule.stepsMs = [10, 10, 10];
   pollSchedule.steadyMs = 10;
+  pollLimits.deadlineMs = 60_000;
 });
 afterEach(() => {
   delete window.Paddle;
@@ -222,6 +224,152 @@ describe("checkout", () => {
   });
 });
 
+/** A checkout whose first answer is lost: the order reached the server (`arrives`) or never did. */
+function lossy(flow: BillingFlow, arrives: boolean): BillingFlow {
+  let drop = true;
+  const real = flow.routes.find((r) => r.operation === "POST /api/billing/checkout");
+  return {
+    ...flow,
+    routes: [
+      {
+        operation: "POST /api/billing/checkout",
+        reply: (request) => {
+          if (drop) {
+            drop = false;
+            if (arrives && typeof real?.reply === "function") real.reply(request);
+            else flow.calls.push(`checkout:${request.headers["idempotency-key"] ?? ""}:lost`);
+            return { status: 0, networkError: true };
+          }
+          return typeof real?.reply === "function" ? real.reply(request) : (real?.reply as Reply);
+        },
+      },
+      ...flow.routes.filter((r) => r.operation !== "POST /api/billing/checkout"),
+    ],
+  };
+}
+
+describe("a checkout whose answer was lost survives a reload (durable intent)", () => {
+  beforeEach(() => window.sessionStorage.clear());
+
+  it("after a reload the server is asked about that exact request key and the order that arrived is found", async () => {
+    const flow = createBilling();
+    const shop = lossy(flow, true);
+    mount(shop);
+    await userEvent.click(await buy("5"));
+    await screen.findByText("Nie wiemy, czy zamówienie zostało utworzone");
+    cleanup(); // the page is left (reload, navigation)
+    mount(shop);
+    expect(await screen.findByText("Zamówienie dotarło")).toBeInTheDocument();
+    const lookups = flow.calls.filter((c) => c.startsWith("lookup:"));
+    expect(lookups).toEqual([`lookup:${keysOf(flow)[0]}`]);
+    expect(keysOf(flow)).toHaveLength(1); // reading created nothing; no second order
+    expect(paddle.Checkout.open).not.toHaveBeenCalled();
+    expect(window.sessionStorage.length).toBe(0); // settled by the server's answer
+    expect(await buy("5")).toBeEnabled();
+  });
+
+  it("an order that never arrived is said so, and the next click is a new order with a new key", async () => {
+    const flow = createBilling();
+    const shop = lossy(flow, false);
+    mount(shop);
+    await userEvent.click(await buy("5"));
+    await screen.findByText("Nie wiemy, czy zamówienie zostało utworzone");
+    cleanup();
+    mount(shop);
+    expect(await screen.findByText("Zamówienie nie dotarło")).toBeInTheDocument();
+    await userEvent.click(await buy("5"));
+    await waitFor(() => expect(paddle.Checkout.open).toHaveBeenCalledOnce());
+    const keys = keysOf(flow);
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).not.toBe(keys[0]);
+  });
+
+  it("another pack cannot silently replace an unresolved order: only the same order can be repeated", async () => {
+    const flow = createBilling();
+    mount(lossy(flow, true));
+    await userEvent.click(await buy("5"));
+    await screen.findByText("Nie wiemy, czy zamówienie zostało utworzone");
+    expect(await buy("1")).toBeDisabled();
+    expect(await buy("10")).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Sprawdź zamówienie" }));
+    expect(await screen.findByText("Zamówienie dotarło")).toBeInTheDocument();
+    expect(await buy("1")).toBeEnabled(); // settled by the server, not by a guess
+    expect(keysOf(flow)).toHaveLength(1);
+  });
+
+  it("when the check itself fails it says so, keeps the order unresolved, and can be repeated", async () => {
+    const flow = createBilling({
+      overrides: { "GET /api/billing/purchases?request_key": { status: 0, networkError: true } },
+    });
+    mount(lossy(flow, true));
+    await userEvent.click(await buy("5"));
+    await screen.findByText("Nie wiemy, czy zamówienie zostało utworzone");
+    await userEvent.click(screen.getByRole("button", { name: "Sprawdź zamówienie" }));
+    expect(
+      await screen.findByText(/Nie udało się sprawdzić zamówienia/, {}, { timeout: 10_000 }),
+    ).toBeInTheDocument();
+    expect(await buy("1")).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Spróbuj ponownie" })); // same order, same key
+    await waitFor(() => expect(paddle.Checkout.open).toHaveBeenCalledOnce());
+    expect(new Set(keysOf(flow)).size).toBe(1);
+  }, 40_000);
+
+  it("works when browser storage is blocked: nothing is remembered, nothing breaks", async () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    mount(createBilling());
+    await userEvent.click(await buy("5"));
+    await waitFor(() => expect(paddle.Checkout.open).toHaveBeenCalledOnce());
+  });
+
+  it("the previous person's pending order is forgotten when the session ends", async () => {
+    mount(lossy(createBilling(), true));
+    await userEvent.click(await buy("5"));
+    await screen.findByText("Nie wiemy, czy zamówienie zostało utworzone");
+    expect(window.sessionStorage.length).toBe(1);
+    act(() => runTenantCleanups());
+    expect(window.sessionStorage.length).toBe(0);
+  });
+});
+
+describe("checkout lifetime", () => {
+  /** Paddle.js not on the page yet: the checkout waits for the script, as in a cold browser. */
+  const slowScript = () => {
+    delete window.Paddle;
+    return () => {
+      window.Paddle = paddle;
+      document.head.querySelector("script[src*='paddle']")?.dispatchEvent(new Event("load"));
+    };
+  };
+  afterEach(() => document.head.querySelectorAll("script[src*='paddle']").forEach((n) => n.remove()));
+
+  it("does not open the payment window if the script arrives after the person left the page", async () => {
+    const finish = slowScript();
+    const { router } = mount(createBilling());
+    await userEvent.click(await buy("5"));
+    await waitFor(() => expect(document.head.querySelector("script[src*='paddle']")).not.toBeNull());
+    await act(() => router.navigate("/login"));
+    finish();
+    await new Promise((r) => setTimeout(r, 50));
+    expect(paddle.Checkout.open).not.toHaveBeenCalled();
+  });
+
+  it("does not open the payment window if the session ended while the script loaded", async () => {
+    const finish = slowScript();
+    mount(createBilling());
+    await userEvent.click(await buy("5"));
+    await waitFor(() => expect(document.head.querySelector("script[src*='paddle']")).not.toBeNull());
+    act(() => {
+      runTenantCleanups();
+      advanceSessionGeneration(); // sign-out here, or account A became account B
+    });
+    finish();
+    await new Promise((r) => setTimeout(r, 50));
+    expect(paddle.Checkout.open).not.toHaveBeenCalled();
+  });
+});
+
 describe("purchases", () => {
   const flow = () => createBilling({ existing: SHOP_HISTORY });
 
@@ -258,18 +406,16 @@ describe("purchases", () => {
     }
   });
 
-  it("opens the invoice link in a new tab without an opener", async () => {
+  it("gives a real link to the document for the person to open: no window is opened from code", async () => {
     const open = vi.spyOn(window, "open").mockImplementation(() => null);
     mount(flow());
     const list = await screen.findByRole("list", { name: "Zakupy" });
     await userEvent.click(within(list).getAllByRole("button", { name: /faktur/i })[0] as HTMLElement);
-    await waitFor(() =>
-      expect(open).toHaveBeenCalledWith(
-        "https://invoice.example.test/document.pdf",
-        "_blank",
-        "noopener,noreferrer",
-      ),
-    );
+    const link = await within(list).findByRole("link", { name: /^Otwórz fakturę w nowej karcie/ });
+    expect(link).toHaveAttribute("href", "https://invoice.example.test/document.pdf");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    expect(open).not.toHaveBeenCalled();
   });
 
   it("an invoice that is not ready, or a provider outage, is said without losing the page", async () => {
@@ -305,6 +451,7 @@ describe("purchases", () => {
     const list = await screen.findByRole("list", { name: "Zakupy" });
     await userEvent.click(within(list).getAllByRole("button", { name: /faktur/i })[0] as HTMLElement);
     expect(await within(list).findByRole("alert")).toBeInTheDocument();
+    expect(within(list).queryByRole("link", { name: /Otwórz fakturę/ })).toBeNull();
     expect(open).not.toHaveBeenCalled();
   });
 
@@ -364,6 +511,62 @@ describe("success page", () => {
   it("an address that names no purchase is said, not guessed", async () => {
     mount(createBilling(), "/app/credits/success?purchase=not-an-id");
     expect(await screen.findByText("Nie znaleziono zamówienia")).toBeInTheDocument();
+  });
+
+  it("polling ends at a permanent failure: a 404 is asked once, never on a schedule", async () => {
+    const flow = createBilling();
+    const unknown = "00000000-0000-4000-8000-0000000009ff";
+    mount(flow, `/app/credits/success?purchase=${unknown}`);
+    await screen.findByRole("alert");
+    await new Promise((r) => setTimeout(r, 120));
+    expect(flow.calls.filter((c) => c.startsWith("poll:"))).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "Sprawdź ponownie" })).toBeNull(); // asking again cannot help
+  });
+
+  it("an unsettled purchase stops being polled at the deadline; checking again is the person's choice and creates no order", async () => {
+    pollLimits.deadlineMs = 120;
+    const flow = seeded({ settleAfter: 9_999 });
+    mount(flow, `/app/credits/success?purchase=${id}`);
+    expect(await screen.findByText("Przestaliśmy sprawdzać automatycznie")).toBeInTheDocument();
+    const polls = flow.calls.filter((c) => c.startsWith("poll:")).length;
+    await new Promise((r) => setTimeout(r, 100));
+    expect(flow.calls.filter((c) => c.startsWith("poll:")).length).toBe(polls); // no more on its own
+    await userEvent.click(screen.getByRole("button", { name: "Sprawdź ponownie" }));
+    await waitFor(() =>
+      expect(flow.calls.filter((c) => c.startsWith("poll:")).length).toBeGreaterThan(polls),
+    );
+    expect(flow.calls.filter((c) => c.startsWith("checkout:"))).toEqual([]);
+    expect(screen.getByText(/Nie płać ponownie/)).toBeInTheDocument();
+  });
+
+  it("a server that keeps failing is bounded too, and offers a manual retry instead of looping forever", async () => {
+    pollLimits.deadlineMs = 150;
+    const flow = seeded({
+      overrides: { "GET /api/billing/purchases/{purchase_id}": { status: 503, body: { code: "NOT_READY" } } },
+    });
+    mount(flow, `/app/credits/success?purchase=${id}`);
+    // Reads are retried by the query client with its own backoff first; only then is the failure shown.
+    const retry = await screen.findByRole("button", { name: "Sprawdź ponownie" }, { timeout: 10_000 });
+    await new Promise((r) => setTimeout(r, 200));
+    const polls = flow.calls.filter((c) => c.startsWith("poll:")).length;
+    await new Promise((r) => setTimeout(r, 200));
+    expect(flow.calls.filter((c) => c.startsWith("poll:")).length).toBe(polls); // past the deadline: nothing on its own
+    await userEvent.click(retry);
+    await waitFor(
+      () => expect(flow.calls.filter((c) => c.startsWith("poll:")).length).toBeGreaterThan(polls),
+      { timeout: 10_000 },
+    );
+  }, 40_000);
+
+  it("polling stops on unmount and on sign-out", async () => {
+    const flow = seeded({ settleAfter: 9_999 });
+    const { router } = mount(flow, `/app/credits/success?purchase=${id}`);
+    await screen.findByText(/Nie płać ponownie/);
+    await act(() => router.navigate("/login"));
+    await new Promise((r) => setTimeout(r, 40));
+    const after = flow.calls.filter((c) => c.startsWith("poll:")).length;
+    await new Promise((r) => setTimeout(r, 120));
+    expect(flow.calls.filter((c) => c.startsWith("poll:")).length).toBe(after);
   });
 
   it("someone else's purchase is a 404 and is said as such", async () => {

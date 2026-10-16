@@ -297,7 +297,7 @@ type PackOut = components["schemas"]["PackOut"];
 export interface BillingFlow extends Scenario {
   /** What the server holds, by purchase id. */
   readonly purchases: Map<string, PurchaseOut>;
-  /** Requests by kind, in order: `checkout:<key>:<pack>`, `poll:<id>`, `invoice:<id>`, `list`. */
+  /** Requests by kind, in order: `checkout:<key>:<pack>`, `lookup:<key>`, `poll:<id>`, `invoice:<id>`, `list`. */
   readonly calls: string[];
 }
 
@@ -355,7 +355,19 @@ export function createBilling(options: BillingOptions = {}): BillingFlow {
     },
     {
       operation: "GET /api/billing/purchases",
-      reply: () => {
+      reply: (request) => {
+        const wanted = request.url.searchParams.get("request_key");
+        if (wanted !== null) {
+          calls.push(`lookup:${wanted}`); // only the purchase created with that key, or none
+          const id = byKey.get(wanted);
+          const found = id === undefined ? undefined : purchases.get(id);
+          return (
+            overrides["GET /api/billing/purchases?request_key"] ?? {
+              status: 200,
+              body: { purchases: found === undefined ? [] : [found] },
+            }
+          );
+        }
         calls.push("list");
         return (
           overrides["GET /api/billing/purchases"] ?? {

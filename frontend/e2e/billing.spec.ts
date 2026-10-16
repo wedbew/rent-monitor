@@ -113,12 +113,11 @@ test.describe("credits and purchases", () => {
       return [await outcome.request(api, { method: "GET", path: "/api/billing/purchases" })];
     });
     await exercise("credits.invoice", async () => {
-      const popup = page.waitForEvent("popup");
       await items
         .nth(0)
         .getByRole("button", { name: /^Pokaż fakturę/ })
         .click();
-      await popup.then((p) => p.close()).catch(() => undefined);
+      await expect(items.nth(0).getByRole("link", { name: /^Otwórz fakturę/ })).toBeVisible();
       return [
         await outcome.request(api, {
           method: "GET",
@@ -126,6 +125,36 @@ test.describe("credits and purchases", () => {
         }),
       ];
     });
+    // The document opens from the person's own click on the link, in a real new tab, even though the reply was slow.
+    const link = items.nth(0).getByRole("link", { name: /^Otwórz fakturę/ });
+    await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    const popup = page.waitForEvent("popup");
+    await link.click();
+    await (await popup).close();
+  });
+
+  test("a slow invoice reply opens nothing by itself, and the link is there when it arrives", async ({
+    page,
+    serve,
+  }) => {
+    const flow = createBilling({
+      existing: SHOP_HISTORY,
+      overrides: {
+        "GET /api/billing/purchases/{purchase_id}/invoice": {
+          status: 200,
+          body: { url: "https://invoice.example.test/document.pdf" },
+          delayMs: 1_500,
+        },
+      },
+    });
+    await serve(flow);
+    let popups = 0;
+    page.context().on("page", () => (popups += 1));
+    await page.goto("/app/credits");
+    const first = page.getByRole("list", { name: "Zakupy" }).getByRole("listitem").nth(0);
+    await first.getByRole("button", { name: /^Pokaż fakturę/ }).click();
+    await expect(first.getByRole("link", { name: /^Otwórz fakturę/ })).toBeVisible({ timeout: 10_000 });
+    expect(popups).toBe(0); // nothing was opened by script after the delay
   });
 
   test("an invoice that is not ready is said, in the list, without losing the page", async ({

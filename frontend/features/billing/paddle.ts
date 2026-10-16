@@ -1,4 +1,5 @@
 import { config } from "../../config";
+import { registerTenantCleanup } from "../../shell/tenant";
 
 /**
  * Paddle.js, loaded only when a purchase is started or `/pay` opens, with the public client-side token only (never an
@@ -16,7 +17,7 @@ interface CheckoutOptions {
 export interface PaddleGlobal {
   readonly Environment?: { set(environment: "sandbox"): void };
   Initialize(options: { token: string; eventCallback?: (event: { name?: string }) => void }): void;
-  readonly Checkout: { open(options: CheckoutOptions): void };
+  readonly Checkout: { open(options: CheckoutOptions): void; close?(): void };
 }
 
 declare global {
@@ -25,7 +26,7 @@ declare global {
   }
 }
 
-export type PaddleFailure = "not-configured" | "load-failed";
+export type PaddleFailure = "not-configured" | "load-failed" | "cancelled";
 export class PaddleError extends Error {
   readonly kind: PaddleFailure;
   constructor(kind: PaddleFailure) {
@@ -39,6 +40,8 @@ export const paddleConfigured = (): boolean => config.paddleClientToken !== "";
 
 let loading: Promise<PaddleGlobal> | null = null;
 let initialised = false;
+/** Forgets the open overlay: its abort listener and tenant cleanup (set while an overlay is open). */
+let releaseOverlay: (() => void) | null = null;
 
 function injectScript(): Promise<PaddleGlobal> {
   return new Promise((resolve, reject) => {
@@ -75,7 +78,12 @@ export async function loadPaddle(): Promise<PaddleGlobal> {
   const paddle = await loading;
   if (!initialised) {
     if (config.paddleEnvironment === "sandbox") paddle.Environment?.set("sandbox");
-    paddle.Initialize({ token: config.paddleClientToken });
+    paddle.Initialize({
+      token: config.paddleClientToken,
+      eventCallback: (event) => {
+        if (event.name === "checkout.closed") releaseOverlay?.();
+      },
+    });
     initialised = true;
   }
   return paddle;
@@ -85,16 +93,49 @@ export async function loadPaddle(): Promise<PaddleGlobal> {
 export function resetPaddleForTests(): void {
   loading = null;
   initialised = false;
+  releaseOverlay?.();
+  releaseOverlay = null;
+}
+
+/**
+ * How long the caller still wants the checkout. Loading Paddle.js takes time (a script download), and the person may
+ * have left by then: unmounted the page, changed the transaction, or ended the session (rules/frontend.md section 3).
+ * The check is made at the moment of opening, not when the call started.
+ */
+export interface CheckoutLifetime {
+  /** Aborted when the caller goes away (unmount, another transaction, a route change). */
+  readonly signal: AbortSignal;
+  /** Signed-in callers: false once the session they started in is over (`isCurrentSession`). */
+  readonly current?: () => boolean;
+  /** A signed-in person's overlay is closed when the session ends; `/pay` is public and sets nothing here. */
+  readonly closeOnSessionEnd?: boolean;
 }
 
 /**
  * Open the overlay for a transaction the server created. The success address only brings the person back to the
  * page that polls the server: the browser's own "success" never grants anything.
  */
-export async function openCheckout(transactionId: string, successPath: string): Promise<void> {
+export async function openCheckout(
+  transactionId: string,
+  successPath: string,
+  lifetime: CheckoutLifetime,
+): Promise<void> {
+  const unwanted = () => lifetime.signal.aborted || lifetime.current?.() === false;
+  if (unwanted()) throw new PaddleError("cancelled");
   const paddle = await loadPaddle();
+  if (unwanted()) throw new PaddleError("cancelled"); // the person left while the script loaded
+  releaseOverlay?.(); // one overlay at a time
   paddle.Checkout.open({
     transactionId,
     settings: { displayMode: "overlay", successUrl: new URL(successPath, window.location.origin).toString() },
   });
+  // From here the overlay is open: leaving closes it where Paddle.js offers `Checkout.close()`.
+  const close = () => paddle.Checkout.close?.();
+  lifetime.signal.addEventListener("abort", close, { once: true });
+  const endSession = lifetime.closeOnSessionEnd === true ? registerTenantCleanup(close) : null;
+  releaseOverlay = () => {
+    lifetime.signal.removeEventListener("abort", close);
+    endSession?.();
+    releaseOverlay = null;
+  };
 }
