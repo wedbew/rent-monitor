@@ -273,6 +273,14 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Description:** The SPA shows the 200 newest saved listings and says so when the list is full. A listing saved earlier than that appears as not saved, and saving it again would replace its note with none. The note editor always sends the note it holds, and unsaving a listing that has a note asks first. Beyond 200 saved listings the risk is real; below it the SPA always knows the state
 - **Workaround:** keep fewer than 200 saved listings
 - **Target:** API paging and a PUT that keeps an absent note (#347)
+### L-036 — Settings cannot tell a password account from a Google-only one
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** `GET /api/me` (`MeDetailOut` has no password flag), `frontend/features/settings/SettingsPage.tsx`, `POST /api/auth/password/change`
+- **Evidence:** confirmed (OpenAPI schema; `services/rm_api/auth/password.py` answers 401 `INVALID_CREDENTIALS` for both a wrong password and an account without one)
+- **Description:** The password form is shown to every account. A Google or magic-link account that tries it gets "To nie jest Twoje obecne hasło." and a note below the form that explains how to set a password through recovery (`/password/forgot`). The SPA does not guess eligibility from the e-mail domain or the export
+- **Workaround:** the recovery link on the page
+- **Target:** #345 (API flag), then hide the form for accounts without a password
 
 ## Deferred
 

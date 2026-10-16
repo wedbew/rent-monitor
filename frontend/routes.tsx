@@ -22,6 +22,9 @@ const NewAnalysisPage = lazy(async () => ({
 const AnalysesPage = lazy(async () => ({
   default: (await import("./features/analyses/list/AnalysesPage")).AnalysesPage,
 }));
+const SettingsPage = lazy(async () => ({
+  default: (await import("./features/settings/SettingsPage")).SettingsPage,
+}));
 const AnalysisPage = lazy(async () => ({
   default: (await import("./features/analyses/AnalysisPage")).AnalysisPage,
 }));
@@ -116,7 +119,7 @@ export const routes: RouteObject[] = [
                   pending("market", "/app/market"),
                   pending("interior", "/app/interior"),
                   pending("listing", "/app/listings/new"),
-                  pending("settings", "/app/settings"),
+                  { path: "/app/settings", element: lazyPage(SettingsPage) },
                 ],
               },
             ],

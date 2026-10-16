@@ -281,6 +281,28 @@ export function createSaved(
   return { ...base, saved, calls };
 }
 
+// ------------------------------------------------------------------------------------------------ settings
+/** The account's own email in the `with_credits_and_flags` profile: what a deletion must be confirmed with. */
+export const SETTINGS_EMAIL = "user-18@example.test";
+
+/** Signed in; the settings routes answer from the fixtures. `routes` replace a default by repeating its operation. */
+export function createSettings(routes: readonly Route[] = [], name = "settings"): Scenario {
+  return scenario(name, "Signed in on the settings page: three browsers, export, password, deletion.", [
+    ...routes,
+    ...(
+      [
+        ["GET /api/auth/sessions", "three_sessions"],
+        ["GET /api/me/export", "export"],
+        ["POST /api/auth/signout-all", "signed_out_everywhere"],
+        ["POST /api/auth/password/change", "changed"],
+        ["DELETE /api/me", "erased"],
+      ] as const
+    )
+      .filter(([operation]) => !routes.some((r) => r.operation === operation))
+      .map(([operation, fixture]) => fromFixture(operation, fixture)),
+  ]);
+}
+
 export const SCENARIOS = {
   firstVisit: scenario(
     "firstVisit",
@@ -289,6 +311,20 @@ export const SCENARIOS = {
     [],
   ),
   empty: scenario("empty", "Signed in with credits and no analyses yet.", [EMPTY_PAGE]),
+  settings: createSettings(),
+  settingsOneSession: createSettings(
+    [fromFixture("GET /api/auth/sessions", "one_session")],
+    "settingsOneSession",
+  ),
+  settingsSessionsFailing: createSettings(
+    [
+      {
+        operation: "GET /api/auth/sessions",
+        reply: { status: 503, body: NOT_READY, contentType: "application/problem+json" },
+      },
+    ],
+    "settingsSessionsFailing",
+  ),
   loaded: scenario("loaded", "Five distinct finished analyses, newest first.", auditRoutes(SUCCEEDED_AUDITS)),
   pending: scenario("pending", "An analysis was accepted and has not run yet.", [
     EMPTY_PAGE,
