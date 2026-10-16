@@ -4,7 +4,7 @@
  * the phone project runs with 4x CPU throttling. They say whether something got badly slower, not what a visitor
  * experiences (that needs field data). Run with `pnpm perf`; the numbers worth keeping go to `docs/PERFORMANCE.md`.
  */
-import { writeFileSync, mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { Page } from "@playwright/test";
@@ -47,12 +47,18 @@ async function vitals(page: Page): Promise<Vitals> {
   });
 }
 
-const results: Record<string, Vitals> = {};
-
-test.afterAll(() => {
-  mkdirSync(OUT, { recursive: true });
-  writeFileSync(join(OUT, `${test.info().project.name}.json`), JSON.stringify(results, null, 2));
-});
+/**
+ * One artifact per page and project, written by the test that measured it (`<out>/perf/<project>/<page>.json`).
+ * Tests may run in parallel workers, so nothing is shared in memory or in a file: `perf-aggregate.mjs` collects the
+ * files afterwards and refuses a missing, duplicate or malformed one.
+ */
+function record(name: string, vitalsOf: Vitals, browserVersion: string): void {
+  const project = test.info().project.name;
+  const dir = join(OUT, project);
+  mkdirSync(dir, { recursive: true });
+  const artifact = { page: name, project, browserVersion, ...vitalsOf };
+  writeFileSync(join(dir, `${name}.json`), JSON.stringify(artifact, null, 2), { flag: "wx" });
+}
 
 test.beforeEach(async ({ page, isMobile }) => {
   await observe(page);
@@ -69,7 +75,7 @@ const PAGES: readonly [string, "empty" | "loaded", string, string][] = [
 ];
 
 for (const [name, scenario, path, heading] of PAGES) {
-  test(`${name}: LCP, CLS and the slowest interaction`, async ({ page, serve }) => {
+  test(`${name}: LCP, CLS and the slowest interaction`, async ({ page, serve, browser }) => {
     await serve(scenario);
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
@@ -78,16 +84,18 @@ for (const [name, scenario, path, heading] of PAGES) {
       .or(page.getByRole("button", { name: "Tryb ciemny" }))
       .first()
       .click();
-    results[name] = await vitals(page);
-    expect(results[name]?.cls).toBeGreaterThanOrEqual(0);
+    const measured = await vitals(page);
+    expect(measured.cls).toBeGreaterThanOrEqual(0);
+    record(name, measured, browser.version());
   });
 }
 
-test("report: LCP, CLS and the slowest interaction", async ({ page, serve }) => {
+test("report: LCP, CLS and the slowest interaction", async ({ page, serve, browser }) => {
   await serve("loaded");
   await page.goto(`/app/analyses/${SUCCEEDED_AUDITS[0]?.audit_id ?? ""}`);
   await expect(page.getByRole("navigation", { name: "Sekcje raportu" })).toBeVisible();
   await page.getByRole("button", { name: "Zwroty, wyjście i wrażliwość na wzrost cen" }).click();
-  results["report"] = await vitals(page);
-  expect(results["report"]?.cls).toBeGreaterThanOrEqual(0);
+  const measured = await vitals(page);
+  expect(measured.cls).toBeGreaterThanOrEqual(0);
+  record("report", measured, browser.version());
 });

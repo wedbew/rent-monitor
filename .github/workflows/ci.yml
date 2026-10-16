@@ -229,16 +229,14 @@ jobs:
     env:
       CI: "1"
       E2E_LANE: visual
-      # The image carries Node 24.21; frontend/package.json asks for 24.22 for the toolchain, not for this lane.
-      npm_config_engine_strict: "false"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+      # The same script `pnpm visual` runs: Node from frontend/.node-version (the image's own is older), then the install.
+      # Everything else about the stack (image digest, Playwright, Node) is checked against BASELINE.json by `pnpm test`.
       - name: visual lane against the committed baselines
-        run: pnpm exec playwright test --reporter=list
+        run: . e2e/visual-prepare.sh && pnpm exec playwright test --reporter=list
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
