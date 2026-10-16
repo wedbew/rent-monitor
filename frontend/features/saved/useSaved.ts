@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { api, unwrap, unwrapEmpty } from "../../api/client";
 import { TransportError } from "../../api/errors";
 import { tenantKey } from "../../api/query";
+import { whileSignedIn } from "../../shell/cancellable";
 import { useMe } from "../../shell/session";
 import { readSaved, type SavedItem } from "./items";
 
@@ -53,14 +54,16 @@ export function useSaveListing() {
   const client = useQueryClient();
   const me = useMe();
   return useMutation({
-    mutationFn: async (variables: { otodomId: string; note: string | null }): Promise<void> => {
-      unwrap(
-        await api.PUT("/api/saved/{otodom_id}", {
-          params: { path: { otodom_id: variables.otodomId } },
-          body: { note: variables.note },
-        }),
-      );
-    },
+    mutationFn: (variables: { otodomId: string; note: string | null }): Promise<void> =>
+      whileSignedIn(async (signal) => {
+        unwrap(
+          await api.PUT("/api/saved/{otodom_id}", {
+            params: { path: { otodom_id: variables.otodomId } },
+            body: { note: variables.note },
+            signal,
+          }),
+        );
+      }),
     onSettled: () => client.invalidateQueries({ queryKey: savedKey(me.id) }),
   });
 }
@@ -69,8 +72,12 @@ export function useUnsaveListing() {
   const client = useQueryClient();
   const me = useMe();
   return useMutation({
-    mutationFn: async (otodomId: string): Promise<void> =>
-      unwrapEmpty(await api.DELETE("/api/saved/{otodom_id}", { params: { path: { otodom_id: otodomId } } })),
+    mutationFn: (otodomId: string): Promise<void> =>
+      whileSignedIn(async (signal) =>
+        unwrapEmpty(
+          await api.DELETE("/api/saved/{otodom_id}", { params: { path: { otodom_id: otodomId } }, signal }),
+        ),
+      ),
     onSettled: () => client.invalidateQueries({ queryKey: savedKey(me.id) }),
   });
 }

@@ -42,6 +42,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 - The product is called **Renti**: mail subjects and bodies, the mail sender display name, the API title and the OSM user agent default now come from the `APP_NAME` setting (default `Renti`; new env name in `.env.example`). Operator action: set `MAIL_FROM` display name to `Renti <noreply@renti.tech>` on the host. Code identifiers, directories, cookie and container names (`rm_*`, `rentmonitor`) are unchanged; `design/`, `frontend/` and the agent rule files are not touched
 
 ### Fixed
+- Frontend: saving, unsaving and noting a listing are cancelled when the session ends, like every other request of the signed-in person (`shell/cancellable.ts`); audit re-verification recorded in `frontend/docs/AUDIT-2026-10-15.md` (RM-314)
 - Frontend: `pnpm dev` no longer sends the SPA's own `/api/*.ts` source modules to the backend (the page could not load); real `/api` requests are still proxied. README now says how to check which backend owns the port and that `PUBLIC_APP_URL` must equal the browser origin (RM-341)
 - Error reports (server and browser) now also redact a token parameter at the very start of a text or line, e.g. `token=…` with nothing before it (RM-280)
 - Frontend: in Safari, closing the "no reports left" dialog returns focus to the submit button (Safari does not focus a clicked button); found by the new WebKit run. `pnpm test:e2e:browsers` runs the mocked suite in Firefox and WebKit; unit coverage is reported for every production directory with its own floor (RM-311)
