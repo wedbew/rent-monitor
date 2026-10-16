@@ -73,8 +73,8 @@ def test_the_planted_listing_is_anonymised_and_has_no_photos() -> None:
 
 
 def test_cleanup_names_exact_references_and_a_ref_fits_the_api_limit() -> None:
-    refs = load_check.planted_refs("abcd1234")
+    refs = load_check.planted_refs("abcd12")
     assert len(refs) == load_check.MAX_AUDITS
-    assert refs[0] == "IDLCABCD123400"
-    assert refs[-1] == "IDLCABCD123424"
-    assert all(len(ref) <= 16 for ref in refs)  # the API's reference limit
+    assert refs[0] == "IDLCABCD1200"
+    assert refs[-1] == "IDLCABCD1224"
+    assert all(6 <= len(ref) <= 12 for ref in refs)  # the API accepts ID plus 4 to 10 characters

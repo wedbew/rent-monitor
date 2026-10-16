@@ -15,7 +15,10 @@ AUDITS="${1:-5}"
 COMPOSE_FILES="${COMPOSE_FILES:-deploy/compose.yml deploy/compose.prod.yml}"
 args=()
 for f in $COMPOSE_FILES; do [ -f "$f" ] && args+=(-f "$f"); done
-COMPOSE=(docker compose "${args[@]}")
+# The compose files live in deploy/, so Compose would look for deploy/.env: pass the repo's .env explicitly
+# (docs/RUNBOOK-DEPLOY.md), and the public profile so a host that runs Caddy is seen whole.
+envopt=(); [ -f .env ] && envopt=(--env-file .env)
+COMPOSE=(docker compose "${envopt[@]}" --profile public "${args[@]}")
 
 die() { echo "load_check: $*" >&2; exit 2; }
 [[ "$AUDITS" =~ ^[0-9]+$ ]] && [ "$AUDITS" -ge 1 ] && [ "$AUDITS" -le 25 ] || die "AUDITS must be 1..25"

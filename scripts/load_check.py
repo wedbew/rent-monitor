@@ -53,7 +53,9 @@ DEADLINE_S = 900.0
 POLL_EVERY_S = 1.0
 TERMINAL = {"succeeded", "succeeded_degraded", "failed", "rejected", "cancelled"}
 EMAIL_DOMAIN = "load-check.invalid"
-REF_PREFIX = "IDLC"  # IDLC + the 8-hex run id + a 2-digit index: 14 characters, deleted only by exact match
+# IDLC + the 6-hex run id + a 2-digit index = 12 characters, the longest reference the API accepts
+REF_PREFIX = "IDLC"
+RUN_ID_LEN = 6
 
 
 def percentile(values: list[float], fraction: float) -> float | None:
@@ -209,8 +211,8 @@ async def _remove(run_id: str | None) -> int:
                     )
                 ).all()
             )
-            found = {m.group(1) for e in emails if (m := re.match(r"load-([0-9a-f]{8})-\d+@", e))}
-            found |= {m.group(1) for t in stems if (m := re.fullmatch(r"load-check-([0-9a-f]{8})", t))}
+            found = {m.group(1) for e in emails if (m := re.match(r"load-([0-9a-f]{6})-\d+@", e))}
+            found |= {m.group(1) for t in stems if (m := re.fullmatch(r"load-check-([0-9a-f]{6})", t))}
             run_ids = [run_id] if run_id else sorted(found)
             refs = [ref for rid in run_ids for ref in planted_refs(rid)]
             mails = [e for e in emails if any(e.startswith(f"load-{rid}-") for rid in run_ids)]
@@ -284,7 +286,7 @@ async def _drive_one(
 
 
 async def run_check(base_url: str, audits: int, stop_connections: int) -> dict[str, Any]:
-    run_id = uuid4().hex[:8]
+    run_id = uuid4().hex[:RUN_ID_LEN]
     run = Run(audits=audits, stop_connections=stop_connections)
     stop = asyncio.Event()
     started = time.monotonic()
