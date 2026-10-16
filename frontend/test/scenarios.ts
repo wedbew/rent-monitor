@@ -143,7 +143,14 @@ export const EMPTY_PAGE: Route = {
 };
 
 /** Routes any signed-in screen needs. A scenario replaces a route by repeating its operation. */
-const SIGNED_IN: readonly Route[] = [me("with_credits_and_flags"), PACKS, SAVED_EMPTY, EMPTY_PAGE];
+const PURCHASES_EMPTY = fromFixture("GET /api/billing/purchases", "empty");
+const SIGNED_IN: readonly Route[] = [
+  me("with_credits_and_flags"),
+  PACKS,
+  PURCHASES_EMPTY,
+  SAVED_EMPTY,
+  EMPTY_PAGE,
+];
 
 function scenario(
   name: string,
@@ -283,6 +290,199 @@ export function createSaved(
   return { ...base, saved, calls };
 }
 
+// ------------------------------------------------------------------------------------------------ billing
+type PurchaseOut = components["schemas"]["PurchaseOut"];
+type PackOut = components["schemas"]["PackOut"];
+
+export interface BillingFlow extends Scenario {
+  /** What the server holds, by purchase id. */
+  readonly purchases: Map<string, PurchaseOut>;
+  /** Requests by kind, in order: `checkout:<key>:<pack>`, `lookup:<key>`, `poll:<id>`, `invoice:<id>`, `list`. */
+  readonly calls: string[];
+}
+
+export interface BillingOptions {
+  /** Purchases the account already has, newest first. */
+  readonly existing?: readonly PurchaseOut[];
+  /** How many reads of a purchase show it unsettled before the final state (default 2: created, then paid). */
+  readonly settleAfter?: number;
+  /** What the purchase becomes (default `granted`). */
+  readonly finalState?: "granted" | "failed" | "review" | "refunded";
+  /** `enabled: false` makes the shop unavailable. */
+  readonly enabled?: boolean;
+  readonly verified?: boolean;
+  /** Replace the answer to an operation (a failing checkout, an invoice error). */
+  readonly overrides?: Record<string, Reply>;
+}
+
+const FIXTURE_PACKS = bodyOf<{ packs: PackOut[] }>(fx("GET /api/billing/packs", "three_packs")).packs;
+
+/**
+ * A working shop against a fake provider: the pack list, a checkout that is idempotent by `Idempotency-Key` (the same
+ * key returns the same purchase and never a second one), purchases that settle after some reads, an invoice link, and
+ * a balance that rises only when the server says `granted`. Fresh state per call.
+ */
+export function createBilling(options: BillingOptions = {}): BillingFlow {
+  const { settleAfter = 2, finalState = "granted", enabled = true, verified = true } = options;
+  const overrides = options.overrides ?? {};
+  const purchases = new Map<string, PurchaseOut>((options.existing ?? []).map((p) => [p.purchase_id, p]));
+  const byKey = new Map<string, string>();
+  const reads = new Map<string, number>();
+  const calls: string[] = [];
+  let counter = 0;
+  const baseBalance = bodyOf<MeDetail>(fx("GET /api/me", "with_credits_and_flags")).credit_balance;
+  const balance = () =>
+    baseBalance +
+    [...purchases.values()]
+      .filter((p) => p.state === "granted" && !(options.existing ?? []).includes(p))
+      .reduce((sum, p) => sum + p.reports, 0);
+
+  const routes: Route[] = [
+    {
+      operation: "GET /api/me",
+      reply: () => {
+        const body = bodyOf<MeDetail>(fx("GET /api/me", "with_credits_and_flags"));
+        return { status: 200, body: { ...body, credit_balance: balance(), email_verified: verified } };
+      },
+    },
+    {
+      operation: "GET /api/billing/packs",
+      reply: () =>
+        overrides["GET /api/billing/packs"] ?? {
+          status: 200,
+          body: { enabled, packs: enabled ? FIXTURE_PACKS : [] },
+        },
+    },
+    {
+      operation: "GET /api/billing/purchases",
+      reply: (request) => {
+        const wanted = request.url.searchParams.get("request_key");
+        if (wanted !== null) {
+          calls.push(`lookup:${wanted}`); // only the purchase created with that key, or none
+          const id = byKey.get(wanted);
+          const found = id === undefined ? undefined : purchases.get(id);
+          return (
+            overrides["GET /api/billing/purchases?request_key"] ?? {
+              status: 200,
+              body: { purchases: found === undefined ? [] : [found] },
+            }
+          );
+        }
+        calls.push("list");
+        return (
+          overrides["GET /api/billing/purchases"] ?? {
+            status: 200,
+            body: { purchases: [...purchases.values()] },
+          }
+        );
+      },
+    },
+    {
+      operation: "POST /api/billing/checkout",
+      reply: (request) => {
+        const key = request.headers["idempotency-key"] ?? "";
+        const code = (request.body as { pack_code?: string } | null)?.pack_code ?? "";
+        calls.push(`checkout:${key}:${code}`);
+        const forced = overrides["POST /api/billing/checkout"];
+        if (forced !== undefined) return forced;
+        const replay = byKey.get(key);
+        const known = replay === undefined ? undefined : purchases.get(replay);
+        if (known !== undefined) return { status: 200, body: known };
+        const pack = FIXTURE_PACKS.find((p) => p.code === code);
+        if (pack === undefined) return replyFrom(fx("POST /api/billing/checkout", "unknown_pack"));
+        counter += 1;
+        const id = `00000000-0000-4000-8000-${String(900 + counter).padStart(12, "0")}`;
+        const purchase: PurchaseOut = {
+          purchase_id: id,
+          pack_code: pack.code,
+          reports: pack.reports,
+          gross_pln: pack.gross_pln,
+          currency: "PLN",
+          state: "created",
+          transaction_id: `txn_fixture${String(counter).padStart(4, "0")}`,
+          checkout_url: `/pay?_ptxn=txn_fixture${String(counter).padStart(4, "0")}`,
+          created_at: "2026-10-02T10:00:00Z",
+          granted_at: null,
+          refunded_at: null,
+        };
+        purchases.set(id, purchase);
+        byKey.set(key, id);
+        return { status: 200, body: purchase };
+      },
+    },
+    {
+      operation: "GET /api/billing/purchases/{purchase_id}",
+      reply: (request) => {
+        const id = request.params["purchase_id"] ?? "";
+        calls.push(`poll:${id}`);
+        const forced = overrides["GET /api/billing/purchases/{purchase_id}"];
+        if (forced !== undefined) return forced;
+        const found = purchases.get(id);
+        if (found === undefined)
+          return replyFrom(fx("GET /api/billing/purchases/{purchase_id}", "foreign_purchase"));
+        const n = (reads.get(id) ?? 0) + 1;
+        reads.set(id, n);
+        if ((options.existing ?? []).includes(found)) return { status: 200, body: found };
+        const state: PurchaseOut["state"] =
+          n < settleAfter ? "created" : n === settleAfter ? "paid" : finalState;
+        const next: PurchaseOut = {
+          ...found,
+          state,
+          granted_at: state === "granted" ? "2026-10-02T10:05:00Z" : null,
+          refunded_at: state === "refunded" ? "2026-10-02T10:06:00Z" : null,
+        };
+        purchases.set(id, next);
+        return { status: 200, body: next };
+      },
+    },
+    {
+      operation: "GET /api/billing/purchases/{purchase_id}/invoice",
+      reply: (request) => {
+        const id = request.params["purchase_id"] ?? "";
+        calls.push(`invoice:${id}`);
+        return (
+          overrides["GET /api/billing/purchases/{purchase_id}/invoice"] ?? {
+            status: 200,
+            body: { url: "https://invoice.example.test/document.pdf" },
+          }
+        );
+      },
+    },
+  ];
+  const base = scenario("billing", "A working shop against a fake provider.", routes);
+  return { ...base, purchases, calls };
+}
+
+function historyPurchase(n: number, patch: Partial<PurchaseOut>): PurchaseOut {
+  const pack = FIXTURE_PACKS[n % FIXTURE_PACKS.length] as PackOut;
+  return {
+    purchase_id: `00000000-0000-4000-8000-${String(500 + n).padStart(12, "0")}`,
+    pack_code: pack.code,
+    reports: pack.reports,
+    gross_pln: pack.gross_pln,
+    currency: "PLN",
+    state: "granted",
+    transaction_id: `txn_history${String(n).padStart(4, "0")}`,
+    checkout_url: null,
+    created_at: new Date(Date.parse("2026-10-01T10:00:00Z") - n * 86_400_000)
+      .toISOString()
+      .replace(".000Z", "Z"),
+    granted_at: "2026-10-01T10:05:00Z",
+    refunded_at: null,
+    ...patch,
+  };
+}
+
+/** Six purchases in six different states, newest first: what an account with a history looks like. */
+export const SHOP_HISTORY: readonly PurchaseOut[] = [
+  historyPurchase(0, { state: "granted" }),
+  historyPurchase(1, { state: "created", granted_at: null }),
+  historyPurchase(2, { state: "refunded", refunded_at: "2026-09-29T10:00:00Z" }),
+  historyPurchase(3, { state: "review", granted_at: null }),
+  historyPurchase(4, { state: "creation_unknown", granted_at: null, transaction_id: null }),
+  historyPurchase(5, { state: "failed", granted_at: null }),
+];
+
 export const SCENARIOS = {
   firstVisit: scenario(
     "firstVisit",
@@ -332,6 +532,30 @@ export const SCENARIOS = {
     },
   ]),
   collection: createCollection(),
+  shop: createBilling(),
+  shopHistory: scenario(
+    "shopHistory",
+    "A shop and a history: one granted, one waiting for payment, one refunded, one under review.",
+    [
+      {
+        operation: "GET /api/billing/purchases",
+        reply: { status: 200, body: { purchases: SHOP_HISTORY } },
+      },
+      {
+        operation: "GET /api/billing/purchases/{purchase_id}",
+        reply: (request) => {
+          const found = SHOP_HISTORY.find((p) => p.purchase_id === request.params["purchase_id"]);
+          return found === undefined
+            ? replyFrom(fx("GET /api/billing/purchases/{purchase_id}", "foreign_purchase"))
+            : { status: 200, body: found };
+        },
+      },
+      {
+        operation: "GET /api/billing/purchases/{purchase_id}/invoice",
+        reply: { status: 200, body: { url: "https://invoice.example.test/document.pdf" } },
+      },
+    ],
+  ),
   savedLoaded: createSaved(),
   unsupportedReport: scenario(
     "unsupportedReport",

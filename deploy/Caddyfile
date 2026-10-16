@@ -9,14 +9,14 @@ www.{$SITE_ADDRESS} {
 
 	# The only places the page may load from: itself, and Google sign-in (GIS script, its button iframe and its
 	# styles), and the browser error-tracking ingest host when one is configured (`BROWSER_ERRORS_ORIGIN`, RM-280;
-	# empty adds nothing). No inline script; no third party not listed here. Paddle (#277) adds its hosts with it. React sets dynamic sizes through the CSSOM, which `style-src` does not block.
+	# empty adds nothing). No inline script; no third party not listed here. Paddle.js (#277) adds its hosts through the `PADDLE_CSP_*` values (all empty = billing off = nothing added; the sandbox and live values and the evidence are in docs/PADDLE-SANDBOX-SETUP.md section 4). `PADDLE_CSP_STYLE_ATTR` is the one relaxation Paddle's overlay needs (inline style attributes, never inline style elements or scripts) and stays empty until the owner accepts it. React sets dynamic sizes through the CSSOM, which `style-src` does not block.
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "same-origin"
 		X-Frame-Options "DENY"
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
-		Content-Security-Policy "default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://accounts.google.com/gsi/style; img-src 'self' data:; font-src 'self'; connect-src 'self' https://accounts.google.com/gsi/ {$BROWSER_ERRORS_ORIGIN}; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client {$PADDLE_CSP_SCRIPT}; style-src 'self' https://accounts.google.com/gsi/style {$PADDLE_CSP_ASSETS}; style-src-attr {$PADDLE_CSP_STYLE_ATTR}; img-src 'self' data: {$PADDLE_CSP_ASSETS}; font-src 'self'; connect-src 'self' https://accounts.google.com/gsi/ {$BROWSER_ERRORS_ORIGIN}; frame-src https://accounts.google.com/gsi/ {$PADDLE_CSP_FRAME}; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'; frame-ancestors 'none'"
 		-Server
 	}
 
