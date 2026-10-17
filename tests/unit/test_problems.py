@@ -123,3 +123,39 @@ async def test_readyz_without_a_database_is_503(client: AsyncClient) -> None:
     assert r.status_code == 503
     assert r.json()["code"] == "NOT_READY"
     assert r.json()["checks"] == {"db": "fail", "queue": "fail"}
+
+
+async def test_405_allow_lists_every_method_of_the_path(client: AsyncClient) -> None:
+    """Starlette's `Allow` names only the first matching route; every method of the path must be listed."""
+    response = await client.options("/t/body")
+    assert response.status_code == 405
+    assert response.headers["allow"] == "POST"
+    assert response.json()["code"] == "HTTP_ERROR"
+
+
+async def test_405_allow_covers_routes_split_by_method() -> None:
+    app = _app()
+
+    @app.get("/t/split")
+    async def read() -> None:
+        return None
+
+    @app.post("/t/split")
+    async def write() -> None:
+        return None
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test"
+    ) as c:
+        response = await c.options("/t/split")
+    assert response.status_code == 405
+    assert response.headers["allow"] == "GET, POST"
+
+
+async def test_a_body_that_is_not_utf8_is_an_http_400_problem(client: AsyncClient) -> None:
+    response = await client.post(
+        "/t/body", content=b"\xff\xfe{", headers={"content-type": "application/json"}
+    )
+    assert response.status_code == 400
+    assert response.headers["content-type"].startswith("application/problem+json")
+    assert response.json()["code"] == "HTTP_ERROR"

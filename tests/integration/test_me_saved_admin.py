@@ -15,6 +15,7 @@ from google_helpers import GOOGLE_AUDIENCE, GoogleKeys
 from rm_api import saved as saved_module
 from rm_api.app import create_app
 from rm_api.auth.google import GoogleVerifier
+from rm_api.auth.sessions import create_session
 from rm_core.db.models import (
     Audit,
     AuditStatus,
@@ -28,6 +29,7 @@ from rm_core.db.models import (
     SavedListing,
     UsagePeriod,
     User,
+    UserCredential,
 )
 from rm_core.ledger import ledger_mismatches
 from rm_core.settings import Settings
@@ -153,6 +155,31 @@ async def test_me_reports_profile_plan_credits_flags_and_upstream_state(
             await s.execute(
                 text("DELETE FROM app.feature_flag WHERE key IN (:a, :b)"), {"a": key_on, "b": key_pro}
             )
+
+
+async def test_me_says_whether_the_account_has_a_password_for_each_way_of_signing_in(
+    app: FastAPI, engine: AsyncEngine, make_google_token: MakeToken
+) -> None:
+    """The flag comes from the credential row, never from how the person signed in or from their e-mail."""
+    sm = async_sessionmaker(engine, expire_on_commit=False)
+    google, me_google = await sign_in(app, make_google_token)  # Google-only
+    with_password, me_password = await sign_in(
+        app, make_google_token
+    )  # Google first, then a password was set
+    async with sm() as s, s.begin():
+        s.add(UserCredential(user_id=me_password["id"], password_hash="$argon2id$v=19$fixture"))
+    magic_id = str(uuid4())  # a magic-link-only account: no Google identity, no credential
+    async with sm() as s, s.begin():
+        s.add(User(id=magic_id, email=f"{magic_id}@example.test", email_verified_at=datetime.now(UTC)))
+        await s.flush()
+        token = await create_session(s, magic_id, user_agent="test", ip=None, settings=app.state.settings)
+    magic = client_for(app)
+    magic.cookies.set(app.state.settings.cookie_name, token)
+    async with google, with_password, magic:
+        assert (await google.get("/api/me")).json()["has_password"] is False
+        assert (await with_password.get("/api/me")).json()["has_password"] is True
+        assert (await magic.get("/api/me")).json()["has_password"] is False
+    assert me_google["id"] != me_password["id"]  # each answer is about its own account only
 
 
 async def test_me_shows_a_30_day_pass_as_pro_with_its_allowance(

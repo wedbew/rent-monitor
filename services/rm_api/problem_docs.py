@@ -6,7 +6,8 @@ client generated from it sees the truth: a `Problem` schema, and for every opera
 return, each with the problem `code`s that can come with it (`x-problem-codes`).
 
 Derived from the routes: `401` behind a session, `403 ORIGIN_NOT_ALLOWED` for unsafe methods, `422` for
-routes that take input, and the ever-present `500` and `503 NOT_READY`. Written by hand is `EXTRA` below: the
+routes that take input, `400` for routes with a body, and the ever-present `500` and `503 NOT_READY`.
+Written by hand is `EXTRA` below: the
 statuses and codes a handler raises. `tests/unit/test_openapi_problems.py` checks that table against the
 handlers' source (every code raised in a router is listed) and the smoke test checks it against real answers
 (every status and code seen is listed).
@@ -105,7 +106,7 @@ def _needs_session(route: APIRoute) -> bool:
     return False
 
 
-def derived_errors(route: APIRoute, method: str, takes_input: bool) -> Errors:
+def derived_errors(route: APIRoute, method: str, takes_input: bool, has_body: bool = False) -> Errors:
     errors: dict[int, set[ProblemCode]] = {500: {C.INTERNAL}, 503: {C.NOT_READY}}
     if method in UNSAFE:
         errors.setdefault(403, set()).add(C.ORIGIN_NOT_ALLOWED)
@@ -115,6 +116,8 @@ def derived_errors(route: APIRoute, method: str, takes_input: bool) -> Errors:
         errors.setdefault(403, set()).add(C.ADMIN_ONLY)
     if takes_input:
         errors.setdefault(422, set()).add(C.VALIDATION_ERROR)
+    if has_body:  # a body that is not decodable JSON is refused before validation, as a plain HTTP 400
+        errors.setdefault(400, set()).add(C.HTTP_ERROR)
     for status, codes in EXTRA.get(f"{method} {route.path}", {}).items():
         errors.setdefault(status, set()).update(codes)
     return {status: tuple(sorted(codes)) for status, codes in sorted(errors.items())}
@@ -146,9 +149,10 @@ def document_problems(routers: Sequence[APIRouter], schema: dict[str, Any]) -> d
         for method, operation in item.items():
             route = routes[(method.upper(), path)]
             responses: dict[str, Any] = operation["responses"]
-            takes_input = bool(operation.get("parameters") or operation.get("requestBody"))
+            has_body = bool(operation.get("requestBody"))
+            takes_input = bool(operation.get("parameters") or has_body)
             responses.pop("422", None)
-            for status, codes in derived_errors(route, method.upper(), takes_input).items():
+            for status, codes in derived_errors(route, method.upper(), takes_input, has_body).items():
                 responses[str(status)] = _response(status, codes)
     return schema
 
