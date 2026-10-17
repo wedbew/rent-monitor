@@ -17,6 +17,11 @@ Seed the register from those; do not restate them elsewhere.
 
 ## Entry format
 
+In parallel work, record new evidence immediately in the unique RM handoff using an issue-local key;
+the integrator assigns the next canonical L ID and updates this register/references in the same feature
+PR before readiness (`parallel-work.md`). Never invent a global number from a stale branch or pause
+unrelated implementation for an ID collision. Existing IDs and history remain immutable.
+
 ```
 ### L-012 — <short title>
 - **Status:** active | resolved | deferred

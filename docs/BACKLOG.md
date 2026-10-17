@@ -58,5 +58,22 @@ add an issue and a row here (same PR). Labels: `phase-1`, `launch`, `owner`, `ph
 | Rules (not in blueprint) | Legal/privacy docs, DPAs | #41 |
 
 ## Known gaps (deliberate)
+
+**Next feature batch — owner direction, 2026-10-16:** [feature-gap guide §0](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md#0-next-implementation-batch-rynek-data-and-location-context). These deliverables are planned, not implemented:
+
+| Deliverable | Existing owner / proposed missing slices |
+|---|---|
+| Durable media and report gallery | G-01 proposal in the feature-gap guide; existing report #274 is not completion of this feature |
+| Factual equipment inventory and persisted OCR evidence | G-02 proposal |
+| Grounded, durable seller questions | G-03 proposal; distinct from listing-writing assistant #285 |
+| Manual source and photo uploads through the common audit pipeline | #283 / G-04 proposal |
+| Persistent interior projects and concept/image operations | #284 / G-05 proposal |
+| All verified 727 Otodom locations; full rental bootstrap and persistent offer-level Postgres corpus | #209/#49; OTO-01/02 proposals in the feature-gap guide; [fetch specification](OTODOM-NIGHTLY-IMPORT.md) |
+| Nightly last-24-hours rental collection, durable coverage windows, restart/missed-night recovery | #16/#209; OTO-03 proposal |
+| Daily rental cohort/trend history and freshness/coverage exposed in Rynek and audit context | #16/#21/#282; OTO-04 proposal |
+| BDL gmina/powiat/województwo profiles, indicators/rankings, separate location index and report/agent context | #48/#21/#282; [contract and LCTX-01–03 proposals](BDL-LOCATION-CONTEXT-CONTRACT.md) |
+
+Proposal labels are not filed GitHub issues. Create issue-owned implementation children under these parents; do not replace the existing import and BDL specifications with duplicate plans.
+
 - Legacy-report and corpus importers from the original blueprint are dropped (ADR 0001, greenfield). Market data enters via fresh importers in #16.
-- Interior-redesign, seller-questions and analyst features exist only as flags in the blueprint; no ticket until the maintainer schedules them.
+- Gallery, equipment/OCR, seller questions, manual input, Rynek and interior tools are all owner-confirmed implementation scope (2026-10-16); market-data additions do not defer them. The separate analyst text-audit mode remains an open decision and is not required to implement seller questions.

@@ -67,6 +67,7 @@ compose.override.yml
 docker-compose.override.yml
 
 # --- Tool caches / logs ---
+.schemathesis/
 .semgrep/.cache/
 .pre-commit-cache/
 *.log

@@ -72,3 +72,12 @@ export function asProblem(value: unknown): Problem | null {
     errors: (errors as Problem["errors"] | undefined) ?? null,
   } as Problem;
 }
+
+/**
+ * A failure after which the request MAY have been applied: the connection dropped, it timed out, the answer could not
+ * be read, or the server failed after starting. A refusal (4xx) and an abort by this app are not ambiguous.
+ */
+export function isAmbiguousFailure(error: unknown): boolean {
+  if (error instanceof TransportError) return error.kind !== "aborted";
+  return error instanceof ApiError && error.status >= 500;
+}

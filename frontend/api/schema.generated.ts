@@ -1093,6 +1093,11 @@ export interface components {
             flags: {
                 [key: string]: boolean;
             };
+            /**
+             * Has Password
+             * @description Whether this account has an e-mail/password credential (a credential row exists). False for an account that only signs in with Google or a magic link; the SPA hides the change-password form for it.
+             */
+            has_password: boolean;
             /** Id */
             id: string;
             /** Name */

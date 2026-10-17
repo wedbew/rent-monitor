@@ -15,9 +15,13 @@ and links to `docs/BLUEPRINT.md` for architecture instead of copying it.
 
 ## Required content once the app runs
 
+Parallel workers queue exact README changes in their RM handoff (`parallel-work.md`); the integrator
+updates the actual README in the same feature PR before readiness. Table ordering or overlapping link
+additions do not block independent coding. Verify new commands against integrated code.
+
 1. One-line architecture summary: single VPS, Docker Compose, Caddy + FastAPI + Procrastinate workers + Postgres 17, Python-only server.
 2. **How to run** that actually works: `make dev`, `make test` (`uv run pytest -m "not e2e"`), `make migrate`, local Compose stack.
-3. **Status**: which of the eight §4.8 steps are done; current phase (Phase 1 is backend only).
+3. **Status**: link `docs/STATUS.md` for delivery state and the current authorized phase; do not restate an obsolete Phase-1 restriction.
 4. Links: blueprint, `.agent/agents.md`, `docs/LIMITATIONS.md`, `CHANGELOG.md`.
 
 ## Do not

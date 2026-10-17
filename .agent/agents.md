@@ -84,6 +84,8 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
 - Migrations: `pytest tests/migrations` (pytest-alembic) and `squawk` must pass. Expand → deploy → contract.
 
 ## 6. Git workflow
+- Parallel owner-authorized sessions follow `rules/parallel-work.md`: isolated checkout writers, explicit
+  implementation ownership, issue-local doc handoffs and serialized same-PR canonical integration.
 - Work from an issue. Branch `rm-<issue>-<slug>` from `staging`.
 - Commit / PR title: `type(RM-<issue>): subject` — types: feat fix perf refactor test docs build ci chore revert.
   Breaking change: `type(RM-n)!: ...`. Only the repository's root commit may omit the ticket.
@@ -124,6 +126,7 @@ Read the matching file when your change touches the area; update the doc in the 
 - `rules/delivery.md` — journey-first priority, ready/done levels, checkpoints, `docs/STATUS.md` upkeep.
 - `rules/frontend.md` — every `frontend/` change: evidence before claims, tested primitive promises, one door per session transition, untrusted network data, copy and numbers from one place, durable audits (audit 2026-10-15).
 - `rules/context.md` — keep root `CONTEXT.md` current: update it in the same PR as any change that makes it stale; bump its "Last updated" line.
+- `rules/parallel-work.md` — independent worker lanes, shared-file reservations, documentation handoffs and integration ownership; no waiver of same-PR docs or required checks.
 Cursor mirrors these in `.cursor/rules/*.mdc` as pointers only; edit the `.agent/rules/` file, never the pointer.
 
 ## 11. Legal and GDPR tagging (rule: `.agent/rules/legal-tags.md`)
