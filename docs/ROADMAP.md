@@ -1,5 +1,14 @@
 # Roadmap — greenfield rebuild to paid launch
 
+**Parallel execution plan, 2026-10-17:** [feature lanes, dependency waves, conflict inventory and Claude
+launch prompts](PARALLEL-FEATURE-DELIVERY.md). [Canonical rules](../.agent/rules/parallel-work.md) assign
+isolated writers and same-PR shared-document integration. The current automatic dispatcher remains serial;
+parallel runtime/scheduler behavior has not been enabled or verified.
+
+**Scope clarification, 2026-10-16:** the next batch retains **all six** feature-gap deliverables: G-01 durable media/gallery, G-02 equipment/OCR, G-03 seller questions, #283/G-04 manual source/uploads, #282 Rynek and #284/G-05 interior operations. The Otodom and GUS work below expands Rynek and location context; it does not replace or defer the other five deliverables. See the [complete required scope and dependency order](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md#4-delivery-order-updated-for-the-owners-next-batch).
+
+**Owner priority update, 2026-10-16:** the next implementation batch is Rynek data: complete coverage of the verified 727 Otodom rental locations, offer-level Postgres storage, full bootstrap, nightly last-24-hours new-offer collection with gap recovery and durable daily trends, alongside GUS BDL multi-level location profiles/rankings and audit/agent context. See the [feature-gap batch/dependencies/issue proposals](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md#0-next-implementation-batch-rynek-data-and-location-context), [Otodom specification](OTODOM-NIGHTLY-IMPORT.md) and [BDL contract proposal](BDL-LOCATION-CONTEXT-CONTRACT.md). Existing owners remain #209/#49/#16/#48/#21/#282; OTO/LCTX labels are proposed children, not filed issues. A largest-city subset is an intermediate rollout, not feature completion. This is a scope/priority update, not implementation evidence; historical revision-2 estimates below remain historical.
+
 **Planning baseline:** 2026-10-11 · **Revision:** 2 (audit of revision 1, RM-47) · **Status:** plan, not a commitment.
 `[C]` = confirmed in the cited file, issue or vendor page; `[I]` = planning inference to verify.
 Every effort figure is an **estimate** in agent-days (one agent, one ticket, offline tests, no vendor outage), excluding

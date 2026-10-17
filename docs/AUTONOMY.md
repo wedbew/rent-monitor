@@ -31,6 +31,13 @@ A run is capped at 40 turns and 30 minutes; a ticket that does not finish leaves
 
 ## Dispatcher (opt-in, ADR 0012)
 
+**Parallel-delivery audit, 2026-10-17:** this dispatcher is still **globally serial**. The [parallel feature
+guide](PARALLEL-FEATURE-DELIVERY.md) maps independent lanes, isolated Claude sessions/runners, file
+ownership and same-PR documentation integration; [the canonical rule](../.agent/rules/parallel-work.md)
+applies to owner-authorized parallel work. No dispatcher or workflow behavior is changed by that rule.
+Do not expect multiple automatic workers from extra `ready` labels. A future multi-lane dispatcher needs
+explicit capacity/ownership/recovery tests and the normal workflow approval.
+
 `.github/workflows/dispatch.yml` runs `scripts/dispatch_next.py` every 30 minutes **only when the repo variable `ENABLE_DISPATCH` is
 `true`** (set it with `gh variable set ENABLE_DISPATCH --body true`; unset it to stop). States it distinguishes:
 

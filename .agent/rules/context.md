@@ -23,6 +23,10 @@ so updating it is part of the change, not a follow-up.
 
 ## How
 
+For parallel work, `parallel-work.md` governs edit timing: the worker records precise section deltas in
+its unique RM handoff and continues owned coding; the integrator makes the actual CONTEXT edit in that
+feature's PR before readiness. Do not defer it to a later PR or claim “not affected” to avoid ownership.
+
 1. Edit only the affected rows/sections; do not rewrite the file.
 2. Bump the line `**Last updated:** YYYY-MM-DD · by: RM-<issue>` (use `datetime`-free plain text; today's date).
 3. Keep *confirmed vs inferred* honest: when you verify an *(inferred)* item, remove the marker; when you add an

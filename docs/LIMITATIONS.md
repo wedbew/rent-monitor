@@ -164,7 +164,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Evidence:** confirmed for the page shape (a live rent search for one city returned 200 with 36 offers a page under `pageProps.data.searchAds`, 2026-10-14); inferred for sampling bias and for sustained-load behaviour (L-002)
 - **Description:** each city and month imports at most the first 5 pages (about 180 offers) in Otodom's default order, so promoted offers may be over-represented and big cities are under-sampled. Rents are the advertised `totalPrice` (Otodom lists the admin fee separately as `rentPrice`, which is never read: invariant 3; whether `totalPrice` excludes the fee is Otodom's convention, inferred); only offers priced in PLN with a visible price are kept. A city is imported only after an audit asks for it, so the first audit in a new city gets the refused rent and the next one is grounded. A month with fewer than 10 usable offers is skipped and the previous month stays.
 - **Workaround:** none needed for a beta; a city list can be pre-imported by deferring `import_rental_city`.
-- **Target:** #209 (city list, coverage policy #49), accuracy evaluation #94
+- **Target:** #209/#49 and #16/#21/#282; the owner confirmed the complete verified 727-location catalogue, nightly last-24-hours collection, durable Postgres corpus and daily trend history as part of the next feature batch with BDL (2026-10-16). See [next-batch gaps and OTO-01–04 proposals](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md#0-next-implementation-batch-rynek-data-and-location-context), [nightly-import specification](OTODOM-NIGHTLY-IMPORT.md), and accuracy evaluation #94. No nationwide bootstrap, rental periodic dispatcher or durable daily-history implementation is claimed.
 
 ### L-023 — Vision quality and floor-plan advert shape are unverified
 - **Status:** active
@@ -283,6 +283,33 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Description:** The 500 cap is soft (two simultaneous saves may overshoot by one), so a list of exactly 500 may be incomplete; the SPA then treats an absent listing as unknown. The note editor sends the whole note; two tabs editing the same note are last-write-wins (no version check), so paging alone does not prevent a stale-tab overwrite of an explicit edit. Saving from a toggle can no longer touch a note
 - **Workaround:** none needed for the toggle; edit one note in one tab
 - **Target:** an `If-Match`/version on notes if concurrent editing matters
+
+### L-042 — Multi-level BDL location context and fundamentals rankings are not integrated
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** #48 BDL contract, #21 market API, #282 Rynek, worker context, audit reports and agent fact inputs
+- **Evidence:** confirmed by reading live #48/#49 and target source at `51e45fa`; read-only GUS-reference inspection at `fd25b15` plus identified working-tree modifications. No fresh external BDL verification or POC test run.
+- **Description:** #48 names `gus-stats-poc` but does not explicitly require its location profiles, indicator history/comparisons/rankings, separate fundamentals index or agent/report consumers. The production worker context currently loads rent comparables and a configured risk-free rate only; price/rent sidecar types cannot represent demographic/fiscal facts faithfully. The reference has 22 resolved raw candidate metrics, ten derived definitions, hierarchical reference identities and REIS v3, but historical review documents differ from current code and are not product acceptance evidence. Owner inclusion/inspection scope is confirmed; exact metric/scoring/publication policy remains to be recorded.
+- **Workaround:** do not claim municipal/ranked context is used by an audit; keep existing financial reports available without invented local facts or proxy precision.
+- **Target:** [BDL location-context contract proposal](BDL-LOCATION-CONTEXT-CONTRACT.md), amendments to #48/#21/#282 and proposed LCTX-01–03; remaining B-023 policy decisions. Keep location index separate from property grade and all finance unchanged until a separate approved engine-spec change.
+
+### L-043 — Parallel feature protocol is not an automated multi-lane dispatcher
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `scripts/dispatch_next.py`, `.github/workflows/{dispatch,claude}.yml`, feature-batch coordination
+- **Evidence:** confirmed in source: any active Claude run or in-flight PR makes the dispatcher idle. Claude workflow concurrency is per issue, not a global capacity/path-ownership controller. Recent five queried Claude runs were skipped; headless authentication was not verified by this audit.
+- **Description:** Parallel-work rules and unique documentation handoffs now define isolated ownership and same-PR integration, but do not enforce runtime file leases, worker caps, branch handoff, integration readiness or multi-lane scheduling. Existing dispatcher tests cover serial behavior only. B-021 remains historical unclosed headless-auth evidence, not a newly confirmed current auth failure.
+- **Workaround:** coordinate a bounded isolated-session/manual-run pilot through the assigned integrator; retain all required checks and record actual launch/auth/test evidence. No automatic dispatch enablement or new paid run is implied.
+- **Target:** [parallel delivery guide](PARALLEL-FEATURE-DELIVERY.md), optional dispatcher issue proposal in §8; implement/test explicit capacity, ownership, recovery and merge coordination before claiming unattended parallel delivery.
+
+### L-044 — Analysis reports lack durable visual/item evidence and seller questions
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** `apps/deal_analyzer/vision.py`, `listing.py`, `analysis.py`; `services/rm_worker/vision_stage.py`; `frontend/features/analyses/report/`
+- **Evidence:** confirmed in source at `51e45fa`; focused extraction/vision/contracts/schema tests (219 passed) and report/adapter tests (35 passed). These tests cover existing behavior, not the missing features.
+- **Description:** Listing photo and floor-plan URLs are extracted and downloaded for vision, but the report renders no gallery and has no authenticated durable media contract. The production CSP permits only same-origin/data images. `VisionRecord` retains condition, counts and financial adjustments, but drops per-image classifications, parsed floor-plan text and notes. The typed listing/vision/report models have no equipment inventory. “Co sprawdzić” is warning-derived copy; no generated seller-question artifact or operation exists. Manual input and the interior tool remain separate planned features (#283/#284), not alternative working ways to supply this evidence.
+- **Workaround:** The report links to the source listing where available; its availability and image retention are external. Use the existing checklist for known warnings; do not present it as generated seller questions or treat unobserved equipment as absent.
+- **Target:** [feature-gap audit and implementation guide](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md), proposed G-01/G-02/G-03 (not filed); existing #211, #283, #284. Implement media/evidence contracts before dependent UI and preserve historical report compatibility.
 
 ## Deferred
 

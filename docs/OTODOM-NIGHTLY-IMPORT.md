@@ -5,10 +5,13 @@ with coverage and provenance work under #49 and #48. This document describes int
 capability. `STATUS.md` remains the delivery-state source. No new command, setting, table or job named below
 exists until implemented and tested.
 
+**Scope revision, 2026-10-16:** the owner confirmed this and GUS BDL as the **next implementation batch**. The completion target is **all locations in the verified 727-location catalogue**, persisted in Postgres with full bootstrap, nightly last-24-hours new-offer capture and durable daily trends. This supersedes the original largest-city launch-subset restriction below and the historical backend-only phase wording. See the [feature-gap batch and issue proposals](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md#0-next-implementation-batch-rynek-data-and-location-context) and [BDL location-context contract](BDL-LOCATION-CONTEXT-CONTRACT.md). No job is installed or scraping run by this documentation change.
+
 ## 1. Owner decisions and scope
 
 - The owner has verified the 727-location catalogue against Otodom. Use that catalogue; do not replace it
-  with an inferred city list. Enable the existing largest locations for launch, without expanding coverage.
+  with an inferred city list. Cover every catalogue location. Roll out in bounded groups if needed, but a
+  largest-city subset is an intermediate state, not completion of this feature.
 - GUS SIMC is useful for future identity validation, but is neither a bootstrap dependency nor a launch gate.
 - Fetch all offers for each enabled location once, then fetch newly created offers every night using
   Otodom's last-24-hours filter. Read all pages of both full and incremental searches.
@@ -17,11 +20,13 @@ exists until implemented and tested.
   the current analytical cohort; it does not mean rented, sold, deleted or confirmed inactive on Otodom.
 - Preserve historical evidence for trend analysis. Launch scope is the existing flat-for-rent importer
   (`estate=FLAT`, `transaction=RENT`). Sale-asking data needs a separate pipeline and price basis.
-- Phase 1 remains backend only. This work must not create or edit a production frontend.
+- Phase 2 SPA work is authorized. Deliver the collection/publication contracts before the consuming
+  Rynek UI; the frontend displays server results and does not calculate finance.
 
-The catalogue's verification is owner-provided evidence. Its actual artifact and launch subset have not
-been located in this checkout during this review. Identify their source before writing a seed; do not
-invent city names, location paths, a launch count or copy the POC corpus. If the list lives in reference-only
+The catalogue's verification is owner-provided evidence. Its actual artifact has not
+been located in this checkout during this review. Identify its source before writing a seed; do not
+invent city names, location paths or copy the POC corpus. The target is the complete verified catalogue,
+not an undecided subset. If the list lives in reference-only
 POC material, resolve an approved data acquisition path rather than copying it under ADR 0001.
 
 ## 2. What has been verified
@@ -126,7 +131,8 @@ the immutable offer content. Archive is not physical deletion.
 
 ### Bootstrap: once per enabled location
 
-1. Idempotently seed the owner-verified catalogue and explicit launch subset. No name-only city keys.
+1. Idempotently seed the complete owner-verified catalogue. No name-only city keys. Track bootstrap
+   and refresh status for every entry; disabled/not-yet-rolled-out locations still count as uncovered.
 2. Create a durable bootstrap run with the location's dataset and source-window start time.
 3. Fetch all validated search pages/partitions through the existing throttle, breaker and kill switch.
    Stage minimal fields; deduplicate IDs across pages. Persist progress between bounded page batches.
@@ -291,13 +297,22 @@ bounded verification and must record location, date, status, sanitized contract 
 
 ## 10. Delivery sequence and operator acceptance
 
-1. Identify catalogue artifact and launch subset; verify filtered list/date/pagination contract.
+1. Identify the complete catalogue artifact; verify filtered list/date/pagination contract and planned
+   coverage for every catalogue location. No launch-subset decision is outstanding.
 2. Add schemas, repositories, immutable offers, staging and durable runs/checkpoints; test concurrency.
 3. Add resumable full bootstrap and filtered incremental/recovery clients behind existing policies.
 4. Add daily dispatcher, due-work reconciler, local expiry handling and dedicated batch worker.
 5. Publish daily evidence, engine cohort calculations and reader freshness; retire monthly launch-city demand.
 6. Update blueprint/ADR as required, `CONTEXT.md`, `.env.example`, `LIMITATIONS.md`, changelog and runbook
    in the relevant implementation PRs. Record delivery levels only in `STATUS.md` with named evidence.
+
+**Completion evidence:** a catalogue-wide manifest accounts for all 727 owner-verified entries (or an
+explicitly reviewed replacement catalogue version), including successful-empty, incomplete and failed
+locations; uncovered locations prevent a full-coverage claim. Rehearse nightly dispatch, missed-window
+recovery, restart/resume and a no-new-offer day. Verify durable daily history and reader freshness through
+the API and Rynek, with source dates and coverage visible. Full coverage is a demonstrated property, not
+the number of queued jobs. Link the feature-gap OTO-01–04 proposals and BDL LCTX-01–03 to real issues
+before implementing; these proposal labels are not GitHub issue numbers.
 7. Deploy to the authorized beta VPS from merged `staging`; canary a small launch subset before enabling
    all already-selected launch locations. This rollout does not expand geographic scope.
 
