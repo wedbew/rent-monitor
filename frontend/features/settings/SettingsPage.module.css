@@ -1,0 +1,102 @@
+.page {
+  display: grid;
+  gap: var(--space-12);
+  max-width: 48rem;
+}
+
+.section {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.section h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.note {
+  color: var(--muted);
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.facts div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.facts dt {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.sessions {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.session {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.sessionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.device {
+  overflow-wrap: anywhere;
+}
+
+.badge {
+  padding: 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.form,
+.dialogBody {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.dialogActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.skeleton {
+  display: grid;
+}

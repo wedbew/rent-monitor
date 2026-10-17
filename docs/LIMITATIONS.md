@@ -284,6 +284,16 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none needed for the toggle; edit one note in one tab
 - **Target:** an `If-Match`/version on notes if concurrent editing matters
 
+### L-036 — Settings cannot tell a password account from a Google-only one
+- **Status:** resolved
+- **Discovered:** 2026-10-16
+- **Resolved:** 2026-10-16, RM-345 (`GET /api/me` returns `has_password`, true when a credential row exists; the settings page shows the change form only then and the recovery notice otherwise; nothing is inferred from the sign-in method or e-mail)
+- **Affects:** `GET /api/me`, `frontend/features/settings/SettingsPage.tsx`
+- **Evidence:** confirmed (`tests/integration/test_me_saved_admin.py::test_me_says_whether_the_account_has_a_password_for_each_way_of_signing_in`, `SettingsPage.test.tsx`)
+- **Description:** Before, the password form was shown to every account and a Google or magic-link account got "To nie jest Twoje obecne hasło"
+- **Workaround:** none needed
+- **Target:** done
+
 ### L-042 — Multi-level BDL location context and fundamentals rankings are not integrated
 - **Status:** active
 - **Discovered:** 2026-10-16
