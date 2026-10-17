@@ -11,6 +11,7 @@
 @.agent/rules/pull-requests.md
 @.agent/rules/blockers.md
 @.agent/rules/delivery.md
+@.agent/rules/parallel-work.md
 @.agent/rules/frontend.md
 @docs/STATUS.md
 @.agent/rules/repo-layout.md
