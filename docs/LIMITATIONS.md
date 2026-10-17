@@ -323,6 +323,16 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 
 ## Deferred
 
+### L-039 — Audit cancellation is in the blueprint but not built
+- **Status:** deferred
+- **Discovered:** 2026-10-16
+- **Affects:** `POST /api/audits/{id}/cancel` (blueprint §2 route map and §4.5), the `cancelled` audit status, `docs/FRONTEND-PLAN.md` (no cancel button)
+- **Evidence:** confirmed (OpenAPI has no such operation; `cancelled` exists as a status and in the failure paths)
+- **Description:** The blueprint says cancel "sets `cancelled` and releases the credit if the job has not started". It does not say what happens to a running audit (kill the engine child? release or capture the credit?). That is a credit-ledger decision, so the route is not implemented and the SPA offers no cancel
+- **Workaround:** an audit finishes or fails by itself within its 900 s deadline and the credit follows the existing outcome rules
+- **Target:** owner decision (B-022), then a ledger-safe implementation with concurrency tests
+
+
 ### L-025 — V2 manual analysis and creative tools are local design flows
 - **Status:** deferred
 - **Discovered:** 2026-10-15

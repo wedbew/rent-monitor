@@ -91,4 +91,5 @@ service-account*.json
 .ovh.conf
 ovh.conf
 .stripe/
+.schemathesis/
 .pnpm-store/

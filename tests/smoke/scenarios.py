@@ -1276,6 +1276,22 @@ def wrong_origin(key: str, path: str) -> Run:
     return run
 
 
+def undecodable_body(key: str, path: str) -> Run:
+    """A body that is not valid UTF-8 JSON is refused before validation, as a plain HTTP 400 problem."""
+    method = key.split(" ", 1)[0]
+
+    async def run(w: World) -> Exchange:
+        return await w.send(
+            w.anonymous(),
+            method,
+            path,
+            content=b"\xff\xfe{",
+            headers={"content-type": "application/json"},
+        )
+
+    return run
+
+
 def not_an_admin(key: str, path: str) -> Run:
     """A signed-in user without the admin role: 403 `ADMIN_ONLY`, never a hint that the resource exists."""
     method = key.split(" ", 1)[0]
@@ -1324,6 +1340,8 @@ def all_scenarios() -> list[Scenario]:
             generated.append(Scenario(key, "no_session", 401, unauthenticated(key, path)))
         if method in {"POST", "PUT", "PATCH", "DELETE"}:
             generated.append(Scenario(key, "wrong_origin", 403, wrong_origin(key, path)))
+        if "400" in op.responses:  # documented for every operation that takes a body
+            generated.append(Scenario(key, "undecodable_body", 400, undecodable_body(key, path)))
         if op.path.startswith("/api/admin/"):
             generated.append(Scenario(key, "not_an_admin", 403, not_an_admin(key, path)))
     return [*SCENARIOS, *generated]
