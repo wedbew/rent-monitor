@@ -18,13 +18,20 @@ surface (radar, screener, redesign, extra admin, analytics) while a P0 slice is 
 2. `Depends on: #a, #b` lists every prerequisite; each is **closed**, or its interface is merged to `staging`.
 3. No unresolved owner decision. A decision the owner already made (BLOCKERS *Resolved*, ADRs, ENGINE-SPEC) is not asked again.
 4. One verifiable behaviour, one PR. Size is judged by behaviour, not line count. Umbrella issues (`umbrella`) are never `ready`.
-5. `Files:` names the paths it owns. Two ready issues may not own the same file; migrations are serialised (one open migration PR).
+5. `Files:` names the implementation/test paths it owns. Two ready issues may not own the same implementation
+   file; migrations are serialised (one open migration PR). Shared central docs are integrator-owned under
+   `parallel-work.md`, with a unique RM handoff per issue and actual same-PR edits before readiness/merge.
 6. Provider behaviour is either behind an injectable fake (say so) or the issue is labelled `owner`.
 
 Not ready: label `blocked` and write the blocker (exact owner action, `docs/BLOCKERS.md`). Do not label `agent` on work that is
 oversized, blocked or ambiguous.
 
 ## Sequencing
+
+Parallel work follows `parallel-work.md` and `docs/PARALLEL-FEATURE-DELIVERY.md`: separate checkout/branch
+writers, exclusive shared-code reservations, same-PR docs integration and serialized staging merges.
+The current dispatcher is serial; the protocol does not silently enable multi-lane dispatch. A routine
+documentation collision is not an owner blocker or a dependency of other lanes.
 
 `agents.md` §7's step order is the *default narrative*, not a gate. The gate is `Depends on:`. Independent work proceeds when
 the contracts it consumes are merged. Dependent work never builds on an assumption: if the interface you need is unmerged, stop

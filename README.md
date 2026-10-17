@@ -27,11 +27,21 @@ make fe-install   # SPA dependencies (Node per frontend/.node-version, pnpm via 
 make fe-check     # the SPA gate: api drift, types, lint, css, format, tests, build
 make fe-fixtures   # sanitised UI fixtures from the newest capture (frontend/test/fixtures)
 make fe-dev       # Vite dev server, /api proxied to the local API
+scripts/dev_stack.sh up    # local fake-provider Compose API/workers + built SPA; prints synthetic session/listing refs
+scripts/dev_stack.sh seed  # add synthetic test data to that running stack
+scripts/dev_stack.sh down  # stop that stack, preserving its database
 make api-samples  # run every API operation over loopback HTTP, keep the answers in data/api-samples/ (gitignored; POSTGRES_PORT=55432 if 5432 is taken)
 make api-samples-clean  # delete every capture
 make backup-drill  # dump and restore the dev database into a scratch DB and compare row counts
 make db-down     # stop the dev database
 ```
+
+`dev_stack.sh` is a manual local-testing helper, not provider or production evidence. It needs Docker,
+Node from `frontend/.node-version` and pnpm. The SPA uses port 4173; API/Postgres host ports are selected
+from free local ports or explicit `API_PORT`/`POSTGRES_PORT` overrides. Do not run it against a shared
+parallel-worker stack: assign isolated Compose project names, databases and ports first. `down --wipe`
+explicitly deletes that local stack's volumes; ordinary `down` preserves them. Synthetic session tokens
+printed by `seed` are local test credentials, not production account secrets.
 
 Integration and migration tests start a throwaway Postgres 17 with Testcontainers (Docker required); set
 `TEST_DATABASE_URL` to use an existing disposable database instead. Procrastinate's tables are applied separately by its
@@ -78,6 +88,9 @@ it also separates "implemented" from "integrated" and "verified against a real p
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Milestones, dependencies and launch gates |
 | [`docs/DELIVERY-AUDIT.md`](docs/DELIVERY-AUDIT.md) | Autonomous delivery audit: GitHub throughput, bottlenecks and proposed faster workflow (RM-177) |
 | [`docs/AUTONOMY.md`](docs/AUTONOMY.md) | Running agents in GitHub Actions, secrets, limits |
+| [`docs/PARALLEL-FEATURE-DELIVERY.md`](docs/PARALLEL-FEATURE-DELIVERY.md) | Parallel Claude feature lanes, shared-file ownership, same-PR doc integration and launch prompts; current dispatcher remains serial |
+| [`docs/CLAUDE-FEATURE-GAP-KICKOFF.md`](docs/CLAUDE-FEATURE-GAP-KICKOFF.md) | Initial Claude prompt to begin the complete parallel feature batch from merged staging (RM-374) |
+| [`docs/FEATURE-GAP-READINESS-COVERAGE-2026-10-17.md`](docs/FEATURE-GAP-READINESS-COVERAGE-2026-10-17.md) | Which readiness gaps the feature batch covers, corrected gate meanings and remaining launch work |
 | [`docs/AGENT-BOT.md`](docs/AGENT-BOT.md) | Limited machine user for autonomous agents |
 | [`docs/PRE-DEPLOYMENT.md`](docs/PRE-DEPLOYMENT.md) | Launch checklist (gates, security, legal, ops) |
 
