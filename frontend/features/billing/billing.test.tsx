@@ -460,7 +460,11 @@ describe("purchases", () => {
             body: {
               purchases: [
                 ...SHOP_HISTORY,
-                { ...SHOP_HISTORY[0], purchase_id: "00000000-0000-4000-8000-0000000000ff", gross_pln: "12.345678" },
+                {
+                  ...SHOP_HISTORY[0],
+                  purchase_id: "00000000-0000-4000-8000-0000000000ff",
+                  gross_pln: "12.345678",
+                },
               ],
             },
           },
