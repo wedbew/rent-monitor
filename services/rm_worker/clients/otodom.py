@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from typing import Any, Literal, Protocol, cast
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urlsplit
 
 from rm_contracts.problems import ProblemCode
 from rm_core.deadline import Deadline
@@ -51,6 +51,10 @@ class ListingGone(FetchError):
 
 class UpstreamSchemaDrift(FetchError):
     code = ProblemCode.UPSTREAM_SCHEMA_DRIFT
+
+
+class FilterContractUnverified(FetchError):
+    """The created-date filter parameters are not verified against the live site (L-050); nothing is sent."""
 
 
 class UpstreamBlocked(FetchError):
@@ -161,6 +165,32 @@ def classify_search(raw: RawResponse) -> dict[str, Any]:
     return cast("dict[str, Any]", ads)
 
 
+@dataclass(frozen=True)
+class SearchOptions:
+    """Typed created-date bounds of a corpus search (RM-392). Both bounds are optional; when given they are
+    aware and `created_from < created_to`. Frozen bounds, never a rolling "last 24 hours" filter, so a retry
+    asks the same question."""
+
+    created_from: datetime | None = None
+    created_to: datetime | None = None
+
+    def __post_init__(self) -> None:
+        for bound in (self.created_from, self.created_to):
+            if bound is not None and (bound.tzinfo is None or bound.utcoffset() is None):
+                raise ValueError("search bounds must be timezone-aware")
+        if self.created_from and self.created_to and self.created_from >= self.created_to:
+            raise ValueError("created_from must precede created_to")
+
+    def query(self) -> dict[str, str]:
+        """UNVERIFIED parameter names (L-050): the filtered listing operation has not been observed live."""
+        out: dict[str, str] = {}
+        if self.created_from:
+            out["createdAtFrom"] = self.created_from.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        if self.created_to:
+            out["createdAtTo"] = self.created_to.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return out
+
+
 @dataclass
 class OtodomClient:
     transport: HttpTransport
@@ -169,6 +199,7 @@ class OtodomClient:
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep
     rng: random.Random = field(default_factory=random.Random)
     base_url: str = "https://www.otodom.pl"
+    filters_verified: bool = False  # flipped only after an owner-authorised live check of the date filter
 
     async def fetch_listing(
         self, short_id: str, *, deadline: Deadline, priority: Priority = "interactive"
@@ -185,6 +216,27 @@ class OtodomClient:
         if not LOCATION_PATH.fullmatch(location_id) or not 1 <= page <= MAX_SEARCH_PAGE:
             raise ValueError("invalid search location or page")
         url = f"{self.base_url}/pl/wyniki/wynajem/mieszkanie/{location_id}?page={page}"
+        return await self._fetch(url, classify_search, deadline, priority)
+
+    async def fetch_corpus_search(
+        self,
+        location_id: str,
+        page: int,
+        *,
+        options: SearchOptions,
+        deadline: Deadline,
+        priority: Priority = "batch",
+    ) -> dict[str, Any]:
+        """One page of flat-for-rent results restricted by created-date bounds (RM-392, OTO-02/03). Same
+        throttle, breaker and retries as `fetch_rental_search`. Refuses to send a date filter until
+        `filters_verified` (L-050); an unbounded search needs no filter and is always allowed."""
+        if not LOCATION_PATH.fullmatch(location_id) or not 1 <= page <= MAX_SEARCH_PAGE:
+            raise ValueError("invalid search location or page")
+        filters = options.query()
+        if filters and not self.filters_verified:
+            raise FilterContractUnverified("created-date filter is not verified against the live site")
+        query = urlencode({"page": page, **filters})
+        url = f"{self.base_url}/pl/wyniki/wynajem/mieszkanie/{location_id}?{query}"
         return await self._fetch(url, classify_search, deadline, priority)
 
     async def _fetch(
