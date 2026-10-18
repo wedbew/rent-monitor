@@ -38,6 +38,10 @@ When CI and `make ci` disagree, fix the script (`scripts/ci_local.sh`) in the sa
 
 ## Authoring
 
+Parallel work uses `parallel-work.md`: the draft can wait for doc integration while owned coding
+continues elsewhere, but it is not ready until its same-PR canonical edits/handoff are reconciled and
+checks rerun on the integrated head. During handoff only one writer owns the feature branch.
+
 1. Target `staging`, never `main`. Open as draft until the local checks (`make lint types test`) pass.
 2. Keep one concern per PR. Tick only what you verified; unverified boxes stay unticked with a note.
 3. End agent-authored PR bodies with the attribution line the tool requires.
@@ -74,7 +78,8 @@ git switch staging && git pull --ff-only && git branch -D <branch> # tidy local;
 - **Ask a human first (comment on the PR, wait for approval)** if the PR touches: money/ledger/quota/billing/webhooks, auth/sessions/tenant
   isolation, a migration's contract step, `.github/` workflows or rulesets, `.claude/settings.json`, an `invariant` test, or owner items in `docs/PRE-DEPLOYMENT.md`.
 - **Promotion `staging` → `main`** is a human decision: the agent may open the promotion PR but never merges it (the ruleset requires one approval).
-- After merging, **pull**: `git switch staging && git pull --ff-only`, delete the local branch, report the commit.
+- After merging, the assigned checkout owner **pulls** staging, cleans up its local branch and reports the
+  commit. Under `parallel-work.md`, never switch or clean another worker's active checkout.
 - After merging, update `CONTEXT.md` §8 if state changed and tick `docs/PRE-DEPLOYMENT.md` items the PR gave evidence for.
 
 **Stop and ask instead of fixing when:**

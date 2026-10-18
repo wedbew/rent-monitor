@@ -164,7 +164,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Evidence:** confirmed for the page shape (a live rent search for one city returned 200 with 36 offers a page under `pageProps.data.searchAds`, 2026-10-14); inferred for sampling bias and for sustained-load behaviour (L-002)
 - **Description:** each city and month imports at most the first 5 pages (about 180 offers) in Otodom's default order, so promoted offers may be over-represented and big cities are under-sampled. Rents are the advertised `totalPrice` (Otodom lists the admin fee separately as `rentPrice`, which is never read: invariant 3; whether `totalPrice` excludes the fee is Otodom's convention, inferred); only offers priced in PLN with a visible price are kept. A city is imported only after an audit asks for it, so the first audit in a new city gets the refused rent and the next one is grounded. A month with fewer than 10 usable offers is skipped and the previous month stays.
 - **Workaround:** none needed for a beta; a city list can be pre-imported by deferring `import_rental_city`.
-- **Target:** #209 (city list, coverage policy #49), accuracy evaluation #94
+- **Target:** #209/#49 and #16/#21/#282; the owner confirmed the complete verified 727-location catalogue, nightly last-24-hours collection, durable Postgres corpus and daily trend history as part of the next feature batch with BDL (2026-10-16). See [next-batch gaps and OTO-01–04 proposals](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md#0-next-implementation-batch-rynek-data-and-location-context), [nightly-import specification](OTODOM-NIGHTLY-IMPORT.md), and accuracy evaluation #94. No nationwide bootstrap, rental periodic dispatcher or durable daily-history implementation is claimed.
 
 ### L-023 — Vision quality and floor-plan advert shape are unverified
 - **Status:** active
@@ -274,6 +274,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none for 1 and 2; treat (3) and (4) as properties of the lane
 - **Target:** a UI issue for 1 and 2 (they are shown in the committed baselines, so fixing them changes pictures on purpose)
 
+### L-041 — Gates 4 and 5 have synthetic lower-bound numbers only
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** release gates 4 (memory) and 5 (connection budget), #35, #36, `scripts/load_check.sh`
+- **Evidence:** confirmed for the numbers (run on VPS-3, 2026-10-16, `docs/DEPLOYMENTS.md`); the representativeness gap is inferred from what the run did not exercise
+- **Description:** Twenty audits submitted together on VPS-3 used at most 28 database connections and 7.1 % of the audit worker's memory limit. They were hand-built listings without photos, so the vision stage (images are the expected memory peak) never ran, no batch import was running, there was no webhook traffic and the audit worker processes one audit at a time. The numbers cannot decide gate 4's "concurrency 2 only if peak < 60 %" or close gate 5
+- **Workaround:** none needed for a private beta without customers
+- **Target:** an owner-authorised run with real listings and photos (OpenRouter cost, one Otodom request per listing, L-002 applies), with the batch import running, recorded in #35 and #36
+
 ### L-037 — Saved listings: a full list is not proof of absence; concurrent note edits are last-write-wins
 - **Status:** resolved (the 200-item cap and the note-wiping save); the residual limit below stays
 - **Discovered:** 2026-10-16
@@ -284,7 +293,43 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none needed for the toggle; edit one note in one tab
 - **Target:** an `If-Match`/version on notes if concurrent editing matters
 
-### L-039 — Analysis reports lack durable visual/item evidence and seller questions
+### L-038 — Purchases in the SPA are exercised against a stand-in for Paddle.js only
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** `frontend/features/billing/`, `frontend/e2e/paddle.ts`, `deploy/Caddyfile` CSP, `VITE_PADDLE_CLIENT_TOKEN`
+- **Evidence:** confirmed (every browser lane replaces `window.Paddle`; the journey stack builds without a token and has billing disabled)
+- **Description:** Checkout, the `/pay` default payment link and the success page are proven offline against the fake Paddle client behind the API and a Paddle.js stub. Real Paddle.js has never run with a real token in this app. 2026-10-16 (RM-277): the Caddy CSP got opt-in `PADDLE_CSP_*` values (hosts read from `paddle.js` and verified in Chromium against the Caddy image with a *fake* sandbox token, `docs/PADDLE-SANDBOX-SETUP.md` section 4b); they are empty by default. Overlay display needs `style-src-attr 'unsafe-inline'` (owner decision, evidence in 4b); with it empty the overlay is created but never shown. There is no client-side token on any host (B-017), and BLIK timing, a real transaction, the live hosts and the invoice link are unverified. Whether Paddle.js itself fetches from the page (`connect-src`, which gets no Paddle host today) or only inside its iframe is also unverified; a blocked fetch would show in the browser console on the first sandbox run. The SPA offers no purchase without a token, and `/pay` says it is not configured
+- **Workaround:** none needed while billing is disabled; no purchase can be started
+- **Target:** #220 (sandbox evidence, owner inputs B-017), CSP change with it, then level 3 in `docs/STATUS.md`
+### L-036 — Settings cannot tell a password account from a Google-only one
+- **Status:** resolved
+- **Discovered:** 2026-10-16
+- **Resolved:** 2026-10-16, RM-345 (`GET /api/me` returns `has_password`, true when a credential row exists; the settings page shows the change form only then and the recovery notice otherwise; nothing is inferred from the sign-in method or e-mail)
+- **Affects:** `GET /api/me`, `frontend/features/settings/SettingsPage.tsx`
+- **Evidence:** confirmed (`tests/integration/test_me_saved_admin.py::test_me_says_whether_the_account_has_a_password_for_each_way_of_signing_in`, `SettingsPage.test.tsx`)
+- **Description:** Before, the password form was shown to every account and a Google or magic-link account got "To nie jest Twoje obecne hasło"
+- **Workaround:** none needed
+- **Target:** done
+
+### L-042 — Multi-level BDL location context and fundamentals rankings are not integrated
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** #48 BDL contract, #21 market API, #282 Rynek, worker context, audit reports and agent fact inputs
+- **Evidence:** confirmed by reading live #48/#49 and target source at `51e45fa`; read-only GUS-reference inspection at `fd25b15` plus identified working-tree modifications. No fresh external BDL verification or POC test run.
+- **Description:** #48 names `gus-stats-poc` but does not explicitly require its location profiles, indicator history/comparisons/rankings, separate fundamentals index or agent/report consumers. The production worker context currently loads rent comparables and a configured risk-free rate only; price/rent sidecar types cannot represent demographic/fiscal facts faithfully. The reference has 22 resolved raw candidate metrics, ten derived definitions, hierarchical reference identities and REIS v3, but historical review documents differ from current code and are not product acceptance evidence. Owner inclusion/inspection scope is confirmed; exact metric/scoring/publication policy remains to be recorded.
+- **Workaround:** do not claim municipal/ranked context is used by an audit; keep existing financial reports available without invented local facts or proxy precision.
+- **Target:** [BDL location-context contract proposal](BDL-LOCATION-CONTEXT-CONTRACT.md), amendments to #48/#21/#282 and proposed LCTX-01–03; remaining B-023 policy decisions. Keep location index separate from property grade and all finance unchanged until a separate approved engine-spec change.
+
+### L-043 — Parallel feature protocol is not an automated multi-lane dispatcher
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `scripts/dispatch_next.py`, `.github/workflows/{dispatch,claude}.yml`, feature-batch coordination
+- **Evidence:** confirmed in source: any active Claude run or in-flight PR makes the dispatcher idle. Claude workflow concurrency is per issue, not a global capacity/path-ownership controller. Recent five queried Claude runs were skipped; headless authentication was not verified by this audit.
+- **Description:** Parallel-work rules and unique documentation handoffs now define isolated ownership and same-PR integration, but do not enforce runtime file leases, worker caps, branch handoff, integration readiness or multi-lane scheduling. Existing dispatcher tests cover serial behavior only. B-021 remains historical unclosed headless-auth evidence, not a newly confirmed current auth failure.
+- **Workaround:** coordinate a bounded isolated-session/manual-run pilot through the assigned integrator; retain all required checks and record actual launch/auth/test evidence. No automatic dispatch enablement or new paid run is implied.
+- **Target:** [parallel delivery guide](PARALLEL-FEATURE-DELIVERY.md), optional dispatcher issue proposal in §8; implement/test explicit capacity, ownership, recovery and merge coordination before claiming unattended parallel delivery.
+
+### L-044 — Analysis reports lack durable visual/item evidence and seller questions
 - **Status:** active
 - **Discovered:** 2026-10-16
 - **Affects:** `apps/deal_analyzer/vision.py`, `listing.py`, `analysis.py`; `services/rm_worker/vision_stage.py`; `frontend/features/analyses/report/`
@@ -293,7 +338,80 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** The report links to the source listing where available; its availability and image retention are external. Use the existing checklist for known warnings; do not present it as generated seller questions or treat unobserved equipment as absent.
 - **Target:** [feature-gap audit and implementation guide](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md), proposed G-01/G-02/G-03 (not filed); existing #211, #283, #284. Implement media/evidence contracts before dependent UI and preserve historical report compatibility.
 
+### L-045 — No BDL metric is selected and no publication threshold is set
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `packages/rm_core/location_contracts.py` (`evaluate_gate`, `require_publishable`), LCTX-01 phase 2, #48, #21, #282
+- **Evidence:** confirmed (`tests/unit/test_bdl_metrics.py`: every undecided threshold fails closed)
+- **Description:** The ranking and comparison logic is implemented, but `PublicationPolicy` thresholds (`min_coverage`, `min_cohort_size`) and the selected metric list with reviewed `bdl_variable_id`s are owner decisions (B-023). Until they are recorded, gates return `undecided` and nothing can be published.
+- **Workaround:** none; do not present municipal or ranked context as available
+- **Target:** B-023 items 1 and 3, then LCTX-01 phase 2
+
+### L-046 — BDL source staleness is not modelled
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `packages/rm_core/location_contracts.py`, LCTX-01 phase 2
+- **Evidence:** confirmed (no age field or limit in the gate)
+- **Description:** The maximum source age is undecided, so an old observation year is never refused for age. Fiscal comparability across years is likewise not decided.
+- **Workaround:** none needed while nothing is published (L-045)
+- **Target:** B-023 item 3
+
+### L-047 — BDL attribution text and terms review are missing
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `packages/rm_contracts/location_context.py`, future reports and API results (`LEGAL[third-party-data]`)
+- **Evidence:** confirmed (no attribution field populated; counsel review not done, B-012)
+- **Description:** Contracts carry a source digest but no attribution wording or redistribution terms. Tags mark the code; they are not a legal verdict.
+- **Workaround:** none needed while nothing is published
+- **Target:** B-023 item 2, B-012
+
+### L-048 — Rental offer expiry says nothing about whether the offer is still live
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `packages/rm_contracts/market.py` (`RentalOffer.expires_at`), future `market_offer` archival (`LEGAL[scraping]`, `LEGAL[third-party-data]`)
+- **Evidence:** confirmed by design (`tests/unit/test_otodom_corpus.py`)
+- **Description:** An offer expires 90 elapsed days after its publication time (first seen when that is missing or in the future). Expiry is an age archive rule only; it does not show that the advertisement was withdrawn or let.
+- **Workaround:** do not present archived or aged offers as currently available
+- **Target:** OTO-01 phase 2 and the nightly importer (`docs/OTODOM-NIGHTLY-IMPORT.md`)
+
+### L-049 — Offers seen under two locations are flagged, first assignment wins
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `CorpusRepository` semantics in `packages/rm_contracts/market.py`, future importer
+- **Evidence:** confirmed (`tests/unit/test_otodom_corpus.py`, reference repository `tests/market_corpus_fake.py`)
+- **Description:** A conflicting sighting is counted and flagged on the run; the first location stays. There is no review tool.
+- **Workaround:** none needed before an importer exists
+- **Target:** OTO-01 phase 2
+
+### L-050 — The Otodom filtered-listing contract is unverified; coverage relies on `pages_expected`
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** OTO-01 importer, `coverage_complete`, `docs/OTODOM-NIGHTLY-IMPORT.md` §4
+- **Evidence:** inferred (nothing fetches yet; filtered listing operation, last-24-hours semantics, partitioning past 50 pages and timestamp meanings not checked live)
+- **Description:** Publishing a location requires proven page coverage, which a future importer must supply as `pages_expected`. Until the live contract is verified (an owner-authorised request, L-002 applies), the value is not trustworthy. The verified 727-location catalogue artifact is also unidentified (B-023 item 4); nothing was seeded.
+- **Workaround:** none; no import runs
+- **Target:** `docs/OTODOM-NIGHTLY-IMPORT.md` §4, B-023 item 4
+
+### L-051 — Media manifest is metadata only: no binary store, no population, no expiry sweep
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `app.media_evidence`, `GET /api/audits/{audit_id}/media`, G-01 gallery (`LEGAL[images]`, `LEGAL[republication]`)
+- **Evidence:** confirmed (`tests/integration/test_media_manifest.py`); the retention gap is inferred from scope
+- **Description:** The manifest contract, table and read route exist, but nothing fills the manifest: the worker does not write it, no binary store exists, `expires_at` has no sweep job and retention values are undecided. The route returns an empty manifest for every audit today.
+- **Workaround:** none; no UI should present a gallery yet
+- **Target:** G-01 follow-up slices; owner decision on binary storage (Postgres `bytea` for the beta or a private object store) and retention values
+
 ## Deferred
+
+### L-039 — Audit cancellation is in the blueprint but not built
+- **Status:** deferred
+- **Discovered:** 2026-10-16
+- **Affects:** `POST /api/audits/{id}/cancel` (blueprint §2 route map and §4.5), the `cancelled` audit status, `docs/FRONTEND-PLAN.md` (no cancel button)
+- **Evidence:** confirmed (OpenAPI has no such operation; `cancelled` exists as a status and in the failure paths)
+- **Description:** The blueprint says cancel "sets `cancelled` and releases the credit if the job has not started". It does not say what happens to a running audit (kill the engine child? release or capture the credit?). That is a credit-ledger decision, so the route is not implemented and the SPA offers no cancel
+- **Workaround:** an audit finishes or fails by itself within its 900 s deadline and the credit follows the existing outcome rules
+- **Target:** owner decision (B-022), then a ledger-safe implementation with concurrency tests
+
 
 ### L-025 — V2 manual analysis and creative tools are local design flows
 - **Status:** deferred

@@ -67,6 +67,7 @@ compose.override.yml
 docker-compose.override.yml
 
 # --- Tool caches / logs ---
+.schemathesis/
 .semgrep/.cache/
 .pre-commit-cache/
 *.log
@@ -90,4 +91,5 @@ service-account*.json
 .ovh.conf
 ovh.conf
 .stripe/
+.schemathesis/
 .pnpm-store/

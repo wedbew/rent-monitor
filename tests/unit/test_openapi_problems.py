@@ -129,3 +129,11 @@ def test_document_problems_is_idempotent() -> None:
     schema: dict[str, Any] = json.loads(json.dumps(SPEC))
     once = json.dumps(document_problems(ROUTERS, schema), sort_keys=True)
     assert once == json.dumps(SPEC, sort_keys=True)
+
+
+def test_routes_with_a_body_document_the_plain_400_for_undecodable_json() -> None:
+    for method, path, op in operations():
+        has = "400" in op["responses"]
+        assert has == bool(op.get("requestBody")), f"{method} {path}"
+        if has:
+            assert op["responses"]["400"]["x-problem-codes"] == ["HTTP_ERROR"], f"{method} {path}"

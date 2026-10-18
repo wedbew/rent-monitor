@@ -7,7 +7,8 @@
     "flags": {
       "smoke_on": true
     },
-    "id": "00000000-0000-4000-8000-000000000293",
+    "has_password": false,
+    "id": "00000000-0000-4000-8000-000000000295",
     "name": "Ewa Wzorcowa",
     "plan": {
       "code": "free",

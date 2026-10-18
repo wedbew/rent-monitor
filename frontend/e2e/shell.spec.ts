@@ -18,7 +18,8 @@ test.describe("desktop rail", () => {
       page,
       serve,
     }) => {
-      await serve("empty");
+      // Settings reads the sessions list; the others need nothing beyond the signed-in basics.
+      await serve(destination.id === "settings" ? "settings" : "empty");
       await page.goto(startFor(destination.to));
       const link = page.getByRole("link", { name: destination.label, exact: true });
       await exercise(`shell.nav.${destination.id}`, async () => {
@@ -150,7 +151,8 @@ test.describe("mobile sheet", () => {
       page,
       serve,
     }) => {
-      await serve("empty");
+      // Settings reads the sessions list; the others need nothing beyond the signed-in basics.
+      await serve(destination.id === "settings" ? "settings" : "empty");
       await page.goto(startFor(destination.to));
       await page.getByRole("button", { name: "Otwórz menu nawigacji" }).click();
       const dialog = page.getByRole("dialog", { name: "Nawigacja" });

@@ -23,6 +23,7 @@ import {
   type Scenario,
   type ScenarioName,
   RUN_AUDIT_ID,
+  SHOP_HISTORY,
   SUCCEEDED_AUDITS,
 } from "../test/scenarios";
 import { fx, type Fixture } from "../test/fixtures";
@@ -87,6 +88,8 @@ export type PageRef = string;
 export const EVERY_PAGE = "*";
 /** The same for every page of the signed-out frame (brand, theme, documents). */
 export const EVERY_PUBLIC_PAGE = "public:*";
+/** Settings scenarios whose account has a password: only those show the change-password form (RM-345). */
+const PASSWORD_ACCOUNT = ["settings", "settingsOneSession", "settingsSessionsFailing"] as const;
 
 export interface Interaction {
   readonly id: string;
@@ -177,6 +180,51 @@ export const PAGES: readonly AppPage[] = [
         },
       },
     ],
+  },
+  {
+    id: "credits",
+    path: "/app/credits",
+    heading: "Raporty i zakupy",
+    scenarios: ["shop", "shopHistory", "billingDisabled"],
+  },
+  {
+    id: "success",
+    path: `/app/credits/success?purchase=${SHOP_HISTORY[0]?.purchase_id ?? ""}`,
+    heading: "Płatność",
+    scenarios: ["shopHistory"],
+    states: [
+      {
+        name: "waiting",
+        path: `/app/credits/success?purchase=${SHOP_HISTORY[1]?.purchase_id ?? ""}`,
+        scenario: "shopHistory",
+        prepare: async (page) => {
+          await page.getByText("Nie płać ponownie").waitFor();
+        },
+      },
+    ],
+  },
+  {
+    id: "settings",
+    path: "/app/settings",
+    heading: "Ustawienia",
+    scenarios: ["settings", "settingsOneSession", "settingsSessionsFailing", "settingsNoPassword"],
+    states: [
+      {
+        name: "validation-errors",
+        scenario: "settings",
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Zmień hasło" }).click();
+          await page.getByRole("alert").filter({ hasText: "Popraw pola" }).waitFor();
+        },
+      },
+    ],
+  },
+  {
+    id: "pay",
+    path: "/pay?_ptxn=txn_fixture0001",
+    layout: "public",
+    heading: "Płatność",
+    scenarios: SIGNED_OUT,
   },
   {
     id: "new-analysis",
@@ -398,7 +446,6 @@ export const PAGES: readonly AppPage[] = [
   { id: "market", path: "/app/market", heading: "Rynek", scenarios: EVERY_SCENARIO },
   { id: "interior", path: "/app/interior", heading: "Architekt wnętrz", scenarios: EVERY_SCENARIO },
   { id: "listing", path: "/app/listings/new", heading: "Stwórz ogłoszenie", scenarios: EVERY_SCENARIO },
-  { id: "settings", path: "/app/settings", heading: "Ustawienia", scenarios: EVERY_SCENARIO },
   { id: "terms", path: "/terms", heading: "Regulamin", scenarios: EVERY_SCENARIO },
   { id: "privacy", path: "/privacy", heading: "Polityka prywatności", scenarios: EVERY_SCENARIO },
   {
@@ -646,6 +693,157 @@ export const INTERACTIONS: readonly Interaction[] = [
     role: "button",
     name: "Wyślij link ponownie",
     outcome: "request",
+  },
+
+  // Credits and purchases.
+  {
+    id: "credits.buy",
+    page: "credits",
+    scenarios: ["shop", "shopHistory"],
+    role: "button",
+    name: /^Kup pakiet /,
+    outcome: "request",
+  },
+  {
+    id: "credits.resume",
+    page: "credits",
+    scenarios: ["shopHistory"],
+    role: "button",
+    name: /^Dokończ płatność, zamówienie /,
+    outcome: "request",
+  },
+  {
+    id: "credits.invoice",
+    page: "credits",
+    scenarios: ["shopHistory"],
+    role: "button",
+    name: /^Pokaż fakturę, zamówienie /,
+    outcome: "request",
+  },
+  { id: "success.analysis", page: "success", role: "link", name: "Sprawdź mieszkanie", outcome: "url" },
+  { id: "success.purchases", page: "success", role: "link", name: "Wróć do zakupów", outcome: "url" },
+  { id: "pay.credits", page: "pay", role: "link", name: "Wróć do zakupów", outcome: "url" },
+  // Settings.
+  {
+    id: "settings.password.current",
+    page: "settings",
+    scenarios: PASSWORD_ACCOUNT,
+    role: "textbox",
+    name: "Obecne hasło",
+    outcome: "state",
+  },
+  {
+    id: "settings.password.next",
+    page: "settings",
+    scenarios: PASSWORD_ACCOUNT,
+    role: "textbox",
+    name: "Nowe hasło",
+    outcome: "state",
+  },
+  {
+    id: "settings.password.submit",
+    page: "settings",
+    scenarios: PASSWORD_ACCOUNT,
+    role: "button",
+    name: "Zmień hasło",
+    outcome: "request",
+  },
+  {
+    id: "settings.password.recover",
+    page: "settings",
+    scenarios: ["settingsNoPassword"],
+    role: "link",
+    name: "Ustaw hasło przez e-mail",
+    outcome: "url",
+  },
+  {
+    id: "settings.error.current",
+    page: "settings",
+    state: "validation-errors",
+    role: "link",
+    name: "Wpisz obecne hasło.",
+    outcome: "focus",
+  },
+  {
+    id: "settings.error.next",
+    page: "settings",
+    state: "validation-errors",
+    role: "link",
+    name: "Wpisz hasło.",
+    outcome: "focus",
+  },
+  {
+    id: "settings.sessions.retry",
+    page: "settings",
+    scenarios: ["settingsSessionsFailing"],
+    role: "button",
+    name: "Spróbuj ponownie",
+    outcome: "request",
+  },
+  {
+    id: "settings.signout-all",
+    page: "settings",
+    role: "button",
+    name: "Wyloguj ze wszystkich urządzeń",
+    outcome: "dialog",
+  },
+  {
+    id: "settings.signout-all.close",
+    page: "settings",
+    within: "settings.signout-all",
+    role: "button",
+    name: "Zamknij",
+    outcome: "dialog",
+  },
+  {
+    id: "settings.signout-all.cancel",
+    page: "settings",
+    within: "settings.signout-all",
+    role: "button",
+    name: "Anuluj",
+    outcome: "dialog",
+  },
+  {
+    id: "settings.signout-all.confirm",
+    page: "settings",
+    within: "settings.signout-all",
+    role: "button",
+    name: "Wyloguj wszędzie",
+    outcome: "url",
+  },
+  { id: "settings.export", page: "settings", role: "button", name: "Pobierz moje dane", outcome: "request" },
+  { id: "settings.erase.open", page: "settings", role: "button", name: "Usuń konto", outcome: "dialog" },
+  {
+    id: "settings.erase.close",
+    page: "settings",
+    within: "settings.erase",
+    role: "button",
+    name: "Zamknij",
+    outcome: "dialog",
+  },
+  {
+    id: "settings.erase.email",
+    page: "settings",
+    within: "settings.erase",
+    role: "textbox",
+    name: "Adres e-mail konta",
+    outcome: "state",
+  },
+  {
+    id: "settings.erase.cancel",
+    page: "settings",
+    within: "settings.erase",
+    role: "button",
+    name: "Anuluj",
+    outcome: "dialog",
+  },
+  {
+    id: "settings.erase.confirm",
+    page: "settings",
+    within: "settings.erase",
+    role: "button",
+    name: "Usuń konto na stałe",
+    outcome: "url",
   },
 
   // Dashboard.
@@ -1280,6 +1478,24 @@ export const POPUPS: readonly Popup[] = [
     role: "dialog",
     name: "Usunąć z zapisanych?",
     backdrop: "closes",
+  },
+  {
+    id: "settings.signout-all",
+    page: "settings",
+    trigger: "settings.signout-all",
+    role: "dialog",
+    name: "Wylogować ze wszystkich urządzeń?",
+    backdrop: "closes",
+    scenarios: ["settings"],
+  },
+  {
+    id: "settings.erase",
+    page: "settings",
+    trigger: "settings.erase.open",
+    role: "dialog",
+    name: "Usunąć konto na stałe?",
+    backdrop: "closes",
+    scenarios: ["settings"],
   },
   {
     id: "paywall",

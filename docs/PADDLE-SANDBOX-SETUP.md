@@ -79,6 +79,29 @@ Expected: one `set NAME (N chars)` line per variable, `check_env: 0 error(s)`, `
 sales unless the three prices match the catalog snapshot and the approved amounts exactly (`billing_catalog`), and it refuses a live key
 with `PADDLE_ENVIRONMENT=sandbox` (and the reverse). To switch off at any time: `BILLING_PROVIDER=disabled`, push, restart.
 
+### 4b. The page's Content-Security-Policy (needed before the SPA can show Paddle's checkout)
+
+The SPA is served with a strict CSP (`deploy/Caddyfile`). Paddle.js adds nothing to it until you set these in `.env`
+(they are read by the `caddy` service; empty means no Paddle host is allowed). The hosts below were read from
+`https://cdn.paddle.com/paddle/v2/paddle.js` (its environment table) and checked in a real Chromium against the Caddy image
+with a *fake* sandbox token on 2026-10-16 (RM-277); Paddle publishes no CSP list in its developer docs.
+
+| Variable | Sandbox | Live |
+|---|---|---|
+| `PADDLE_CSP_SCRIPT` (script-src) | `https://cdn.paddle.com` | `https://cdn.paddle.com` |
+| `PADDLE_CSP_ASSETS` (style-src, img-src: Paddle.js's own stylesheet and images) | `https://cdn.paddle.com https://sandbox-cdn.paddle.com` | `https://cdn.paddle.com` |
+| `PADDLE_CSP_FRAME` (frame-src: the checkout iframe) | `https://sandbox-buy.paddle.com` | `https://buy.paddle.com` |
+| `PADDLE_CSP_STYLE_ATTR` (style-src-attr) | `'unsafe-inline'` | `'unsafe-inline'` |
+
+`PADDLE_CSP_STYLE_ATTR` is a deliberate, narrow relaxation and **your decision**: with it empty the overlay iframe is
+created but never shown (Paddle.js sets inline `style` attributes; the strict CSP blocks them), with `'unsafe-inline'` in
+`style-src-attr` only it appears on top of the page. It allows inline style *attributes* only: not inline `<style>` elements, not inline
+or remote scripts, and `script-src` stays closed. The page needs no extra `connect-src` host: the browser requests from the
+checkout iframe (`*-checkout-service.paddle.com`, `*-checkout-analytics.paddle.com`) are governed by Paddle's own CSP in the iframe.
+Paddle.js also tries to load a Paddle Retain script from `public.profitwell.com` on live accounts; it is not allowed and not used (a
+console error, no function lost). Rebuild and restart `caddy` after changing them. **Not established:** a real sandbox
+token, real transaction, BLIK or card flow, or the live hosts (read from the script, not exercised).
+
 ## 5. Test matrix (sandbox only; this is provider verification, not a real bank payment)
 
 Test cards: `4242 4242 4242 4242` success; `4000 0038 0000 0446` 3DS; `4000 0000 0000 0002` declined. Any future expiry, any CVC.

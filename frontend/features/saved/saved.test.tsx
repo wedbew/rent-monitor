@@ -9,6 +9,7 @@ import { fx } from "../../test/fixtures";
 import { useScenario as serveScenario } from "../../test/handlers";
 import { createSaved, replyFrom, SUCCEEDED_AUDITS, type Reply } from "../../test/scenarios";
 import { RequireSession, SessionProvider } from "../../shell/session";
+import { advanceSessionGeneration, runTenantCleanups } from "../../shell/tenant";
 import { NoteEditor } from "./NoteEditor";
 import { SavedList } from "./SavedList";
 import { SavedPanel } from "./SavedPanel";
@@ -117,6 +118,31 @@ describe("SaveToggle", () => {
     await waitFor(() => expect(puts).toBeGreaterThan(0));
     await new Promise((r) => setTimeout(r, 400));
     expect(puts).toBe(1);
+  });
+
+  it("a save still in flight when the session ends does not ask for the list again", async () => {
+    const flow = createSaved();
+    mount(<SaveToggle otodomId={UNSAVED} />, {
+      ...flow,
+      routes: [
+        {
+          operation: "PUT /api/saved/{otodom_id}",
+          reply: { ...reply("PUT /api/saved/{otodom_id}", "saved_without_note"), delayMs: 200 },
+        },
+        ...flow.routes.filter((r) => r.operation !== "PUT /api/saved/{otodom_id}"),
+      ],
+    });
+    const button = await toggle(UNSAVED);
+    await userEvent.click(button);
+    await waitFor(() => expect(button).toHaveAttribute("aria-busy", "true"));
+    const listsBefore = flow.calls.filter((c) => c === "list").length;
+    act(() => {
+      runTenantCleanups();
+      advanceSessionGeneration();
+    });
+    // The mutation settles at once (aborted); its onSettled is the only place that could ask for the list again.
+    await waitFor(() => expect(button).not.toHaveAttribute("aria-busy"));
+    expect(flow.calls.filter((c) => c === "list").length).toBe(listsBefore);
   });
 
   it("a listing that was never analysed says so and stays not saved", async () => {
