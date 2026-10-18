@@ -391,6 +391,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Description:** Publishing a location requires proven page coverage, which a future importer must supply as `pages_expected`. Until the live contract is verified (an owner-authorised request, L-002 applies), the value is not trustworthy. The verified 727-location catalogue artifact is also unidentified (B-023 item 4); nothing was seeded.
 - **Workaround:** none; no import runs
 - **Target:** `docs/OTODOM-NIGHTLY-IMPORT.md` §4, B-023 item 4
+- **Update (2026-10-19, RM-392):** the client now has typed search options but refuses created-date filters until `filters_verified` is set; `createdAtFrom`/`createdAtTo` are guesses from the count query (L-070).
 
 ### L-051 — Media manifest is metadata only: no binary store, no population, no expiry sweep
 - **Status:** active
@@ -526,6 +527,42 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Description:** Only the gate prunes its own stamps.
 - **Workaround:** none
 - **Target:** ops retention job
+
+### L-070 — Corpus window restarts re-read pages; page budget and deadline are constants
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `otodom_corpus.py` (RM-392), `sync_corpus_location`
+- **Evidence:** confirmed (design); per-partition resume needs the unbuilt `market_import_item` (L-060)
+- **Description:** A restarted window re-reads from its first page. Page budget 3000 and a 3600 s deadline apply, so a very large location may stay `incomplete` (visible, not published) across runs. The date-filter parameter names and boundary behaviour are unverified, so `filters_verified` stays false (see L-050).
+- **Workaround:** none
+- **Target:** OTO-02 live check; `market_import_item` slice
+
+### L-071 — `createdAtFirst` as original publication time is unverified
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `RentalOffer` age anchor, 90-day archive dates of bootstrap offers
+- **Evidence:** inferred
+- **Description:** Used instead of `pushedUpAt` (never used). A wrong choice shifts archive dates.
+- **Workaround:** none
+- **Target:** owner-authorised live check
+
+### L-072 — Unpublished runs leave offers visible; bootstrap lower bound is a constant
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `list_offers`, freshness readers; bootstrap lower bound `2010-01-01`
+- **Evidence:** confirmed
+- **Description:** Offers are inserted per page before a run is published. Readers must judge freshness from the checkpoint, not the offer table.
+- **Workaround:** use the checkpoint
+- **Target:** OTO-04 publication slice
+
+### L-073 — Corpus scheduling knobs are module constants, with no import switch
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** cron (01:00 UTC), night window end 05:00 UTC, overlap 60 min, 7-day chunk, 23 h due-after, catalogue version 1
+- **Evidence:** confirmed
+- **Description:** No `OTODOM_MARKET_IMPORT_ENABLED`; the only kill switch is `LEGAL_SCRAPING_ENABLED`. Proposed names are in `docs/parallel-handoffs/RM-392.md`.
+- **Workaround:** the dispatcher is inert until catalogue version 1 is seeded
+- **Target:** settings slice (settings.py is free after #394)
 
 ## Deferred
 

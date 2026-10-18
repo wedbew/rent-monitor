@@ -5,6 +5,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- Worker: Otodom rental corpus importer and two batch tasks (`sync_corpus_location`, periodic `dispatch_corpus_nightly` at 01:00 UTC); inert until a catalogue version 1 is seeded and the date filter is verified; no operator action, no migration (RM-392)
+
+### Added
 - Migration 0016 adds the `location_*` tables (BDL territory reference, observations, ingestion runs, publication pointer, quota stamps) and optional env `BDL_API_KEY` / `BDL_REQUESTS_PER_MINUTE`; operators run `make migrate`; no user-visible change and nothing is ingested until metrics are approved (RM-391)
 
 ### Added

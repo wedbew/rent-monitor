@@ -92,7 +92,7 @@ listing response is valid and consistent with that search.
 
 ## 5. Proposed Postgres data model
 
-> **Implemented contracts (RM-377):** `market_location`, `market_offer`, `market_import_run` and `market_import_checkpoint` are mirrored by `LocationEntry`/`LocationCatalogue`, `RentalOffer`, `ImportRun` and `LocationCheckpoint` in `packages/rm_contracts/market.py`; the migration should keep that mapping. **As built (RM-385, migration 0015):** `market_catalogue` header plus versioned `market_location`, `market_offer`, `market_import_run`, `market_import_checkpoint` (key `(location_id, dataset)`); `market_import_item` and `market_daily_summary` are not built yet.
+> **Implemented contracts (RM-377):** `market_location`, `market_offer`, `market_import_run` and `market_import_checkpoint` are mirrored by `LocationEntry`/`LocationCatalogue`, `RentalOffer`, `ImportRun` and `LocationCheckpoint` in `packages/rm_contracts/market.py`; the migration should keep that mapping. **As built (RM-385, migration 0015):** `market_catalogue` header plus versioned `market_location`, `market_offer`, `market_import_run`, `market_import_checkpoint` (key `(location_id, dataset)`); `market_import_item` and `market_daily_summary` are not built yet. **Importer as built (RM-392):** hour-aligned windows, retries as `-aN` attempts, catch-up in chained runs of at most 7 days, per-location advisory lock; the scheduling constants and proposed `OTODOM_MARKET_*` settings are listed in `docs/parallel-handoffs/RM-392.md`.
 
 Implement expand-only Alembic migrations in the existing `app` schema. The names below are proposals.
 Use typed repository methods, aware UTC timestamps and `Decimal`/`NUMERIC` for money.
