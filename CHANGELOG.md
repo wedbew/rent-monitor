@@ -4,6 +4,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+- Migration 0015 adds the Otodom rental corpus tables (`market_catalogue`, `market_location`, `market_offer`, `market_import_run`, `market_import_checkpoint`); expand-only, empty, no importer yet; operators run `make migrate` (RM-385)
+
 ### Fixed
 - Frontend (RM-362): `whileSignedIn` no longer hands a late result to the next session. A request that ignores its abort signal is now rejected with a typed `aborted` error when the session ends or the session generation moves, success and failure alike, and its listeners are always released; saved-listing changes refresh the list only if their session is still current. Abort does not undo a server mutation
 - Frontend settings (RM-346 review): Cancel, Escape, the backdrop and the close button are shut while a sign-out-everywhere or account-deletion request runs (the dialog and its state are never reset under a running request, so no second request can start); a lost answer says "Nie wiemy, czy się udało" and asks the server whether the session still exists (a 401 then takes the one sign-out door) instead of assuming either way
