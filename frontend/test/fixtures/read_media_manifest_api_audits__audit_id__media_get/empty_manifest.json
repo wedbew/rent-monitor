@@ -1,0 +1,25 @@
+{
+  "body": {
+    "audit_id": "00000000-0000-4000-8000-000000000302",
+    "created_at": null,
+    "items": [],
+    "schema_version": 1
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}/media",
+    "method": "GET",
+    "operation_id": "read_media_manifest_api_audits__audit_id__media_get",
+    "path": "/api/audits/{audit_id}/media"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/00000000-0000-4000-8000-000000000302/media"
+  },
+  "scenario": "empty_manifest",
+  "status": 200
+}

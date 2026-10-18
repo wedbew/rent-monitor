@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["path", "audit_id"],
+        "msg": "Input should be a valid UUID, invalid character: found `n` at 0",
+        "type": "uuid_parsing"
+      }
+    ],
+    "instance": "/api/audits/not-a-uuid/media",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}/media",
+    "method": "GET",
+    "operation_id": "read_media_manifest_api_audits__audit_id__media_get",
+    "path": "/api/audits/{audit_id}/media"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/not-a-uuid/media"
+  },
+  "scenario": "malformed_id",
+  "status": 422
+}
