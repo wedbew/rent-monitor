@@ -20,7 +20,13 @@ from uuid import UUID
 import httpx
 import structlog
 from deal_analyzer import Listing
-from deal_analyzer.vision import VisionOutput, VisionOutputError, parse_vision_output
+from deal_analyzer.vision import (
+    EquipmentObservation,
+    EvidenceSource,
+    VisionOutput,
+    VisionOutputError,
+    parse_vision_output,
+)
 from rm_core.deadline import Deadline
 from rm_core.legal import LegalTag, tag_names
 
@@ -28,7 +34,7 @@ from rm_worker.clients.openrouter import VisionRequest, VisionResult, VisionUnav
 from rm_worker.images import PreparedImage, drop_near_duplicates, fetch_prepared, select_media
 
 log = structlog.get_logger(__name__)
-PROMPT_VERSION = "vision-v1"
+PROMPT_VERSION = "vision-v2"  # v2 (RM-387): equipment observations
 VISION_BUDGET_S = 240.0  # the stage's own cap inside the audit's 900 s, so a slow model cannot eat the rest
 MAX_TOKENS = 1800
 
@@ -45,7 +51,9 @@ Return exactly this JSON object:
   "capex_adjustment": number between -0.15 and 0.15,
   "rent_adjustment": number between -0.15 and 0.15,
   "floor_plan_text": string or null,
-  "notes": string of at most 300 characters or null
+  "notes": string of at most 300 characters or null,
+  "equipment": [{{"item": string, "image_index": integer or null, "confidence": number between 0 and 1,
+                  "sale_status": "included" | "visible_only" | "unknown"}}, ...]
 }}
 Rules:
 - "photos" has one entry per image, in the order given. Computer renders and virtual staging are "render" /
@@ -57,12 +65,36 @@ Rules:
   (positive = more expensive). "rent_adjustment": fraction by which achievable rent differs from comparable
   flats because of finish and layout (positive = higher). Use 0 when unsure.
 - "floor_plan_text": transcribe room names and areas readable on the floor plans, or null if none.
+- "equipment": fixed or movable equipment and fit-out you can actually see or read (for example oven, hob,
+  fitted wardrobe, air conditioning), at most 30 items, each with the 0-based "image_index" of the image
+  showing it. "visible_only" means seen but nothing says it is sold with the flat; use "included" only when
+  a floor plan or visible label says so; otherwise "unknown". Do not guess items you cannot see.
 - Never include addresses, names, phone numbers or any personal data in "notes"."""
 
 
 def _safe_id(value: str) -> str:
     """A provider-reported model id reduced to id characters (it is stored and sent to the engine)."""
     return re.sub(r"[^A-Za-z0-9._:/@+-]", "", value)[:120]
+
+
+def _link_media(
+    output: VisionOutput, sent: list[PreparedImage], selected: list[str], photo_count: int
+) -> VisionOutput:
+    """Rewrite each observation's `image_index` (position in the images actually sent) to the ordinal in the
+    selected media list (photos in listing order, then plans: the media manifest's ordinal) and record whether
+    it came from a photo or a floor plan. An index naming no sent image leaves the observation unattributed.
+    LEGAL[images]: links model output back to listing media (RM-387)."""
+    linked: list[EquipmentObservation] = []
+    for obs in output.equipment:
+        ordinal: int | None = None
+        source = EvidenceSource.UNATTRIBUTED
+        if obs.media_ordinal is not None and obs.media_ordinal < len(sent):
+            url = sent[obs.media_ordinal].source_url
+            if url in selected:
+                ordinal = selected.index(url)
+                source = EvidenceSource.PHOTO if ordinal < photo_count else EvidenceSource.FLOOR_PLAN
+        linked.append(obs.model_copy(update={"media_ordinal": ordinal, "provenance": source}))
+    return output.model_copy(update={"equipment": tuple(linked)})
 
 
 @dataclass(frozen=True)
@@ -139,6 +171,7 @@ class OpenRouterVision:
             deadline=deadline,
         )
         output = parse_vision_output(result.content)
+        output = _link_media(output, images, [*photo_urls, *plan_urls], len(photo_urls))
         bound.info(
             "vision_done",
             model=result.model,

@@ -18,12 +18,15 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from deal_analyzer.money import ONE, ZERO, engine_math
 
 MAX_ADJUSTMENT = Decimal("0.15")  # the clamp: +/- 15 % of the deterministic base, never more
 MAX_PHOTOS = 25
+MAX_PLANS = 2
+MAX_IMAGES = MAX_PHOTOS + MAX_PLANS  # one assessment per image sent: 25 photos then 2 floor plans (G-02)
+MAX_EQUIPMENT = 40
 _FENCE = re.compile(r"^\s*```(?:json)?\s*(.*?)\s*```\s*$", re.DOTALL)
 _CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
 
@@ -52,6 +55,50 @@ class Condition(StrEnum):
 EXCLUDED_KINDS = frozenset({PhotoKind.RENDER, PhotoKind.STAGING})
 
 
+class SaleStatus(StrEnum):
+    """Whether an item seen in the listing media is part of the sale. Unknown is the honest default."""
+
+    INCLUDED = "included"  # the listing text or plan says it stays
+    VISIBLE_ONLY = "visible_only"  # seen in a photo, nothing says it is sold with the flat
+    UNKNOWN = "unknown"
+
+
+class EvidenceSource(StrEnum):
+    PHOTO = "photo"
+    FLOOR_PLAN = "floor_plan"
+    UNATTRIBUTED = "unattributed"  # the model named no usable image
+
+
+class EquipmentObservation(BaseModel):
+    """One piece of equipment or fit-out the model saw, linked to the image it came from (G-02).
+
+    Factual evidence only: it never feeds a number (invariant 4). `media_ordinal` is the position in the
+    selected media list (photos in listing order, then floor plans), the `ordinal` of the media manifest.
+    LEGAL[images]: derived from listing photos and plans sent to a third party (RM-387)
+    LEGAL[republication]: shown back to users, so bounded and stripped of control characters (RM-387)
+    GDPR[processor]: produced by the vision model behind OpenRouter (RM-387)
+    """
+
+    model_config = ConfigDict(extra="ignore", frozen=True, populate_by_name=True)
+
+    item: str = Field(min_length=1, max_length=80)
+    # the model answers with `image_index` (0-based, order sent); the worker rewrites it to the ordinal
+    media_ordinal: int | None = Field(
+        default=None, ge=0, lt=MAX_IMAGES, validation_alias=AliasChoices("image_index", "media_ordinal")
+    )
+    confidence: Decimal = Field(ge=ZERO, le=ONE)
+    provenance: EvidenceSource = EvidenceSource.UNATTRIBUTED
+    sale_status: SaleStatus = SaleStatus.UNKNOWN
+
+    @field_validator("item")
+    @classmethod
+    def _clean_item(cls, value: str) -> str:
+        cleaned = " ".join(_CONTROL.sub("", value).split())
+        if not cleaned:
+            raise ValueError("empty item")
+        return cleaned
+
+
 class PhotoAssessment(BaseModel):
     model_config = ConfigDict(extra="ignore", frozen=True)
 
@@ -65,13 +112,34 @@ class VisionOutput(BaseModel):
     model_config = ConfigDict(extra="ignore", frozen=True)
 
     condition: Condition = Condition.UNKNOWN
-    photos: tuple[PhotoAssessment, ...] = Field(default=(), max_length=MAX_PHOTOS)
+    photos: tuple[PhotoAssessment, ...] = Field(default=(), max_length=MAX_IMAGES)
     capex_adjustment: Decimal = Field(
         default=ZERO, ge=Decimal(-10), le=Decimal(10)
     )  # proposed fraction of the base
     rent_adjustment: Decimal = Field(default=ZERO, ge=Decimal(-10), le=Decimal(10))
     floor_plan_text: str | None = Field(default=None, max_length=4_000)
     notes: str | None = Field(default=None, max_length=1_000)
+
+    equipment: tuple[EquipmentObservation, ...] = Field(default=(), max_length=MAX_EQUIPMENT)
+
+    @field_validator("equipment", mode="before")
+    @classmethod
+    def _keep_valid_equipment(cls, value: Any) -> Any:
+        """One malformed observation must not void the whole answer (and with it the finance adjustments):
+        unusable entries are dropped, the rest kept up to the cap."""
+        if not isinstance(value, (list, tuple)):
+            return ()
+        items: list[Any] = list(value)  # type: ignore[arg-type]
+        kept: list[EquipmentObservation] = []
+        for raw in items:
+            if isinstance(raw, EquipmentObservation):
+                kept.append(raw)
+                continue
+            try:
+                kept.append(EquipmentObservation.model_validate(raw))
+            except ValidationError:
+                continue
+        return tuple(kept[:MAX_EQUIPMENT])
 
     @field_validator("floor_plan_text", "notes")
     @classmethod
@@ -140,6 +208,14 @@ class VisionRecord(BaseModel):
     photos_excluded: int
     capex: Applied | None
     rent: Applied | None
+    # G-02: evidence kept for the report so a reload needs no second model call. Additive within schema
+    # version 1 (`ADDITIVE_FIELDS` in scripts/gen_report_schema.py); old stored reports lack them.
+    # LEGAL[images]: text transcribed from listing floor plans and notes about photos (RM-387)
+    # LEGAL[republication]: echoed to the audit's owner in the report (RM-387)
+    # GDPR[processor]: OCR text may contain names printed on a plan; produced via OpenRouter (RM-387)
+    floor_plan_text: str | None = Field(default=None, max_length=4_000)
+    notes: str | None = Field(default=None, max_length=1_000)
+    equipment: tuple[EquipmentObservation, ...] = Field(default=(), max_length=MAX_EQUIPMENT)
 
 
 def usable_photo_count(output: VisionOutput) -> tuple[int, int]:
@@ -172,4 +248,7 @@ def apply_vision(
         photos_excluded=excluded,
         capex=clamp_adjustment(capex_base, output.capex_adjustment) if capex_base is not None else None,
         rent=clamp_adjustment(rent_base, output.rent_adjustment) if rent_base is not None else None,
+        floor_plan_text=output.floor_plan_text,
+        notes=output.notes,
+        equipment=output.equipment,
     )

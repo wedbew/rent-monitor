@@ -15,7 +15,15 @@ from uuid import UUID
 
 import pytest
 from deal_analyzer import Listing
-from deal_analyzer.vision import Condition, PhotoAssessment, PhotoKind, VisionOutput
+from deal_analyzer.vision import (
+    Condition,
+    EquipmentObservation,
+    EvidenceSource,
+    PhotoAssessment,
+    PhotoKind,
+    SaleStatus,
+    VisionOutput,
+)
 from rm_core.deadline import Deadline
 from rm_worker.vision_stage import PROMPT_VERSION, VisionAssessment
 from test_audit_journey import SIGNUP_CREDITS, Harness, MakeToken, clean_up, h, new_ref, sale_ad, submit  # noqa: F401
@@ -176,3 +184,41 @@ async def test_invariant_no_vision_call_for_a_listing_that_is_not_a_deal(
     assert got["status"] == "rejected"
     assert vision.calls == []
     assert await h.balance(me["id"]) == SIGNUP_CREDITS
+
+
+async def test_ocr_text_and_equipment_are_stored_and_reload_without_a_second_model_call(
+    h: Harness, make_google_token: MakeToken
+) -> None:
+    """G-02 (RM-387): the evidence is part of the stored report; finance numbers do not depend on it."""
+    c, _ = await sign_in(h.app, make_google_token)
+    obs = EquipmentObservation(
+        item="Piekarnik",
+        media_ordinal=1,
+        confidence=Decimal("0.8"),
+        provenance=EvidenceSource.PHOTO,
+        sale_status=SaleStatus.VISIBLE_ONLY,
+    )
+    results: list[dict[str, Any]] = []
+    for extra in ({}, {"floor_plan_text": "Salon 20 m2", "notes": "Nowa kuchnia", "equipment": (obs,)}):
+        ref = new_ref()
+        h.source.ads[ref] = sale_ad(floorPlans=[PLAN])
+        vision = FakeVision(answer(**extra))
+        got, _ = await run(h, c, ref, vision)
+        results.append(got)
+    plain, rich = results
+    record = rich["result"]["vision"]
+    assert record["floor_plan_text"] == "Salon 20 m2"
+    assert record["notes"] == "Nowa kuchnia"
+    assert record["equipment"] == [
+        {
+            "item": "Piekarnik",
+            "media_ordinal": 1,
+            "confidence": "0.8",
+            "provenance": "photo",
+            "sale_status": "visible_only",
+        }
+    ]
+    assert plain["result"]["vision"]["equipment"] == []
+    assert plain["result"]["cash_flow"]["returns"] == rich["result"]["cash_flow"]["returns"]  # invariant 4
+    again = (await c.get(f"/api/audits/{rich['audit_id']}")).json()  # a reload reads storage only
+    assert again["result"]["vision"] == record

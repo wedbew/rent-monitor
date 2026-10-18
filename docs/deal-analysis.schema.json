@@ -176,6 +176,61 @@
       "title": "Confidence",
       "type": "string"
     },
+    "EquipmentObservation": {
+      "description": "One piece of equipment or fit-out the model saw, linked to the image it came from (G-02).\n\nFactual evidence only: it never feeds a number (invariant 4). `media_ordinal` is the position in the\nselected media list (photos in listing order, then floor plans), the `ordinal` of the media manifest.\nLEGAL[images]: derived from listing photos and plans sent to a third party (RM-387)\nLEGAL[republication]: shown back to users, so bounded and stripped of control characters (RM-387)\nGDPR[processor]: produced by the vision model behind OpenRouter (RM-387)",
+      "properties": {
+        "confidence": {
+          "title": "Confidence",
+          "type": "string"
+        },
+        "item": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Item",
+          "type": "string"
+        },
+        "media_ordinal": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 27,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Media Ordinal"
+        },
+        "provenance": {
+          "$ref": "#/$defs/EvidenceSource",
+          "default": "unattributed"
+        },
+        "sale_status": {
+          "$ref": "#/$defs/SaleStatus",
+          "default": "unknown"
+        }
+      },
+      "required": [
+        "confidence",
+        "item",
+        "media_ordinal",
+        "provenance",
+        "sale_status"
+      ],
+      "title": "EquipmentObservation",
+      "type": "object"
+    },
+    "EvidenceSource": {
+      "enum": [
+        "photo",
+        "floor_plan",
+        "unattributed"
+      ],
+      "title": "EvidenceSource",
+      "type": "string"
+    },
     "ExitBreakdown": {
       "additionalProperties": false,
       "properties": {
@@ -908,6 +963,16 @@
       "title": "Returns",
       "type": "object"
     },
+    "SaleStatus": {
+      "description": "Whether an item seen in the listing media is part of the sale. Unknown is the honest default.",
+      "enum": [
+        "included",
+        "visible_only",
+        "unknown"
+      ],
+      "title": "SaleStatus",
+      "type": "string"
+    },
     "VisionRecord": {
       "additionalProperties": false,
       "description": "Everything needed to reproduce an audit without the model: provenance plus proposed and applied\nadjustments.",
@@ -925,10 +990,45 @@
         "condition": {
           "$ref": "#/$defs/Condition"
         },
+        "equipment": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EquipmentObservation"
+          },
+          "maxItems": 40,
+          "title": "Equipment",
+          "type": "array"
+        },
+        "floor_plan_text": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Floor Plan Text"
+        },
         "model": {
           "maxLength": 120,
           "title": "Model",
           "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
         },
         "photos_excluded": {
           "title": "Photos Excluded",

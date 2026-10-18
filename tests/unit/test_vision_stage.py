@@ -14,11 +14,19 @@ from uuid import uuid4
 import httpx
 import pytest
 from deal_analyzer import Listing
-from deal_analyzer.vision import Condition, PhotoKind
+from deal_analyzer.vision import (
+    MAX_EQUIPMENT,
+    MAX_IMAGES,
+    Condition,
+    PhotoKind,
+    apply_vision,
+    parse_vision_output,
+)
 from PIL import Image
 from rm_core.deadline import Deadline
 from rm_worker.clients.openrouter import VisionDisabled, VisionRequest, VisionResult, VisionUnavailable
-from rm_worker.vision_stage import PROMPT_VERSION, OpenRouterVision
+from rm_worker.images import MAX_FLOOR_PLANS, MAX_PHOTOS
+from rm_worker.vision_stage import PROMPT, PROMPT_VERSION, OpenRouterVision
 
 HOSTS = ("olxcdn.com",)
 CDN = "https://ireland.apollo.olxcdn.com/v1/files/"
@@ -229,3 +237,79 @@ async def test_a_hostile_model_id_is_reduced_to_id_characters() -> None:
     assert got is not None
     assert got.model == "evilmodelscript/x"
     assert "\n" not in got.model
+
+
+# ----------------------------------------------------------------------------- G-02 (RM-387)
+def test_the_image_cap_is_the_media_limit_not_25() -> None:
+    """25 photos + 2 floor plans = 27 assessments; a full listing must not fail validation."""
+
+    assert MAX_IMAGES == MAX_PHOTOS + MAX_FLOOR_PLANS == 27
+    full = {"condition": "good", "photos": [{"kind": "interior"}] * MAX_IMAGES}
+    assert len(parse_vision_output(full).photos) == 27
+    with pytest.raises(Exception, match="expected shape"):
+        parse_vision_output({"photos": [{"kind": "interior"}] * (MAX_IMAGES + 1)})
+
+
+async def test_a_full_listing_of_25_photos_and_2_plans_is_assessed() -> None:
+    names = [f"p{i}" for i in range(25)] + ["plan1", "plan2"]
+    answer = {**ANSWER, "photos": [{"kind": "interior"}] * 27, "equipment": []}
+    host, model = FakeHost(files(*names)), FakeModel(content=json.dumps(answer))
+    got = await assess(
+        stage(host, model), listing(tuple(CDN + n for n in names[:25]), (CDN + "plan1", CDN + "plan2"))
+    )
+    assert got is not None
+    assert len(got.output.photos) == 27
+
+
+async def test_equipment_is_linked_to_the_selected_media_ordinal_and_source() -> None:
+    answer = {
+        **ANSWER,
+        "equipment": [
+            {"item": "  Piekarnik\x07 ", "image_index": 1, "confidence": 0.7, "sale_status": "visible_only"},
+            {"item": "Szafa", "image_index": 2, "confidence": 0.9, "sale_status": "included"},
+            {"item": "Lodowka", "image_index": 9, "confidence": 0.5},  # names no sent image
+            {"item": "Zly", "image_index": 0, "confidence": 7},  # confidence out of range: dropped
+            "not an object",
+        ],
+    }
+    host = FakeHost(files("a", "b", "plan"))
+    got = await assess(
+        stage(host, FakeModel(content=json.dumps(answer))), listing((CDN + "a", CDN + "b"), (CDN + "plan",))
+    )
+    assert got is not None
+    eq = got.output.equipment
+    assert [(e.item, e.media_ordinal, e.provenance.value, e.sale_status.value) for e in eq] == [
+        ("Piekarnik", 1, "photo", "visible_only"),
+        ("Szafa", 2, "floor_plan", "included"),
+        ("Lodowka", None, "unattributed", "unknown"),
+    ]
+    assert eq[0].confidence == Decimal("0.7")
+
+
+async def test_equipment_ordinal_survives_a_skipped_download() -> None:
+    answer = {**ANSWER, "equipment": [{"item": "Piec", "image_index": 1, "confidence": 0.6}]}
+    host = FakeHost(files("a", "missing_gap", "c"))  # photo 2 is skipped by the host
+    del host.files[CDN + "missing_gap"]
+    got = await assess(
+        stage(host, FakeModel(content=json.dumps(answer))),
+        listing((CDN + "a", CDN + "missing_gap", CDN + "c")),
+    )
+    assert got is not None
+    assert got.output.equipment[0].media_ordinal == 2  # sent index 1 is the third selected photo
+
+
+def test_equipment_is_bounded_and_cannot_move_a_number() -> None:
+
+    many = [{"item": f"x{i}", "confidence": 0.5} for i in range(MAX_EQUIPMENT + 10)]
+    out = parse_vision_output({"equipment": many, "capex_adjustment": 0.4})
+    assert len(out.equipment) == MAX_EQUIPMENT
+    rec = apply_vision(out, model="m", prompt_version="v", capex_base=Decimal(1000), rent_base=None)
+    assert rec.capex is not None
+    assert rec.capex.applied == Decimal("0.15")  # the clamp is untouched by evidence
+    assert len(rec.equipment) == MAX_EQUIPMENT
+
+
+def test_the_prompt_never_asks_for_a_number_from_equipment() -> None:
+
+    assert "image_index" in PROMPT
+    assert PROMPT_VERSION == "vision-v2"

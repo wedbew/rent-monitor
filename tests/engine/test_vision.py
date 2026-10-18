@@ -72,7 +72,7 @@ def test_markdown_fences_unknown_keys_and_missing_fields_are_tolerated() -> None
         '{"rent_adjustment": -11}',
         '{"floor_plan_text": ' + json.dumps("x" * 4_001) + "}",
         '{"notes": ' + json.dumps("x" * 1_001) + "}",
-        '{"photos": ' + json.dumps([{"kind": "interior"}] * 26) + "}",
+        '{"photos": ' + json.dumps([{"kind": "interior"}] * 28) + "}",
         "x" * 100_001,
     ],
 )
@@ -185,4 +185,7 @@ def test_instructions_hidden_in_text_fields_change_no_number() -> None:
     )
     a = apply_vision(plain, model="m", prompt_version="v", capex_base=D(10_000), rent_base=D(2_000))
     b = apply_vision(injected, model="m", prompt_version="v", capex_base=D(10_000), rent_base=D(2_000))
-    assert a == b
+    # RM-387: the text is now kept in the record as evidence, so the records differ in `notes` only;
+    # every number and the condition must be identical.
+    assert (a.capex, a.rent, a.condition, a.photos_total) == (b.capex, b.rent, b.condition, b.photos_total)
+    assert a.model_copy(update={"notes": None}) == b.model_copy(update={"notes": None})

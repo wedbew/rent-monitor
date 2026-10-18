@@ -16,7 +16,7 @@ from deal_analyzer.vision import Condition, PhotoAssessment, PhotoKind, VisionOu
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from gen_report_schema import SCHEMA_PATH, breaking_changes, build_schema, render  # noqa: E402
+from gen_report_schema import ADDITIVE_FIELDS, SCHEMA_PATH, breaking_changes, build_schema, render  # noqa: E402
 
 BASELINES = ROOT / "tests" / "fixtures"
 AD: dict[str, Any] = {
@@ -192,7 +192,8 @@ def test_every_serialized_field_is_required() -> None:
     assert {"warnings", "engine_version", "assumptions_version"} <= set(schema["required"])
     for name, node in schema["$defs"].items():
         if "properties" in node:
-            assert sorted(node["properties"]) == node["required"], name
+            additive = ADDITIVE_FIELDS.get(name, frozenset())  # the only documented exception
+            assert sorted(set(node["properties"]) - additive) == node["required"], name
 
 
 def test_additive_changes_are_not_breaking() -> None:
@@ -204,3 +205,23 @@ def test_additive_changes_are_not_breaking() -> None:
         }
 
     assert breaking_changes(build_schema(), _mutated(add)) == []
+
+
+def test_g02_fields_are_additive_within_version_1() -> None:
+    """RM-387: OCR text and equipment join `VisionRecord` without a version bump: they are optional in the
+    schema, so a report stored before them still validates, and the v1 baseline reports nothing breaking."""
+    schema = build_schema()
+    required = set(schema["$defs"]["VisionRecord"]["required"])
+    assert {"floor_plan_text", "notes", "equipment"}.isdisjoint(required)
+    assert {"floor_plan_text", "notes", "equipment"} <= set(schema["$defs"]["VisionRecord"]["properties"])
+    assert SCHEMA_VERSION == 1
+    assert breaking_changes(baseline(1), schema) == []
+    old_vision = {
+        "model": "m", "prompt_version": "vision-v1", "condition": "good", "photos_total": 1,
+        "photos_excluded": 0, "capex": None, "rent": None,
+    }  # fmt: skip
+    validator = jsonschema_rs.validator_for({"$defs": schema["$defs"], "$ref": "#/$defs/VisionRecord"})
+    assert validator.is_valid(old_vision)
+    assert not validator.is_valid(
+        {**old_vision, "equipment": [{"item": "x"}]}
+    )  # observation needs its fields

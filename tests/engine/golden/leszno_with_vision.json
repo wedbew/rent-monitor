@@ -264,7 +264,10 @@
       "value": "30555.0000"
     },
     "condition": "refresh",
+    "equipment": [],
+    "floor_plan_text": null,
     "model": "vendor/vision-1",
+    "notes": null,
     "photos_excluded": 1,
     "photos_total": 3,
     "prompt_version": "golden-1",
