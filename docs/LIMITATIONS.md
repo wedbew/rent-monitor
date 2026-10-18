@@ -401,6 +401,33 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none; no UI should present a gallery yet
 - **Target:** G-01 follow-up slices; owner decision on binary storage (Postgres `bytea` for the beta or a private object store) and retention values
 
+### L-053 — BDL response shapes are unverified against the live API
+- **Status:** active
+- **Discovered:** 2026-10-18
+- **Affects:** `services/rm_worker/clients/bdl.py` (`variableId`, `results[].values[].attrId`, `measureUnitName`, `X-ClientId` header), LCTX-01b
+- **Evidence:** inferred (public API description; no BDL call made)
+- **Description:** The client and validator were built and tested offline against hand-built fixtures only.
+- **Workaround:** none needed offline; no metric is selected or activated
+- **Target:** one owner-authorised live BDL read (B-023), then LCTX-01b part 2
+
+### L-054 — BDL request quota limits are not encoded and the gate is per process
+- **Status:** active
+- **Discovered:** 2026-10-18
+- **Affects:** `SlidingWindowQuota`, BDL ingestion (LCTX-01b)
+- **Evidence:** confirmed (code); the real limits for the key tier are unknown
+- **Description:** Windows are caller-supplied; none are baked in. The gate is not shared across workers, and `BDL_API_KEY` has no field in `rm_core.settings`.
+- **Workaround:** a single worker with conservative caller-supplied windows
+- **Target:** LCTX-01b part 2 (Postgres-shared gate, setting, migration 0016)
+
+### L-055 — Meaning of BDL `attrId` values is an unreviewed per-binding input
+- **Status:** active
+- **Discovered:** 2026-10-18
+- **Affects:** `BdlMetricBinding`, which values count as valid, suppressed or invalid
+- **Evidence:** inferred
+- **Description:** The validator maps attribute ids per binding; no real binding is approved.
+- **Workaround:** none; no binding ships
+- **Target:** B-023 reviewed metric list
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built
