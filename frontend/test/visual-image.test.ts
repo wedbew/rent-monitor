@@ -57,7 +57,9 @@ describe("the visual lane's rendering stack", () => {
 
   it("the Node tarball is pinned by checksum for the .node-version release, with no npm wrapper", () => {
     const pinned = readFileSync(resolve(root, "frontend", "e2e", "node-linux-x64.sha256"), "utf8").trim();
-    expect(pinned).toMatch(new RegExp(`^[0-9a-f]{64}  node-v${nodeVersion().replace(/\./g, "\\.")}-linux-x64\\.tar\\.gz$`));
+    expect(pinned).toMatch(
+      new RegExp(`^[0-9a-f]{64}  node-v${nodeVersion().replace(/\./g, "\\.")}-linux-x64\\.tar\\.gz$`),
+    );
     const script = readFileSync(resolve(root, "frontend", "e2e", "visual-prepare.sh"), "utf8");
     expect(script).toContain("sha256sum -c");
     expect(script).not.toMatch(/npm install[^\n]*node@/);
