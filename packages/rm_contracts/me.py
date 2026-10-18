@@ -41,15 +41,24 @@ class UpstreamOut(BaseModel):
 
 
 class MeDetailOut(MeOut):
+    has_password: bool = Field(
+        description="Whether this account has an e-mail/password credential (a credential row exists). "
+        "False for an account that only signs in with Google or a magic link; the SPA hides the "
+        "change-password form for it."
+    )
     plan: PlanOut
     credit_balance: int
     flags: dict[str, bool]
     upstream: UpstreamOut
 
 
+# Free text that reaches Postgres: Postgres refuses NUL (a 500), so the contract refuses it (a 422).
+NO_NUL = r"^[^\x00]*$"
+
+
 class SavedPut(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    note: str | None = Field(default=None, max_length=2000)
+    note: str | None = Field(default=None, max_length=2000, pattern=NO_NUL)
 
 
 class SavedOut(BaseModel):
@@ -100,9 +109,9 @@ class CreditAdjust(BaseModel):
     """`idempotency_key` is chosen by the caller; repeating it never adjusts twice."""
 
     model_config = ConfigDict(extra="forbid")
-    user_id: str = Field(min_length=1, max_length=64)
+    user_id: str = Field(min_length=1, max_length=64, pattern=NO_NUL)
     delta: int = Field(ge=-1000, le=1000)
-    note: str = Field(min_length=3, max_length=200)
+    note: str = Field(min_length=3, max_length=200, pattern=NO_NUL)
     idempotency_key: UUID
 
 
@@ -115,7 +124,7 @@ class BillingHoldClear(BaseModel):
     """Staff resolved a billing review; the note is the record of why (logged with the admin's id)."""
 
     model_config = ConfigDict(extra="forbid")
-    note: str = Field(min_length=10, max_length=300)
+    note: str = Field(min_length=10, max_length=300, pattern=NO_NUL)
 
 
 class BillingHoldOut(BaseModel):

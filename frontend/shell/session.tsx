@@ -138,6 +138,14 @@ export function refreshBalance(client: QueryClient): void {
   void client.invalidateQueries({ queryKey: SESSION_KEY });
 }
 
+/**
+ * Ask the server who this tab is, after a request that may have ended the session was lost. A 401 answer takes the one
+ * sign-out door (`endSession`) by itself; a live session simply stays.
+ */
+export function recheckSession(client: QueryClient): void {
+  void client.invalidateQueries({ queryKey: SESSION_KEY });
+}
+
 export function SessionProvider({ children }: { readonly children: ReactNode }) {
   const client = useQueryClient();
   const query = useQuery({
