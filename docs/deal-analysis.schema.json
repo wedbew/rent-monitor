@@ -192,7 +192,7 @@
         "media_ordinal": {
           "anyOf": [
             {
-              "exclusiveMaximum": 27,
+              "maximum": 26,
               "minimum": 0,
               "type": "integer"
             },

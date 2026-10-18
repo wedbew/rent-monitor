@@ -84,7 +84,7 @@ class EquipmentObservation(BaseModel):
     item: str = Field(min_length=1, max_length=80)
     # the model answers with `image_index` (0-based, order sent); the worker rewrites it to the ordinal
     media_ordinal: int | None = Field(
-        default=None, ge=0, lt=MAX_IMAGES, validation_alias=AliasChoices("image_index", "media_ordinal")
+        default=None, ge=0, le=MAX_IMAGES - 1, validation_alias=AliasChoices("image_index", "media_ordinal")
     )
     confidence: Decimal = Field(ge=ZERO, le=ONE)
     provenance: EvidenceSource = EvidenceSource.UNATTRIBUTED
