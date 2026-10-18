@@ -28,11 +28,12 @@ from rm_api.billing_erasure import BillingEraser
 from rm_api.billing_webhook import router as billing_webhook_router
 from rm_api.health import router as health_router
 from rm_api.me import router as me_router
+from rm_api.media import router as media_router
 from rm_api.middleware import RequestContextMiddleware
 from rm_api.notify import NotifyListener
 from rm_api.origin import OriginCheckMiddleware
 from rm_api.problem_docs import install_problem_docs
-from rm_api.problems import install_problem_handlers
+from rm_api.problems import build_route_table, install_problem_handlers
 from rm_api.queue import AuditQueue, EmailQueue, ProcrastinateEmailQueue
 from rm_api.saved import router as saved_router
 from rm_api.sse import ProgressHub
@@ -164,12 +165,14 @@ ROUTERS = (
     saved_router,
     admin_router,
     audits_router,
+    media_router,
 )
 
 
 def _include_routers(app: FastAPI) -> None:
     for router in ROUTERS:
         app.include_router(router)
+    app.state.route_table = build_route_table(ROUTERS)  # for the `Allow` header of a 405 (rm_api.problems)
 
 
 class _NoQueue:

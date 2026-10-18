@@ -195,6 +195,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/audits/{audit_id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Media Manifest */
+        get: operations["read_media_manifest_api_audits__audit_id__media_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/email/start": {
         parameters: {
             query?: never;
@@ -636,6 +653,12 @@ export interface components {
             /** Confirm Email */
             confirm_email: string;
         };
+        /**
+         * AnalysisState
+         * @description Vision or OCR outcome, kept apart from storage: a stored photo stays viewable when analysis fails.
+         * @enum {string}
+         */
+        AnalysisState: "not_requested" | "classified" | "failed";
         /** AuditAccepted */
         AuditAccepted: {
             /**
@@ -1093,6 +1116,11 @@ export interface components {
             flags: {
                 [key: string]: boolean;
             };
+            /**
+             * Has Password
+             * @description Whether this account has an e-mail/password credential (a credential row exists). False for an account that only signs in with Google or a magic link; the SPA hides the change-password form for it.
+             */
+            has_password: boolean;
             /** Id */
             id: string;
             /** Name */
@@ -1120,6 +1148,78 @@ export interface components {
             /** Role */
             role: string;
         };
+        /** MediaItem */
+        MediaItem: {
+            /** @default not_requested */
+            analysis_state: components["schemas"]["AnalysisState"];
+            /**
+             * Content Digest
+             * @description SHA-256 of the prepared bytes
+             */
+            content_digest?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Failure Code */
+            failure_code?: string | null;
+            /** Height */
+            height?: number | null;
+            kind: components["schemas"]["MediaKind"];
+            /**
+             * Media Id
+             * Format: uuid
+             * @description Opaque and stable; vision output cites it
+             */
+            media_id?: string;
+            mime?: components["schemas"]["MediaMime"] | null;
+            /** Ordinal */
+            ordinal: number;
+            source_type: components["schemas"]["MediaSource"];
+            /** @default pending */
+            state: components["schemas"]["MediaState"];
+            /** Width */
+            width?: number | null;
+        };
+        /**
+         * MediaKind
+         * @enum {string}
+         */
+        MediaKind: "photo" | "plan";
+        /** MediaManifest */
+        MediaManifest: {
+            /**
+             * Audit Id
+             * Format: uuid
+             */
+            audit_id: string;
+            /**
+             * Created At
+             * @description None while the manifest is empty
+             */
+            created_at?: string | null;
+            /** Items */
+            items: components["schemas"]["MediaItem"][];
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
+        };
+        /**
+         * MediaMime
+         * @enum {string}
+         */
+        MediaMime: "image/jpeg" | "image/png" | "image/webp";
+        /**
+         * MediaSource
+         * @enum {string}
+         */
+        MediaSource: "url" | "manual" | "upload";
+        /**
+         * MediaState
+         * @description Storage state of the prepared image. `expired` is derived on read from `expires_at`.
+         * @enum {string}
+         */
+        MediaState: "pending" | "stored" | "rejected" | "failed" | "expired";
         /** OverrideOut */
         OverrideOut: {
             /** Created By */
@@ -1482,6 +1582,15 @@ export interface operations {
                     "application/json": components["schemas"]["RefundOut"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: UNAUTHENTICATED */
             401: {
                 headers: {
@@ -1567,6 +1676,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreditAdjustOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: UNAUTHENTICATED */
@@ -1714,6 +1832,15 @@ export interface operations {
                     "application/json": components["schemas"]["FlagOut"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: UNAUTHENTICATED */
             401: {
                 headers: {
@@ -1793,6 +1920,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OverrideOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: UNAUTHENTICATED */
@@ -2010,6 +2146,15 @@ export interface operations {
                     "application/json": components["schemas"]["BillingHoldOut"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: UNAUTHENTICATED */
             401: {
                 headers: {
@@ -2156,6 +2301,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditAccepted"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: UNAUTHENTICATED */
@@ -2359,6 +2513,73 @@ export interface operations {
             };
         };
     };
+    read_media_manifest_api_audits__audit_id__media_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                audit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaManifest"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     email_start_api_auth_email_start_post: {
         parameters: {
             query?: never;
@@ -2378,6 +2599,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
             };
             /** @description Problem: ORIGIN_NOT_ALLOWED */
             403: {
@@ -2446,6 +2676,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: MAGIC_LINK_INVALID */
@@ -2517,6 +2756,15 @@ export interface operations {
                     "application/json": components["schemas"]["MeOut"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: EMAIL_CONFIRMATION_REQUIRED, GOOGLE_EMAIL_UNVERIFIED, INVALID_GOOGLE_TOKEN */
             401: {
                 headers: {
@@ -2584,6 +2832,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: INVALID_CREDENTIALS */
@@ -2661,6 +2918,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
             };
             /** @description Problem: INVALID_CREDENTIALS, UNAUTHENTICATED */
             401: {
@@ -2740,6 +3006,15 @@ export interface operations {
                     "application/json": components["schemas"]["Accepted"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: ORIGIN_NOT_ALLOWED */
             403: {
                 headers: {
@@ -2806,6 +3081,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
             };
             /** @description Problem: AUTH_TOKEN_INVALID */
             401: {
@@ -2885,6 +3169,15 @@ export interface operations {
                     "application/json": components["schemas"]["Accepted"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: ORIGIN_NOT_ALLOWED */
             403: {
                 headers: {
@@ -2954,6 +3247,15 @@ export interface operations {
                     "application/json": components["schemas"]["Accepted"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: ORIGIN_NOT_ALLOWED */
             403: {
                 headers: {
@@ -3021,6 +3323,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: AUTH_TOKEN_INVALID */
@@ -3267,6 +3578,15 @@ export interface operations {
                     "application/json": components["schemas"]["PurchaseOut"];
                 };
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: UNAUTHENTICATED */
             401: {
                 headers: {
@@ -3392,6 +3712,8 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                /** @description The Idempotency-Key of a checkout: only the caller's purchase created with it (an empty list when it never arrived). Lets a client settle a lost answer without guessing. */
+                request_key?: string | null;
             };
             header?: never;
             path?: never;
@@ -3674,6 +3996,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: UNAUTHENTICATED */
             401: {
                 headers: {
@@ -3857,6 +4188,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SavedOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Problem: UNAUTHENTICATED */

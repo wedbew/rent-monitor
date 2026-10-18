@@ -1,0 +1,8 @@
+---
+description: Parallel agents use isolated writers, explicit ownership and same-PR shared-document integration
+alwaysApply: true
+---
+
+Canonical rule lives in `.agent/rules/parallel-work.md`. Follow it:
+
+@.agent/rules/parallel-work.md

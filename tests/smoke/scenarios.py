@@ -765,6 +765,34 @@ async def events_malformed(w: World) -> Exchange:
     return await w.send(await w.user(label="events"), "GET", "/api/audits/not-a-uuid/events")
 
 
+@scenario(
+    "GET /api/audits/{audit_id}/media", "empty_manifest", 200, "nothing is stored until the worker fills it"
+)
+async def media_empty(w: World) -> Exchange:
+    who = await w.user(label="media")
+    audit_id = await w.audit_to_end(who, w.serve_sale(SUCCESS[0]))
+    return await w.send(who, "GET", f"/api/audits/{audit_id}/media")
+
+
+@scenario(
+    "GET /api/audits/{audit_id}/media", "foreign_audit", 404, "another user's audit is a 404, never a 403"
+)
+async def media_foreign(w: World) -> Exchange:
+    owner, other = await w.user(label="owner"), await w.user(label="other")
+    audit_id = await w.audit_to_end(owner, w.serve_sale(SUCCESS[0]))
+    return await w.send(other, "GET", f"/api/audits/{audit_id}/media")
+
+
+@scenario("GET /api/audits/{audit_id}/media", "unknown_audit", 404)
+async def media_unknown(w: World) -> Exchange:
+    return await w.send(await w.user(label="media"), "GET", f"/api/audits/{uuid4()}/media")
+
+
+@scenario("GET /api/audits/{audit_id}/media", "malformed_id", 422)
+async def media_malformed(w: World) -> Exchange:
+    return await w.send(await w.user(label="media"), "GET", "/api/audits/not-a-uuid/media")
+
+
 # ============================================================================================== billing
 @scenario("GET /api/billing/packs", "three_packs", 200)
 async def packs(w: World) -> Exchange:
@@ -884,6 +912,15 @@ async def purchases_mixed(w: World) -> Exchange:
     assert requested.status == 202, requested.body
     await w.approve_refund(refunded["transaction_id"], requested.body["adjustment_id"])
     return await w.send(who, "GET", "/api/billing/purchases")
+
+
+@scenario("GET /api/billing/purchases", "by_request_key", 200)
+async def purchases_by_key(w: World) -> Exchange:
+    who = await w.user(label="buyer")
+    key = uuid4()
+    await w.buy(who, "reports_5", key)
+    await w.buy(who, "reports_1")  # another order, not returned
+    return await w.send(who, "GET", "/api/billing/purchases", params={"request_key": str(key)})
 
 
 @scenario("GET /api/billing/purchases", "validation_error", 422)
@@ -1267,6 +1304,22 @@ def wrong_origin(key: str, path: str) -> Run:
     return run
 
 
+def undecodable_body(key: str, path: str) -> Run:
+    """A body that is not valid UTF-8 JSON is refused before validation, as a plain HTTP 400 problem."""
+    method = key.split(" ", 1)[0]
+
+    async def run(w: World) -> Exchange:
+        return await w.send(
+            w.anonymous(),
+            method,
+            path,
+            content=b"\xff\xfe{",
+            headers={"content-type": "application/json"},
+        )
+
+    return run
+
+
 def not_an_admin(key: str, path: str) -> Run:
     """A signed-in user without the admin role: 403 `ADMIN_ONLY`, never a hint that the resource exists."""
     method = key.split(" ", 1)[0]
@@ -1315,6 +1368,8 @@ def all_scenarios() -> list[Scenario]:
             generated.append(Scenario(key, "no_session", 401, unauthenticated(key, path)))
         if method in {"POST", "PUT", "PATCH", "DELETE"}:
             generated.append(Scenario(key, "wrong_origin", 403, wrong_origin(key, path)))
+        if "400" in op.responses:  # documented for every operation that takes a body
+            generated.append(Scenario(key, "undecodable_body", 400, undecodable_body(key, path)))
         if op.path.startswith("/api/admin/"):
             generated.append(Scenario(key, "not_an_admin", 403, not_an_admin(key, path)))
     return [*SCENARIOS, *generated]

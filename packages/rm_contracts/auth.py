@@ -5,8 +5,9 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
-# Small and strict on purpose: one `@`, no whitespace or quoting, a dotted domain. Delivery is the real check.
-_LOCAL = r"[^@\s<>\"',;()\[\]\\]{1,64}"
+# Small and strict on purpose: one `@`, no whitespace, control character (NUL would be refused by Postgres) or
+# quoting, a dotted domain. Delivery is the real check.
+_LOCAL = r"[^@\s\x00-\x1f\x7f<>\"',;()\[\]\\]{1,64}"
 _LABEL = r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
 EMAIL_PATTERN = rf"^{_LOCAL}@{_LABEL}(?:\.{_LABEL})+$"
 Email = Annotated[str, StringConstraints(strip_whitespace=True, max_length=254, pattern=EMAIL_PATTERN)]

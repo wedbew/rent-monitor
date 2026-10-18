@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "NOT_FOUND",
+    "instance": "/api/audits/00000000-0000-4000-8000-000000000304/media",
+    "request_id": "req_fixture",
+    "status": 404,
+    "title": "Audit not found",
+    "type": "urn:rentmonitor:problem:NOT_FOUND"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/audits/{audit_id}/media",
+    "method": "GET",
+    "operation_id": "read_media_manifest_api_audits__audit_id__media_get",
+    "path": "/api/audits/{audit_id}/media"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/audits/00000000-0000-4000-8000-000000000304/media"
+  },
+  "scenario": "unknown_audit",
+  "status": 404
+}

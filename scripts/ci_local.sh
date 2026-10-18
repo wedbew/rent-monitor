@@ -83,7 +83,13 @@ st_smoke() { ./scripts/smoke_docker.sh; }
 # The SPA's own gate: frozen install, then `pnpm check` (api drift, types, lint, css, format, unit tests, build).
 st_frontend() { pnpm --dir frontend install --frozen-lockfile && pnpm --dir frontend check; }
 # The browser lanes: Chromium against the built SPA with the mocked API, the interaction-coverage gate, axe.
-st_frontend_e2e() { pnpm --dir frontend test:e2e; }
+# A free port of its own: Playwright reuses whatever already answers on its default port (4173, also used by
+# scripts/dev_stack.sh and by a preview left behind), and then a run would test a build made without the test tokens.
+st_frontend_e2e() {
+  local port="${E2E_PORT:-}"
+  [ -n "$port" ] || port=$(python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')
+  E2E_PORT="$port" pnpm --dir frontend test:e2e
+}
 e2e_skip_reason() { # empty when Playwright's headless Chromium is installed
   local path; path=$(cd frontend && pnpm exec playwright install --dry-run chromium 2>/dev/null | awk '/Headless Shell/{f=1} f&&/Install location/{print $3; exit}')
   [ -n "$path" ] && [ -d "$path" ] || echo "Chromium for Playwright is not installed (cd frontend && pnpm exec playwright install chromium)"
