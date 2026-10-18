@@ -938,6 +938,69 @@ class MarketOffer(Base):
     run_id: Mapped[str] = mapped_column(String(64))
 
 
+class MarketDailySummary(Base):
+    """Published daily summary of original *asking* rents per location (RM-395, OTO-04). Immutable (trigger).
+
+    Two series that never mix: `additions` (offers whose source date is the summary day) and `cohort` (the
+    rolling 90-elapsed-day eligible cohort at `as_of`). Asking rents only: not achieved rent, not active
+    stock, never a deed price (invariant 2, `price_basis` CHECKed to 'asking').
+
+    LEGAL[third-party-data]: aggregates of Otodom asking rents; terms unreviewed (B-012) (RM-395).
+    LEGAL[republication]: shown to tenants only as aggregates, never as listing content (RM-395).
+    GDPR[personal-data]: counts and quantiles only, no personal data. Retention: daily history kept
+    (bounded physical retention undecided, RM-395-L03); erasure: not per person.
+    """
+
+    __tablename__ = "market_daily_summary"
+    __table_args__ = (
+        CheckConstraint("series IN ('additions','cohort')", name="series_vocab"),
+        CheckConstraint("source = 'otodom'", name="source_vocab"),
+        CheckConstraint("price_basis = 'asking'", name="asking_only"),
+        CheckConstraint("archive_days = 90", name="archive_policy"),
+        CheckConstraint("calc_version >= 1", name="calc_version_positive"),
+        CheckConstraint("cohort_key ~ '^[a-z0-9_]{1,16}$'", name="cohort_key_shape"),
+        CheckConstraint(
+            "observed_count >= 0 AND priced_count >= 0 AND priced_count <= observed_count"
+            " AND (first_observed_count IS NULL OR first_observed_count >= 0)",
+            name="counts_consistent",
+        ),
+        CheckConstraint(
+            "series = 'additions' OR first_observed_count IS NULL", name="first_observed_additions"
+        ),
+        CheckConstraint("sufficient = (priced_count >= 10)", name="sufficient_matches_sample"),
+        CheckConstraint(
+            "(priced_count = 0) = (median_ppm2 IS NULL AND median_rent_pln IS NULL"
+            " AND p25_ppm2 IS NULL AND p75_ppm2 IS NULL)",
+            name="stats_iff_priced",
+        ),
+        CheckConstraint("input_digest ~ '^[0-9a-f]{64}$'", name="digest_hex"),
+    )
+
+    location_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    dataset: Mapped[str] = mapped_column(String(32), primary_key=True, default="otodom_rental")
+    summary_date: Mapped[date] = mapped_column(Date, primary_key=True)  # UTC day
+    series: Mapped[str] = mapped_column(String(10), primary_key=True)
+    cohort_key: Mapped[str] = mapped_column(String(16), primary_key=True)
+    calc_version: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
+    source: Mapped[str] = mapped_column(String(16), default="otodom", server_default="otodom")
+    price_basis: Mapped[str] = mapped_column(String(8), default="asking", server_default="asking")
+    archive_days: Mapped[int] = mapped_column(Integer, default=90, server_default=text("90"))
+    as_of: Mapped[datetime]
+    observed_count: Mapped[int] = mapped_column(Integer)
+    priced_count: Mapped[int] = mapped_column(Integer)
+    first_observed_count: Mapped[int | None] = mapped_column(Integer)
+    median_rent_pln: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    median_ppm2: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    p25_ppm2: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    p75_ppm2: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    sufficient: Mapped[bool] = mapped_column(Boolean)
+    input_digest: Mapped[str] = mapped_column(String(64))
+    backfilled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    refresh_at: Mapped[datetime | None]  # checkpoint's last successful refresh when this was published
+    gap_since: Mapped[datetime | None]  # checkpoint's unresolved gap when this was published
+    published_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
 # ---------- BDL location context (RM-391, LCTX-01b part 2; see rm_contracts.location_context) ----------
 class LocationReference(Base):
     """A versioned, immutable territorial reference (hierarchy plus TERYT crosswalk) header.
