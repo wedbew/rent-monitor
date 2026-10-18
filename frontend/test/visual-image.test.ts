@@ -17,10 +17,14 @@ import {
  */
 const root = resolve(__dirname, "..", "..");
 const workflow = readFileSync(resolve(root, ".github", "workflows", "ci.yml"), "utf8");
-const visualJob = workflow.slice(
-  workflow.indexOf("\n  frontend-visual:"),
-  workflow.indexOf("\n  frontend-journey:"),
-);
+/** The `frontend-visual` job's text, up to the next job key: independent of where the job sits in the file. */
+const visualJob = (() => {
+  const start = workflow.indexOf("\n  frontend-visual:");
+  if (start < 0) throw new Error("ci.yml has no frontend-visual job");
+  const rest = workflow.slice(start + 1);
+  const next = rest.slice(1).search(/\n {2}[A-Za-z0-9_-]+:\s*\n/);
+  return next < 0 ? rest : rest.slice(0, next + 1);
+})();
 const runner = readFileSync(resolve(root, "frontend", "visual.mjs"), "utf8");
 
 describe("the visual lane's rendering stack", () => {
@@ -43,6 +47,20 @@ describe("the visual lane's rendering stack", () => {
     const script = readFileSync(resolve(root, "frontend", "e2e", "visual-prepare.sh"), "utf8");
     expect(script).toContain(".node-version");
     expect(script).not.toMatch(/engine[_-]strict/i);
+  });
+
+  it("the job is cut out of the workflow on its own, with its image and steps", () => {
+    expect(visualJob.startsWith("  frontend-visual:")).toBe(true);
+    expect(visualJob).toContain("mcr.microsoft.com/playwright:");
+    expect(visualJob).not.toMatch(/\n {2}frontend-journey:/);
+  });
+
+  it("the Node tarball is pinned by checksum for the .node-version release, with no npm wrapper", () => {
+    const pinned = readFileSync(resolve(root, "frontend", "e2e", "node-linux-x64.sha256"), "utf8").trim();
+    expect(pinned).toMatch(new RegExp(`^[0-9a-f]{64}  node-v${nodeVersion().replace(/\./g, "\\.")}-linux-x64\\.tar\\.gz$`));
+    const script = readFileSync(resolve(root, "frontend", "e2e", "visual-prepare.sh"), "utf8");
+    expect(script).toContain("sha256sum -c");
+    expect(script).not.toMatch(/npm install[^\n]*node@/);
   });
 
   it("the committed baselines were made with exactly these pins", () => {

@@ -265,7 +265,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** the filters narrow the list; the date column is the order
 - **Target:** an API ordering parameter with a keyset per order, then sortable headers
 
-### L-039 — Visual lane: layout findings seen in the pictures, and its colour tolerance
+### L-052 — Visual lane: layout findings seen in the pictures, and its colour tolerance
 - **Status:** active
 - **Discovered:** 2026-10-16
 - **Affects:** `frontend/e2e/visual.spec.ts` and its baselines; the app shell at 1280 x 800 and 390 px
