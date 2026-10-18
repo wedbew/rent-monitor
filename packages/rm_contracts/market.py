@@ -296,6 +296,25 @@ class LocationCheckpoint(_Model):
         return DataStatus.delayed if age > timedelta(hours=FRESH_HOURS) else DataStatus.fresh
 
 
+def advance_checkpoint(cp: LocationCheckpoint, run: ImportRun, now: datetime) -> LocationCheckpoint:
+    """The checkpoint after `run` was published at `now` (pure; both repositories use it)."""
+    update: dict[str, object] = {
+        "last_successful_refresh_at": _aware(now),
+        "last_published_run_id": run.run_id,
+    }
+    if run.mode is RunMode.bootstrap:
+        update["bootstrap_completed_at"] = _aware(now)
+        update["covered_until"] = run.window_end
+        update["unresolved_gap_since"] = None
+    elif cp.covered_until is not None and run.window_start > cp.covered_until:
+        # The window does not reach the watermark: keep it, make the gap visible.
+        update["unresolved_gap_since"] = cp.unresolved_gap_since or cp.covered_until
+    else:
+        update["covered_until"] = max(cp.covered_until or run.window_end, run.window_end)
+        update["unresolved_gap_since"] = None
+    return LocationCheckpoint.model_validate(cp.model_copy(update=update).model_dump())
+
+
 class BootstrapManifest(_Model):
     """Readiness: every catalogue location counts, enabled or not; disabled ones are uncovered."""
 
