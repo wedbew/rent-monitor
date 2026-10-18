@@ -564,6 +564,60 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** the dispatcher is inert until catalogue version 1 is seeded
 - **Target:** settings slice (settings.py is free after #394)
 
+### L-074 — Published days are immutable, so late-discovered offers miss past `additions`
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `market_daily_summary` additions series (`first_observed_count` holds the discovery-day count)
+- **Evidence:** confirmed (design)
+- **Description:** Offers found later by recovery appear only in later cohorts.
+- **Workaround:** read `first_observed_count`
+- **Target:** OTO-04 consumers
+
+### L-075 — Backfilled cohort rows for old days reflect what was known at the bootstrap
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** cohort rows with `backfilled=true`
+- **Evidence:** confirmed
+- **Description:** Bootstrap offers are old but first seen on the bootstrap day, so early cohort days hold the whole bootstrap sample.
+- **Workaround:** the `backfilled` flag is stored
+- **Target:** OTO-04 consumers
+
+### L-076 — No retention for daily history
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `market_daily_summary` (up to about 20 rows per location-day)
+- **Evidence:** confirmed
+- **Description:** No deletion job; the retention period is an owner decision.
+- **Workaround:** none
+- **Target:** owner decision, ops job
+
+### L-077 — Sufficiency minimum and cohort bands are implementation constants
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `MIN_PRICED = 10` (also a CHECK), rooms and size bands, published median and quartiles per m2
+- **Evidence:** confirmed; thresholds are not owner-approved (compare L-045)
+- **Description:** Chosen by the implementer.
+- **Workaround:** none
+- **Target:** owner approval
+
+### L-078 — `usable_for_ranking` ignores catalogue-wide completeness
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `PgMarketHistory.view`
+- **Evidence:** confirmed
+- **Description:** There is no catalogue-wide manifest of summary coverage yet.
+- **Workaround:** none
+- **Target:** OTO-04 consumers
+
+### L-079 — Market settings are defined but mostly unread; the summary cron is a constant
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `OTODOM_MARKET_*` settings; `publish_market_summaries` cron `30 5 * * *`; importer constants (see L-073)
+- **Evidence:** confirmed
+- **Description:** Only `IMPORT_ENABLED`, `FRESH_HOURS`, `STALE_HOURS` and `CATALOGUE_VERSION` are read; the importer still uses its own constants.
+- **Workaround:** none
+- **Target:** follow-up wiring slice (resolves L-073)
+
 ### L-080 — Gmina values for powiat-native metrics are proxies
 - **Status:** active
 - **Discovered:** 2026-10-19
