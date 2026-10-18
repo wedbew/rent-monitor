@@ -473,6 +473,60 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none
 - **Target:** OTO-03 and OTO-04
 
+### L-064 — BDL unit-level numbers are inferred, not verified live
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `location_territory` level codes (gmina 6, powiat 5, voivodeship 2, country 0), LCTX-01b
+- **Evidence:** inferred (with L-053)
+- **Description:** Not checked against the live API.
+- **Workaround:** none; nothing is ingested
+- **Target:** one owner-authorised live BDL read
+
+### L-065 — `BDL_REQUESTS_PER_MINUTE=10` is a placeholder cap
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `PgQuotaGate`, ingestion pacing
+- **Evidence:** estimate
+- **Description:** The real quota for the key tier is unknown. Sharing across workers is resolved (Postgres-shared gate); that half of L-054 is closed.
+- **Workaround:** conservative default
+- **Target:** owner confirms the key tier
+
+### L-066 — The territorial reference has no loader
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `location_reference`, `ensure_reference`
+- **Evidence:** confirmed
+- **Description:** Hierarchy and TERYT crosswalk content must come from a reviewed source (B-023).
+- **Workaround:** none
+- **Target:** after B-023 reference-source decision
+
+### L-067 — A failed BDL ingest run is terminal with no reset path
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `location_ingest_run`
+- **Evidence:** confirmed
+- **Description:** Bad data marks the run `failed`; an owner/ops decision on reset is needed.
+- **Workaround:** none
+- **Target:** ops decision
+
+### L-068 — Source revisions of BDL observations are counted, not stored
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `location_observation` (insert-once)
+- **Evidence:** confirmed
+- **Description:** The first stored fact stays; a changed value counts as a conflict. A new-vintage policy is undecided.
+- **Workaround:** none
+- **Target:** owner policy
+
+### L-069 — No scheduled cleanup of BDL run and quota rows
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `location_ingest_run`, `location_quota_stamp` (`GDPR[retention]`, no personal data)
+- **Evidence:** confirmed
+- **Description:** Only the gate prunes its own stamps.
+- **Workaround:** none
+- **Target:** ops retention job
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built

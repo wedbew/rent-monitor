@@ -71,6 +71,10 @@ class Settings(BaseSettings):
     # Owner-approved gross amounts in PLN minor units, e.g. "reports_1=1000,reports_5=4000,reports_10=7000".
     # No default: prices are the owner's decision, and sales stay off until all three are approved here.
     paddle_approved_amounts: str = ""
+    # LEGAL[third-party-data]: GUS BDL API key (optional, raises the request quota) and our own request cap.
+    # The real server quota is unconfirmed (RM-391-L02); the cap is a conservative placeholder, not a policy.
+    bdl_api_key: SecretStr = SecretStr("")
+    bdl_requests_per_minute: int = Field(default=10, ge=1, le=600)
     audit_child_memory_mb: int = Field(default=1024, ge=128)  # RLIMIT_AS of the engine child process (#186)
 
     openrouter_api_key: SecretStr = Field(  # blueprint §4.2 spells it OPEN_ROUTER_API_KEY
