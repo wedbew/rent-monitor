@@ -11,6 +11,15 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 - Audits with 25 photos plus floor plans no longer degrade because the vision answer list was capped at 25 (RM-387)
 
 ### Added
+- Migration 0017 adds `market_daily_summary` (expand-only, empty) and the worker task `publish_market_summaries` (daily 05:30 UTC, batch queue), inert until a catalogue is seeded; new settings `OTODOM_MARKET_IMPORT_ENABLED` (default on), `_NIGHTLY_CRON`, `_NIGHT_WINDOW_END_UTC`, `_ARCHIVE_DAYS` (only 90), `_OVERLAP_MINUTES`, `_REQUEST_BUDGET`, `_FRESH_HOURS`, `_STALE_HOURS`, `_CATALOGUE_VERSION`; operators run `make migrate` (RM-395)
+
+### Added
+- Worker: Otodom rental corpus importer and two batch tasks (`sync_corpus_location`, periodic `dispatch_corpus_nightly` at 01:00 UTC); inert until a catalogue version 1 is seeded and the date filter is verified; no operator action, no migration (RM-392)
+
+### Added
+- Migration 0016 adds the `location_*` tables (BDL territory reference, observations, ingestion runs, publication pointer, quota stamps) and optional env `BDL_API_KEY` / `BDL_REQUESTS_PER_MINUTE`; operators run `make migrate`; no user-visible change and nothing is ingested until metrics are approved (RM-391)
+
+### Added
 - Migration 0015 adds the Otodom rental corpus tables (`market_catalogue`, `market_location`, `market_offer`, `market_import_run`, `market_import_checkpoint`); expand-only, empty, no importer yet; operators run `make migrate` (RM-385)
 
 ### Fixed

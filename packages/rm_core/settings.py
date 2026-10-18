@@ -4,7 +4,7 @@ from decimal import Decimal
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import AliasChoices, Field, SecretStr
+from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_APP_NAME = "Renti"  # the product name users see; override with APP_NAME
@@ -71,6 +71,10 @@ class Settings(BaseSettings):
     # Owner-approved gross amounts in PLN minor units, e.g. "reports_1=1000,reports_5=4000,reports_10=7000".
     # No default: prices are the owner's decision, and sales stay off until all three are approved here.
     paddle_approved_amounts: str = ""
+    # LEGAL[third-party-data]: GUS BDL API key (optional, raises the request quota) and our own request cap.
+    # The real server quota is unconfirmed (RM-391-L02); the cap is a conservative placeholder, not a policy.
+    bdl_api_key: SecretStr = SecretStr("")
+    bdl_requests_per_minute: int = Field(default=10, ge=1, le=600)
     audit_child_memory_mb: int = Field(default=1024, ge=128)  # RLIMIT_AS of the engine child process (#186)
 
     openrouter_api_key: SecretStr = Field(  # blueprint §4.2 spells it OPEN_ROUTER_API_KEY
@@ -89,6 +93,55 @@ class Settings(BaseSettings):
     image_host_allowlist: str = (
         "olxcdn.com,otodom.pl"  # comma-separated host suffixes photos may be fetched from
     )
+
+    # LEGAL[scraping]: Otodom market corpus import and daily summaries (OTODOM-NIGHTLY-IMPORT.md s.7).
+    # Independent of audit fetching; LEGAL_SCRAPING_ENABLED still gates every fetch (RM-395).
+    otodom_market_import_enabled: bool = True  # default-on kill switch for the market import capability
+    otodom_market_nightly_cron: str = "0 1 * * *"  # UTC, five fields; registered by the dispatcher
+    otodom_market_night_window_end_utc: str = "05:00"  # HH:MM UTC: stop normal batch fetches, keep the rest
+    otodom_market_archive_days: int = 90  # policy version: the database CHECKs fix it; see the validator
+    otodom_market_overlap_minutes: int = Field(default=60, ge=0, le=1440)  # recovery margin
+    otodom_market_request_budget: int = Field(
+        default=3000, ge=1, le=100_000
+    )  # pages per run, not a cap on completeness
+    otodom_market_fresh_hours: int = Field(default=36, ge=1, le=720)
+    otodom_market_stale_hours: int = Field(default=72, ge=1, le=720)
+    otodom_market_catalogue_version: int = Field(default=1, ge=1)
+
+    @field_validator("otodom_market_nightly_cron")
+    @classmethod
+    def _cron_has_five_fields(cls, v: str) -> str:
+        if len(v.split()) != 5:
+            raise ValueError("a cron expression has five space-separated fields")
+        return v
+
+    @field_validator("otodom_market_night_window_end_utc")
+    @classmethod
+    def _window_end_is_hh_mm(cls, v: str) -> str:
+        hh, sep, mm = v.partition(":")
+        if not (
+            sep
+            and hh.isdigit()
+            and mm.isdigit()
+            and len(hh) == len(mm) == 2
+            and int(hh) < 24
+            and int(mm) < 60
+        ):
+            raise ValueError("expected HH:MM (UTC)")
+        return v
+
+    @field_validator("otodom_market_archive_days")
+    @classmethod
+    def _archive_days_is_the_policy(cls, v: int) -> int:
+        if v != 90:  # market_offer/market_daily_summary CHECKs and the contracts fix 90 elapsed days
+            raise ValueError("the archive policy is 90 elapsed days; changing it needs a migration")
+        return v
+
+    @model_validator(mode="after")
+    def _stale_after_fresh(self) -> "Settings":
+        if self.otodom_market_stale_hours <= self.otodom_market_fresh_hours:
+            raise ValueError("OTODOM_MARKET_STALE_HOURS must exceed OTODOM_MARKET_FRESH_HOURS")
+        return self
 
     # GDPR[retention]: PROPOSED periods, to be confirmed by counsel (docs/BLOCKERS.md B-012).
     retention_session_days: int = Field(default=7, ge=0)  # days after `expires_at`

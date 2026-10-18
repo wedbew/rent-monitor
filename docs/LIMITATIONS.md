@@ -391,6 +391,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Description:** Publishing a location requires proven page coverage, which a future importer must supply as `pages_expected`. Until the live contract is verified (an owner-authorised request, L-002 applies), the value is not trustworthy. The verified 727-location catalogue artifact is also unidentified (B-023 item 4); nothing was seeded.
 - **Workaround:** none; no import runs
 - **Target:** `docs/OTODOM-NIGHTLY-IMPORT.md` §4, B-023 item 4
+- **Update (2026-10-19, RM-392):** the client now has typed search options but refuses created-date filters until `filters_verified` is set; `createdAtFrom`/`createdAtTo` are guesses from the count query (L-070).
 
 ### L-051 — Media manifest is metadata only: no binary store, no population, no expiry sweep
 - **Status:** active
@@ -499,6 +500,150 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Description:** Photos then plans in selected order; no foreign key, and the worker does not populate the manifest yet.
 - **Workaround:** none
 - **Target:** G-01b media population
+
+### L-064 — BDL unit-level numbers are inferred, not verified live
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `location_territory` level codes (gmina 6, powiat 5, voivodeship 2, country 0), LCTX-01b
+- **Evidence:** inferred (with L-053)
+- **Description:** Not checked against the live API.
+- **Workaround:** none; nothing is ingested
+- **Target:** one owner-authorised live BDL read
+
+### L-065 — `BDL_REQUESTS_PER_MINUTE=10` is a placeholder cap
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `PgQuotaGate`, ingestion pacing
+- **Evidence:** estimate
+- **Description:** The real quota for the key tier is unknown. Sharing across workers is resolved (Postgres-shared gate); that half of L-054 is closed.
+- **Workaround:** conservative default
+- **Target:** owner confirms the key tier
+
+### L-066 — The territorial reference has no loader
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `location_reference`, `ensure_reference`
+- **Evidence:** confirmed
+- **Description:** Hierarchy and TERYT crosswalk content must come from a reviewed source (B-023).
+- **Workaround:** none
+- **Target:** after B-023 reference-source decision
+
+### L-067 — A failed BDL ingest run is terminal with no reset path
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `location_ingest_run`
+- **Evidence:** confirmed
+- **Description:** Bad data marks the run `failed`; an owner/ops decision on reset is needed.
+- **Workaround:** none
+- **Target:** ops decision
+
+### L-068 — Source revisions of BDL observations are counted, not stored
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `location_observation` (insert-once)
+- **Evidence:** confirmed
+- **Description:** The first stored fact stays; a changed value counts as a conflict. A new-vintage policy is undecided.
+- **Workaround:** none
+- **Target:** owner policy
+
+### L-069 — No scheduled cleanup of BDL run and quota rows
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `location_ingest_run`, `location_quota_stamp` (`GDPR[retention]`, no personal data)
+- **Evidence:** confirmed
+- **Description:** Only the gate prunes its own stamps.
+- **Workaround:** none
+- **Target:** ops retention job
+
+### L-070 — Corpus window restarts re-read pages; page budget and deadline are constants
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `otodom_corpus.py` (RM-392), `sync_corpus_location`
+- **Evidence:** confirmed (design); per-partition resume needs the unbuilt `market_import_item` (L-060)
+- **Description:** A restarted window re-reads from its first page. Page budget 3000 and a 3600 s deadline apply, so a very large location may stay `incomplete` (visible, not published) across runs. The date-filter parameter names and boundary behaviour are unverified, so `filters_verified` stays false (see L-050).
+- **Workaround:** none
+- **Target:** OTO-02 live check; `market_import_item` slice
+
+### L-071 — `createdAtFirst` as original publication time is unverified
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `RentalOffer` age anchor, 90-day archive dates of bootstrap offers
+- **Evidence:** inferred
+- **Description:** Used instead of `pushedUpAt` (never used). A wrong choice shifts archive dates.
+- **Workaround:** none
+- **Target:** owner-authorised live check
+
+### L-072 — Unpublished runs leave offers visible; bootstrap lower bound is a constant
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `list_offers`, freshness readers; bootstrap lower bound `2010-01-01`
+- **Evidence:** confirmed
+- **Description:** Offers are inserted per page before a run is published. Readers must judge freshness from the checkpoint, not the offer table.
+- **Workaround:** use the checkpoint
+- **Target:** OTO-04 publication slice
+
+### L-073 — Corpus scheduling knobs are module constants, with no import switch
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** cron (01:00 UTC), night window end 05:00 UTC, overlap 60 min, 7-day chunk, 23 h due-after, catalogue version 1
+- **Evidence:** confirmed
+- **Description:** No `OTODOM_MARKET_IMPORT_ENABLED`; the only kill switch is `LEGAL_SCRAPING_ENABLED`. Proposed names are in `docs/parallel-handoffs/RM-392.md`.
+- **Workaround:** the dispatcher is inert until catalogue version 1 is seeded
+- **Target:** settings slice (settings.py is free after #394)
+
+### L-074 — Published days are immutable, so late-discovered offers miss past `additions`
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `market_daily_summary` additions series (`first_observed_count` holds the discovery-day count)
+- **Evidence:** confirmed (design)
+- **Description:** Offers found later by recovery appear only in later cohorts.
+- **Workaround:** read `first_observed_count`
+- **Target:** OTO-04 consumers
+
+### L-075 — Backfilled cohort rows for old days reflect what was known at the bootstrap
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** cohort rows with `backfilled=true`
+- **Evidence:** confirmed
+- **Description:** Bootstrap offers are old but first seen on the bootstrap day, so early cohort days hold the whole bootstrap sample.
+- **Workaround:** the `backfilled` flag is stored
+- **Target:** OTO-04 consumers
+
+### L-076 — No retention for daily history
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `market_daily_summary` (up to about 20 rows per location-day)
+- **Evidence:** confirmed
+- **Description:** No deletion job; the retention period is an owner decision.
+- **Workaround:** none
+- **Target:** owner decision, ops job
+
+### L-077 — Sufficiency minimum and cohort bands are implementation constants
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `MIN_PRICED = 10` (also a CHECK), rooms and size bands, published median and quartiles per m2
+- **Evidence:** confirmed; thresholds are not owner-approved (compare L-045)
+- **Description:** Chosen by the implementer.
+- **Workaround:** none
+- **Target:** owner approval
+
+### L-078 — `usable_for_ranking` ignores catalogue-wide completeness
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `PgMarketHistory.view`
+- **Evidence:** confirmed
+- **Description:** There is no catalogue-wide manifest of summary coverage yet.
+- **Workaround:** none
+- **Target:** OTO-04 consumers
+
+### L-079 — Market settings are defined but mostly unread; the summary cron is a constant
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `OTODOM_MARKET_*` settings; `publish_market_summaries` cron `30 5 * * *`; importer constants (see L-073)
+- **Evidence:** confirmed
+- **Description:** Only `IMPORT_ENABLED`, `FRESH_HOURS`, `STALE_HOURS` and `CATALOGUE_VERSION` are read; the importer still uses its own constants.
+- **Workaround:** none
+- **Target:** follow-up wiring slice (resolves L-073)
 
 ## Deferred
 
