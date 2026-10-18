@@ -401,6 +401,78 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none; no UI should present a gallery yet
 - **Target:** G-01 follow-up slices; owner decision on binary storage (Postgres `bytea` for the beta or a private object store) and retention values
 
+### L-053 — BDL response shapes are unverified against the live API
+- **Status:** active
+- **Discovered:** 2026-10-18
+- **Affects:** `services/rm_worker/clients/bdl.py` (`variableId`, `results[].values[].attrId`, `measureUnitName`, `X-ClientId` header), LCTX-01b
+- **Evidence:** inferred (public API description; no BDL call made)
+- **Description:** The client and validator were built and tested offline against hand-built fixtures only.
+- **Workaround:** none needed offline; no metric is selected or activated
+- **Target:** one owner-authorised live BDL read (B-023), then LCTX-01b part 2
+
+### L-054 — BDL request quota limits are not encoded and the gate is per process
+- **Status:** active
+- **Discovered:** 2026-10-18
+- **Affects:** `SlidingWindowQuota`, BDL ingestion (LCTX-01b)
+- **Evidence:** confirmed (code); the real limits for the key tier are unknown
+- **Description:** Windows are caller-supplied; none are baked in. The gate is not shared across workers, and `BDL_API_KEY` has no field in `rm_core.settings`.
+- **Workaround:** a single worker with conservative caller-supplied windows
+- **Target:** LCTX-01b part 2 (Postgres-shared gate, setting, migration 0016)
+
+### L-055 — Meaning of BDL `attrId` values is an unreviewed per-binding input
+- **Status:** active
+- **Discovered:** 2026-10-18
+- **Affects:** `BdlMetricBinding`, which values count as valid, suppressed or invalid
+- **Evidence:** inferred
+- **Description:** The validator maps attribute ids per binding; no real binding is approved.
+- **Workaround:** none; no binding ships
+- **Target:** B-023 reviewed metric list
+
+### L-056 — Location conflicts in the rental corpus are counted, not stored for review
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `rm_core.market_corpus.PgCorpus.record_offers`, OTO-02
+- **Evidence:** confirmed (behaviour); the need for a review list is inferred
+- **Description:** The first location assignment wins; conflicts are counted on the run and returned by `record_offers`, with no persistent list.
+- **Workaround:** none
+- **Target:** OTO-02 importer slice
+
+### L-057 — Corpus `location_id` columns have no foreign key
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `market_offer.location_id`, `market_import_run.location_id`
+- **Evidence:** confirmed
+- **Description:** Locations are versioned (key `(catalogue_version, location_id)`), so no FK exists; `start_run` checks the id against any catalogue version.
+- **Workaround:** repository-level check
+- **Target:** revisit when a catalogue is seeded
+
+### L-058 — Corpus source ids lose leading zeros
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `market_offer.source_offer_id` (`NUMERIC(20,0)`)
+- **Evidence:** confirmed
+- **Description:** The contract allows leading zeros; the column does not preserve them.
+- **Workaround:** none known to matter for Otodom numeric ids
+- **Target:** OTO-02 once real ids are seen
+
+### L-059 — No retention job for the rental corpus
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `market_offer` (follows L-048)
+- **Evidence:** confirmed
+- **Description:** Archive state is derived from `expires_at` at read time; no rows are deleted.
+- **Workaround:** none needed while the table is empty
+- **Target:** OTO-03/OTO-04, with `GDPR[retention]` review
+
+### L-060 — `market_import_item` and `market_daily_summary` are not built
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `docs/OTODOM-NIGHTLY-IMPORT.md` §5
+- **Evidence:** confirmed
+- **Description:** Only the five tables of migration 0015 exist.
+- **Workaround:** none
+- **Target:** OTO-03 and OTO-04
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built

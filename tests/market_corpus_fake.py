@@ -14,14 +14,15 @@ from rm_contracts.market import (
     CatalogueConflictError,
     CoverageNotProvenError,
     ImportRun,
+    InvalidRunTransitionError,
     LocationCatalogue,
     LocationCheckpoint,
     OfferObservation,
     RentalOffer,
-    RunMode,
     RunState,
     SightingReport,
     UnknownLocationError,
+    advance_checkpoint,
     check_transition,
     offer_from_observation,
 )
@@ -84,6 +85,8 @@ class InMemoryCorpus:
     ) -> SightingReport:
         async with self._lock:
             run = self._run(run_id)
+            if run.state in (RunState.published, RunState.failed):
+                raise InvalidRunTransitionError(f"{run.state.value} run accepts no offers")
             inserted = duplicates = unpriced = 0
             conflicts: list[str] = []
             seen: set[str] = set()
@@ -134,20 +137,7 @@ class InMemoryCorpus:
 
     def _advance_checkpoint(self, run: ImportRun, now: datetime) -> None:
         cp = self._checkpoints.get(run.location_id) or LocationCheckpoint(location_id=run.location_id)
-        update: dict[str, object] = {"last_successful_refresh_at": now, "last_published_run_id": run.run_id}
-        if run.mode is RunMode.bootstrap:
-            update["bootstrap_completed_at"] = now
-            update["covered_until"] = run.window_end
-            update["unresolved_gap_since"] = None
-        elif cp.covered_until is not None and run.window_start > cp.covered_until:
-            # The window does not reach the watermark: keep it, make the gap visible.
-            update["unresolved_gap_since"] = cp.unresolved_gap_since or cp.covered_until
-        else:
-            update["covered_until"] = max(cp.covered_until or run.window_end, run.window_end)
-            update["unresolved_gap_since"] = None
-        self._checkpoints[run.location_id] = LocationCheckpoint.model_validate(
-            cp.model_copy(update=update).model_dump()
-        )
+        self._checkpoints[run.location_id] = advance_checkpoint(cp, run, now)
 
     async def get_run(self, run_id: str) -> ImportRun | None:
         return self._runs.get(run_id)
