@@ -122,8 +122,6 @@ describe("SaveToggle", () => {
 
   it("a save still in flight when the session ends does not ask for the list again", async () => {
     const flow = createSaved();
-    const put = flow.routes.find((r) => r.operation === "PUT /api/saved/{otodom_id}");
-    if (put === undefined || typeof put.reply !== "function") throw new Error("no put route");
     mount(<SaveToggle otodomId={UNSAVED} />, {
       ...flow,
       routes: [
@@ -134,13 +132,16 @@ describe("SaveToggle", () => {
         ...flow.routes.filter((r) => r.operation !== "PUT /api/saved/{otodom_id}"),
       ],
     });
-    await userEvent.click(await toggle(UNSAVED));
+    const button = await toggle(UNSAVED);
+    await userEvent.click(button);
+    await waitFor(() => expect(button).toHaveAttribute("aria-busy", "true"));
     const listsBefore = flow.calls.filter((c) => c === "list").length;
     act(() => {
       runTenantCleanups();
       advanceSessionGeneration();
     });
-    await new Promise((r) => setTimeout(r, 400));
+    // The mutation settles at once (aborted); its onSettled is the only place that could ask for the list again.
+    await waitFor(() => expect(button).not.toHaveAttribute("aria-busy"));
     expect(flow.calls.filter((c) => c === "list").length).toBe(listsBefore);
   });
 

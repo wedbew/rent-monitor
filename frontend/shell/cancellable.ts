@@ -14,21 +14,28 @@ export async function whileSignedIn<T>(run: (signal: AbortSignal) => Promise<T>)
   const generation = sessionGeneration();
   const controller = new AbortController();
   const cancelled = () => new TransportError("aborted");
-  if (controller.signal.aborted || !isCurrentSession(generation)) throw cancelled();
   let onAbort: (() => void) | undefined;
   const ended = new Promise<never>((_resolve, reject) => {
     onAbort = () => reject(cancelled());
     controller.signal.addEventListener("abort", onAbort, { once: true });
   });
   const release = registerTenantCleanup(() => controller.abort());
-  const work = run(controller.signal);
-  work.catch(() => undefined); // a rejection that arrives after the race was settled is not an unhandled one
+  // A late answer of a session that moved on is dropped, and the request still running for it is stopped.
+  const late = () => {
+    if (controller.signal.aborted) return true;
+    if (isCurrentSession(generation)) return false;
+    controller.abort();
+    return true;
+  };
   try {
+    // `run` may throw before returning a promise; that failure goes through the same path, so `finally` still releases.
+    const work = new Promise<T>((resolve) => resolve(run(controller.signal)));
+    work.catch(() => undefined); // a rejection that arrives after the race was settled is not an unhandled one
     const result = await Promise.race([work, ended]);
-    if (controller.signal.aborted || !isCurrentSession(generation)) throw cancelled();
+    if (late()) throw cancelled();
     return result;
   } catch (error) {
-    if (controller.signal.aborted || !isCurrentSession(generation)) throw cancelled();
+    if (late()) throw cancelled();
     throw error;
   } finally {
     release();

@@ -73,10 +73,15 @@ describe("whileSignedIn: an operation that ignores the abort signal", () => {
 
   it("rejects a result that arrives after the session generation moved, even with no cleanup run", async () => {
     let finish: (value: string) => void = () => undefined;
-    const pending = whileSignedIn(() => new Promise<string>((resolve) => (finish = resolve)));
+    let seen: AbortSignal | null = null;
+    const pending = whileSignedIn((signal) => {
+      seen = signal;
+      return new Promise<string>((resolve) => (finish = resolve));
+    });
     advanceSessionGeneration(); // A -> B without the cleanup having reached this request
     finish("A's result");
     await expect(pending).rejects.toMatchObject({ kind: "aborted" });
+    expect((seen as unknown as AbortSignal).aborted).toBe(true); // the previous session's request is stopped too
   });
 
   it("runs the work with a live signal while the session is current", async () => {
@@ -84,7 +89,8 @@ describe("whileSignedIn: an operation that ignores the abort signal", () => {
     expect(await controllerless).toBe(false);
   });
 
-  it("repeated cleanups are harmless, and listeners are released on every outcome", async () => {
+  // A released cleanup no longer aborts the finished request's signal: that is how a leak would show.
+  it("repeated cleanups are harmless, and the cleanup is released on success and on failure", async () => {
     let seen: AbortSignal | null = null;
     await whileSignedIn((signal) => {
       seen = signal;
@@ -93,9 +99,25 @@ describe("whileSignedIn: an operation that ignores the abort signal", () => {
     runTenantCleanups();
     runTenantCleanups();
     expect((seen as unknown as AbortSignal).aborted).toBe(false);
-    const failing = whileSignedIn(() => Promise.reject(new Error("x")));
+    let failed: AbortSignal | null = null;
+    const failing = whileSignedIn((signal) => {
+      failed = signal;
+      return Promise.reject(new Error("x"));
+    });
     await expect(failing).rejects.toThrow("x");
     runTenantCleanups();
+    expect((failed as unknown as AbortSignal).aborted).toBe(false);
+  });
+
+  it("an operation that throws before returning a promise is rejected and its cleanup released", async () => {
+    let seen: AbortSignal | null = null;
+    const throwing = whileSignedIn((signal): Promise<number> => {
+      seen = signal;
+      throw new Error("sync");
+    });
+    await expect(throwing).rejects.toThrow("sync");
+    runTenantCleanups();
+    expect((seen as unknown as AbortSignal).aborted).toBe(false);
   });
 
   it("passes a real failure through while the session is current", async () => {
