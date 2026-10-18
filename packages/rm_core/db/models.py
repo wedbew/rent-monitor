@@ -19,6 +19,7 @@ from sqlalchemy import (
     CheckConstraint,
     Date,
     ForeignKey,
+    ForeignKeyConstraint,
     Identity,
     Index,
     Integer,
@@ -29,6 +30,7 @@ from sqlalchemy import (
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
 from rm_core.db.base import Base, pg_enum
@@ -934,6 +936,206 @@ class MarketOffer(Base):
     expires_at: Mapped[datetime]
     source_date_issue: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     run_id: Mapped[str] = mapped_column(String(64))
+
+
+# ---------- BDL location context (RM-391, LCTX-01b part 2; see rm_contracts.location_context) ----------
+class LocationReference(Base):
+    """A versioned, immutable territorial reference (hierarchy plus TERYT crosswalk) header.
+
+    LEGAL[third-party-data]: administrative identifiers from GUS BDL / TERYT; terms unreviewed (B-023, B-012).
+    GDPR[retention]: no personal data; kept as long as an observation set refers to it. Immutable (trigger).
+    """
+
+    __tablename__ = "location_reference"
+    __table_args__ = (
+        CheckConstraint("version >= 1", name="version_positive"),
+        CheckConstraint("checksum ~ '^[0-9a-f]{64}$'", name="checksum_hex"),
+    )
+
+    version: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
+    source_ref: Mapped[str] = mapped_column(String(300))
+    checksum: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class LocationTerritory(Base):
+    """One administrative unit in one reference version; BDL id and TERYT are distinct strings.
+
+    LEGAL[third-party-data]: public administrative names and codes (RM-391). Immutable (trigger).
+    """
+
+    __tablename__ = "location_territory"
+    __table_args__ = (
+        CheckConstraint("level IN ('gmina','powiat','wojewodztwo','country')", name="level_vocab"),
+        CheckConstraint("teryt ~ '^[0-9]{0,7}$'", name="teryt_digits"),
+        CheckConstraint("(parent_id IS NULL) = (level = 'country')", name="only_country_is_root"),
+        CheckConstraint("parent_id IS NULL OR parent_id <> territory_id", name="not_own_parent"),
+        CheckConstraint("NOT has_powiat_rights OR level = 'gmina'", name="powiat_rights_are_gmina"),
+        ForeignKeyConstraint(
+            ["reference_version", "parent_id"],
+            ["location_territory.reference_version", "location_territory.territory_id"],
+            ondelete="RESTRICT",
+        ),
+        Index("ix_location_territory_level", "reference_version", "level"),
+        Index(
+            "uq_location_territory_teryt",
+            "reference_version",
+            "level",
+            "teryt",
+            unique=True,
+            postgresql_where=text("teryt <> ''"),
+        ),
+    )
+
+    reference_version: Mapped[int] = mapped_column(
+        ForeignKey("location_reference.version", ondelete="RESTRICT"), primary_key=True
+    )
+    territory_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    teryt: Mapped[str] = mapped_column(String(7))
+    name: Mapped[str] = mapped_column(String(120))
+    level: Mapped[str] = mapped_column(String(12))
+    parent_id: Mapped[str | None] = mapped_column(String(32))
+    has_powiat_rights: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+
+
+class LocationObservation(Base):
+    """One BDL metric value (or typed gap) for one territory and year; insert-once, immutable (trigger).
+
+    LEGAL[third-party-data]: GUS BDL statistics; attribution and redistribution limits unreviewed (RM-391).
+    GDPR[retention]: aggregate public statistics, no personal data; annual history is kept (no TTL).
+    Not a price: no price basis exists, so it cannot be mistaken for asking or deed prices (invariant 2).
+    """
+
+    __tablename__ = "location_observation"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('measured','suppressed','missing','invalid_attribute','withheld')",
+            name="status_vocab",
+        ),
+        CheckConstraint("metric_version >= 1", name="version_positive"),
+        CheckConstraint("year BETWEEN 1990 AND 2100", name="year_range"),
+        CheckConstraint("source_digest ~ '^[0-9a-f]{64}$'", name="digest_hex"),
+        CheckConstraint(
+            "(status IN ('measured','withheld')) = (value IS NOT NULL)", name="value_matches_status"
+        ),
+        CheckConstraint("status = 'measured' OR reason IS NOT NULL", name="gap_has_reason"),
+        Index("ix_location_observation_metric_year", "metric_key", "metric_version", "year"),
+    )
+
+    metric_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    metric_version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    territory_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    year: Mapped[int] = mapped_column(Integer, primary_key=True)
+    status: Mapped[str] = mapped_column(String(17))
+    value: Mapped[Decimal | None] = mapped_column(Numeric(30, 10))
+    reason: Mapped[str | None] = mapped_column(String(200))
+    source_digest: Mapped[str] = mapped_column(String(64))
+    run_id: Mapped[str] = mapped_column(String(64))
+    captured_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class LocationIngestRun(Base):
+    """Resumable ingestion cursor for one BDL variable, unit level and year set.
+
+    LEGAL[scraping]: records progress of requests to the GUS BDL API; this table fetches nothing (RM-391).
+    The page cursor and the page's observations commit in one transaction, so a crash never skips a page.
+    A short lease (owner + expiry) lets one worker run it at a time. GDPR[retention]: no personal data.
+    """
+
+    __tablename__ = "location_ingest_run"
+    __table_args__ = (
+        CheckConstraint(
+            "state IN ('planned','running','incomplete','complete','failed')", name="state_vocab"
+        ),
+        CheckConstraint("unit_level BETWEEN 0 AND 7", name="unit_level_range"),
+        CheckConstraint("next_page BETWEEN 0 AND 10000", name="next_page_range"),
+        CheckConstraint(
+            "observed >= 0 AND inserted >= 0 AND duplicates >= 0 AND conflicts >= 0", name="counts_nonneg"
+        ),
+        CheckConstraint("cardinality(years) BETWEEN 1 AND 40", name="years_count"),
+        CheckConstraint(
+            "state NOT IN ('complete','failed') OR lease_owner IS NULL", name="done_has_no_lease"
+        ),
+        Index("ix_location_ingest_run_state", "state"),
+    )
+
+    run_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    variable_id: Mapped[str] = mapped_column(String(16))
+    unit_level: Mapped[int] = mapped_column(Integer)
+    years: Mapped[list[int]] = mapped_column(ARRAY(Integer))
+    reference_version: Mapped[int] = mapped_column(
+        ForeignKey("location_reference.version", ondelete="RESTRICT")
+    )
+    metric_key: Mapped[str] = mapped_column(String(64))
+    metric_version: Mapped[int] = mapped_column(Integer)
+    state: Mapped[str] = mapped_column(String(10), default="planned", server_default="planned")
+    next_page: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    observed: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    inserted: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    duplicates: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    conflicts: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    lease_owner: Mapped[str | None] = mapped_column(String(64))
+    lease_expires_at: Mapped[datetime | None]
+    error_category: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class LocationPublication(Base):
+    """An immutable release record of one metric version and year that passed its gate.
+
+    LEGAL[republication]: marks data that may later be shown to users; nothing is shown yet (RM-391).
+    Only `publish` writes it, and only when the owner's policy exists and passed (B-023: fail closed).
+    """
+
+    __tablename__ = "location_publication"
+    __table_args__ = (
+        CheckConstraint("expected >= 0 AND eligible >= 0 AND eligible <= expected", name="counts_consistent"),
+        Index("ix_location_publication_metric", "metric_key", "metric_version", "year"),
+    )
+
+    release_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    metric_key: Mapped[str] = mapped_column(String(64))
+    metric_version: Mapped[int] = mapped_column(Integer)
+    year: Mapped[int] = mapped_column(Integer)
+    reference_version: Mapped[int] = mapped_column(
+        ForeignKey("location_reference.version", ondelete="RESTRICT")
+    )
+    run_id: Mapped[str] = mapped_column(ForeignKey("location_ingest_run.run_id", ondelete="RESTRICT"))
+    expected: Mapped[int] = mapped_column(Integer)
+    eligible: Mapped[int] = mapped_column(Integer)
+    policy_min_coverage: Mapped[Decimal] = mapped_column(Numeric(5, 4))
+    policy_min_cohort_size: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class LocationPublicationPointer(Base):
+    """The atomic pointer to the last valid release per metric version and year (updated in one statement)."""
+
+    __tablename__ = "location_publication_pointer"
+
+    metric_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    metric_version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    year: Mapped[int] = mapped_column(Integer, primary_key=True)
+    release_id: Mapped[str] = mapped_column(
+        ForeignKey("location_publication.release_id", ondelete="RESTRICT")
+    )
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class LocationQuotaStamp(Base):
+    """One request slot taken from a Postgres-shared quota (all workers draw from the same budget).
+
+    LEGAL[scraping]: bounds the request rate to a third-party API (RM-391).
+    GDPR[retention]: no personal data; rows older than the longest window are deleted by the gate itself.
+    """
+
+    __tablename__ = "location_quota_stamp"
+    __table_args__ = (Index("ix_location_quota_stamp_source_at", "source", "at"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    source: Mapped[str] = mapped_column(String(32))
+    at: Mapped[datetime]
 
 
 # ---------- Erasure accountability ----------
