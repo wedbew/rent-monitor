@@ -1,0 +1,12 @@
+{
+  "totalRecords": 4,
+  "page": 0,
+  "pageSize": 2,
+  "variableId": "TEST-VAR-1",
+  "measureUnitName": "osoba",
+  "links": {"next": "https://bdl.example.test/api/v1/data/by-variable/TEST-VAR-1?page=1"},
+  "results": [
+    {"id": "T000000000001", "name": "Test gmina A", "values": [{"year": "2022", "val": 1200, "attrId": 1}]},
+    {"id": "T000000000002", "name": "Test gmina B", "values": [{"year": "2022", "val": 0, "attrId": 1}]}
+  ]
+}

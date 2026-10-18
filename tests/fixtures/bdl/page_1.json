@@ -1,0 +1,12 @@
+{
+  "totalRecords": 4,
+  "page": 1,
+  "pageSize": 2,
+  "variableId": "TEST-VAR-1",
+  "measureUnitName": "osoba",
+  "links": {},
+  "results": [
+    {"id": "T000000000003", "name": "Test gmina C", "values": [{"year": "2022", "val": null, "attrId": 1}]},
+    {"id": "T000000000004", "name": "Test gmina D", "values": [{"year": "2022", "val": 5, "attrId": 9}]}
+  ]
+}
