@@ -14,7 +14,7 @@ from rm_core.settings import Settings
 from rm_core.snapshots import FetchedListing
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from rm_worker.clients.otodom import OtodomClient, Priority, UpstreamBlocked
+from rm_worker.clients.otodom import OtodomClient, Priority, SearchOptions, UpstreamBlocked
 from rm_worker.clients.otodom_policy import PostgresHostPolicy
 from rm_worker.clients.otodom_transport import CurlCffiTransport
 from rm_worker.snapshot_service import ListingSource
@@ -54,6 +54,21 @@ class GatedSearchSource:
         if not self._enabled:
             raise ScrapingDisabledError
         return await self._inner.fetch_rental_search(location_id, page, deadline=deadline, priority=priority)
+
+    async def fetch_corpus_search(
+        self,
+        location_id: str,
+        page: int,
+        *,
+        options: SearchOptions,
+        deadline: Deadline,
+        priority: Priority = "batch",
+    ) -> dict[str, Any]:
+        if not self._enabled:
+            raise ScrapingDisabledError
+        return await self._inner.fetch_corpus_search(
+            location_id, page, options=options, deadline=deadline, priority=priority
+        )
 
 
 def build_search_source(
