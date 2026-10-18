@@ -23,7 +23,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-from typing import Literal, Protocol
+from typing import Literal, Protocol, cast
 
 from pydantic import BaseModel, ConfigDict
 from rm_contracts.market import FRESH_HOURS, STALE_HOURS, DataStatus
@@ -295,7 +295,7 @@ def _obs(r: MarketDailySummary) -> AskingRentObservation:
     return AskingRentObservation(
         location_id=r.location_id,
         summary_date=r.summary_date,
-        series=r.series,  # type: ignore[arg-type]  # CHECKed vocabulary
+        series=cast("Series", r.series),  # CHECKed vocabulary
         cohort_key=r.cohort_key,
         calc_version=r.calc_version,
         as_of=r.as_of,
