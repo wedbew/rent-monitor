@@ -5,6 +5,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- Migration 0016 adds the `location_*` tables (BDL territory reference, observations, ingestion runs, publication pointer, quota stamps) and optional env `BDL_API_KEY` / `BDL_REQUESTS_PER_MINUTE`; operators run `make migrate`; no user-visible change and nothing is ingested until metrics are approved (RM-391)
+
+### Added
 - Migration 0015 adds the Otodom rental corpus tables (`market_catalogue`, `market_location`, `market_offer`, `market_import_run`, `market_import_checkpoint`); expand-only, empty, no importer yet; operators run `make migrate` (RM-385)
 
 ### Fixed
