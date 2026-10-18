@@ -1,0 +1,5 @@
+{"totalRecords": 3, "page": 1, "pageSize": 2, "variableId": "TESTV1",
+ "results": [
+  {"id": "0000000003", "name": "Gmina Testowa C", "values": [
+    {"year": "2022", "val": 900.0, "attrId": 1}]}
+ ]}
