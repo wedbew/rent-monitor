@@ -215,6 +215,7 @@ From the blueprint §5 and TOOLCHAIN §8, plus those found here. Do not guess on
 | Frontend correctness rules (session transitions, transport, copy, numbers, evidence) | `.agent/rules/frontend.md` (RM-320, from the 2026-10-15 audit) |
 | Parallel Claude feature lanes, all shared-file conflicts, isolated writers and same-PR integration | `docs/PARALLEL-FEATURE-DELIVERY.md`, `.agent/rules/parallel-work.md`, `docs/parallel-handoffs/`; L-043 (current dispatcher still serial) |
 | Initial Claude execution prompt for the complete feature batch after foundation merge | `docs/CLAUDE-FEATURE-GAP-KICKOFF.md` (RM-374) |
+| Post-merge feature-gap audit and continuous-worker completion prompt | `docs/FEATURE-GAP-REVERIFICATION-2026-10-18.md`, `docs/CLAUDE-FEATURE-GAP-FINISH-PROMPT.md` (dated audit and execution instructions, not delivery claims) |
 | Feature batch versus production readiness: corrected pasted assessment, covered/uncovered blockers and companion launch work | `docs/FEATURE-GAP-READINESS-COVERAGE-2026-10-17.md` (assessment, not delivery evidence) |
 | Architecture, schema, Stripe, auth, tests | `docs/BLUEPRINT.md` §2–§4 |
 | Launch-city Otodom bootstrap, nightly incremental imports, recovery and 90-day archiving | `docs/OTODOM-NIGHTLY-IMPORT.md` (phase 1 contracts in `packages/rm_contracts/market.py`, RM-377, L-048 to L-050) (#209 planning; implementation pending) |

@@ -1,5 +1,8 @@
 # Worker 1: Media lane startup — G-01a (#376)
 
+> Historical first-slice assignment; #381 has merged. Do not restart these commands. Use the
+> [completion prompt](../CLAUDE-FEATURE-GAP-FINISH-PROMPT.md) to assign current follow-up work.
+
 **Assigned:** media foundation (manifest persistence, API route, Postgres identity)  
 **Worktree:** `/Users/marcin/Projects/rent-monitor/.claude/worktrees/worker-media`  
 **Branch:** `rm-376-media-foundation`  

@@ -1,5 +1,9 @@
 # Worker 3: BDL data lane startup — LCTX-01 (#378)
 
+> Historical first-slice assignment; #380 has merged contracts/pure logic, not a BDL dataset.
+> Exact publication policy remains partly undecided in B-023. Use the
+> [completion prompt](../CLAUDE-FEATURE-GAP-FINISH-PROMPT.md) to assign current follow-up work.
+
 **Assigned:** BDL territory and metric validation (hierarchy, approved metrics, comparisons)  
 **Worktree:** `/Users/marcin/Projects/rent-monitor/.claude/worktrees/worker-bdl`  
 **Branch:** `rm-378-bdl-metrics`  

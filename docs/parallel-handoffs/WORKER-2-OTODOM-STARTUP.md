@@ -1,5 +1,9 @@
 # Worker 2: Otodom data lane startup — OTO-01 (#377)
 
+> Historical first-slice assignment; #379 has merged contracts/test semantics, not production
+> persistence. Do not restart these commands. Use the
+> [completion prompt](../CLAUDE-FEATURE-GAP-FINISH-PROMPT.md) for persistence and later slices.
+
 **Assigned:** Otodom rental corpus persistence (catalogue, offer identity, dedup, coverage)  
 **Worktree:** `/Users/marcin/Projects/rent-monitor/.claude/worktrees/worker-otodom`  
 **Branch:** `rm-377-otodom-corpus`  
