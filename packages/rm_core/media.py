@@ -24,8 +24,7 @@ from rm_contracts.media import (
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rm_core.db.media_models import MediaEvidence
-from rm_core.db.models import Audit
+from rm_core.db.models import Audit, MediaEvidence
 from rm_core.principal import Principal
 
 

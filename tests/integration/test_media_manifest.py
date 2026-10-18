@@ -1,20 +1,17 @@
 # ruff: noqa: F811  (the `app` fixture is imported from test_me_saved_admin and used as a parameter)
 """Media manifest on real Postgres: persist, retrieve, tenant isolation, expiry, cascade (RM-376, G-01a).
 
-The `media_evidence` table has no Alembic migration yet (coordinator slot, handoff RM-376): this module
-creates it from the model for each test and drops it again. The router is mounted here, not in
-`rm_api.app.ROUTERS`, for the same reason.
+The table comes from migration 0014 and the router is registered in `rm_api.app.ROUTERS`.
 """
 
-from collections.abc import AsyncIterator, Callable
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
 from fastapi import FastAPI
-from rm_api.media import router as media_router
 from rm_contracts.media import MediaItem, MediaKind, MediaManifest
-from rm_core.db.media_models import MediaEvidence, PendingBase
+from rm_core.db.models import MediaEvidence
 from rm_core.media import AuditNotFoundError, get_manifest, persist_manifest
 from rm_core.principal import Principal
 from sqlalchemy import func, select, text
@@ -25,22 +22,6 @@ from test_me_saved_admin import app, sign_in  # noqa: F401  (fixture: `app`)
 pytestmark = [pytest.mark.integration]
 MakeToken = Callable[..., str]
 DIGEST = "b" * 64
-
-
-@pytest.fixture(autouse=True)
-async def media_table(engine: AsyncEngine) -> AsyncIterator[None]:
-    table = PendingBase.metadata.tables["app.media_evidence"]
-    async with engine.begin() as conn:
-        await conn.run_sync(lambda c: table.create(c, checkfirst=True))
-    yield
-    async with engine.begin() as conn:
-        await conn.run_sync(lambda c: table.drop(c, checkfirst=True))
-
-
-@pytest.fixture
-def mounted(app: FastAPI) -> FastAPI:
-    app.include_router(media_router)
-    return app
 
 
 def stored(ordinal: int, kind: MediaKind = MediaKind.photo, **kw: object) -> MediaItem:
@@ -66,9 +47,9 @@ def principal(user_id: str) -> Principal:
 
 
 async def test_persist_and_retrieve_round_trips_25_photos_and_2_plans(
-    mounted: FastAPI, engine: AsyncEngine, make_google_token: MakeToken
+    app: FastAPI, engine: AsyncEngine, make_google_token: MakeToken
 ) -> None:
-    c, me = await sign_in(mounted, make_google_token)
+    c, me = await sign_in(app, make_google_token)
     [audit_id] = await seed(engine, me["id"], 1)
     items = [stored(i) for i in range(25)] + [stored(25, MediaKind.plan), stored(26, MediaKind.plan)]
     async with async_sessionmaker(engine)() as s, s.begin():
@@ -82,10 +63,10 @@ async def test_persist_and_retrieve_round_trips_25_photos_and_2_plans(
 
 
 async def test_a_foreign_or_unknown_audit_is_404_and_leaks_nothing(
-    mounted: FastAPI, engine: AsyncEngine, make_google_token: MakeToken
+    app: FastAPI, engine: AsyncEngine, make_google_token: MakeToken
 ) -> None:
-    _, owner = await sign_in(mounted, make_google_token)
-    other, _ = await sign_in(mounted, make_google_token)
+    _, owner = await sign_in(app, make_google_token)
+    other, _ = await sign_in(app, make_google_token)
     [audit_id] = await seed(engine, owner["id"], 1)
     async with async_sessionmaker(engine)() as s, s.begin():
         await persist_manifest(s, user_id=owner["id"], audit_id=audit_id, items=[stored(0)])
@@ -100,17 +81,17 @@ async def test_a_foreign_or_unknown_audit_is_404_and_leaks_nothing(
             await persist_manifest(s, user_id="someone-else", audit_id=audit_id, items=[stored(0)])
 
 
-async def test_unauthenticated_is_401(mounted: FastAPI) -> None:
+async def test_unauthenticated_is_401(app: FastAPI) -> None:
     from test_auth import client_for  # noqa: PLC0415
 
-    r = await client_for(mounted).get(f"/api/audits/{uuid4()}/media")
+    r = await client_for(app).get(f"/api/audits/{uuid4()}/media")
     assert r.status_code == 401
 
 
 async def test_partial_failure_and_expiry_are_explicit(
-    mounted: FastAPI, engine: AsyncEngine, make_google_token: MakeToken
+    app: FastAPI, engine: AsyncEngine, make_google_token: MakeToken
 ) -> None:
-    c, me = await sign_in(mounted, make_google_token)
+    c, me = await sign_in(app, make_google_token)
     [audit_id] = await seed(engine, me["id"], 1)
     past = datetime.now(UTC) - timedelta(hours=1)
     items = [
@@ -134,9 +115,9 @@ async def test_partial_failure_and_expiry_are_explicit(
 
 
 async def test_an_audit_without_media_has_an_empty_manifest(
-    mounted: FastAPI, engine: AsyncEngine, make_google_token: MakeToken
+    app: FastAPI, engine: AsyncEngine, make_google_token: MakeToken
 ) -> None:
-    c, me = await sign_in(mounted, make_google_token)
+    c, me = await sign_in(app, make_google_token)
     [audit_id] = await seed(engine, me["id"], 1)
     body = (await c.get(f"/api/audits/{audit_id}/media")).json()
     assert body["items"] == []
@@ -144,9 +125,9 @@ async def test_an_audit_without_media_has_an_empty_manifest(
 
 
 async def test_persist_replaces_atomically_and_rejects_oversized_input(
-    engine: AsyncEngine, make_google_token: MakeToken, mounted: FastAPI
+    engine: AsyncEngine, make_google_token: MakeToken, app: FastAPI
 ) -> None:
-    _, me = await sign_in(mounted, make_google_token)
+    _, me = await sign_in(app, make_google_token)
     [audit_id] = await seed(engine, me["id"], 1)
     sm = async_sessionmaker(engine)
     async with sm() as s, s.begin():
@@ -164,11 +145,11 @@ async def test_persist_replaces_atomically_and_rejects_oversized_input(
 
 
 async def test_database_rejects_a_stored_row_without_digest(
-    engine: AsyncEngine, make_google_token: MakeToken, mounted: FastAPI
+    engine: AsyncEngine, make_google_token: MakeToken, app: FastAPI
 ) -> None:
     from sqlalchemy.exc import IntegrityError  # noqa: PLC0415
 
-    _, me = await sign_in(mounted, make_google_token)
+    _, me = await sign_in(app, make_google_token)
     [audit_id] = await seed(engine, me["id"], 1)
     with pytest.raises(IntegrityError, match="stored_complete"):
         async with engine.begin() as conn:
@@ -182,9 +163,9 @@ async def test_database_rejects_a_stored_row_without_digest(
 
 
 async def test_deleting_the_audit_removes_its_media(
-    engine: AsyncEngine, make_google_token: MakeToken, mounted: FastAPI
+    engine: AsyncEngine, make_google_token: MakeToken, app: FastAPI
 ) -> None:
-    _, me = await sign_in(mounted, make_google_token)
+    _, me = await sign_in(app, make_google_token)
     [audit_id] = await seed(engine, me["id"], 1)
     async with async_sessionmaker(engine)() as s, s.begin():
         await persist_manifest(s, user_id=me["id"], audit_id=audit_id, items=[stored(0)])

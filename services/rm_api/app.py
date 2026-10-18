@@ -28,6 +28,7 @@ from rm_api.billing_erasure import BillingEraser
 from rm_api.billing_webhook import router as billing_webhook_router
 from rm_api.health import router as health_router
 from rm_api.me import router as me_router
+from rm_api.media import router as media_router
 from rm_api.middleware import RequestContextMiddleware
 from rm_api.notify import NotifyListener
 from rm_api.origin import OriginCheckMiddleware
@@ -164,6 +165,7 @@ ROUTERS = (
     saved_router,
     admin_router,
     audits_router,
+    media_router,
 )
 
 

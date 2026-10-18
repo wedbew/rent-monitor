@@ -64,6 +64,7 @@ EXTRA: dict[str, Errors] = {
     },
     "GET /api/audits/{audit_id}": {404: (C.NOT_FOUND,)},
     "GET /api/audits/{audit_id}/events": {404: (C.NOT_FOUND,)},
+    "GET /api/audits/{audit_id}/media": {404: (C.NOT_FOUND,)},
     "POST /api/billing/checkout": {
         403: (C.EMAIL_NOT_VERIFIED, C.BILLING_HOLD),
         409: (C.IDEMPOTENCY_CONFLICT,),

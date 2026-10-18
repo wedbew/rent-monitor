@@ -765,6 +765,34 @@ async def events_malformed(w: World) -> Exchange:
     return await w.send(await w.user(label="events"), "GET", "/api/audits/not-a-uuid/events")
 
 
+@scenario(
+    "GET /api/audits/{audit_id}/media", "empty_manifest", 200, "nothing is stored until the worker fills it"
+)
+async def media_empty(w: World) -> Exchange:
+    who = await w.user(label="media")
+    audit_id = await w.audit_to_end(who, w.serve_sale(SUCCESS[0]))
+    return await w.send(who, "GET", f"/api/audits/{audit_id}/media")
+
+
+@scenario(
+    "GET /api/audits/{audit_id}/media", "foreign_audit", 404, "another user's audit is a 404, never a 403"
+)
+async def media_foreign(w: World) -> Exchange:
+    owner, other = await w.user(label="owner"), await w.user(label="other")
+    audit_id = await w.audit_to_end(owner, w.serve_sale(SUCCESS[0]))
+    return await w.send(other, "GET", f"/api/audits/{audit_id}/media")
+
+
+@scenario("GET /api/audits/{audit_id}/media", "unknown_audit", 404)
+async def media_unknown(w: World) -> Exchange:
+    return await w.send(await w.user(label="media"), "GET", f"/api/audits/{uuid4()}/media")
+
+
+@scenario("GET /api/audits/{audit_id}/media", "malformed_id", 422)
+async def media_malformed(w: World) -> Exchange:
+    return await w.send(await w.user(label="media"), "GET", "/api/audits/not-a-uuid/media")
+
+
 # ============================================================================================== billing
 @scenario("GET /api/billing/packs", "three_packs", 200)
 async def packs(w: World) -> Exchange:

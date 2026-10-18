@@ -375,6 +375,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none; no import runs
 - **Target:** `docs/OTODOM-NIGHTLY-IMPORT.md` §4, B-023 item 4
 
+### L-051 — Media manifest is metadata only: no binary store, no population, no expiry sweep
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `app.media_evidence`, `GET /api/audits/{audit_id}/media`, G-01 gallery (`LEGAL[images]`, `LEGAL[republication]`)
+- **Evidence:** confirmed (`tests/integration/test_media_manifest.py`); the retention gap is inferred from scope
+- **Description:** The manifest contract, table and read route exist, but nothing fills the manifest: the worker does not write it, no binary store exists, `expires_at` has no sweep job and retention values are undecided. The route returns an empty manifest for every audit today.
+- **Workaround:** none; no UI should present a gallery yet
+- **Target:** G-01 follow-up slices; owner decision on binary storage (Postgres `bytea` for the beta or a private object store) and retention values
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built

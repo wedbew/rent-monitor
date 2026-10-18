@@ -64,7 +64,7 @@ class MediaItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     media_id: UUID = Field(default_factory=uuid4, description="Opaque and stable; vision output cites it")
-    ordinal: Annotated[int, Field(ge=0, lt=MAX_ITEMS)]
+    ordinal: Annotated[int, Field(ge=0, le=MAX_ITEMS - 1)]
     kind: MediaKind
     source_type: MediaSource
     state: MediaState = MediaState.pending
