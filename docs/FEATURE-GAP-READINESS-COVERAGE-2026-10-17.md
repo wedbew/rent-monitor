@@ -1,5 +1,9 @@
 # How much the feature-gap batch resolves production readiness
 
+> Historical assessment: settings #346, credits/checkout #366, API fuzz #350, session fix #363 and
+> visual CI #356 have since merged. Use [the 2026-10-18 re-verification](FEATURE-GAP-REVERIFICATION-2026-10-18.md)
+> and live GitHub state for remaining work; the open-PR references below describe the review date.
+
 **Reviewed:** 2026-10-17. **Conclusion:** the batch addresses major missing product and market-data
 capabilities, but is **not a complete production-readiness plan**. The planning/documentation changes
 have closed **no implementation or release gate**. After implementation, the batch still needs live

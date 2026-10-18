@@ -1,5 +1,12 @@
 # Feature-Gap Batch Execution Summary — 2026-10-17
 
+> **Historical pre-dispatch snapshot, superseded for execution on 2026-10-18.** The three foundation
+> PRs have merged; the full batch remains unfinished. The blanket B-023-resolved statement below
+> is incorrect: scope was approved, but the canonical `docs/BLOCKERS.md` still records outstanding
+> catalogue/metric/publication decisions. Use
+> [the current re-verification](docs/FEATURE-GAP-REVERIFICATION-2026-10-18.md) and
+> [completion prompt](docs/CLAUDE-FEATURE-GAP-FINISH-PROMPT.md), not the old startup commands.
+
 **Status:** Ready to dispatch three parallel workers. Staging: `93fb778` (execution plan + startup guides committed).
 
 ---

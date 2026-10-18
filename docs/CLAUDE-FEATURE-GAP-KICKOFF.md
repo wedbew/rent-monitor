@@ -1,5 +1,10 @@
 # Claude kickoff: execute the complete feature-gap batch in parallel
 
+> **Resume after the first three merges (2026-10-18):** use
+> [the completion prompt](CLAUDE-FEATURE-GAP-FINISH-PROMPT.md) and
+> [the source/GitHub re-verification](FEATURE-GAP-REVERIFICATION-2026-10-18.md).
+> This original kickoff remains scope history; the merged foundations do not complete the batch.
+
 Foundation issue: [#374](https://github.com/wedbew/rent-monitor/issues/374). Start this prompt from the
 merged, updated `staging` checkout after its checks are verified. The foundation issue publishes the
 plans/protocol; it is not the implementation issue for every feature. Current GitHub state and source

@@ -1,5 +1,10 @@
 # Feature-gap batch execution checkpoint — 2026-10-17
 
+> **Historical first-wave checkpoint.** PRs #379/#380/#381 have since merged. The assertions below
+> that the exact B-023 metric/source policy was approved are not supported by the canonical blocker
+> register. Use current source, reconciled RM-376/377/378 handoffs and
+> [the 2026-10-18 audit](../FEATURE-GAP-REVERIFICATION-2026-10-18.md) before dispatching follow-ups.
+
 **Status:** Wave 1 foundation issues created; worktrees prepared; Explore agent verifying real paths.
 
 ## Lanes and ownership
