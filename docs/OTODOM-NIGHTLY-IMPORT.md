@@ -92,6 +92,8 @@ listing response is valid and consistent with that search.
 
 ## 5. Proposed Postgres data model
 
+> **Implemented contracts (RM-377):** `market_location`, `market_offer`, `market_import_run` and `market_import_checkpoint` are mirrored by `LocationEntry`/`LocationCatalogue`, `RentalOffer`, `ImportRun` and `LocationCheckpoint` in `packages/rm_contracts/market.py`; the migration should keep that mapping.
+
 Implement expand-only Alembic migrations in the existing `app` schema. The names below are proposals.
 Use typed repository methods, aware UTC timestamps and `Decimal`/`NUMERIC` for money.
 
