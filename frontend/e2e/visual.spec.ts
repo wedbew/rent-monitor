@@ -14,6 +14,15 @@ import { createSaved, SUCCEEDED_AUDITS } from "../test/scenarios";
 import { expect, test } from "./fixtures";
 
 const THEMES = ["light", "dark"] as const;
+/** The report routes answer with their fixture whatever the id is. */
+const ANY_AUDIT = "00000000-0000-4000-8000-000000000037";
+/** [scenario, picture name, text that proves the page is ready]. */
+const REPORT_VARIANTS = [
+  ["degraded", "degraded", "wniosek jest mniej pewny"],
+  ["rejectedRent", "rejected-rent", "To ogłoszenie wynajmu"],
+  ["rejectedFractional", "rejected-fractional", "Sprzedaż udziału"],
+  ["failedUpstream", "failed-upstream", "Raport nie został pobrany z konta."],
+] as const;
 const LISTING = "https://www.otodom.pl/pl/oferta/mieszkanie-2-pokoje-ID4abcd";
 
 async function settle(page: Page): Promise<void> {
@@ -41,14 +50,14 @@ for (const theme of THEMES) {
       await serve("empty");
       await page.goto("/app");
       await expect(page.getByRole("heading", { level: 1, name: "Pulpit" })).toBeVisible();
-      await shoot(page, "dashboard-empty");
+      await shoot(page, "dashboard-empty", { fullPage: true }); // the history sits below a phone's first screen
     });
 
     test("dashboard with five analyses", async ({ page, serve }) => {
       await serve("loaded");
       await page.goto("/app");
       await expect(page.getByRole("list", { name: "Ostatnie analizy" })).toBeVisible();
-      await shoot(page, "dashboard-loaded");
+      await shoot(page, "dashboard-loaded", { fullPage: true });
     });
 
     test("analyses: cards, table and the saved scope", async ({ page, serve }) => {
@@ -70,6 +79,32 @@ for (const theme of THEMES) {
       await expect(page.getByRole("navigation", { name: "Sekcje raportu" })).toBeVisible();
       await shoot(page, "report");
     });
+
+    test("report, the whole page (below the fold: costs, price, what to verify, sources)", async ({
+      page,
+      serve,
+    }) => {
+      await serve("loaded");
+      await page.goto(`/app/analyses/${SUCCEEDED_AUDITS[0]?.audit_id ?? ""}`);
+      await expect(page.getByRole("navigation", { name: "Sekcje raportu" })).toBeVisible();
+      await shoot(page, "report-full", { fullPage: true });
+    });
+
+    test("report with listing details and evidence", async ({ page, serve }) => {
+      await serve("richReport");
+      await page.goto(`/app/analyses/${SUCCEEDED_AUDITS[0]?.audit_id ?? ""}`);
+      await expect(page.getByRole("heading", { level: 2, name: "Podsumowanie" })).toBeVisible();
+      await shoot(page, "report-rich", { fullPage: true });
+    });
+
+    for (const [scenario, name, ready] of REPORT_VARIANTS) {
+      test(`report variant: ${name}`, async ({ page, serve }) => {
+        await serve(scenario);
+        await page.goto(`/app/analyses/${ANY_AUDIT}`);
+        await expect(page.getByText(ready).first()).toBeVisible();
+        await shoot(page, `report-${name}`, { fullPage: true });
+      });
+    }
 
     test("new analysis: empty, with an error, and the paywall dialog", async ({ page, serve }) => {
       await serve("insufficientCredits");

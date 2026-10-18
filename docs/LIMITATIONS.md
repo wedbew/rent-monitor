@@ -265,6 +265,15 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** the filters narrow the list; the date column is the order
 - **Target:** an API ordering parameter with a keyset per order, then sortable headers
 
+### L-052 — Visual lane: layout findings seen in the pictures, and its colour tolerance
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** `frontend/e2e/visual.spec.ts` and its baselines; the app shell at 1280 x 800 and 390 px
+- **Evidence:** confirmed (pictures `report-failed-upstream-light.png` desktop, `dashboard-loaded-light.png` mobile; probe runs recorded in the RM-334 PR)
+- **Description:** (1) At 1280 x 800 the sidebar's "Wyloguj się" button is cut off at the bottom of the viewport (the sidebar does not scroll when the window is short). (2) At 390 px the header's "Tryb ciemny" label touches the "Menu" button. (3) In full-page pictures the fixed sidebar is drawn only for the first viewport height (a property of full-page capture, not of the app). (4) The lane tolerates small colour differences: a 3-step RGB change of `--accent` was not detected, while a visible change failed 14 pictures. The baselines record these layouts as they are
+- **Workaround:** none for 1 and 2; treat (3) and (4) as properties of the lane
+- **Target:** a UI issue for 1 and 2 (they are shown in the committed baselines, so fixing them changes pictures on purpose)
+
 ### L-041 — Gates 4 and 5 have synthetic lower-bound numbers only
 - **Status:** active
 - **Discovered:** 2026-10-16
