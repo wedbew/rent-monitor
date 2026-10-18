@@ -781,6 +781,161 @@ class RentComparableRow(Base):
     area_m2: Mapped[Decimal] = mapped_column(Numeric(8, 2))
 
 
+# ---------- Otodom rental corpus (RM-385, OTO-01b; contracts in rm_contracts.market) ----------
+class MarketCatalogue(Base):
+    """A versioned, immutable location catalogue header. Locations live in `market_location`.
+
+    LEGAL[third-party-data]: the Otodom location paths the owner verified (B-023); no offer data (RM-385).
+    Immutable: a trigger refuses any UPDATE; a new version is a new row.
+    """
+
+    __tablename__ = "market_catalogue"
+    __table_args__ = (
+        CheckConstraint("version >= 1", name="version_positive"),
+        CheckConstraint("checksum ~ '^[0-9a-f]{64}$'", name="checksum_hex"),
+    )
+
+    version: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
+    source_ref: Mapped[str] = mapped_column(String(300))
+    checksum: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class MarketLocation(Base):
+    """One catalogue entry in one catalogue version (immutable, ordered by `position`).
+
+    LEGAL[third-party-data]: verified Otodom domain path of a place (RM-385).
+    """
+
+    __tablename__ = "market_location"
+    __table_args__ = (
+        UniqueConstraint("catalogue_version", "otodom_path", name="uq_market_location_version_path"),
+        UniqueConstraint("catalogue_version", "position", name="uq_market_location_version_position"),
+        Index("ix_market_location_location", "location_id"),
+    )
+
+    catalogue_version: Mapped[int] = mapped_column(
+        ForeignKey("market_catalogue.version", ondelete="RESTRICT"), primary_key=True
+    )
+    location_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    position: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(String(120))
+    otodom_path: Mapped[str] = mapped_column(String(160))
+    launch_enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
+
+
+class MarketImportRun(Base):
+    """One import attempt for one location: page checkpoint, counters and completion evidence.
+
+    LEGAL[scraping]: records the outcome of fetching Otodom search pages; this table fetches nothing (RM-385).
+    GDPR[personal-data]: counters and timestamps only, no personal data. Retention: with the offers it
+    describes (90-day archive policy, a later maintenance job); no per-person erasure path.
+    """
+
+    __tablename__ = "market_import_run"
+    __table_args__ = (
+        CheckConstraint("mode IN ('bootstrap','incremental','recovery')", name="mode_vocab"),
+        CheckConstraint(
+            "state IN ('planned','running','published','incomplete','failed')", name="state_vocab"
+        ),
+        CheckConstraint("window_end >= window_start", name="window_ordered"),
+        CheckConstraint(
+            "pages_fetched >= 0 AND pages_fetched <= 10000"
+            " AND (pages_expected IS NULL OR (pages_expected >= 0 AND pages_expected <= 10000))",
+            name="pages_range",
+        ),
+        CheckConstraint(
+            "observed >= 0 AND inserted >= 0 AND duplicates >= 0 AND location_conflicts >= 0",
+            name="counts_nonneg",
+        ),
+        CheckConstraint(
+            "state <> 'published' OR (NOT truncated AND pages_expected IS NOT NULL"
+            " AND pages_fetched = pages_expected)",
+            name="published_has_coverage",
+        ),
+        Index("ix_market_import_run_location_state", "location_id", "state"),
+    )
+
+    run_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    location_id: Mapped[str] = mapped_column(String(64))
+    mode: Mapped[str] = mapped_column(String(12))
+    window_start: Mapped[datetime]
+    window_end: Mapped[datetime]
+    state: Mapped[str] = mapped_column(String(10), default="planned", server_default="planned")
+    pages_expected: Mapped[int | None] = mapped_column(Integer)
+    pages_fetched: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    truncated: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    observed: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    inserted: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    duplicates: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    location_conflicts: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    error_category: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class MarketImportCheckpoint(Base):
+    """What is proven covered per location and dataset; advanced only by a published run, atomically.
+
+    GDPR[personal-data]: timestamps and a run id only (RM-385).
+    """
+
+    __tablename__ = "market_import_checkpoint"
+
+    location_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    dataset: Mapped[str] = mapped_column(String(32), primary_key=True, default="otodom_rental")
+    bootstrap_completed_at: Mapped[datetime | None]
+    covered_until: Mapped[datetime | None]
+    unresolved_gap_since: Mapped[datetime | None]
+    last_successful_refresh_at: Mapped[datetime | None]
+    last_published_run_id: Mapped[str | None] = mapped_column(String(64))
+
+
+class MarketOffer(Base):
+    """An Otodom rental offer, insert-once and immutable (a trigger refuses UPDATE).
+
+    LEGAL[scraping]: rows come from Otodom search pages fetched by a later importer (RM-385).
+    LEGAL[third-party-data]: asking rent, area and rooms of third-party adverts; never re-published here.
+    GDPR[personal-data]: whitelisted analytical fields only; no seller name, phone, text or payload exists in
+    this table. Retention: archived from reads at `expires_at` (90 elapsed days); physical deletion is a later
+    maintenance job. Erasure: not per person, because the table holds no personal data.
+    Invariant 2: `price_basis` is CHECKed to 'asking'; there is no deed variant.
+    """
+
+    __tablename__ = "market_offer"
+    __table_args__ = (
+        CheckConstraint("source = 'otodom'", name="source_vocab"),
+        CheckConstraint("price_basis = 'asking'", name="asking_only"),
+        CheckConstraint("age_basis IN ('publication','first_seen')", name="age_basis_vocab"),
+        CheckConstraint("asking_rent_pln IS NULL OR asking_rent_pln > 0", name="rent_positive"),
+        CheckConstraint("area_m2 IS NULL OR area_m2 > 0", name="area_positive"),
+        CheckConstraint("rooms IS NULL OR (rooms >= 1 AND rooms <= 50)", name="rooms_range"),
+        CheckConstraint(
+            "(age_basis = 'publication' AND published_at IS NOT NULL"
+            " AND expires_at = published_at + interval '2160 hours')"
+            " OR (age_basis = 'first_seen' AND expires_at = first_seen_at + interval '2160 hours')",
+            name="expiry_matches_anchor",
+        ),
+        Index("ix_market_offer_location_expires", "location_id", "expires_at"),
+    )
+
+    source: Mapped[str] = mapped_column(
+        String(16), primary_key=True, default="otodom", server_default="otodom"
+    )
+    source_offer_id: Mapped[Decimal] = mapped_column(Numeric(20, 0), primary_key=True)
+    price_basis: Mapped[str] = mapped_column(String(8), default="asking", server_default="asking")
+    location_id: Mapped[str] = mapped_column(String(64))
+    asking_rent_pln: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    area_m2: Mapped[Decimal | None] = mapped_column(Numeric(8, 2))
+    rooms: Mapped[int | None] = mapped_column(Integer)
+    published_at: Mapped[datetime | None]
+    first_seen_at: Mapped[datetime]
+    age_basis: Mapped[str] = mapped_column(String(12))
+    expires_at: Mapped[datetime]
+    source_date_issue: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    run_id: Mapped[str] = mapped_column(String(64))
+
+
 # ---------- Erasure accountability ----------
 class ErasureLog(Base):
     """Pseudonymous record that an account was erased, kept so a restore from an older backup can re-erase it.
