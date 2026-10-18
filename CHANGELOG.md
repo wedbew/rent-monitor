@@ -5,6 +5,12 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- Report `vision.floor_plan_text`, `vision.notes` and `vision.equipment` (optional within `schema_version` 1), vision prompt `vision-v2`; no operator action (RM-387)
+
+### Fixed
+- Audits with 25 photos plus floor plans no longer degrade because the vision answer list was capped at 25 (RM-387)
+
+### Added
 - Migration 0015 adds the Otodom rental corpus tables (`market_catalogue`, `market_location`, `market_offer`, `market_import_run`, `market_import_checkpoint`); expand-only, empty, no importer yet; operators run `make migrate` (RM-385)
 
 ### Fixed
