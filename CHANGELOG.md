@@ -5,6 +5,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- Settings `OTODOM_MARKET_IMPORT_ENABLED` (default on), `OTODOM_MARKET_NIGHTLY_CRON`, `OTODOM_MARKET_NIGHT_WINDOW_END_UTC`, `OTODOM_MARKET_ARCHIVE_DAYS`, `OTODOM_MARKET_OVERLAP_MINUTES`, `OTODOM_MARKET_REQUEST_BUDGET`, `OTODOM_MARKET_FRESH_HOURS`, `OTODOM_MARKET_STALE_HOURS` (names in `.env.example`); nothing reads them yet except the freshness thresholds in `LocationCheckpoint.data_status` (RM-395)
 - Migration 0016 adds the `location_*` tables (BDL territory reference, observations, ingestion runs, publication pointer, quota stamps) and optional env `BDL_API_KEY` / `BDL_REQUESTS_PER_MINUTE`; operators run `make migrate`; no user-visible change and nothing is ingested until metrics are approved (RM-391)
 
 ### Added

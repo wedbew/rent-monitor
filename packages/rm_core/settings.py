@@ -53,6 +53,16 @@ class Settings(BaseSettings):
     # LEGAL[scraping]: kill switch for fetching listing pages; off ends audits `UPSTREAM_BLOCKED` (RM-187).
     legal_images_enabled: bool = True  # LEGAL[images] kill switch: false skips vision/OCR (degraded audits)
     legal_scraping_enabled: bool = True
+    # Otodom rental market corpus (docs/OTODOM-NIGHTLY-IMPORT.md section 7). The gate is default-on and
+    # independent of audit fetching; `legal_scraping_enabled` stays the global fetch kill switch (RM-395).
+    otodom_market_import_enabled: bool = True
+    otodom_market_nightly_cron: str = "0 1 * * *"  # UTC
+    otodom_market_night_window_end_utc: str = Field(default="05:00", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    otodom_market_archive_days: int = Field(default=90, ge=1)
+    otodom_market_overlap_minutes: int = Field(default=60, ge=0)
+    otodom_market_request_budget: int | None = Field(default=None, ge=1)  # unset: no cap, never implicit
+    otodom_market_fresh_hours: int = Field(default=36, ge=1)
+    otodom_market_stale_hours: int = Field(default=72, ge=1)
     # Owner input until the macro source exists (ENGINE-SPEC row 9, N-12): PL 10Y yield as a fraction, e.g.
     # 0.055. Unset means audits end CONTEXT_UNAVAILABLE rather than run on an invented rate.
     risk_free_rate: Decimal | None = Field(default=None, gt=0, lt=1)

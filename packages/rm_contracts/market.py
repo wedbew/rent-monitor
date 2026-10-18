@@ -287,13 +287,15 @@ class LocationCheckpoint(_Model):
     last_successful_refresh_at: UtcDatetime | None = None  # advances even when no offer was inserted
     last_published_run_id: str | None = None
 
-    def data_status(self, now: datetime) -> DataStatus:
+    def data_status(
+        self, now: datetime, *, fresh_hours: int = FRESH_HOURS, stale_hours: int = STALE_HOURS
+    ) -> DataStatus:
         if self.bootstrap_completed_at is None or self.last_successful_refresh_at is None:
             return DataStatus.unavailable
         age = _aware(now) - self.last_successful_refresh_at
-        if self.unresolved_gap_since is not None or age > timedelta(hours=STALE_HOURS):
+        if self.unresolved_gap_since is not None or age > timedelta(hours=stale_hours):
             return DataStatus.stale
-        return DataStatus.delayed if age > timedelta(hours=FRESH_HOURS) else DataStatus.fresh
+        return DataStatus.delayed if age > timedelta(hours=fresh_hours) else DataStatus.fresh
 
 
 def advance_checkpoint(cp: LocationCheckpoint, run: ImportRun, now: datetime) -> LocationCheckpoint:
