@@ -1,7 +1,14 @@
 import type { Locator, Page } from "@playwright/test";
 
 import { fx } from "../test/fixtures";
-import { createAuthFlow, createRun, type Reply, type Scenario } from "../test/scenarios";
+import {
+  createAuthFlow,
+  createRun,
+  createSettings,
+  SETTINGS_EMAIL,
+  type Reply,
+  type Scenario,
+} from "../test/scenarios";
 import { expect, test } from "./fixtures";
 
 /**
@@ -39,6 +46,8 @@ interface FormCase {
   readonly submit: (page: Page) => Locator;
   /** The summary or notice of THIS form (a page can hold two forms). */
   readonly scope: (page: Page) => Locator;
+  /** Get to the form when it is not on the page at once (a dialog the person opens). */
+  readonly open?: (page: Page) => Promise<void>;
 }
 
 const textbox = (page: Page, name: string) => page.getByRole("textbox", { name, exact: true });
@@ -111,6 +120,32 @@ const FORMS: readonly FormCase[] = [
     submit: (page) => page.getByRole("button", { name: "Rozpocznij analizę" }),
     scope: (page) => page.locator("form"),
   },
+  {
+    name: "change password in settings",
+    path: "/app/settings",
+    scenario: (failure) => createSettings([{ operation: "POST /api/auth/password/change", reply: failure }]),
+    fieldFailure: slow("POST /api/auth/password/change", "weak_new_password"),
+    field: (page) => page.getByRole("form", { name: "Zmiana hasła" }).getByLabel(/Nowe hasło/),
+    fill: async (page) => {
+      const form = page.getByRole("form", { name: "Zmiana hasła" });
+      await form.getByLabel("Obecne hasło").fill("my-current-password");
+      await form.getByLabel(/Nowe hasło/).fill(PHRASE);
+    },
+    submit: (page) => page.getByRole("button", { name: "Zmień hasło" }),
+    scope: (page) => page.getByRole("form", { name: "Zmiana hasła" }),
+  },
+  {
+    name: "delete the account in settings",
+    path: "/app/settings",
+    scenario: (failure) => createSettings([{ operation: "DELETE /api/me", reply: failure }]),
+    fieldFailure: slow("DELETE /api/me", "confirmation_mismatch"),
+    field: (page) => page.getByRole("dialog").getByRole("textbox", { name: "Adres e-mail konta" }),
+    fill: async (page) =>
+      page.getByRole("dialog").getByRole("textbox", { name: "Adres e-mail konta" }).fill(SETTINGS_EMAIL),
+    submit: (page) => page.getByRole("dialog").getByRole("button", { name: "Usuń konto na stałe" }),
+    scope: (page) => page.getByRole("dialog"),
+    open: async (page) => page.getByRole("button", { name: "Usuń konto", exact: true }).click(),
+  },
 ];
 
 const summaryOf = (form: FormCase, page: Page) =>
@@ -129,6 +164,7 @@ for (const form of FORMS) {
     }) => {
       await serve(form.scenario(form.fieldFailure));
       await page.goto(form.path);
+      await form.open?.(page);
       await form.submit(page).click();
       const summary = summaryOf(form, page);
       await expect(summary).toBeFocused();
@@ -143,6 +179,7 @@ for (const form of FORMS) {
     }) => {
       await serve(form.scenario(form.fieldFailure));
       await page.goto(form.path);
+      await form.open?.(page);
       await form.fill(page);
       await form.submit(page).click();
       const summary = summaryOf(form, page);
@@ -163,6 +200,7 @@ for (const form of FORMS) {
       const limited = slow("POST /api/auth/login", "rate_limited", 100);
       await serve(form.scenario(limited));
       await page.goto(form.path);
+      await form.open?.(page);
       await form.fill(page);
       await form.submit(page).click();
       const notice = form

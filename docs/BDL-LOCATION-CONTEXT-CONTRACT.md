@@ -141,6 +141,8 @@ Pure statistical computations belong in newly written Python analytical modules;
 
 ## 8. Delivery slices and evidence
 
+> **Status (2026-10-18):** LCTX-01 phase 1 (contract models and pure ranking, gate and comparison logic) is implemented offline in `packages/rm_contracts/location_context.py` and `packages/rm_core/location_contracts.py` (RM-378). Persistence, importer and API are phase 2.
+
 1. **#48 contract/reference slice:** metric-definition and territory models; metadata validation; explicit scope/threshold decisions; fixtures; no network in tests.
 2. **BDL ingestion slice:** approved annual metrics/native and parent levels; raw/attribute provenance; resumable quota-aware tasks; real-Postgres state; truthful partial/complete outcomes.
 3. **Location indicator slice:** intensity/trend/comparison/rank modules and versioned immutable publication. Publish usable individual indicators before a composite is accepted.

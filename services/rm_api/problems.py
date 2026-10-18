@@ -3,13 +3,16 @@
 Foreign tenant resources are answered with `Problem.not_found()`: 404, never 403 (agents.md §4).
 """
 
+import re
+from collections.abc import Sequence
 from typing import Any, cast
 
 import sentry_sdk
 import structlog
-from fastapi import FastAPI, Request
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from rm_contracts.problems import ProblemCode
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -118,13 +121,44 @@ async def _validation(request: Request, exc: Exception) -> JSONResponse:
     )
 
 
+def build_route_table(routers: Sequence[APIRouter]) -> list[tuple[re.Pattern[str], frozenset[str]]]:
+    """`(path pattern, methods)` for every route of the included routers.
+
+    FastAPI keeps included routers behind opaque objects, so the table is made from the routers themselves
+    (called once from `create_app`)."""
+    return [
+        (route.path_regex, frozenset(route.methods or ()))
+        for router in routers
+        for route in router.routes
+        if isinstance(route, APIRoute)
+    ]
+
+
+def allowed_methods(request: Request) -> list[str]:
+    """Every method any route offers for this path.
+
+    Starlette's own `Allow` lists only the first matching route, which is wrong where one path has a route per
+    method (`GET /api/audits`, `POST /api/audits`)."""
+    path = request.url.path
+    methods: set[str] = set()
+    for pattern, offered in getattr(request.app.state, "route_table", ()):
+        if pattern.match(path):
+            methods.update(offered)
+    for route in request.app.routes:  # routes added straight to the app
+        pattern = getattr(route, "path_regex", None)
+        if pattern is not None and pattern.match(path):
+            methods.update(getattr(route, "methods", None) or ())
+    return sorted(methods)
+
+
 async def _http(request: Request, exc: Exception) -> JSONResponse:
     exc = cast("StarletteHTTPException", exc)
     code = ProblemCode.NOT_FOUND if exc.status_code == 404 else ProblemCode.HTTP_ERROR
     title = "Resource not found" if exc.status_code == 404 else "HTTP error"
-    return problem_response(
-        request, status=exc.status_code, code=code, title=title, headers=dict(exc.headers or {})
-    )
+    headers = dict(exc.headers or {})
+    if exc.status_code == 405 and (methods := allowed_methods(request)):  # RFC 9110 section 15.5.6
+        headers["Allow"] = ", ".join(methods)
+    return problem_response(request, status=exc.status_code, code=code, title=title, headers=headers)
 
 
 async def _unhandled(request: Request, exc: Exception) -> JSONResponse:
