@@ -21,7 +21,7 @@ import hashlib
 import json
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 from rm_contracts.location_context import (
     MetricDefinition,
@@ -31,7 +31,7 @@ from rm_contracts.location_context import (
     TerritoryLevel,
     TerritoryRef,
 )
-from sqlalchemy import func, select, text, update
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -140,7 +140,7 @@ def _run(row: LocationIngestRun) -> IngestRun:
         reference_version=row.reference_version,
         metric_key=row.metric_key,
         metric_version=row.metric_version,
-        state=row.state,  # type: ignore[arg-type]  # CHECKed vocabulary
+        state=cast(RunState, row.state),  # CHECKed vocabulary
         next_page=row.next_page,
         observed=row.observed,
         inserted=row.inserted,
@@ -297,7 +297,7 @@ class PgLocationRepo:
                 .values(
                     state="running",
                     lease_owner=owner,
-                    lease_expires_at=func.now() + text(f"interval '{float(lease_s)} seconds'"),
+                    lease_expires_at=func.now() + func.make_interval(0, 0, 0, 0, 0, 0, float(lease_s)),
                     error_category=None,
                     updated_at=func.now(),
                 )
@@ -343,7 +343,7 @@ class PgLocationRepo:
             row.inserted += report.inserted
             row.duplicates += report.duplicates
             row.conflicts += report.conflicts
-            row.lease_expires_at = func.now() + text(f"interval '{float(lease_s)} seconds'")
+            row.lease_expires_at = func.now() + func.make_interval(0, 0, 0, 0, 0, 0, float(lease_s))
             row.updated_at = func.now()
             return report
 
