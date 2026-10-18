@@ -64,10 +64,11 @@ describe("Paddle.js loader", () => {
     await expect(second).resolves.toBeDefined();
   });
 
-  it("a script that loads but defines no Paddle is a failure", async () => {
+  it("a script that loads but defines no Paddle is a failure, and is removed so a retry injects a fresh one", async () => {
     const pending = loadPaddle();
     document.head.querySelector(`script[src="${PADDLE_SCRIPT}"]`)?.dispatchEvent(new Event("load"));
     await expect(pending).rejects.toBeInstanceOf(PaddleError);
+    expect(document.head.querySelectorAll(`script[src="${PADDLE_SCRIPT}"]`)).toHaveLength(0);
   });
 });
 

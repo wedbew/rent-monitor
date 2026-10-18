@@ -16,6 +16,7 @@ import {
   readPurchases,
   SETTLED,
   type Purchase,
+  type PurchaseList,
 } from "./guards";
 
 const key = (userId: string, ...parts: readonly string[]) => tenantKey(userId, "billing", ...parts);
@@ -38,7 +39,7 @@ export function usePurchases() {
   const me = useMe();
   return useQuery({
     queryKey: key(me.id, "purchases"),
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal }): Promise<PurchaseList> => {
       const purchases = readPurchases(unwrap(await api.GET("/api/billing/purchases", { signal })));
       if (purchases === null) throw new TransportError("invalid-response");
       return purchases;
@@ -86,7 +87,14 @@ export function usePurchase(purchaseId: string | null) {
   const client = useQueryClient();
   const me = useMe();
   const [round, setRound] = useState(0);
-  const [gaveUp, setGaveUp] = useState(false);
+  // Kept per purchase, so opening another purchase never inherits a stopped poll or a used-up schedule.
+  const [gaveUpFor, setGaveUpFor] = useState<string | null>(null);
+  const gaveUp = purchaseId !== null && gaveUpFor === purchaseId;
+  const [roundStart, setRoundStart] = useState<{ readonly id: string | null; readonly answers: number }>({
+    id: purchaseId,
+    answers: 0,
+  });
+  const answersBefore = roundStart.id === purchaseId ? roundStart.answers : 0;
   const query = useQuery({
     queryKey: key(me.id, "purchase", purchaseId ?? "none"),
     enabled: purchaseId !== null,
@@ -100,10 +108,6 @@ export function usePurchase(purchaseId: string | null) {
         ),
       );
       if (purchase === null) throw new TransportError("invalid-response");
-      if (SETTLED.has(purchase.state)) {
-        refreshBalance(client);
-        void client.invalidateQueries({ queryKey: key(me.id, "purchases") });
-      }
       return purchase;
     },
     staleTime: 0,
@@ -112,20 +116,30 @@ export function usePurchase(purchaseId: string | null) {
       if (data !== undefined && SETTLED.has(data.state)) return false;
       if (q.state.status === "error" && isPermanentFailure(q.state.error)) return false;
       if (gaveUp) return false;
-      return pollDelayMs(q.state.dataUpdateCount + q.state.errorUpdateCount);
+      return pollDelayMs(q.state.dataUpdateCount + q.state.errorUpdateCount - answersBefore);
     },
   });
-  const settled = query.data !== undefined && SETTLED.has(query.data.state);
+  const settledState = query.data !== undefined && SETTLED.has(query.data.state) ? query.data.state : null;
+  const settled = settledState !== null;
+  // Once per settled answer, not on every refetch of a settled purchase (window focus refetches with staleTime 0).
+  useEffect(() => {
+    if (settledState === null) return;
+    refreshBalance(client);
+    void client.invalidateQueries({ queryKey: key(me.id, "purchases") });
+  }, [settledState, client, me.id]);
   const permanent = query.isError && isPermanentFailure(query.error);
   const active = purchaseId !== null && !settled && !permanent;
   useEffect(() => {
     if (!active) return;
-    const timer = setTimeout(() => setGaveUp(true), pollLimits.deadlineMs);
+    const timer = setTimeout(() => setGaveUpFor(purchaseId), pollLimits.deadlineMs);
     return () => clearTimeout(timer);
   }, [active, round, purchaseId]);
   const { refetch } = query;
   const checkAgain = () => {
-    setGaveUp(false);
+    const state = client.getQueryState(key(me.id, "purchase", purchaseId ?? "none"));
+    const answers = (state?.dataUpdateCount ?? 0) + (state?.errorUpdateCount ?? 0);
+    setGaveUpFor(null);
+    setRoundStart({ id: purchaseId, answers }); // a new round starts the backoff from its first step again
     setRound((n) => n + 1);
     void refetch();
   };
@@ -136,6 +150,14 @@ export function usePurchase(purchaseId: string | null) {
 export function isAmbiguous(error: unknown): boolean {
   if (error instanceof TransportError) return error.kind !== "aborted";
   return error instanceof ApiError && error.status >= 500;
+}
+
+/** Another pack was asked for while an order is unresolved: refused here, and the unresolved order is kept. */
+export class IntentConflict extends Error {
+  constructor() {
+    super("an unresolved order is pending");
+    this.name = "IntentConflict";
+  }
 }
 
 /**
@@ -152,8 +174,10 @@ export function useCheckout() {
   const mutation = useMutation({
     mutationFn: async (pack: PackCode): Promise<Purchase> => {
       const remembered = loadIntent(me.id) ?? intent;
-      if (remembered !== null && remembered.pack !== pack) throw new TransportError("aborted"); // never replaced silently
-      const current = remembered ?? { pack, key: crypto.randomUUID() };
+      const fresh = remembered === null || (remembered.parked === true && remembered.pack !== pack);
+      if (!fresh && remembered.pack !== pack) throw new IntentConflict(); // never replaced silently
+      // The same pack always goes out with its remembered key, also after "not found": a late arrival stays one order.
+      const current: Intent = fresh ? { pack, key: crypto.randomUUID() } : { pack, key: remembered.key };
       saveIntent(me.id, current); // before the request: a reload after a lost answer can still ask about it
       setIntent(current);
       const started = sessionGeneration();
@@ -178,6 +202,7 @@ export function useCheckout() {
       void client.invalidateQueries({ queryKey: key(me.id, "purchases") });
     },
     onError: (error) => {
+      if (error instanceof IntentConflict) return; // the unresolved order stays exactly as it was
       if (!isAmbiguous(error)) {
         clearIntent(me.id);
         setIntent(null);
@@ -188,8 +213,23 @@ export function useCheckout() {
     clearIntent(me.id);
     setIntent(null);
   }, [me.id]);
+  /** The server has no order with this key: keep the key for the same pack, free the choice of another. */
+  const park = useCallback(() => {
+    setIntent((current) => {
+      if (current === null) return null;
+      const parked: Intent = { ...current, parked: true };
+      saveIntent(me.id, parked);
+      return parked;
+    });
+  }, [me.id]);
   useEffect(() => registerTenantCleanup(() => clearIntent(me.id)), [me.id]); // a person's pending order is not the next one's
-  return { ...mutation, intent, unresolved: intent !== null && !mutation.isPending, resolve };
+  return {
+    ...mutation,
+    intent,
+    unresolved: intent !== null && intent.parked !== true && !mutation.isPending,
+    resolve,
+    park,
+  };
 }
 
 /**
@@ -208,8 +248,9 @@ export function useIntentLookup() {
             }),
           ),
         );
-        if (found === null) throw new TransportError("invalid-response");
-        return found;
+        // An unreadable row is not "not found": the order may exist, so the answer settles nothing.
+        if (found === null || found.hidden > 0) throw new TransportError("invalid-response");
+        return found.purchases;
       }),
   });
 }

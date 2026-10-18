@@ -23,7 +23,7 @@ export interface Recovery {
  * found. It runs on its own once when the page opens with an unresolved purchase (a reload or a return), and again
  * when the person asks. A late answer from an earlier session settles nothing. Reading creates no order.
  */
-export function useIntentRecovery(intent: Intent | null, resolve: () => void): Recovery {
+export function useIntentRecovery(intent: Intent | null, resolve: () => void, park: () => void): Recovery {
   const client = useQueryClient();
   const me = useMe();
   const lookup = useIntentLookup();
@@ -38,17 +38,20 @@ export function useIntentRecovery(intent: Intent | null, resolve: () => void): R
         onSuccess: (found) => {
           if (!isCurrentSession(started)) return;
           setOutcome({ found: found[0] ?? null }); // one request key: zero or one purchase
+          if (found.length === 0) {
+            park(); // "not found" is not proof it will never arrive: the key stays for the same pack
+            return;
+          }
           resolve();
-          if (found.length > 0)
-            void client.invalidateQueries({ queryKey: tenantKey(me.id, "billing", "purchases") });
+          void client.invalidateQueries({ queryKey: tenantKey(me.id, "billing", "purchases") });
         },
       });
     },
-    [mutate, resolve, client, me.id],
+    [mutate, resolve, park, client, me.id],
   );
 
   useEffect(() => {
-    if (initial !== null) run(initial);
+    if (initial !== null && initial.parked !== true) run(initial);
   }, [initial, run]);
 
   return {

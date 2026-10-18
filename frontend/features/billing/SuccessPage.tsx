@@ -8,8 +8,7 @@ import { Skeleton } from "../../ui/Skeleton";
 import { InlineNotice } from "../../ui/Status";
 import { ProblemNotice } from "../auth/ProblemNotice";
 import { readFailure } from "../auth/forms";
-import { shortReference } from "./CreditsPage";
-import { SETTLED, TRANSACTION_ID } from "./guards";
+import { SETTLED, shortReference, TRANSACTION_ID } from "./guards";
 import { usePurchase, usePurchases } from "./queries";
 import styles from "./billing.module.css";
 import { t } from "../../i18n";
@@ -33,7 +32,7 @@ export function SuccessPage() {
   const resolved = UUID.test(purchaseParam)
     ? purchaseParam
     : byTransaction
-      ? (list.data?.find((p) => p.transactionId === txn)?.id ?? null)
+      ? (list.data?.purchases.find((p) => p.transactionId === txn)?.id ?? null)
       : null;
   const purchase = usePurchase(resolved);
   const [openedAt] = useState(() => Date.now());
@@ -46,7 +45,8 @@ export function SuccessPage() {
         </InlineNotice>
       );
     if (resolved === null) {
-      if (list.isError)
+      // Not found among rows that could not all be read is not "unknown": it may be one of the hidden ones.
+      if (list.isError || (list.data?.hidden ?? 0) > 0)
         return <InlineNotice tone="danger" title={t.billing.success.failedLoad} live="alert" />;
       if (list.isSuccess)
         return (

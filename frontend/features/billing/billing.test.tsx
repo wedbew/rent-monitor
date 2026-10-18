@@ -16,7 +16,7 @@ import { RequireSession, SessionProvider } from "../../shell/session";
 import { advanceSessionGeneration, runTenantCleanups } from "../../shell/tenant";
 import { CreditsPage } from "./CreditsPage";
 import { resetPaddleForTests } from "./paddle";
-import { pollLimits, pollSchedule } from "./queries";
+import { IntentConflict, pollLimits, pollSchedule, useCheckout } from "./queries";
 import { SuccessPage } from "./SuccessPage";
 
 const reply = (operation: string, name: string): Reply => replyFrom(fx(operation, name));
@@ -268,7 +268,7 @@ describe("a checkout whose answer was lost survives a reload (durable intent)", 
     expect(await buy("5")).toBeEnabled();
   });
 
-  it("an order that never arrived is said so, and the next click is a new order with a new key", async () => {
+  it("an order that never arrived is said so, and buying the same pack again reuses its key", async () => {
     const flow = createBilling();
     const shop = lossy(flow, false);
     mount(shop);
@@ -277,11 +277,87 @@ describe("a checkout whose answer was lost survives a reload (durable intent)", 
     cleanup();
     mount(shop);
     expect(await screen.findByText("Zamówienie nie dotarło")).toBeInTheDocument();
+    // "Not found" is not proof the lost request will never arrive: the same pack goes out with the same key, so a
+    // late arrival and this retry are one order at the server.
     await userEvent.click(await buy("5"));
     await waitFor(() => expect(paddle.Checkout.open).toHaveBeenCalledOnce());
     const keys = keysOf(flow);
     expect(keys).toHaveLength(2);
+    expect(keys[1]).toBe(keys[0]);
+    expect(window.sessionStorage.length).toBe(0); // settled by the server's answer
+  });
+
+  it("after an order that never arrived another pack may be chosen, and it is a new order", async () => {
+    const flow = createBilling();
+    const shop = lossy(flow, false);
+    mount(shop);
+    await userEvent.click(await buy("5"));
+    await screen.findByText("Nie wiemy, czy zamówienie zostało utworzone");
+    cleanup();
+    mount(shop);
+    expect(await screen.findByText("Zamówienie nie dotarło")).toBeInTheDocument();
+    await userEvent.click(await buy("1"));
+    await waitFor(() => expect(paddle.Checkout.open).toHaveBeenCalledOnce());
+    const keys = keysOf(flow);
+    expect(keys).toHaveLength(2);
     expect(keys[1]).not.toBe(keys[0]);
+  });
+
+  it("a parked order is not looked up again on every visit", async () => {
+    const flow = createBilling();
+    const shop = lossy(flow, false);
+    mount(shop);
+    await userEvent.click(await buy("5"));
+    await screen.findByText("Nie wiemy, czy zamówienie zostało utworzone");
+    cleanup();
+    mount(shop);
+    await screen.findByText("Zamówienie nie dotarło");
+    cleanup();
+    mount(shop);
+    expect(await buy("1")).toBeEnabled();
+    expect(flow.calls.filter((c) => c.startsWith("lookup:"))).toHaveLength(1);
+  });
+
+  it("asking for another pack while an order is unresolved is refused and keeps that order and its key", async () => {
+    function Probe() {
+      const checkout = useCheckout();
+      return (
+        <>
+          <button type="button" onClick={() => checkout.mutate("reports_5")}>
+            probe 5
+          </button>
+          <button type="button" onClick={() => checkout.mutate("reports_1")}>
+            probe 1
+          </button>
+          <p>{checkout.error instanceof IntentConflict ? "conflict" : ""}</p>
+          <p>{checkout.unresolved ? "unresolved" : "free"}</p>
+        </>
+      );
+    }
+    const flow = lossy(createBilling(), false);
+    serveScenario(flow);
+    const router = createMemoryRouter(
+      [{ element: <RequireSession />, children: [{ path: "/", element: <Probe /> }] }],
+      { initialEntries: ["/"] },
+    );
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <SessionProvider>
+          <RouterProvider router={router} />
+        </SessionProvider>
+      </QueryClientProvider>,
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "probe 5" }));
+    await screen.findByText("unresolved");
+    const stored = JSON.stringify(Object.entries({ ...window.sessionStorage }));
+    await userEvent.click(screen.getByRole("button", { name: "probe 1" }));
+    expect(await screen.findByText("conflict")).toBeInTheDocument();
+    expect(screen.getByText("unresolved")).toBeInTheDocument();
+    expect(JSON.stringify(Object.entries({ ...window.sessionStorage }))).toBe(stored);
+    expect(keysOf(flow)).toHaveLength(1); // nothing was sent for the other pack
+    await userEvent.click(screen.getByRole("button", { name: "probe 5" }));
+    await waitFor(() => expect(keysOf(flow)).toHaveLength(2));
+    expect(new Set(keysOf(flow)).size).toBe(1);
   });
 
   it("another pack cannot silently replace an unresolved order: only the same order can be repeated", async () => {
@@ -372,6 +448,29 @@ describe("checkout lifetime", () => {
 
 describe("purchases", () => {
   const flow = () => createBilling({ existing: SHOP_HISTORY });
+
+  it("a row it cannot read is reported, never silently left out", async () => {
+    mount(
+      createBilling({
+        existing: SHOP_HISTORY,
+        overrides: {
+          // Valid for the OpenAPI schema (the client checks that first), but a price with more decimals than the guard accepts.
+          "GET /api/billing/purchases": {
+            status: 200,
+            body: {
+              purchases: [
+                ...SHOP_HISTORY,
+                { ...SHOP_HISTORY[0], purchase_id: "00000000-0000-4000-8000-0000000000ff", gross_pln: "12.345678" },
+              ],
+            },
+          },
+        },
+      }),
+    );
+    expect(await screen.findByText("Nie wszystkie zakupy dało się pokazać")).toBeInTheDocument();
+    const list = await screen.findByRole("list", { name: "Zakupy" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(SHOP_HISTORY.length);
+  });
 
   it("shows every state in words with the order number", async () => {
     mount(flow());

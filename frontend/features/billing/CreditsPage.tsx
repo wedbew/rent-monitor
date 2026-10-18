@@ -9,16 +9,13 @@ import { Skeleton } from "../../ui/Skeleton";
 import { InlineNotice } from "../../ui/Status";
 import { readFailure } from "../auth/forms";
 import { ProblemNotice } from "../auth/ProblemNotice";
-import { type Pack, type Purchase, type PurchaseState, SETTLED } from "./guards";
+import { type Pack, type Purchase, type PurchaseState, SETTLED, shortReference } from "./guards";
 import { useMountLifetime } from "./lifetime";
 import { openCheckout, PaddleError, paddleConfigured } from "./paddle";
 import { useCheckout, useInvoice, usePacks, usePurchases } from "./queries";
 import { useIntentRecovery } from "./recovery";
 import styles from "./billing.module.css";
 import { t } from "../../i18n";
-
-/** The order number the person can quote: the start of its id, never anything secret. */
-export const shortReference = (id: string): string => id.slice(0, 8);
 
 const successPath = (purchaseId: string) => `/app/credits/success?purchase=${purchaseId}`;
 
@@ -76,7 +73,7 @@ function PacksSection() {
   const [openError, setOpenError] = useState<Purchase | null>(null);
   const [creationUnknown, setCreationUnknown] = useState<Purchase | null>(null);
   // A page left with an unresolved purchase asks the server about it at once (a read: it creates nothing).
-  const recovery = useIntentRecovery(checkout.intent, checkout.resolve);
+  const recovery = useIntentRecovery(checkout.intent, checkout.resolve, checkout.park);
   const { outcome } = recovery;
 
   const buy = (pack: Pack) => {
@@ -380,12 +377,17 @@ function PurchasesSection() {
             </Button>
           }
         />
-      ) : purchases.data.length === 0 ? (
+      ) : purchases.data.purchases.length === 0 ? (
         <p className={styles["note"]}>{t.billing.purchases.empty}</p>
       ) : (
         <>
+          {purchases.data.hidden > 0 ? (
+            <InlineNotice tone="warning" title={t.billing.purchases.hiddenTitle} live="status">
+              {t.billing.purchases.hiddenBody}
+            </InlineNotice>
+          ) : null}
           <ul className={styles["purchases"]} aria-label={t.billing.purchases.list}>
-            {purchases.data.map((purchase) => (
+            {purchases.data.purchases.map((purchase) => (
               <PurchaseItem key={purchase.id} purchase={purchase} />
             ))}
           </ul>

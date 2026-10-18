@@ -462,6 +462,9 @@ export const pl = {
       openInvoice: "Otwórz fakturę",
       openInvoiceLabel: ({ id }: { id: string }) => `Otwórz fakturę w nowej karcie, zamówienie ${id}`,
       invoiceReady: "Link jest gotowy i działa krótko.",
+      hiddenTitle: "Nie wszystkie zakupy dało się pokazać",
+      hiddenBody:
+        "Część odpowiedzi serwera była nieczytelna. Odśwież stronę, a jeśli to się powtórzy, napisz do nas, zanim zapłacisz ponownie.",
       invoiceNote: "Dokument sprzedaży pobieramy z Paddle na Twoje żądanie. Link jest krótkotrwały.",
       support: "Jeśli coś się nie zgadza, napisz do nas i podaj numer zamówienia.",
       states: {

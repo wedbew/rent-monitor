@@ -13,6 +13,11 @@ import { PACK_CODES, type PackCode } from "./guards";
 export interface Intent {
   readonly pack: PackCode;
   readonly key: string;
+  /**
+   * The server said no order with this key exists. Not proof the request will never arrive, so the same pack is
+   * still bought with this key (a late arrival then answers with that one order); another pack may be chosen freely.
+   */
+  readonly parked?: boolean;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -24,10 +29,11 @@ export function loadIntent(userId: string): Intent | null {
     if (raw === null) return null;
     const value: unknown = JSON.parse(raw);
     if (typeof value !== "object" || value === null) return null;
-    const { pack, key } = value as Record<string, unknown>;
+    const { pack, key, parked } = value as Record<string, unknown>;
     if (typeof key !== "string" || !UUID.test(key)) return null;
     const known = PACK_CODES.find((code) => code === pack);
-    return known === undefined ? null : { pack: known, key };
+    if (known === undefined) return null;
+    return parked === true ? { pack: known, key, parked: true } : { pack: known, key };
   } catch {
     return null;
   }

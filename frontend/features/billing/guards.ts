@@ -119,12 +119,22 @@ export function readPurchase(value: unknown): Purchase | null {
   };
 }
 
-export function readPurchases(value: unknown): readonly Purchase[] | null {
+export interface PurchaseList {
+  readonly purchases: readonly Purchase[];
+  /** Rows the server sent that could not be read. Never silently gone: a hidden unpaid order could be paid twice. */
+  readonly hidden: number;
+}
+
+export function readPurchases(value: unknown): PurchaseList | null {
   if (!isRecord(value) || !Array.isArray(value["purchases"])) return null;
   const raw = value["purchases"] as unknown[];
   const purchases = raw.map(readPurchase).filter((p): p is Purchase => p !== null);
-  return purchases.length === 0 && raw.length > 0 ? null : purchases;
+  if (purchases.length === 0 && raw.length > 0) return null;
+  return { purchases, hidden: raw.length - purchases.length };
 }
+
+/** The order number the person can quote: the start of its id, never anything secret. */
+export const shortReference = (id: string): string => id.slice(0, 8);
 
 /** The invoice answer: a link to the document Paddle issued. Only an https address is ever opened. */
 export function readInvoiceUrl(value: unknown): string | null {

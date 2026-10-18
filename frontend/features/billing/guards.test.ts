@@ -66,9 +66,11 @@ describe("readPurchase / readPurchases", () => {
 
   it("a list of only unreadable rows is a failure; an empty list is an answer", () => {
     expect(readPurchases({ purchases: [{ junk: true }] })).toBeNull();
-    expect(readPurchases({ purchases: [] })).toEqual([]);
+    expect(readPurchases({ purchases: [] })).toEqual({ purchases: [], hidden: 0 });
     expect(readPurchases([purchase])).toBeNull();
-    expect(readPurchases({ purchases: [purchase, { junk: 1 }] })).toHaveLength(1);
+    const partial = readPurchases({ purchases: [purchase, { junk: 1 }] });
+    expect(partial?.purchases).toHaveLength(1);
+    expect(partial?.hidden).toBe(1); // reported, never silently dropped
   });
 });
 

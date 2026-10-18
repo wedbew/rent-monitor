@@ -54,8 +54,10 @@ function injectScript(): Promise<PaddleGlobal> {
     }, LOAD_TIMEOUT_MS);
     script.onload = () => {
       clearTimeout(timer);
-      if (window.Paddle === undefined) reject(new PaddleError("load-failed"));
-      else resolve(window.Paddle);
+      if (window.Paddle === undefined) {
+        script.remove(); // like the other failures: a later attempt injects a fresh script
+        reject(new PaddleError("load-failed"));
+      } else resolve(window.Paddle);
     };
     script.onerror = () => {
       clearTimeout(timer);
