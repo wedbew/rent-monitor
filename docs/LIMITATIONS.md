@@ -348,6 +348,33 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none needed while nothing is published
 - **Target:** B-023 item 2, B-012
 
+### L-048 — Rental offer expiry says nothing about whether the offer is still live
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `packages/rm_contracts/market.py` (`RentalOffer.expires_at`), future `market_offer` archival (`LEGAL[scraping]`, `LEGAL[third-party-data]`)
+- **Evidence:** confirmed by design (`tests/unit/test_otodom_corpus.py`)
+- **Description:** An offer expires 90 elapsed days after its publication time (first seen when that is missing or in the future). Expiry is an age archive rule only; it does not show that the advertisement was withdrawn or let.
+- **Workaround:** do not present archived or aged offers as currently available
+- **Target:** OTO-01 phase 2 and the nightly importer (`docs/OTODOM-NIGHTLY-IMPORT.md`)
+
+### L-049 — Offers seen under two locations are flagged, first assignment wins
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `CorpusRepository` semantics in `packages/rm_contracts/market.py`, future importer
+- **Evidence:** confirmed (`tests/unit/test_otodom_corpus.py`, reference repository `tests/market_corpus_fake.py`)
+- **Description:** A conflicting sighting is counted and flagged on the run; the first location stays. There is no review tool.
+- **Workaround:** none needed before an importer exists
+- **Target:** OTO-01 phase 2
+
+### L-050 — The Otodom filtered-listing contract is unverified; coverage relies on `pages_expected`
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** OTO-01 importer, `coverage_complete`, `docs/OTODOM-NIGHTLY-IMPORT.md` §4
+- **Evidence:** inferred (nothing fetches yet; filtered listing operation, last-24-hours semantics, partitioning past 50 pages and timestamp meanings not checked live)
+- **Description:** Publishing a location requires proven page coverage, which a future importer must supply as `pages_expected`. Until the live contract is verified (an owner-authorised request, L-002 applies), the value is not trustworthy. The verified 727-location catalogue artifact is also unidentified (B-023 item 4); nothing was seeded.
+- **Workaround:** none; no import runs
+- **Target:** `docs/OTODOM-NIGHTLY-IMPORT.md` §4, B-023 item 4
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built
