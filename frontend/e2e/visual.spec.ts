@@ -110,6 +110,16 @@ for (const theme of THEMES) {
       await shoot(page, "credits-history", { fullPage: true });
     });
 
+    test("settings, and the account deletion dialog", async ({ page, serve }) => {
+      await serve("settings");
+      await page.goto("/app/settings");
+      await expect(page.getByRole("list", { name: "Aktywne sesje" })).toBeVisible();
+      await shoot(page, "settings");
+      await page.getByRole("button", { name: "Usuń konto", exact: true }).click();
+      await expect(page.getByRole("dialog", { name: "Usunąć konto na stałe?" })).toBeVisible();
+      await shoot(page, "settings-erase");
+    });
+
     test("unknown address keeps the shell", async ({ page, serve }) => {
       await serve("empty");
       await page.goto("/nie-ma-takiej-strony");

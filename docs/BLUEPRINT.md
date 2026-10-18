@@ -172,6 +172,7 @@ FastAPI is stateless: every byte of state — sessions, audits, credits, jobs, p
 | `/api/auth/*` | FastAPI | public | Google ID-token sign-in, email magic link, email/password (`register`, `register/verify`, `register/resend`, `login`, `password/forgot`, `password/reset`; `password/change` needs a session), sign-out, session list (spec: PASSWORD-AUTH-SPEC.md) |
 | `/api/me` | FastAPI | session | Profile, plan, credit balance, feature flags; `GET /api/me/export` (access request, 5 per hour); `DELETE /api/me` (account erasure, confirmed by typing the address) |
 | `/api/audits` | FastAPI | session + entitlement | `POST` create (202; optional `Idempotency-Key` UUID: a repeat returns the audit it created, never a second reservation, RM-304), `GET` list (`{items, next_cursor}`; keyset cursor; filters `status`, `grade`, `q`, `request_key`), `GET /{id}`, `GET /{id}/events` (SSE), `POST /{id}/cancel` |
+| `/api/audits/{id}/media` | FastAPI | session | `GET` the audit's media manifest: one row per photo or floor plan (identity, ordinal, kind, source, storage and analysis state, SHA-256 digest, dimensions, MIME). Metadata only, `Cache-Control: private, no-store`; a foreign or unknown audit is 404. Reading never fetches or analyses anything (RM-376, `LEGAL[images]`) |
 | `/api/saved` | FastAPI | session | Save or unsave listings, notes; only listings the caller has audited can be saved (anything else is 404), at most 500 |
 | `/api/market/*` | FastAPI | session; free tier sees top 20 | 727-city yield radar, city sidecars by grain |
 | `/api/screener/*` | FastAPI | Pro feature flag | Discovery runs, approval queue, batch generate |
@@ -731,6 +732,23 @@ class AuditEvent(Base):
     payload: Mapped[dict] = mapped_column(default=dict)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     __table_args__ = (Index("ix_audit_event_audit_id", "audit_id", "id"), APP)
+
+
+class MediaEvidence(Base):
+    """RM-376: metadata and SHA-256 digest of an audit's photos and plans; no bytes. Cascades with audit and user."""
+    __tablename__ = "media_evidence"
+    media_id: Mapped[UUID] = mapped_column(primary_key=True, server_default=text("gen_random_uuid()"))
+    audit_id: Mapped[UUID] = mapped_column(ForeignKey("app.audit.id", ondelete="CASCADE"))
+    user_id: Mapped[str] = mapped_column(Text, USER_FK)
+    ordinal: Mapped[int] = mapped_column()                # 0..26: at most 25 photos + 2 plans
+    kind: Mapped[str] = mapped_column(String(8))           # photo | plan
+    source_type: Mapped[str] = mapped_column(String(8))    # url | manual | upload
+    state: Mapped[str] = mapped_column(String(8))          # pending | stored | rejected | failed
+    analysis_state: Mapped[str] = mapped_column(String(14))  # not_requested | classified | failed
+    content_digest: Mapped[str | None] = mapped_column(String(64))
+    width: Mapped[int | None]; height: Mapped[int | None]; mime: Mapped[str | None]
+    failure_code: Mapped[str | None]; expires_at: Mapped[datetime | None]
+    __table_args__ = (UniqueConstraint("audit_id", "ordinal"), APP)  # plus vocabulary and completeness CHECKs
 
 
 class SavedListing(Base):

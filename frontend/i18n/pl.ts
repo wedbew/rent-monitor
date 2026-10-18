@@ -521,6 +521,87 @@ export const pl = {
       toCredits: "Wróć do zakupów",
     },
   },
+  settings: {
+    title: "Ustawienia",
+    lead: "Konto, bezpieczeństwo i Twoje dane w jednym miejscu.",
+    loading: "Wczytuję ustawienia",
+    unknown: {
+      title: "Nie wiemy, czy się udało",
+      signOutAll:
+        "Połączenie zostało przerwane. Sprawdzamy, czy ta sesja nadal działa; jeśli zobaczysz tę stronę, wylogowanie mogło się nie udać. Spróbuj ponownie: to bezpieczne.",
+      password:
+        "Połączenie zostało przerwane. Hasło mogło zostać zmienione. Jeśli za chwilę wylogujemy Cię, zaloguj się nowym hasłem; w przeciwnym razie spróbuj ponownie.",
+      erase:
+        "Połączenie zostało przerwane. Konto mogło zostać usunięte. Jeśli za chwilę wylogujemy Cię, konto nie istnieje; w przeciwnym razie spróbuj ponownie.",
+    },
+    profile: {
+      heading: "Konto",
+      list: "Dane konta",
+      email: "Adres e-mail",
+      name: "Imię",
+      noName: "Nie podano",
+      status: "Status adresu e-mail",
+      verified: "Potwierdzony",
+      unverified: "Niepotwierdzony",
+    },
+    appearance: {
+      heading: "Wygląd",
+      body: "Motyw jest zapamiętywany w tej przeglądarce.",
+    },
+    sessions: {
+      heading: "Zalogowane urządzenia",
+      lead: "Przeglądarki, w których jesteś zalogowany(-a). Adres IP i przeglądarka służą tylko do rozpoznania urządzenia.",
+      list: "Aktywne sesje",
+      current: "Ta przeglądarka",
+      unknownDevice: "Nieznana przeglądarka",
+      unknownIp: "adres IP nieznany",
+      lastSeen: ({ when }: { when: string }) => `Ostatnia aktywność: ${when}`,
+      expires: ({ when }: { when: string }) => `Wygasa: ${when}`,
+      loadFailed: "Nie udało się wczytać sesji",
+      retry: "Spróbuj ponownie",
+      empty: "Nie znaleziono aktywnych sesji.",
+      signOutAll: "Wyloguj ze wszystkich urządzeń",
+      confirmTitle: "Wylogować ze wszystkich urządzeń?",
+      confirmBody:
+        "Zostaniesz wylogowany(-a) także w tej przeglądarce i wrócisz do logowania. Twoje analizy i raporty zostają na koncie.",
+      confirm: "Wyloguj wszędzie",
+      cancel: "Anuluj",
+    },
+    password: {
+      heading: "Hasło",
+      lead: "Zmiana hasła wylogowuje Cię ze wszystkich urządzeń, także z tego.",
+      form: "Zmiana hasła",
+      current: "Obecne hasło",
+      next: "Nowe hasło",
+      hint: ({ min }: { min: string }) => `Co najmniej ${min} znaków.`,
+      submit: "Zmień hasło",
+      noPasswordTitle: "To konto nie ma hasła",
+      noPasswordBody:
+        "Logujesz się przez Google lub link w mailu, więc nie ma czego zmieniać. Możesz ustawić hasło przez odzyskiwanie hasła.",
+      noPasswordLink: "Ustaw hasło przez e-mail",
+      wrongCurrent: "To nie jest Twoje obecne hasło.",
+      currentMissing: "Wpisz obecne hasło.",
+    },
+    data: {
+      heading: "Twoje dane",
+      lead: ({ limit }: { limit: string }) =>
+        `Pobierz wszystko, co o Tobie przechowujemy, jako jeden plik JSON. Limit: ${limit} pobrań na godzinę.`,
+      export: "Pobierz moje dane",
+      exportDone: "Plik został pobrany.",
+      fileName: ({ date }: { date: string }) => `renti-moje-dane-${date}.json`,
+    },
+    erase: {
+      heading: "Usuń konto",
+      lead: "Usunięcie konta jest trwałe: kasujemy Twoje dane, analizy i zapisane ogłoszenia. Nie da się tego cofnąć.",
+      open: "Usuń konto",
+      title: "Usunąć konto na stałe?",
+      body: "Aby potwierdzić, wpisz adres e-mail swojego konta.",
+      confirmField: "Adres e-mail konta",
+      submit: "Usuń konto na stałe",
+      cancel: "Anuluj",
+      mismatch: "Wpisz dokładnie adres e-mail swojego konta.",
+    },
+  },
   analyses: {
     status: {
       queued: "W kolejce",
