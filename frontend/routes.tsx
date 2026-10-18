@@ -14,13 +14,21 @@ import { PendingPage } from "./shell/PendingPage";
 import { AppLoading, RootLayout } from "./shell/RootLayout";
 import { RouteError } from "./shell/RouteError";
 import { RedirectIfSignedIn, RequireSession } from "./shell/session";
-import { t } from "./i18n";
 
 const NewAnalysisPage = lazy(async () => ({
   default: (await import("./features/analyses/new/NewAnalysisPage")).NewAnalysisPage,
 }));
 const AnalysesPage = lazy(async () => ({
   default: (await import("./features/analyses/list/AnalysesPage")).AnalysesPage,
+}));
+const CreditsPage = lazy(async () => ({
+  default: (await import("./features/billing/CreditsPage")).CreditsPage,
+}));
+const SuccessPage = lazy(async () => ({
+  default: (await import("./features/billing/SuccessPage")).SuccessPage,
+}));
+const PayPage = lazy(async () => ({
+  default: (await import("./features/billing/PayPage")).PayPage,
 }));
 const SettingsPage = lazy(async () => ({
   default: (await import("./features/settings/SettingsPage")).SettingsPage,
@@ -93,6 +101,8 @@ export const routes: RouteObject[] = [
           { path: "/signup/verify", element: <VerifySignupPage /> },
           { path: "/password/reset", element: <ResetPasswordPage /> },
           { path: "/password/forgot", element: <ForgotPasswordPage /> },
+          // The default payment link Paddle redirects the buyer to (docs/PADDLE-INTEGRATION.md section 3).
+          { path: "/pay", element: lazyPage(PayPage) },
         ],
       },
       {
@@ -106,10 +116,8 @@ export const routes: RouteObject[] = [
                 errorElement: <RouteError />,
                 children: [
                   { path: "/app", element: <DashboardPage /> },
-                  {
-                    path: "/app/credits",
-                    element: <PendingPage title={t.shell.creditsPage} availability="building" />,
-                  },
+                  { path: "/app/credits", element: lazyPage(CreditsPage) },
+                  { path: "/app/credits/success", element: lazyPage(SuccessPage) },
                   // The analysis pages load on first visit (audit F17, #312): the report and the collection are the
                   // largest features and most visits start on the Pulpit. A chunk that fails to load (a deploy
                   // replaced the files) throws while rendering, into this RouteError, which offers a reload.

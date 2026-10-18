@@ -23,6 +23,7 @@ import {
   type Scenario,
   type ScenarioName,
   RUN_AUDIT_ID,
+  SHOP_HISTORY,
   SUCCEEDED_AUDITS,
 } from "../test/scenarios";
 import { fx, type Fixture } from "../test/fixtures";
@@ -181,6 +182,28 @@ export const PAGES: readonly AppPage[] = [
     ],
   },
   {
+    id: "credits",
+    path: "/app/credits",
+    heading: "Raporty i zakupy",
+    scenarios: ["shop", "shopHistory", "billingDisabled"],
+  },
+  {
+    id: "success",
+    path: `/app/credits/success?purchase=${SHOP_HISTORY[0]?.purchase_id ?? ""}`,
+    heading: "Płatność",
+    scenarios: ["shopHistory"],
+    states: [
+      {
+        name: "waiting",
+        path: `/app/credits/success?purchase=${SHOP_HISTORY[1]?.purchase_id ?? ""}`,
+        scenario: "shopHistory",
+        prepare: async (page) => {
+          await page.getByText("Nie płać ponownie").waitFor();
+        },
+      },
+    ],
+  },
+  {
     id: "settings",
     path: "/app/settings",
     heading: "Ustawienia",
@@ -195,6 +218,13 @@ export const PAGES: readonly AppPage[] = [
         },
       },
     ],
+  },
+  {
+    id: "pay",
+    path: "/pay?_ptxn=txn_fixture0001",
+    layout: "public",
+    heading: "Płatność",
+    scenarios: SIGNED_OUT,
   },
   {
     id: "new-analysis",
@@ -665,6 +695,34 @@ export const INTERACTIONS: readonly Interaction[] = [
     outcome: "request",
   },
 
+  // Credits and purchases.
+  {
+    id: "credits.buy",
+    page: "credits",
+    scenarios: ["shop", "shopHistory"],
+    role: "button",
+    name: /^Kup pakiet /,
+    outcome: "request",
+  },
+  {
+    id: "credits.resume",
+    page: "credits",
+    scenarios: ["shopHistory"],
+    role: "button",
+    name: /^Dokończ płatność, zamówienie /,
+    outcome: "request",
+  },
+  {
+    id: "credits.invoice",
+    page: "credits",
+    scenarios: ["shopHistory"],
+    role: "button",
+    name: /^Pokaż fakturę, zamówienie /,
+    outcome: "request",
+  },
+  { id: "success.analysis", page: "success", role: "link", name: "Sprawdź mieszkanie", outcome: "url" },
+  { id: "success.purchases", page: "success", role: "link", name: "Wróć do zakupów", outcome: "url" },
+  { id: "pay.credits", page: "pay", role: "link", name: "Wróć do zakupów", outcome: "url" },
   // Settings.
   {
     id: "settings.password.current",

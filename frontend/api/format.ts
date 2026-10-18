@@ -137,6 +137,15 @@ export function formatMoney(value: string | null | undefined, { decimals = 2 }: 
   return pl.compose("currency", parsed.negative, scaledTo(parsed, d), d);
 }
 
+/**
+ * A price the buyer pays: whole złoty without grosze ("10 zł"), anything else with both ("10,49 zł"). The decision is
+ * made on the exact string, so a fractional price can never be shown rounded to whole złoty. Display only.
+ */
+export function formatPrice(value: string | null | undefined): string {
+  const whole = typeof value === "string" && /^\d+(\.0+)?$/.test(value);
+  return formatMoney(value, { decimals: whole ? 0 : 2 });
+}
+
 /** A ratio such as "0.0734" (7.34 %); `digits` is 0..6, default 1. */
 export function formatRatio(value: string | null | undefined, digits = 1): string {
   if (value === null || value === undefined) return NOT_COMPUTED;

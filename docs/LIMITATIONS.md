@@ -284,6 +284,14 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none needed for the toggle; edit one note in one tab
 - **Target:** an `If-Match`/version on notes if concurrent editing matters
 
+### L-038 — Purchases in the SPA are exercised against a stand-in for Paddle.js only
+- **Status:** active
+- **Discovered:** 2026-10-16
+- **Affects:** `frontend/features/billing/`, `frontend/e2e/paddle.ts`, `deploy/Caddyfile` CSP, `VITE_PADDLE_CLIENT_TOKEN`
+- **Evidence:** confirmed (every browser lane replaces `window.Paddle`; the journey stack builds without a token and has billing disabled)
+- **Description:** Checkout, the `/pay` default payment link and the success page are proven offline against the fake Paddle client behind the API and a Paddle.js stub. Real Paddle.js has never run with a real token in this app. 2026-10-16 (RM-277): the Caddy CSP got opt-in `PADDLE_CSP_*` values (hosts read from `paddle.js` and verified in Chromium against the Caddy image with a *fake* sandbox token, `docs/PADDLE-SANDBOX-SETUP.md` section 4b); they are empty by default. Overlay display needs `style-src-attr 'unsafe-inline'` (owner decision, evidence in 4b); with it empty the overlay is created but never shown. There is no client-side token on any host (B-017), and BLIK timing, a real transaction, the live hosts and the invoice link are unverified. Whether Paddle.js itself fetches from the page (`connect-src`, which gets no Paddle host today) or only inside its iframe is also unverified; a blocked fetch would show in the browser console on the first sandbox run. The SPA offers no purchase without a token, and `/pay` says it is not configured
+- **Workaround:** none needed while billing is disabled; no purchase can be started
+- **Target:** #220 (sandbox evidence, owner inputs B-017), CSP change with it, then level 3 in `docs/STATUS.md`
 ### L-036 — Settings cannot tell a password account from a Google-only one
 - **Status:** resolved
 - **Discovered:** 2026-10-16
