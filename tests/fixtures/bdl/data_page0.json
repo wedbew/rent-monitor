@@ -1,0 +1,7 @@
+{"totalRecords": 3, "page": 0, "pageSize": 2, "variableId": "TESTV1",
+ "results": [
+  {"id": "0000000001", "name": "Gmina Testowa A", "values": [
+    {"year": "2022", "val": 1200.0, "attrId": 1}, {"year": "2023", "val": 1250.5, "attrId": 1}]},
+  {"id": "0000000002", "name": "Gmina Testowa B", "values": [
+    {"year": "2022", "val": 0, "attrId": 1}, {"year": "2023", "val": null, "attrId": 2}]}
+ ]}
