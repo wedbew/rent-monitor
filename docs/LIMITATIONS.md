@@ -321,6 +321,33 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** The report links to the source listing where available; its availability and image retention are external. Use the existing checklist for known warnings; do not present it as generated seller questions or treat unobserved equipment as absent.
 - **Target:** [feature-gap audit and implementation guide](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md), proposed G-01/G-02/G-03 (not filed); existing #211, #283, #284. Implement media/evidence contracts before dependent UI and preserve historical report compatibility.
 
+### L-045 — No BDL metric is selected and no publication threshold is set
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `packages/rm_core/location_contracts.py` (`evaluate_gate`, `require_publishable`), LCTX-01 phase 2, #48, #21, #282
+- **Evidence:** confirmed (`tests/unit/test_bdl_metrics.py`: every undecided threshold fails closed)
+- **Description:** The ranking and comparison logic is implemented, but `PublicationPolicy` thresholds (`min_coverage`, `min_cohort_size`) and the selected metric list with reviewed `bdl_variable_id`s are owner decisions (B-023). Until they are recorded, gates return `undecided` and nothing can be published.
+- **Workaround:** none; do not present municipal or ranked context as available
+- **Target:** B-023 items 1 and 3, then LCTX-01 phase 2
+
+### L-046 — BDL source staleness is not modelled
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `packages/rm_core/location_contracts.py`, LCTX-01 phase 2
+- **Evidence:** confirmed (no age field or limit in the gate)
+- **Description:** The maximum source age is undecided, so an old observation year is never refused for age. Fiscal comparability across years is likewise not decided.
+- **Workaround:** none needed while nothing is published (L-045)
+- **Target:** B-023 item 3
+
+### L-047 — BDL attribution text and terms review are missing
+- **Status:** active
+- **Discovered:** 2026-10-17
+- **Affects:** `packages/rm_contracts/location_context.py`, future reports and API results (`LEGAL[third-party-data]`)
+- **Evidence:** confirmed (no attribution field populated; counsel review not done, B-012)
+- **Description:** Contracts carry a source digest but no attribution wording or redistribution terms. Tags mark the code; they are not a legal verdict.
+- **Workaround:** none needed while nothing is published
+- **Target:** B-023 item 2, B-012
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built
