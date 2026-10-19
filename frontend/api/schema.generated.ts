@@ -734,6 +734,8 @@ export interface components {
             result: {
                 [key: string]: unknown;
             } | null;
+            /** @description questions to ask the seller, generated with the report (RM-404); null when the audit has none stored (every audit made before RM-404, or no successful result) */
+            seller_questions?: components["schemas"]["SellerQuestionBlock"] | null;
             /** Started At */
             started_at: string | null;
             status: components["schemas"]["AuditState"];
@@ -1476,6 +1478,45 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /**
+         * SellerQuestion
+         * @description A question to ask the seller (G-03, RM-404). Mirrors `deal_analyzer.seller_questions.SellerQuestion`;
+         *     `tests/unit/test_seller_questions.py` fails if the two schemas drift.
+         */
+        SellerQuestion: {
+            /**
+             * Evidence
+             * @description the facts it rests on; the engine never emits an empty list
+             */
+            evidence: string[];
+            /**
+             * Id
+             * @description stable: rule plus evidence key
+             */
+            id: string;
+            /** Reason */
+            reason: string;
+            /** @description stable rule code, for localisation in the SPA */
+            rule: components["schemas"]["SellerQuestionRuleName"];
+            /** Text */
+            text: string;
+        };
+        /**
+         * SellerQuestionBlock
+         * @description The versioned block persisted with the audit. Null on audits made before RM-404: no questions.
+         */
+        SellerQuestionBlock: {
+            /** Questions */
+            questions: components["schemas"]["SellerQuestion"][];
+            /** Version */
+            version: number;
+        };
+        /**
+         * SellerQuestionRuleName
+         * @description Mirrors `deal_analyzer.seller_questions.SellerQuestionRule`; the drift test compares the values.
+         * @enum {string}
+         */
+        SellerQuestionRuleName: "admin_fee_unknown" | "floor_unknown" | "build_year_unknown" | "condition_unclear" | "floor_plan_missing" | "seller_status_unclear" | "equipment_sale_status";
         /**
          * SessionOut
          * @description One signed-in browser. GDPR[personal-data]: user_agent and ip belong to the account owner.

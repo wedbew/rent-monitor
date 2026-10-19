@@ -699,6 +699,20 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Workaround:** caller supplies them
 - **Target:** reference loader slice
 
+
+### L-085 — Seller questions are rule-based and their usefulness is unmeasured
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `apps/deal_analyzer/seller_questions.py`, `audit.seller_questions`, `GET /api/audits/{id}`
+- **Evidence:** confirmed (offline tests: determinism, stable IDs, de-duplication); usefulness to a buyer is inferred and unmeasured
+- **Description:** The seven rules (missing czynsz, floor, build year, unclear condition, missing floor plan,
+  unclear seller status, equipment whose sale status is unknown) are a fixed deterministic list, not a model.
+  They ask only about gaps the listing or the vision answer shows; they miss questions a buyer would ask
+  about unseen defects, legal title and the seller's motive. No seller, sale or buyer has rated them.
+  Equipment questions depend on the vision model's classification (L-061, L-063). Question text is Polish only.
+- **Workaround:** the SPA shows them as prompts to check, never as findings; old audits show none.
+- **Target:** frontend display (report owner after RM-404); quality review with labelled listings (#94, B-015)
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built

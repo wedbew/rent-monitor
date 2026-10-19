@@ -27,6 +27,7 @@ from rm_contracts.audits import (
     AuditState,
     AuditSummary,
     ChargeStateName,
+    SellerQuestionBlock,
 )
 from rm_contracts.problems import ProblemCode
 from rm_core.db.models import Audit, AuditStatus, ChargeSource, ChargeState, Listing
@@ -66,6 +67,10 @@ def _out(a: Audit) -> AuditOut:
         irr_10y=a.irr_10y,
         capex_pln=a.capex_pln,
         result=a.result,
+        # G-03 (RM-404): stored once with the report; an audit without a block has no questions (null).
+        seller_questions=(
+            SellerQuestionBlock.model_validate(a.seller_questions) if a.seller_questions is not None else None
+        ),
     )
 
 

@@ -17,6 +17,7 @@ from deal_analyzer.ownership import (
     require_whole_ownership,
 )
 from deal_analyzer.rent import RentComparable, RentEstimate, estimate_rent
+from deal_analyzer.seller_questions import SellerQuestionBlock, seller_questions
 from deal_analyzer.vision import (
     Applied,
     Condition,
@@ -52,6 +53,7 @@ __all__ = [
     "RentEstimate",
     "RentInput",
     "RentNotADealError",
+    "SellerQuestionBlock",
     "VisionOutput",
     "VisionOutputError",
     "VisionRecord",
@@ -72,5 +74,6 @@ __all__ = [
     "parse_vision_output",
     "render_markdown",
     "require_whole_ownership",
+    "seller_questions",
     "solve_max_bid",
 ]
