@@ -7,6 +7,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ### Changed
 - `OTODOM_MARKET_IMPORT_ENABLED=false` now stops the rental corpus dispatcher and every corpus page request, not only the summaries; the nightly cron, night window end, overlap, request budget and catalogue version are read from `OTODOM_MARKET_*` (`OTODOM_MARKET_SUMMARY_CRON` is new). Operator action: restart the worker after changing any of them; the window end must be before 12:00 UTC (RM-209)
 
+### Fixed
+- Vision equipment references are bound to the image identity the model was shown: each image sent carries an `Image N of M` label and the model answers with that N; the prompt text changed within `vision-v2` (no version bump, no operator action) (RM-410)
+
 ### Added
 - `GET /api/audits/{id}` returns `seller_questions`: deterministic, grounded questions to ask the seller, stored once with the report; `null` for audits made earlier, which show none; migration 0018 adds the nullable `audit.seller_questions` column (expand-only), so operators run `make migrate` (RM-404)
 - Report `vision.floor_plan_text`, `vision.notes` and `vision.equipment` (optional within `schema_version` 1), vision prompt `vision-v2`; no operator action (RM-387)

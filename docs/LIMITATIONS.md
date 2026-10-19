@@ -487,6 +487,7 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Affects:** `vision.equipment` (`sale_status`, confidence), report consumers
 - **Evidence:** general accuracy unmeasured; one live `vision-v2` sample checked on 2026-10-19 (`docs/LIVE-VISION-ID4DACX-2026-10-19.md`)
 - **Description:** `included` in a sale is a model claim; accuracy is unmeasured and the UI must not present it as fact. The live sample returned five `visible_only` observations, with two incorrect source-image references despite confidence 0.8; a successful provider call is not extraction/grounding accuracy proof.
+- **Defect status (RM-410, 2026-10-19):** the grounding defect is resolved offline: every image sent is labelled with its index (`Image N of M`) and the model answers with that N. Regression tests in `tests/unit/test_vision_stage.py` fail on the previous code and pass now. Live accuracy of the references is still unmeasured; the live sample is not re-run.
 - **Workaround:** none; no UI panel exists yet
 - **Target:** #94 accuracy set, G-02b panels
 
@@ -505,6 +506,7 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Affects:** `vision.equipment[].media_ordinal`, `app.media_evidence` (see L-051)
 - **Evidence:** confirmed in code
 - **Description:** Photos then plans in selected order; no foreign key, and the worker does not populate the manifest yet. In the 2026-10-19 live ID4DACX sample, intercom/doorbell references pointed to an exterior photo while the devices were visible in the preceding entrance photo. A one-based model index is a possible cause, not a proven parser offset; do not automatically subtract one from every reference.
+- **Defect status (RM-410, 2026-10-19):** the image-identity defect is resolved offline. The request now names each image by the index the model must return, and that index is the position among the images actually sent, so a skipped or duplicate photo cannot shift it. The mapping back is unchanged for existing callers. Still open: the manifest is not populated (G-01b), and the live references are unverified until a new sample is checked.
 - **Workaround:** none
 - **Target:** G-01b media population
 
