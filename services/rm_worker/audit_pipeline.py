@@ -31,9 +31,11 @@ from deal_analyzer import (
     Listing,
     RentInput,
     RentNotADealError,
+    SellerQuestionBlock,
     classify_ownership,
     extract_listing,
     require_whole_ownership,
+    seller_questions,
 )
 from rm_contracts.problems import ProblemCode
 from rm_core.db.models import Audit, AuditStatus, ListingSnapshot
@@ -83,6 +85,9 @@ class Outcome:
     error_code: str | None = None
     analysis: DealAnalysis | None = None
     snapshot_id: UUID | None = None
+    questions: SellerQuestionBlock | None = (
+        None  # G-03 (RM-404): derived from `analysis`, never a credit input
+    )
 
 
 async def _claim(sm: async_sessionmaker[AsyncSession], audit_id: UUID) -> str | None:
@@ -145,6 +150,18 @@ async def _vision(
     return assessment
 
 
+def _questions_for(analysis: DealAnalysis, audit_id: UUID) -> SellerQuestionBlock | None:
+    """Seller questions for a finished analysis. They are an extra, so a failure here is logged and the audit
+    still succeeds without them (no questions stored); the charge never depends on them.
+    LEGAL[republication]."""
+    try:
+        return seller_questions(analysis)
+    except Exception:
+        log.error("audit.seller_questions_failed", audit_id=str(audit_id), exc_info=True)
+        sentry_sdk.capture_exception()
+        return None
+
+
 async def _analyse(services: AuditServices, audit_id: UUID, otodom_id: str) -> Outcome:
     deadline = Deadline.after(services.timeout_s)
     sm = services.sessionmaker
@@ -190,6 +207,7 @@ async def _analyse(services: AuditServices, audit_id: UUID, otodom_id: str) -> O
         ProblemCode.VISION_UNAVAILABLE if degraded else None,
         analysis,
         snapshot_id,
+        _questions_for(analysis, audit_id),
     )
 
 
@@ -213,6 +231,9 @@ async def _finish(sm: async_sessionmaker[AsyncSession], audit_id: UUID, out: Out
             "capex_pln": a.capex_used_pln,
             "engine_version": a.engine_version,
             "schema_version": a.schema_version,
+            "seller_questions": (
+                out.questions.model_dump(mode="json") if out.questions is not None else None
+            ),
         }
     async with sm() as db, db.begin():
         await lock_owner(

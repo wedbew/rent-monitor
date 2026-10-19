@@ -213,6 +213,17 @@
             "description": "canonical DealAnalysis JSON; null until a terminal success. Its shape is docs/deal-analysis.schema.json for the version in `result.schema_version`",
             "title": "Result"
           },
+          "seller_questions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SellerQuestionBlock"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "questions to ask the seller, generated with the report (RM-404); null when the audit has none stored (every audit made before RM-404, or no successful result)"
+          },
           "started_at": {
             "anyOf": [
               {
@@ -2266,6 +2277,91 @@
         },
         "title": "SavedPut",
         "type": "object"
+      },
+      "SellerQuestion": {
+        "additionalProperties": false,
+        "description": "A question to ask the seller (G-03, RM-404). Mirrors `deal_analyzer.seller_questions.SellerQuestion`;\n`tests/unit/test_seller_questions.py` fails if the two schemas drift.",
+        "properties": {
+          "evidence": {
+            "description": "the facts it rests on; the engine never emits an empty list",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "id": {
+            "description": "stable: rule plus evidence key",
+            "pattern": "^sq-[0-9a-f]{16}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "rule": {
+            "$ref": "#/components/schemas/SellerQuestionRuleName",
+            "description": "stable rule code, for localisation in the SPA"
+          },
+          "text": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rule",
+          "text",
+          "reason",
+          "evidence"
+        ],
+        "title": "SellerQuestion",
+        "type": "object"
+      },
+      "SellerQuestionBlock": {
+        "additionalProperties": false,
+        "description": "The versioned block persisted with the audit. Null on audits made before RM-404: no questions.",
+        "properties": {
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/SellerQuestion"
+            },
+            "maxItems": 40,
+            "title": "Questions",
+            "type": "array"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "questions"
+        ],
+        "title": "SellerQuestionBlock",
+        "type": "object"
+      },
+      "SellerQuestionRuleName": {
+        "description": "Mirrors `deal_analyzer.seller_questions.SellerQuestionRule`; the drift test compares the values.",
+        "enum": [
+          "admin_fee_unknown",
+          "floor_unknown",
+          "build_year_unknown",
+          "condition_unclear",
+          "floor_plan_missing",
+          "seller_status_unclear",
+          "equipment_sale_status"
+        ],
+        "title": "SellerQuestionRuleName",
+        "type": "string"
       },
       "SessionOut": {
         "description": "One signed-in browser. GDPR[personal-data]: user_agent and ip belong to the account owner.",

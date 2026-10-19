@@ -623,6 +623,12 @@ class Audit(Base):
     engine_version: Mapped[str] = mapped_column(String(40))
     schema_version: Mapped[int]
     result: Mapped[dict[str, Any] | None] = mapped_column(comment="canonical DealAnalysis JSON")
+    # G-03 (RM-404): questions to ask the seller, derived from `result` once; NULL = none stored (old audits).
+    # LEGAL[republication]: echoes listing facts and photo equipment to the audit's owner.
+    # GDPR[retention]: deleted with the row.
+    seller_questions: Mapped[dict[str, Any] | None] = mapped_column(
+        comment="versioned seller-question block derived from result (RM-404); NULL = none stored"
+    )
     # Extracted for filtering and sorting: copied from `result`, never computed here (invariant 4).
     grade: Mapped[str | None] = mapped_column(String(2))
     asking_price_pln: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))

@@ -5,6 +5,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- `GET /api/audits/{id}` returns `seller_questions`: deterministic, grounded questions to ask the seller, stored once with the report; `null` for audits made earlier, which show none; migration 0018 adds the nullable `audit.seller_questions` column (expand-only), so operators run `make migrate` (RM-404)
 - Report `vision.floor_plan_text`, `vision.notes` and `vision.equipment` (optional within `schema_version` 1), vision prompt `vision-v2`; no operator action (RM-387)
 
 ### Fixed
