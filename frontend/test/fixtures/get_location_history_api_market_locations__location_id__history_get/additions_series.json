@@ -1,0 +1,27 @@
+{
+  "body": {
+    "cohort_key": "rooms_2",
+    "end": "2026-10-19",
+    "location_id": "smoke-torun",
+    "points": [],
+    "series": "additions",
+    "start": "2026-07-22"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations/{location_id}/history",
+    "method": "GET",
+    "operation_id": "get_location_history_api_market_locations__location_id__history_get",
+    "path": "/api/market/locations/{location_id}/history"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations/smoke-torun/history?series=additions&cohort=rooms_2"
+  },
+  "scenario": "additions_series",
+  "status": 200
+}

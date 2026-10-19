@@ -549,6 +549,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/market/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Locations
+         * @description Catalogue places by name with the headline of their latest published cohort.
+         */
+        get: operations["list_locations_api_market_locations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/market/locations/{location_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Location
+         * @description One place: live freshness and its latest cohort, one entry per cohort key.
+         */
+        get: operations["get_location_api_market_locations__location_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/market/locations/{location_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Location History
+         * @description Daily history of one series and cohort, oldest first. A day without a published row is absent.
+         */
+        get: operations["get_location_history_api_market_locations__location_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me": {
         parameters: {
             query?: never;
@@ -659,6 +719,75 @@ export interface components {
          * @enum {string}
          */
         AnalysisState: "not_requested" | "classified" | "failed";
+        /**
+         * AskingRentOut
+         * @description One published aggregate: a series and cohort on one summary day.
+         */
+        AskingRentOut: {
+            /**
+             * Archive Days
+             * @default 90
+             * @constant
+             */
+            archive_days: 90;
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Backfilled */
+            backfilled: boolean;
+            /** Caveats */
+            caveats: string[];
+            /** Cohort Key */
+            cohort_key: string;
+            /** First Observed Count */
+            first_observed_count: number | null;
+            /**
+             * Measure
+             * @default original_asking_rent
+             * @constant
+             */
+            measure: "original_asking_rent";
+            /** Median Ppm2 */
+            median_ppm2: string | null;
+            /** Median Rent Pln */
+            median_rent_pln: string | null;
+            /** Observed Count */
+            observed_count: number;
+            /** P25 Ppm2 */
+            p25_ppm2: string | null;
+            /** P75 Ppm2 */
+            p75_ppm2: string | null;
+            /**
+             * Price Basis
+             * @default asking
+             * @constant
+             */
+            price_basis: "asking";
+            /** Priced Count */
+            priced_count: number;
+            /**
+             * Series
+             * @enum {string}
+             */
+            series: "additions" | "cohort";
+            /**
+             * Source
+             * @default otodom
+             * @constant
+             */
+            source: "otodom";
+            /** Sufficient */
+            sufficient: boolean;
+            /**
+             * Summary Date
+             * Format: date
+             */
+            summary_date: string;
+            /** Withheld Reason */
+            withheld_reason: "insufficient_sample" | null;
+        };
         /** AuditAccepted */
         AuditAccepted: {
             /**
@@ -847,6 +976,11 @@ export interface components {
             /** Balance */
             balance: number;
         };
+        /**
+         * DataStatus
+         * @enum {string}
+         */
+        DataStatus: "unavailable" | "fresh" | "delayed" | "stale";
         /** EmailStart */
         EmailStart: {
             /** Email */
@@ -1096,6 +1230,77 @@ export interface components {
             };
             /** Recent */
             recent: components["schemas"]["JobOut"][];
+        };
+        /** LocationDetailOut */
+        LocationDetailOut: {
+            /** Cohort */
+            cohort: components["schemas"]["AskingRentOut"][];
+            /** Covered Until */
+            covered_until: string | null;
+            data_status: components["schemas"]["DataStatus"];
+            /** Last Successful Refresh At */
+            last_successful_refresh_at: string | null;
+            /** Location Id */
+            location_id: string;
+            /** Name */
+            name: string;
+            /** Unresolved Gap Since */
+            unresolved_gap_since: string | null;
+            /** Usable For Ranking */
+            usable_for_ranking: boolean;
+        };
+        /** LocationHistoryOut */
+        LocationHistoryOut: {
+            /** Cohort Key */
+            cohort_key: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Location Id */
+            location_id: string;
+            /** Points */
+            points: components["schemas"]["AskingRentOut"][];
+            /**
+             * Series
+             * @enum {string}
+             */
+            series: "additions" | "cohort";
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+        };
+        /** LocationPage */
+        LocationPage: {
+            /** Items */
+            items: components["schemas"]["LocationSummaryOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** LocationSummaryOut */
+        LocationSummaryOut: {
+            data_status: components["schemas"]["DataStatus"];
+            /** Last Successful Refresh At */
+            last_successful_refresh_at: string | null;
+            /** Latest Summary Date */
+            latest_summary_date: string | null;
+            /** Location Id */
+            location_id: string;
+            /** Median Ppm2 */
+            median_ppm2: string | null;
+            /** Median Rent Pln */
+            median_rent_pln: string | null;
+            /** Name */
+            name: string;
+            /** Priced Count */
+            priced_count: number | null;
+            /** Sufficient */
+            sufficient: boolean | null;
+            /** Withheld Reason */
+            withheld_reason: "insufficient_sample" | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -3960,6 +4165,211 @@ export interface operations {
                 };
             };
             /** @description Problem: BILLING_UNAVAILABLE, NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_locations_api_market_locations_get: {
+        parameters: {
+            query?: {
+                /** @description part of the place name */
+                q?: string | null;
+                limit?: number;
+                /** @description `next_cursor` of the previous page */
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationPage"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_location_api_market_locations__location_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description stable internal place id */
+                location_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationDetailOut"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_location_history_api_market_locations__location_id__history_get: {
+        parameters: {
+            query?: {
+                /** @description `additions` and `cohort` are never mixed */
+                series?: "additions" | "cohort";
+                /** @description cohort key, `all` by default */
+                cohort?: string;
+                /** @description days ending today (UTC) */
+                days?: number;
+            };
+            header?: never;
+            path: {
+                /** @description stable internal place id */
+                location_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationHistoryOut"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
             503: {
                 headers: {
                     [name: string]: unknown;
