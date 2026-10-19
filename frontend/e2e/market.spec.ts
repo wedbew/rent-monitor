@@ -306,6 +306,24 @@ test.describe("Rynek: one place", () => {
     await expect(page).toHaveURL(/q=to/);
   });
 
+  test("the cohort select opens a labelled list of the cohorts the API published", async ({
+    page,
+    serve,
+  }) => {
+    await serve("market");
+    await page.goto("/app/market/torun");
+    const select = page.getByRole("combobox", { name: "Grupa mieszkań" });
+    await exercise("market.place.cohort.listbox", async () => {
+      await select.click();
+      const list = page.getByRole("listbox", { name: "Grupa mieszkań" });
+      await expect(list).toBeVisible();
+      await expect(list.getByRole("option")).toHaveText(["Wszystkie", "2 pokoje", "45–60 m²"]);
+      const opened = await outcome.state(select, "aria-expanded", "true");
+      await page.keyboard.press("Escape");
+      return [opened];
+    });
+  });
+
   test("an address with values outside the vocabulary falls back to the defaults", async ({
     page,
     serve,
