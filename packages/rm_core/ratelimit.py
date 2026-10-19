@@ -10,6 +10,8 @@ GDPR[personal-data]: the key stored is a SHA-256 of "<scope>:<subject>", never t
 
 import hashlib
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import Integer, cast, func, literal
 from sqlalchemy.dialects.postgresql import insert
@@ -29,8 +31,30 @@ def limit_key(scope: str, subject: str) -> str:
     return hashlib.sha256(f"{scope}:{subject}".encode()).hexdigest()
 
 
-async def hit(session: AsyncSession, scope: str, subject: str, *, limit: int, window_s: int) -> RateDecision:
-    """Count one attempt for `subject` in the current window and say whether it is within `limit`."""
+async def hit(
+    session: AsyncSession,
+    scope: str,
+    subject: str,
+    *,
+    limit: int,
+    window_s: int,
+    at: datetime | None = None,
+) -> RateDecision:
+    """Count one attempt for `subject` in the current window and say whether it is within `limit`.
+
+    `at` pins the clock for tests; production callers leave it unset and the database clock is used.
+    """
+    if at is not None:
+        epoch_s = int(at.timestamp())
+        start_s = epoch_s // window_s * window_s
+        window_start: Any = literal(datetime.fromtimestamp(start_s, UTC))
+        retry_after = start_s + window_s - epoch_s
+        stmt = insert(RateLimit).values(key=limit_key(scope, subject), window_start=window_start, n=1)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[RateLimit.key, RateLimit.window_start], set_={"n": RateLimit.n + 1}
+        ).returning(RateLimit.n)
+        count = int((await session.execute(stmt)).scalar_one())
+        return RateDecision(allowed=count <= limit, count=count, retry_after_s=max(1, retry_after))
     epoch = func.extract("epoch", func.now())
     window_start = func.to_timestamp(func.floor(epoch / window_s) * window_s)
     stmt = insert(RateLimit).values(key=limit_key(scope, subject), window_start=window_start, n=1)
