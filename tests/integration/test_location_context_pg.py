@@ -344,19 +344,53 @@ async def test_page_replay_is_idempotent_and_skipping_is_refused(repo: PgLocatio
     assert (await repo.observations("test_population", 1, 2022))[0].value == Decimal(5)  # first fact stays
 
 
-async def test_bad_data_fails_the_run_terminally(engine: AsyncEngine, repo: PgLocationRepo) -> None:
+async def test_units_outside_the_reference_are_ignored_not_fatal(
+    engine: AsyncEngine, repo: PgLocationRepo
+) -> None:
+    """BDL lists urban/rural parts, districts and defunct gminas next to the current whole ones; the reference
+    holds only the latter, so the rest is skipped and the run still completes (live finding, RM-48)."""
     await repo.ensure_reference(2, "smaller", territories()[:-1])  # gmina 3 is unknown to this reference
-    with pytest.raises(UnexpectedDataError):
-        await run_once(repo, Source(), reference_version=2)
+    outcome = await run_once(repo, Source(), reference_version=2)
+    assert outcome.status == "complete"
+    stored = {o.territory_id for y in YEARS for o in await repo.observations("test_population", 1, y)}
+    assert GMINAS[2] not in stored  # never stored for a territory the reference does not know
+
+
+async def test_bad_data_fails_the_run_terminally(engine: AsyncEngine, repo: PgLocationRepo) -> None:
+    with pytest.raises(UnexpectedDataError):  # the fixture carries a year this run did not ask for
+        await ingest_variable(
+            repo,
+            Source().client(),
+            validator(),
+            variable_id="TESTV1",
+            unit_level=6,
+            years=(YEARS[0],),
+            reference_version=1,
+            owner="w1",
+            deadline=Deadline.after(30),
+        )
     async with engine.connect() as c:
-        state = await c.scalar(text("SELECT state FROM app.location_ingest_run WHERE reference_version = 2"))
+        state = await c.scalar(
+            text("SELECT state FROM app.location_ingest_run WHERE years = CAST(:y AS integer[])"),
+            {"y": [YEARS[0]]},
+        )
     assert state == "failed"
     with pytest.raises(RunStateError):  # a failed run is not silently retried
-        await run_once(repo, Source(), reference_version=2)
+        await ingest_variable(
+            repo,
+            Source().client(),
+            validator(),
+            variable_id="TESTV1",
+            unit_level=6,
+            years=(YEARS[0],),
+            reference_version=1,
+            owner="w1",
+            deadline=Deadline.after(30),
+        )
 
 
-async def test_no_binding_means_no_request_and_the_shipped_registry_is_empty(repo: PgLocationRepo) -> None:
-    assert BDL_BINDINGS == {}  # B-023: nothing is selected or activated
+async def test_no_binding_means_no_request(repo: PgLocationRepo) -> None:
+    assert "TESTV1" not in BDL_BINDINGS  # test-only ids are never part of the shipped registry
     source = Source()
     with pytest.raises(UnknownVariableError):
         await ingest_variable(

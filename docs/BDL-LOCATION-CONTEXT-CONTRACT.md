@@ -6,6 +6,19 @@
 
 **Next batch:** the owner also confirmed that BDL and complete Otodom rental-market ingestion belong in the same next feature batch. The [feature-gap guide §0](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md#0-next-implementation-batch-rynek-data-and-location-context) coordinates the work; the [Otodom guide](OTODOM-NIGHTLY-IMPORT.md) specifies all-location Postgres storage, full bootstrap, nightly last-24-hours new offers and daily trend history. BDL annual statistical history and Otodom rental cohorts stay separately sourced/versioned; neither workstream is satisfied by the Rynek placeholder or one-city sample.
 
+## As built (2026-10-20, RM-48)
+
+Delivery state of this proposal, verified against the live service on 2026-10-20 (see `docs/STATUS.md`): the reviewed
+registry is `packages/rm_core/bdl_metrics.py` (22 metrics, each with variable id, unit, native level, direction,
+change basis and publication threshold); the territorial reference is built by `packages/rm_core/bdl_reference.py`
+from `/units` (levels 0, 2, 5, 6) with TERYT derived from the 12-digit BDL id; the pass is
+`services/rm_worker/importers/bdl_context.py` (task `refresh_bdl_context`, weekly). Facts it relies on: the unit list
+cannot be filtered by year and holds parts, districts and defunct units next to whole gminas, so a unit is current
+when it reports a population in the reference year (L-089); every gmina metric is also published by BDL at powiat,
+voivodeship and country level and those aggregates are read as published; four metrics are powiat-grain only and a
+gmina view shows them as labelled proxies (L-080); attribute 91 is suppressed, never zero (L-055). Still open: the
+read routes, the Otodom-location-to-gmina mapping, the profile UI and the experimental index.
+
 ## 1. Does the existing BDL contract cover this?
 
 **Only partially.** [Issue #48](https://github.com/wedbew/rent-monitor/issues/48) explicitly references the GUS project README and `docs/REIS_V3_IMPLEMENTATION_VERIFICATION.md`. It requires approved metrics, units, territorial grain, a versioned TERYT crosswalk, provenance, completeness gates and reconciliation. It does **not** explicitly require:

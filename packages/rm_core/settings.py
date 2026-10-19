@@ -75,7 +75,7 @@ class Settings(BaseSettings):
     # LEGAL[third-party-data]: GUS BDL API key (optional, raises the request quota) and our own request cap.
     # The real server quota is unconfirmed (RM-391-L02); the cap is a conservative placeholder, not a policy.
     bdl_api_key: SecretStr = SecretStr("")
-    bdl_requests_per_minute: int = Field(default=10, ge=1, le=600)
+    bdl_requests_per_minute: int = Field(default=60, ge=1, le=600)
     audit_child_memory_mb: int = Field(default=1024, ge=128)  # RLIMIT_AS of the engine child process (#186)
 
     openrouter_api_key: SecretStr = Field(  # blueprint §4.2 spells it OPEN_ROUTER_API_KEY
@@ -112,7 +112,10 @@ class Settings(BaseSettings):
         "30 5 * * *"  # UTC; after the default window end, before the day's reads
     )
 
-    @field_validator("otodom_market_nightly_cron", "otodom_market_summary_cron")
+    location_reference_version: int = Field(default=1, ge=1)  # frozen BDL territorial reference (RM-48)
+    bdl_refresh_cron: str = "30 3 * * 1"  # UTC, weekly: a finished run is skipped, a new source year is read
+
+    @field_validator("otodom_market_nightly_cron", "otodom_market_summary_cron", "bdl_refresh_cron")
     @classmethod
     def _cron_has_five_fields(cls, v: str) -> str:
         if len(v.split()) != 5:

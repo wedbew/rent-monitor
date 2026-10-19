@@ -20,6 +20,7 @@ from rm_contracts.location_context import (
     TerritoryLevel,
     TerritoryRef,
 )
+from rm_core.bdl_metrics import BY_KEY
 from rm_core.location_contracts import LocationContractError, TerritoryHierarchy
 from rm_core.location_indicators import (
     Basis,
@@ -93,8 +94,9 @@ def obs(
     )
 
 
-def test_bdl_bindings_stay_empty() -> None:
-    assert BDL_BINDINGS == {}  # nothing is activated by this slice
+def test_bdl_bindings_are_the_reviewed_registry_and_nothing_else() -> None:
+    assert len(BDL_BINDINGS) == 22
+    assert {b.definition.key for b in BDL_BINDINGS.values()} == set(BY_KEY)
 
 
 # --- measured unit and labels -------------------------------------------------------------------------
