@@ -39,7 +39,7 @@ cd /opt/rent-monitor && git fetch && git checkout <sha> && export IMAGE_TAG=$(gi
 C="docker compose -f deploy/compose.yml -f deploy/compose.prod.yml"
 $C build                              # tags rentmonitor-py:$IMAGE_TAG
 $C run --rm bootstrap                 # migrations (expand-only), Procrastinate schema, seed: idempotent
-$C up -d --wait postgres api worker-audit worker-ops
+$C up -d --wait postgres api worker-audit worker-ops worker-batch
 $C ps                                 # all healthy
 ```
 
@@ -65,7 +65,7 @@ Private access for people: `ssh -L 8000:127.0.0.1:8000 deploy@host`, then use `h
 
 ```bash
 git checkout <previous-sha> && export IMAGE_TAG=<previous-short-sha>   # the previous image is still on the host
-$C up -d --wait api worker-audit worker-ops                           # no bootstrap: the schema is only ever expanded
+$C up -d --wait api worker-audit worker-ops worker-batch             # no bootstrap: the schema is only ever expanded
 ```
 
 If the failure is data, restore (section 4) into a scratch database first and compare before touching the live one. In-flight
@@ -86,9 +86,10 @@ These conservative ceilings also fit the current 12 GB VPS-3. They have not been
 on that host; do not automatically raise limits or worker concurrency before gate-4 evidence.
 
 `compose.prod.yml`: postgres 1 G, api 512 M, worker-audit 1.5 G (the engine child is capped inside it by
-`AUDIT_CHILD_MEMORY_MB`), worker-ops 256 M, caddy 64 M; containers drop all capabilities, run read-only with a 64 MB `/tmp`
-and `no-new-privileges`. Two worker lanes: `worker-audit` (queue `audit`, concurrency 1) and `worker-ops` (`ops,batch`,
-concurrency 2), so a long audit can never starve mail, the reconciler or the monitors. These are ceilings sized on paper; gate 4
+`AUDIT_CHILD_MEMORY_MB`), worker-ops 256 M, worker-batch 256 M, caddy 64 M; containers drop all capabilities, run read-only with a 64 MB `/tmp`
+and `no-new-privileges`. Three worker lanes: `worker-audit` (queue `audit`, concurrency 1), `worker-ops` (queue `ops`,
+concurrency 2) and `worker-batch` (queue `batch`, concurrency 1: market collection and BDL ingestion), so a long audit
+or a bootstrap can never starve mail, the reconciler or the monitors. These are ceilings sized on paper; gate 4
 (20 representative audits, `memory.peak`) replaces them with measurements.
 
 ## 6. Public exposure (not part of the private beta)

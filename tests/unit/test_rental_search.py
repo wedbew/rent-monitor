@@ -160,7 +160,7 @@ async def test_search_url_is_built_from_a_validated_location_and_defaults_to_bat
         ("https://evil.test/", 1),
         ("", 1),
         (LOC, 0),
-        (LOC, 51),
+        (LOC, 401),
     ],
 )
 async def test_unsafe_location_or_page_is_refused_before_any_request(location: str, page_no: int) -> None:

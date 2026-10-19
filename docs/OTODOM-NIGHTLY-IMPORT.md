@@ -7,6 +7,19 @@ exists until implemented and tested.
 
 **Scope revision, 2026-10-16:** the owner confirmed this and GUS BDL as the **next implementation batch**. The completion target is **all locations in the verified 727-location catalogue**, persisted in Postgres with full bootstrap, nightly last-24-hours new-offer capture and durable daily trends. This supersedes the original largest-city launch-subset restriction below and the historical backend-only phase wording. See the [feature-gap batch and issue proposals](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md#0-next-implementation-batch-rynek-data-and-location-context) and [BDL location-context contract](BDL-LOCATION-CONTEXT-CONTRACT.md). No job is installed or scraping run by this documentation change.
 
+## As verified (2026-10-20, RM-411)
+
+Single live requests (Bydgoszcz and Warsaw flat rentals, no offer content kept) settled section 4 and changed the
+design: `?daysSinceCreated=N` is a rolling N x 24 h window with no upper bound and no absolute-date filter;
+`by=LATEST&direction=ASC|DESC` sorts by `createdAtFirst`; `limit=24|36|72` sets the page size; there is no
+50-page ceiling; an empty location answers `totalPages: 0`; a page past the end repeats the last page; every
+non-empty page ends with a sponsored `hpr/` tile that is not an offer. The importer therefore reads a window
+newest-first until an advert older than its start appears (one wider window for a long gap, not chunks) and
+reads a list deeper than the page cap from both ends and walks the middle with `daysSinceCreated`; coverage is
+proven from timestamps. The catalogue is the 787 gmina-level places Otodom lists today (reconciliation in
+`docs/market/otodom-catalogue-v1.json`), not the owner's 727 identities (L-092). Sections 4 to 6 below describe
+the earlier plan; where they disagree with this paragraph, this paragraph wins.
+
 ## 1. Owner decisions and scope
 
 - The owner has verified the 727-location catalogue against Otodom. Use that catalogue; do not replace it

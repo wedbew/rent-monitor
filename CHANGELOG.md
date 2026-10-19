@@ -5,6 +5,14 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- Otodom place catalogue from the site's own location sitemap: `docs/market/otodom-catalogue-v1.json` (787 gmina-level places, provenance, sitemap SHA-256, checksum, per-place census and a reconciliation that says plainly it is not the owner's 727 identities), `scripts/seed_catalogue.py discover|apply` and `scripts/market_manifest.py` (coverage manifest: per-place state, pages read, offers stored). Operator action: `scripts/seed_catalogue.py apply --file docs/market/otodom-catalogue-v1.json` once per database (RM-411)
+- A dedicated `worker-batch` Compose lane (queue `batch`, concurrency 1) for market collection; `worker-ops` now serves `ops` only. Operator action: `docker compose up -d worker-batch worker-ops` (RM-411)
+
+### Changed
+- The corpus search uses the contract verified against the live site on 2026-10-20: `daysSinceCreated=N` (rolling), `by=LATEST&direction=ASC|DESC`, `limit=72`; the invented `createdAtFrom/To` parameters and the unverified-filter switch are gone, there is no 50-page ceiling, and a long gap is one wider window instead of chained chunks (RM-411)
+
+### Fixed
+- The sponsored `hpr/` tile that ends every non-empty results page (synthetic id, 1999 date, another advert's price) is no longer stored as an offer; an empty location (`totalPages: 0`) is a valid complete search instead of a malformed page; a page past the end (the site repeats the last one) ends the run `incomplete` (RM-411)
 - GUS BDL location context goes live (code and offline evidence; no data is published until the first real pass, L-088): a reviewed registry of 22 metrics (`rm_core.bdl_metrics`: population and age, migration, housing, deed transactions and median price, earnings, unemployment, REGON, municipal revenue), a territorial reference built from the live unit lists with exact TERYT codes, and a weekly worker task `refresh_bdl_context` (queue `batch`, `BDL_REFRESH_CRON`, default Monday 03:30 UTC) that reads each metric at every level BDL publishes and publishes each year that passes its coverage gate. New env names `LOCATION_REFERENCE_VERSION` and `BDL_REFRESH_CRON`; `BDL_REQUESTS_PER_MINUTE` now defaults to 60 (the key's live quota is 50,000 requests per 7 days). Operator action: none for a deploy; set `BDL_API_KEY` for the higher quota (RM-48)
 
 ### Fixed

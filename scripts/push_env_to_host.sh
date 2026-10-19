@@ -57,6 +57,6 @@ if [ "$RESTART" = 1 ]; then
     export IMAGE_TAG=$(grep -E "^IMAGE_TAG=" .env | cut -d= -f2) &&
     dc() { docker compose --env-file .env --profile public -f deploy/compose.yml -f deploy/compose.prod.yml "$@"; }
     dc run --rm --no-deps --entrypoint python api scripts/check_env.py 2>&1 | grep -E "ERROR|WARN|check_env"
-    dc up -d --force-recreate --wait api worker-ops worker-audit 2>&1 | tail -3
+    dc up -d --force-recreate --wait api worker-ops worker-audit worker-batch 2>&1 | tail -3
     curl -sS https://renti.tech/api/health; echo'
 fi
