@@ -16,7 +16,7 @@ import time
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any, ClassVar, Literal
 from uuid import UUID, uuid4
@@ -239,6 +239,9 @@ class Actor:
 # ------------------------------------------------------------------------------------------------ world
 # GDPR[personal-data]: every account here is synthetic (example.test addresses); exchanges are redacted before
 # they are written anywhere (RM-263)
+MARKET_CATALOGUE_VERSION = 7  # smoke-only catalogue, so seeding never collides with the integration suites
+
+
 class World:
     def __init__(
         self,
@@ -268,6 +271,7 @@ class World:
             public_app_url=ORIGIN,
             google_client_id=GOOGLE_AUDIENCE,
             free_signup_credits=SIGNUP_CREDITS,
+            otodom_market_catalogue_version=MARKET_CATALOGUE_VERSION,
             log_level="WARNING",  # a capture of 170 scenarios should not print 170 access lines
             paddle_webhook_secret=SecretStr(WEBHOOK_SECRET),
         )
@@ -391,6 +395,83 @@ class World:
             await conn.execute(text("DELETE FROM app.feature_flag WHERE key = ANY(:k)"), {"k": self._flags})
             await conn.execute(text("DELETE FROM app.plan WHERE code = ANY(:p)"), {"p": self._plans})
             await conn.execute(text("DELETE FROM app.rate_limit WHERE true"))
+
+    # ------------------------------------------------------------------------------------- market
+    async def seed_market(self) -> None:
+        """Synthetic market data through production code: two places (12 and 3 priced asking rents) published
+        for today, one with a pending bootstrap and one never imported. Idempotent per process.
+        Evidence class: fake provider data (hand-made offers, no Otodom response)."""
+        if getattr(self, "_market_seeded", False):
+            return
+        from deal_analyzer.market_stats import summarise_asking  # noqa: PLC0415
+        from rm_contracts.market import (  # noqa: PLC0415
+            ImportRun,
+            LocationCatalogue,
+            LocationEntry,
+            OfferObservation,
+            RunMode,
+            RunState,
+        )
+        from rm_core.market_corpus import PgCorpus  # noqa: PLC0415
+        from rm_core.market_history import PgMarketHistory  # noqa: PLC0415
+
+        now = datetime.now(UTC)
+        boot = now - timedelta(days=3)
+        places = {
+            "smoke-torun": "Toruń",
+            "smoke-gdynia": "Gdynia",
+            "smoke-gdansk": "Gdańsk",
+            "smoke-kielce": "Kielce",
+        }
+        corpus = PgCorpus(self.sm)
+        await corpus.ensure_catalogue(
+            LocationCatalogue.build(
+                MARKET_CATALOGUE_VERSION,
+                "smoke-catalogue",
+                [
+                    LocationEntry(location_id=i, name=n, otodom_path=f"cala-polska/{i}")
+                    for i, n in places.items()
+                ],
+            )
+        )
+
+        async def publish(loc: str, count: int) -> None:
+            tag = uuid4().hex[:10]
+            for rid, mode, seen, start in (
+                (f"b-{tag}", RunMode.bootstrap, boot, boot - timedelta(hours=24)),
+                (f"n-{tag}", RunMode.incremental, now - timedelta(hours=2), boot),
+            ):
+                await corpus.start_run(
+                    ImportRun(
+                        run_id=rid,
+                        location_id=loc,
+                        mode=mode,
+                        window_start=start,
+                        window_end=start + timedelta(hours=24),
+                    )
+                )
+                await corpus.save_progress(rid, pages_fetched=1, pages_expected=1)
+                offers = [
+                    OfferObservation(
+                        source_offer_id=str(abs(hash(loc)) % 10**9 * 100 + i),
+                        location_id=loc,
+                        asking_rent_pln=Decimal(2000 + 50 * i),
+                        area_m2=Decimal(50),
+                        rooms=2,
+                        observed_at=seen,
+                    )
+                    for i in range(count)
+                ]
+                if mode is RunMode.bootstrap:
+                    await corpus.record_offers(rid, offers, seen)
+                await corpus.finish_run(rid, state=RunState.published, now=seen)
+
+        await publish("smoke-torun", 12)
+        await publish("smoke-gdynia", 3)
+        history = PgMarketHistory(self.sm)
+        for loc in ("smoke-torun", "smoke-gdynia"):
+            await history.publish_day(loc, now.date(), now=now, summarise=summarise_asking)
+        self._market_seeded = True
 
     # ------------------------------------------------------------------------------------- clients
     def _next_ip(self) -> str:

@@ -35,6 +35,169 @@
         "title": "AnalysisState",
         "type": "string"
       },
+      "AskingRentOut": {
+        "additionalProperties": false,
+        "description": "One published aggregate: a series and cohort on one summary day.",
+        "properties": {
+          "archive_days": {
+            "const": 90,
+            "default": 90,
+            "title": "Archive Days",
+            "type": "integer"
+          },
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "backfilled": {
+            "title": "Backfilled",
+            "type": "boolean"
+          },
+          "caveats": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Caveats",
+            "type": "array"
+          },
+          "cohort_key": {
+            "title": "Cohort Key",
+            "type": "string"
+          },
+          "first_observed_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Observed Count"
+          },
+          "measure": {
+            "const": "original_asking_rent",
+            "default": "original_asking_rent",
+            "title": "Measure",
+            "type": "string"
+          },
+          "median_ppm2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Ppm2"
+          },
+          "median_rent_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Rent Pln"
+          },
+          "observed_count": {
+            "minimum": 0.0,
+            "title": "Observed Count",
+            "type": "integer"
+          },
+          "p25_ppm2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P25 Ppm2"
+          },
+          "p75_ppm2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P75 Ppm2"
+          },
+          "price_basis": {
+            "const": "asking",
+            "default": "asking",
+            "title": "Price Basis",
+            "type": "string"
+          },
+          "priced_count": {
+            "minimum": 0.0,
+            "title": "Priced Count",
+            "type": "integer"
+          },
+          "series": {
+            "enum": [
+              "additions",
+              "cohort"
+            ],
+            "title": "Series",
+            "type": "string"
+          },
+          "source": {
+            "const": "otodom",
+            "default": "otodom",
+            "title": "Source",
+            "type": "string"
+          },
+          "sufficient": {
+            "title": "Sufficient",
+            "type": "boolean"
+          },
+          "summary_date": {
+            "format": "date",
+            "title": "Summary Date",
+            "type": "string"
+          },
+          "withheld_reason": {
+            "anyOf": [
+              {
+                "const": "insufficient_sample",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withheld Reason"
+          }
+        },
+        "required": [
+          "caveats",
+          "summary_date",
+          "series",
+          "cohort_key",
+          "as_of",
+          "observed_count",
+          "priced_count",
+          "first_observed_count",
+          "median_rent_pln",
+          "median_ppm2",
+          "p25_ppm2",
+          "p75_ppm2",
+          "sufficient",
+          "withheld_reason",
+          "backfilled"
+        ],
+        "title": "AskingRentOut",
+        "type": "object"
+      },
       "AuditAccepted": {
         "properties": {
           "audit_id": {
@@ -535,6 +698,16 @@
         ],
         "title": "CreditAdjustOut",
         "type": "object"
+      },
+      "DataStatus": {
+        "enum": [
+          "unavailable",
+          "fresh",
+          "delayed",
+          "stale"
+        ],
+        "title": "DataStatus",
+        "type": "string"
       },
       "EmailStart": {
         "additionalProperties": false,
@@ -1227,6 +1400,268 @@
           "recent"
         ],
         "title": "JobsOut",
+        "type": "object"
+      },
+      "LocationDetailOut": {
+        "additionalProperties": false,
+        "properties": {
+          "cohort": {
+            "items": {
+              "$ref": "#/components/schemas/AskingRentOut"
+            },
+            "title": "Cohort",
+            "type": "array"
+          },
+          "covered_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Covered Until"
+          },
+          "data_status": {
+            "$ref": "#/components/schemas/DataStatus"
+          },
+          "last_successful_refresh_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Successful Refresh At"
+          },
+          "location_id": {
+            "title": "Location Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "unresolved_gap_since": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unresolved Gap Since"
+          },
+          "usable_for_ranking": {
+            "title": "Usable For Ranking",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "location_id",
+          "name",
+          "data_status",
+          "last_successful_refresh_at",
+          "covered_until",
+          "unresolved_gap_since",
+          "usable_for_ranking",
+          "cohort"
+        ],
+        "title": "LocationDetailOut",
+        "type": "object"
+      },
+      "LocationHistoryOut": {
+        "additionalProperties": false,
+        "properties": {
+          "cohort_key": {
+            "title": "Cohort Key",
+            "type": "string"
+          },
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "location_id": {
+            "title": "Location Id",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/AskingRentOut"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "series": {
+            "enum": [
+              "additions",
+              "cohort"
+            ],
+            "title": "Series",
+            "type": "string"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "location_id",
+          "series",
+          "cohort_key",
+          "start",
+          "end",
+          "points"
+        ],
+        "title": "LocationHistoryOut",
+        "type": "object"
+      },
+      "LocationPage": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LocationSummaryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "LocationPage",
+        "type": "object"
+      },
+      "LocationSummaryOut": {
+        "additionalProperties": false,
+        "properties": {
+          "data_status": {
+            "$ref": "#/components/schemas/DataStatus"
+          },
+          "last_successful_refresh_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Successful Refresh At"
+          },
+          "latest_summary_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Summary Date"
+          },
+          "location_id": {
+            "title": "Location Id",
+            "type": "string"
+          },
+          "median_ppm2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Ppm2"
+          },
+          "median_rent_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Rent Pln"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "priced_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priced Count"
+          },
+          "sufficient": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sufficient"
+          },
+          "withheld_reason": {
+            "anyOf": [
+              {
+                "const": "insufficient_sample",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withheld Reason"
+          }
+        },
+        "required": [
+          "location_id",
+          "name",
+          "data_status",
+          "last_successful_refresh_at",
+          "latest_summary_date",
+          "median_rent_pln",
+          "median_ppm2",
+          "priced_count",
+          "sufficient",
+          "withheld_reason"
+        ],
+        "title": "LocationSummaryOut",
         "type": "object"
       },
       "LoginRequest": {
@@ -6143,6 +6578,378 @@
         "summary": "Get Invoice",
         "tags": [
           "billing"
+        ]
+      }
+    },
+    "/api/market/locations": {
+      "get": {
+        "description": "Catalogue places by name with the headline of their latest published cohort.",
+        "operationId": "list_locations_api_market_locations_get",
+        "parameters": [
+          {
+            "description": "part of the place name",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 60,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "part of the place name",
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "`next_cursor` of the previous page",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 300,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`next_cursor` of the previous page",
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "List Locations",
+        "tags": [
+          "market"
+        ]
+      }
+    },
+    "/api/market/locations/{location_id}": {
+      "get": {
+        "description": "One place: live freshness and its latest cohort, one entry per cohort key.",
+        "operationId": "get_location_api_market_locations__location_id__get",
+        "parameters": [
+          {
+            "description": "stable internal place id",
+            "in": "path",
+            "name": "location_id",
+            "required": true,
+            "schema": {
+              "description": "stable internal place id",
+              "pattern": "^[a-z0-9-]{1,64}$",
+              "title": "Location Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Get Location",
+        "tags": [
+          "market"
+        ]
+      }
+    },
+    "/api/market/locations/{location_id}/history": {
+      "get": {
+        "description": "Daily history of one series and cohort, oldest first. A day without a published row is absent.",
+        "operationId": "get_location_history_api_market_locations__location_id__history_get",
+        "parameters": [
+          {
+            "description": "stable internal place id",
+            "in": "path",
+            "name": "location_id",
+            "required": true,
+            "schema": {
+              "description": "stable internal place id",
+              "pattern": "^[a-z0-9-]{1,64}$",
+              "title": "Location Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "`additions` and `cohort` are never mixed",
+            "in": "query",
+            "name": "series",
+            "required": false,
+            "schema": {
+              "default": "cohort",
+              "description": "`additions` and `cohort` are never mixed",
+              "enum": [
+                "additions",
+                "cohort"
+              ],
+              "title": "Series",
+              "type": "string"
+            }
+          },
+          {
+            "description": "cohort key, `all` by default",
+            "in": "query",
+            "name": "cohort",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "cohort key, `all` by default",
+              "pattern": "^[a-z0-9_]{1,16}$",
+              "title": "Cohort",
+              "type": "string"
+            }
+          },
+          {
+            "description": "days ending today (UTC)",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 90,
+              "description": "days ending today (UTC)",
+              "maximum": 399,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationHistoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Get Location History",
+        "tags": [
+          "market"
         ]
       }
     },

@@ -1333,6 +1333,102 @@ def not_an_admin(key: str, path: str) -> Run:
 
 # The operations that answer without a session. Every other operation also gets the generated `no_session`
 # scenario below (401 `UNAUTHENTICATED`).
+
+
+# ============================================================================================== market
+@scenario(
+    "GET /api/market/locations", "populated", 200, "two published places, one pending, one never imported"
+)
+async def market_list(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations")
+
+
+@scenario("GET /api/market/locations", "search_and_page", 200, "a one-row page of a name search")
+async def market_list_search(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(
+        await w.user(label="market"), "GET", "/api/market/locations", params={"q": "g", "limit": 1}
+    )
+
+
+@scenario("GET /api/market/locations", "no_match", 200, "an empty page is a valid answer")
+async def market_list_empty(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations", params={"q": "zzzz"})
+
+
+@scenario("GET /api/market/locations", "bad_cursor", 422)
+async def market_list_bad_cursor(w: World) -> Exchange:
+    return await w.send(
+        await w.user(label="market"), "GET", "/api/market/locations", params={"cursor": "garbage"}
+    )
+
+
+@scenario("GET /api/market/locations/{location_id}", "fresh_sufficient", 200)
+async def market_detail(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/smoke-torun")
+
+
+@scenario(
+    "GET /api/market/locations/{location_id}", "withheld_sample", 200, "3 priced offers: statistics withheld"
+)
+async def market_detail_withheld(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/smoke-gdynia")
+
+
+@scenario("GET /api/market/locations/{location_id}", "bootstrap_pending", 200, "unavailable, no rows")
+async def market_detail_pending(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/smoke-gdansk")
+
+
+@scenario("GET /api/market/locations/{location_id}", "unknown_place", 404)
+async def market_detail_unknown(w: World) -> Exchange:
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/nowhere")
+
+
+@scenario("GET /api/market/locations/{location_id}", "malformed_id", 422)
+async def market_detail_malformed(w: World) -> Exchange:
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/NOT_VALID")
+
+
+@scenario("GET /api/market/locations/{location_id}/history", "cohort_series", 200)
+async def market_history(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(
+        await w.user(label="market"), "GET", "/api/market/locations/smoke-torun/history", params={"days": 30}
+    )
+
+
+@scenario("GET /api/market/locations/{location_id}/history", "additions_series", 200)
+async def market_history_additions(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(
+        await w.user(label="market"),
+        "GET",
+        "/api/market/locations/smoke-torun/history",
+        params={"series": "additions", "cohort": "rooms_2"},
+    )
+
+
+@scenario("GET /api/market/locations/{location_id}/history", "unknown_place", 404)
+async def market_history_unknown(w: World) -> Exchange:
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/nowhere/history")
+
+
+@scenario("GET /api/market/locations/{location_id}/history", "unsupported_series", 422)
+async def market_history_bad_series(w: World) -> Exchange:
+    return await w.send(
+        await w.user(label="market"),
+        "GET",
+        "/api/market/locations/smoke-torun/history",
+        params={"series": "deed"},
+    )
+
+
 PUBLIC = frozenset(
     {
         "POST /api/auth/google",
@@ -1353,6 +1449,7 @@ PATH_VALUES = {
     "otodom_id": "ID00000000",
     "key": "some_flag",
     "user_id": "nobody",
+    "location_id": "smoke-torun",
 }
 
 

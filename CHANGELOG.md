@@ -4,6 +4,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+- `GET /api/market/locations`, `/api/market/locations/{id}` and `/api/market/locations/{id}/history`: session-authenticated, read-only asking-rent aggregates per catalogue place (search, keyset paging, latest cohort with freshness, daily history of the `additions` and `cohort` series). A sample under 10 priced offers keeps its counts and withholds statistics; no migration, no operator action (RM-21)
+
 ### Changed
 - `OTODOM_MARKET_IMPORT_ENABLED=false` now stops the rental corpus dispatcher and every corpus page request, not only the summaries; the nightly cron, night window end, overlap, request budget and catalogue version are read from `OTODOM_MARKET_*` (`OTODOM_MARKET_SUMMARY_CRON` is new). Operator action: restart the worker after changing any of them; the window end must be before 12:00 UTC (RM-209)
 
