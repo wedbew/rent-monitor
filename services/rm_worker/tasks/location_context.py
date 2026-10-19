@@ -6,10 +6,11 @@ LEGAL[scraping]: automated requests to a third-party API, under a Postgres-share
 timeout and one total deadline (RM-391)
 GDPR[processor]: no personal data is sent or received; aggregate territorial statistics only (RM-391)
 
-Policy (B-023): no metric is selected, so `BDL_BINDINGS` is empty and the task refuses every variable before
-any request is made. Publication is a separate, fail-closed step (`PgLocationRepo.publish`); this task never
-publishes. A run is the deterministic id of (variable, unit level, years, reference version); the page cursor
-and the page's observations commit together, so a crash or a retry resumes at the first unsaved page.
+Policy: only variables with a reviewed binding (`BDL_BINDINGS`, built from `rm_core.bdl_metrics`) are read;
+the task refuses any other variable before a request is made. Publication is a separate, fail-closed step
+(`PgLocationRepo.publish`); this task never publishes. A run is the deterministic id of (variable, unit
+level, years, reference version); the page cursor and the page's observations commit together, so a crash
+or a retry resumes at the first unsaved page.
 """
 
 import uuid
@@ -21,6 +22,7 @@ import procrastinate
 import structlog
 from rm_contracts.jobs import BATCH_QUEUE
 from rm_contracts.location_context import TerritoryLevel
+from rm_core.bdl_metrics import METRICS, SUPPRESSED_ATTR_IDS, VALID_ATTR_IDS
 from rm_core.db.session import make_engine, make_sessionmaker
 from rm_core.deadline import Deadline
 from rm_core.location_repo import IngestRun, PgLocationRepo, RunStateError
@@ -52,8 +54,17 @@ UNIT_LEVELS: Final = {
     2: TerritoryLevel.wojewodztwo,
     0: TerritoryLevel.country,
 }
-# Reviewed variable bindings. Empty until the owner selects metrics (B-023); tests inject their own.
-BDL_BINDINGS: Final[dict[str, BdlMetricBinding]] = {}
+# Reviewed variable bindings, one per metric of the registry (verified live 2026-10-20, RM-48).
+BDL_BINDINGS: Final[dict[str, BdlMetricBinding]] = {
+    str(m.variable_id): BdlMetricBinding(
+        variable_id=str(m.variable_id),
+        definition=m.definition,
+        expected_unit=m.unit,
+        valid_attr_ids=VALID_ATTR_IDS,
+        suppressed_attr_ids=SUPPRESSED_ATTR_IDS,
+    )
+    for m in METRICS
+}
 RETRY = procrastinate.RetryStrategy(max_attempts=5, exponential_wait=300, retry_exceptions={BdlUnavailable})
 
 
@@ -117,7 +128,9 @@ async def ingest_variable(
         start = BdlCursor(variable_id=variable_id, unit_level=unit_level, years=years, page=claimed.next_page)
         async for page in client.pages(start, deadline=deadline):
             subset = {u.id: expected[u.id] for u in page.body.results if u.id in expected}
-            report = validator.validate(meta, (page,), expected=subset, years=years)
+            report = validator.validate(
+                meta, (page,), expected=subset, years=years, ignore_unknown_units=True
+            )
             await repo.record_page(
                 claimed.run_id,
                 owner,

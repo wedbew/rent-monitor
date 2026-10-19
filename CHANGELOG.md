@@ -13,6 +13,11 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ### Fixed
 - The sponsored `hpr/` tile that ends every non-empty results page (synthetic id, 1999 date, another advert's price) is no longer stored as an offer; an empty location (`totalPages: 0`) is a valid complete search instead of a malformed page; a page past the end (the site repeats the last one) ends the run `incomplete` (RM-411)
+- GUS BDL location context goes live (code and offline evidence; no data is published until the first real pass, L-088): a reviewed registry of 22 metrics (`rm_core.bdl_metrics`: population and age, migration, housing, deed transactions and median price, earnings, unemployment, REGON, municipal revenue), a territorial reference built from the live unit lists with exact TERYT codes, and a weekly worker task `refresh_bdl_context` (queue `batch`, `BDL_REFRESH_CRON`, default Monday 03:30 UTC) that reads each metric at every level BDL publishes and publishes each year that passes its coverage gate. New env names `LOCATION_REFERENCE_VERSION` and `BDL_REFRESH_CRON`; `BDL_REQUESTS_PER_MINUTE` now defaults to 60 (the key's live quota is 50,000 requests per 7 days). Operator action: none for a deploy; set `BDL_API_KEY` for the higher quota (RM-48)
+
+### Fixed
+- BDL client and ingestion now match the live API (numeric variable ids, data pages without `page`/`pageSize`, units outside the reference such as urban/rural parts and districts are skipped, attribute 91 is suppressed and never read as zero) (RM-48)
+- Publishing a metric ranks only its native-level cohort; the powiat, voivodeship and country aggregates stored next to it no longer block publication (RM-48)
 
 ### Added
 - Rynek page (`/app/market`, `/app/market/:id`): searchable list of places with the latest rental asking medians, a place page with status, latest reading, history and series/cohort/period choices kept in the address; the Pulpit links to it. Frontend only; no operator action (RM-422)
