@@ -18,7 +18,6 @@ LEGAL[url-analysis]: only the strictly parsed short id stored on the audit row i
 
 import asyncio
 from dataclasses import dataclass, field
-from decimal import Decimal
 from typing import Protocol
 from uuid import UUID
 
@@ -43,6 +42,7 @@ from rm_core.deadline import Deadline
 from rm_core.ledger import lock_owner, settle
 from rm_core.legal import LegalTag, tag_names
 from rm_core.progress import KIND_DONE, KIND_ERROR, emit, emit_stage
+from rm_core.risk_free import RiskFreeRate
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -64,7 +64,7 @@ class ContextProvider(Protocol):
 
     async def rent_input(self, listing: Listing, *, deadline: Deadline) -> RentInput: ...
 
-    async def risk_free_rate(self, *, deadline: Deadline) -> Decimal: ...
+    async def risk_free_rate(self, *, deadline: Deadline) -> RiskFreeRate: ...
 
 
 @dataclass(frozen=True)
@@ -88,6 +88,7 @@ class Outcome:
     questions: SellerQuestionBlock | None = (
         None  # G-03 (RM-404): derived from `analysis`, never a credit input
     )
+    risk_free: RiskFreeRate | None = None  # the input the engine used, recorded beside the result (RM-210)
 
 
 async def _claim(sm: async_sessionmaker[AsyncSession], audit_id: UUID) -> str | None:
@@ -165,6 +166,7 @@ def _questions_for(analysis: DealAnalysis, audit_id: UUID) -> SellerQuestionBloc
 async def _analyse(services: AuditServices, audit_id: UUID, otodom_id: str) -> Outcome:
     deadline = Deadline.after(services.timeout_s)
     sm = services.sessionmaker
+    risk_free: RiskFreeRate | None = None
     try:
         async with asyncio.timeout(services.timeout_s):
             await _progress(sm, audit_id, "fetch")
@@ -187,13 +189,13 @@ async def _analyse(services: AuditServices, audit_id: UUID, otodom_id: str) -> O
             )
             await _progress(sm, audit_id, "context")
             rent = await services.context.rent_input(listing, deadline=deadline)
-            risk_free = await services.context.risk_free_rate(deadline=deadline)
+            risk_free = await services.context.risk_free_rate(deadline=deadline)  # RM-210
             assessment = await _vision(services, listing, audit_id, deadline)
             await _progress(sm, audit_id, "synthesize")
             analysis = await services.engine.run(
                 listing,
                 rent=rent,
-                risk_free=risk_free,
+                risk_free=risk_free.rate,
                 timeout_s=deadline.remaining(),
                 vision=assessment.output if assessment else None,
                 model=assessment.model if assessment else "none",
@@ -208,6 +210,7 @@ async def _analyse(services: AuditServices, audit_id: UUID, otodom_id: str) -> O
         analysis,
         snapshot_id,
         _questions_for(analysis, audit_id),
+        risk_free,
     )
 
 
@@ -235,6 +238,12 @@ async def _finish(sm: async_sessionmaker[AsyncSession], audit_id: UUID, out: Out
                 out.questions.model_dump(mode="json") if out.questions is not None else None
             ),
         }
+        if out.risk_free is not None:  # RM-210: the input used, with its source and observed month
+            values |= {
+                "risk_free_rate": out.risk_free.rate,
+                "risk_free_source": out.risk_free.source,
+                "risk_free_as_of": out.risk_free.as_of,
+            }
     async with sm() as db, db.begin():
         await lock_owner(
             db, audit_id

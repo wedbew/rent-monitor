@@ -11,6 +11,7 @@ import asyncio
 from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
@@ -28,6 +29,7 @@ from rm_contracts.jobs import AUDIT_QUEUE
 from rm_core.db.models import Audit, AuditStatus, ChargeState, CreditAccount, CreditLedger
 from rm_core.deadline import Deadline
 from rm_core.ledger import admin_adjust, ledger_mismatches
+from rm_core.risk_free import RiskFreeRate
 from rm_core.settings import Settings
 from rm_core.snapshots import FetchedListing, content_hash
 from rm_worker import audit_services
@@ -111,9 +113,9 @@ class FakeContext:
             raise self.fail
         return RENT
 
-    async def risk_free_rate(self, *, deadline: Deadline) -> Decimal:
+    async def risk_free_rate(self, *, deadline: Deadline) -> RiskFreeRate:
         self.calls.append("risk_free_rate")
-        return RISK_FREE
+        return RiskFreeRate(rate=RISK_FREE, source="test:fake", as_of=date(2026, 9, 1))
 
 
 class Harness:
@@ -300,6 +302,16 @@ async def test_a_signed_in_user_gets_a_persisted_canonical_result(
     assert Decimal(done["irr_10y"]) == Decimal(done["result"]["cash_flow"]["returns"]["irr"])
     assert Decimal(done["capex_pln"]) == Decimal(done["result"]["capex_used_pln"])
     assert h.ctx.calls == ["rent_input", "risk_free_rate"]
+    # RM-210: the rate the engine used, its source and observed month are kept beside the result (DB row
+    # only).
+    async with h.sm() as db:
+        audit_row = await db.get(Audit, UUID(audit_id))
+    assert audit_row is not None
+    assert (audit_row.risk_free_rate, audit_row.risk_free_source, audit_row.risk_free_as_of) == (
+        RISK_FREE,
+        "test:fake",
+        date(2026, 9, 1),
+    )
 
     listed = (await c.get("/api/audits")).json()
     assert [row["audit_id"] for row in listed["items"]] == [audit_id]

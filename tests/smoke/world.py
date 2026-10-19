@@ -54,6 +54,7 @@ from rm_core.deadline import Deadline
 from rm_core.ledger import admin_adjust, ensure_credit_account
 from rm_core.paddle import Adjustment
 from rm_core.paddle_webhook import sign
+from rm_core.risk_free import RiskFreeRate
 from rm_core.settings import Settings
 from rm_core.snapshots import FetchedListing, content_hash
 from rm_worker import audit_services
@@ -150,8 +151,8 @@ class SmokeContext:
         per_m2 = self.PER_M2.get(listing.city or "", 45)
         return RentInput(monthly_rent_pln=Decimal(per_m2) * listing.area_m2, basis="asking", comparables=14)
 
-    async def risk_free_rate(self, *, deadline: Deadline) -> Decimal:
-        return Decimal("0.055")  # a placeholder, like the product's own (#210)
+    async def risk_free_rate(self, *, deadline: Deadline) -> RiskFreeRate:
+        return RiskFreeRate(rate=Decimal("0.055"), source="setting:RISK_FREE_RATE", as_of=None)
 
 
 class SmokeVision:

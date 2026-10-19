@@ -17,6 +17,15 @@ from deal_analyzer import Listing, RentInput
 from deal_analyzer.rent import RentComparable, estimate_rent
 from rm_core.comparables import ComparableCache, city_slug, load_comparables
 from rm_core.deadline import Deadline
+from rm_core.risk_free import (
+    ECB_SERIES_KEY,
+    SETTING_SOURCE,
+    SOURCE_ECB,
+    RiskFreeRate,
+    is_fresh,
+    is_plausible,
+    load_stored,
+)
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from rm_worker.importers.demand import RentalImportQueue
@@ -67,7 +76,24 @@ class MarketContext:
         except Exception:
             log.warning("rental_import_request_failed", city=city_slug(listing.city), exc_info=True)
 
-    async def risk_free_rate(self, *, deadline: Deadline) -> Decimal:
-        if self._risk_free is None:
-            raise ContextUnavailableError("RISK_FREE_RATE is not set")
-        return self._risk_free
+    async def risk_free_rate(self, *, deadline: Deadline) -> RiskFreeRate:
+        """Order (RM-210): the stored ECB value while fresh (<= MAX_AGE_DAYS after its month), else the
+        RISK_FREE_RATE setting, else refuse. The rate used and its source/date go onto the audit row."""
+        async with self._sm() as session:
+            stored = await load_stored(session)
+        today = self._today()
+        if stored is not None and stored.rate is not None and stored.observation_period is not None:
+            if is_fresh(stored.observation_period, today) and is_plausible(stored.rate):
+                return RiskFreeRate(
+                    rate=stored.rate,
+                    source=f"{SOURCE_ECB}:{ECB_SERIES_KEY}",
+                    as_of=stored.observation_period,
+                )
+            log.warning(
+                "risk_free_rate_stored_not_used",
+                observation_period=str(stored.observation_period),
+                fresh=is_fresh(stored.observation_period, today),
+            )
+        if self._risk_free is not None:
+            return RiskFreeRate(rate=self._risk_free, source=SETTING_SOURCE, as_of=None)
+        raise ContextUnavailableError("no fresh stored risk-free rate and RISK_FREE_RATE is not set")
