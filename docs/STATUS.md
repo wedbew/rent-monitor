@@ -94,3 +94,5 @@ Classes: **V** implemented and verified (offline) · **E** implemented, awaiting
 Baseline (audit, 2026-10-13): `claude` workflow 231 runs, 224 skipped by design, 2 success, 2 failure, 3 cancelled; both failures
 ended in ~2 s with zero model usage and $0 cost (an execution error before any model turn, logs in run 38182957497), and there is no
 merged PR authored by a headless run. Canary results are recorded on #177 and, once the workflow PR lands, in `docs/AUTONOMY.md` *Canary log*.
+
+**Update, 2026-10-19:** the owner-updated `CLAUDE_CODE_OAUTH_TOKEN` passes the read-only canary (run 39245939324, `is_error: false`). B-021 is resolved. A headless run that opens a PR with the bot token is not yet demonstrated (#6).
