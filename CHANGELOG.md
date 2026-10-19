@@ -6,6 +6,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ### Added
 - Report `vision.floor_plan_text`, `vision.notes` and `vision.equipment` (optional within `schema_version` 1), vision prompt `vision-v2`; no operator action (RM-387)
+- Report page shows the persisted equipment (with source, sale status and confidence), floor-plan text and model notes, and says separately when analysis failed, was not run, or the report is older (frontend only; no operator action) (RM-403)
 
 ### Fixed
 - Audits with 25 photos plus floor plans no longer degrade because the vision answer list was capped at 25 (RM-387)

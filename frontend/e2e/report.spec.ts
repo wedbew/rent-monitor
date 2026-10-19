@@ -203,7 +203,9 @@ test.describe("the report", () => {
     await expect(checklist).toContainText("Nie oceniliśmy zdjęć");
     await expect(checklist).toContainText("Brak informacji o ogrzewaniu");
     await page.getByRole("button", { name: "Ocena zdjęć" }).click();
-    await expect(page.getByText("Zdjęć nie oceniono")).toBeVisible();
+    // A degraded audit whose vision answer is missing says the analysis failed (RM-403), not that nothing was tried.
+    await expect(page.getByText(/Analiza zdjęć nie zakończyła się/)).toBeVisible();
+    await expect(page.getByText("Zdjęć nie oceniono")).toHaveCount(0);
   });
 
   test("details open and close on their own, several at a time, from the keyboard too", async ({
