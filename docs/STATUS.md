@@ -25,6 +25,12 @@ fakes) · **3** provider-verified (authorised sandbox/live evidence) · **4** la
 
 ## Other capability
 
+**Live vision follow-up, 2026-10-19:** current merged `8b738ff`, `vision-v2`, owner-authorized
+ID4DACX stage canary: 13 real photos, five equipment observations, provider-reported USD 0.0005845.
+No floor-plan drawing was present, so this is not positive OCR evidence. Two equipment source-image
+associations were wrong. This did not deploy the new code or verify the full API/queue/UI journey.
+See [scope, evidence and follow-ups](LIVE-VISION-ID4DACX-2026-10-19.md); L-061/L-063 remain open.
+
 | Area | Level | Note |
 |---|---|---|
 | Platform (settings, logging, problems, health, flags, admin, GDPR export/erase, retention) | 1 | Admin and privacy tools are outside the P0 path |

@@ -1,5 +1,10 @@
 # Claude resume prompt: complete the feature batch and remaining safe project work
 
+> **After #390 / 2026-10-19:** use [the next delivery prompt](CLAUDE-DELIVERY-PROMPT-2026-10-19.md)
+> and [fresh frontend/backend audit](DELIVERY-AUDIT-2026-10-19.md). The documentation bootstrap and
+> several backend slices below have since merged. This remains the full-scope reference, not the
+> current first-wave work order.
+
 Copy the block into Claude Code in this repository. This resumes merged foundations; it does not
 start agents by itself. Recheck current state rather than treating the dated audit SHA as a fixed base.
 
