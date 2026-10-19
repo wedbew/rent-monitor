@@ -11,6 +11,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 - Vision equipment references are bound to the image identity the model was shown: each image sent carries an `Image N of M` label and the model answers with that N; the prompt text changed within `vision-v2` (no version bump, no operator action) (RM-410)
 
 ### Added
+- Risk-free rate from the ECB: the latest Polish 10-year yield (monthly ECB IRS convergence series) is refreshed daily on the batch queue and stored with its month and source. Audits use it while it is at most 120 days past its month, otherwise `RISK_FREE_RATE`, otherwise they end `CONTEXT_UNAVAILABLE`; the audit row records the rate, source and month. Operator action: run `alembic upgrade head` (migration 0019); `RISK_FREE_RATE` stays the fallback (RM-210)
 - `GET /api/audits/{id}` returns `seller_questions`: deterministic, grounded questions to ask the seller, stored once with the report; `null` for audits made earlier, which show none; migration 0018 adds the nullable `audit.seller_questions` column (expand-only), so operators run `make migrate` (RM-404)
 - Report `vision.floor_plan_text`, `vision.notes` and `vision.equipment` (optional within `schema_version` 1), vision prompt `vision-v2`; no operator action (RM-387)
 - Report page shows the persisted equipment (with source, sale status and confidence), floor-plan text and model notes, and says separately when analysis failed, was not run, or the report is older (frontend only; no operator action) (RM-403)

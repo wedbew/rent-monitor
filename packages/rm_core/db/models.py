@@ -629,6 +629,13 @@ class Audit(Base):
     seller_questions: Mapped[dict[str, Any] | None] = mapped_column(
         comment="versioned seller-question block derived from result (RM-404); NULL = none stored"
     )
+    # The risk-free input the engine used, copied from the context stage (RM-210); NULL = none stored (old
+    # audits).
+    risk_free_rate: Mapped[Decimal | None] = mapped_column(Numeric(8, 6))
+    risk_free_source: Mapped[str | None] = mapped_column(
+        Text, comment="ecb:<series> or setting:RISK_FREE_RATE"
+    )
+    risk_free_as_of: Mapped[date | None] = mapped_column(Date, comment="first day of the observed month")
     # Extracted for filtering and sorting: copied from `result`, never computed here (invariant 4).
     grade: Mapped[str | None] = mapped_column(String(2))
     asking_price_pln: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
@@ -1005,6 +1012,36 @@ class MarketDailySummary(Base):
     refresh_at: Mapped[datetime | None]  # checkpoint's last successful refresh when this was published
     gap_since: Mapped[datetime | None]  # checkpoint's unresolved gap when this was published
     published_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class RiskFreeRate(Base):
+    """Latest stored value per macro series (RM-210, ENGINE-SPEC N-12). One row per series, overwritten only
+    by
+    an observation at least as new as the stored one. A failed refresh keeps the value and records the
+    failure.
+
+    LEGAL[third-party-data]: ECB Data Portal statistic, cited as its source (RM-210).
+    GDPR[retention]: public macro statistic, no personal data; one row per series, no history kept.
+    """
+
+    __tablename__ = "risk_free_rate"
+    __table_args__ = (
+        CheckConstraint("rate IS NULL OR (rate >= 0.001 AND rate <= 0.20)", name="rate_plausible"),
+        CheckConstraint(
+            "(rate IS NULL) = (observation_period IS NULL) AND (rate IS NULL) = (fetched_at IS NULL)",
+            name="value_complete",
+        ),
+        CheckConstraint("(last_failure_code IS NULL) = (last_failed_at IS NULL)", name="failure_complete"),
+    )
+
+    series_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    source: Mapped[str] = mapped_column(String(16))
+    observation_period: Mapped[date | None] = mapped_column(Date, comment="first day of the observed month")
+    rate: Mapped[Decimal | None] = mapped_column(Numeric(8, 6), comment="annual yield as a fraction")
+    fetched_at: Mapped[datetime | None]
+    last_attempt_at: Mapped[datetime]
+    last_failure_code: Mapped[str | None] = mapped_column(String(40))
+    last_failed_at: Mapped[datetime | None]
 
 
 # ---------- BDL location context (RM-391, LCTX-01b part 2; see rm_contracts.location_context) ----------

@@ -745,6 +745,15 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Workaround:** Use the prototype for navigation/appearance review only; see `design/v2/README.md` for explicit scope.
 - **Target:** Phase 2 design (blueprint §4.8 step 6): replacement analysis cards, proper pagination, a table-view option and a fuller market information architecture. 2026-10-15 (#262): the market data lives in Postgres only; no `/api/market/*` route exists yet (#21), so the Rynek redesign (#282) waits on it; collection paging is #265.
 
+### L-086 — Risk-free rate is one monthly ECB series, not checked against a second source
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `rm_worker.clients.macro`, `rm_worker.tasks.macro`, `rm_core.risk_free`, `MarketContext.risk_free_rate`, the audit row columns `risk_free_*`, every hurdle and Max Bid; `scripts/journey_check.py` still computes its expected result with the setting only.
+- **Evidence:** confirmed (live ECB Data Portal answer read on 2026-10-19: series `IRS.M.PL.L.L40.CI.0000.PLN.N.Z`, unit PC with UNIT_MULT 0, OBS_STATUS A; latest observation 2026-09 = 6.23 %, earlier 2026-08 = 5.81, 2026-07 = 5.50, 2026-06 = 5.51). The series is the ECB's long-term interest rate for convergence purposes (10 years, new business, monthly), not a daily market quote. The rise from 5.81 to 6.23 between August and September is not verified against a second source (inferred: market movement, unverified).
+- **Description:** A stored value is used for 120 days after the end of its observed month (`MAX_AGE_DAYS`, chosen so one missed monthly release does not refuse audits); after that the `RISK_FREE_RATE` setting is used, and with neither, audits end `CONTEXT_UNAVAILABLE`. The ECB terms (disclaimer page, read 2026-10-19) allow free use when the ECB is cited as the source and forbid reproducing authors' documents without written permission; the stored source and the audit row carry the citation. Counsel has not reviewed this use (B-012). Known gap: `scripts/journey_check.py` compares the result with the setting, so after a successful refresh its `result_matches_engine` check can fail with a correct result.
+- **Workaround:** keep `RISK_FREE_RATE` set as the fallback; compare audits with the stored `risk_free_source` and `risk_free_as_of`.
+- **Target:** #210 (RM-210); B-012 for counsel's review; ENGINE-SPEC row 9. Close the `journey_check.py` gap by reading the same context as the worker.
+
 ## Resolved
 
 ### L-030 — Frontend session transitions do not consistently purge tenant state
