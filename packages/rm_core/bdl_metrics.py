@@ -111,17 +111,12 @@ class MetricSpec:
         )
 
 
-def _spec(*args: object, **kw: object) -> MetricSpec:
-    return MetricSpec(*args, **kw)  # type: ignore[arg-type]
-
-
 HIGHER, LOWER = Direction.higher_is_favorable, Direction.lower_is_favorable
 SIGNED = ChangeBasis.absolute
-PERCENT_0_100 = {"max_value": Decimal(100)}
 
 METRICS: Final[tuple[MetricSpec, ...]] = (
-    _spec("population_total", 72305, "Ludność ogółem", "population", "osoba", "osób", G, additive=True),
-    _spec(
+    MetricSpec("population_total", 72305, "Ludność ogółem", "population", "osoba", "osób", G, additive=True),
+    MetricSpec(
         "population_pre_working_age",
         149,
         "Ludność w wieku przedprodukcyjnym",
@@ -131,7 +126,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         G,
         additive=True,
     ),
-    _spec(
+    MetricSpec(
         "population_working_age",
         152,
         "Ludność w wieku produkcyjnym",
@@ -141,7 +136,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         G,
         additive=True,
     ),
-    _spec(
+    MetricSpec(
         "population_post_working_age",
         155,
         "Ludność w wieku poprodukcyjnym",
@@ -151,7 +146,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         G,
         additive=True,
     ),
-    _spec(
+    MetricSpec(
         "net_migration",
         1365234,
         "Saldo migracji na pobyt stały",
@@ -165,7 +160,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         min_value=None,
         note_pl="Wartość ze znakiem: napływ minus odpływ.",
     ),
-    _spec(
+    MetricSpec(
         "natural_increase",
         68,
         "Przyrost naturalny",
@@ -179,7 +174,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         min_value=None,
         note_pl="Wartość ze znakiem: urodzenia minus zgony.",
     ),
-    _spec(
+    MetricSpec(
         "dwellings_completed",
         748601,
         "Mieszkania oddane do użytkowania",
@@ -190,7 +185,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         additive=True,
         note_pl="Aktywność budowlana, nie ocena rynku.",
     ),
-    _spec(
+    MetricSpec(
         "dwellings_completed_floor_area",
         748603,
         "Powierzchnia użytkowa mieszkań oddanych do użytkowania",
@@ -200,8 +195,8 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         G,
         additive=True,
     ),
-    _spec("dwelling_stock", 60811, "Zasoby mieszkaniowe", "housing", "-", "mieszkań", G, additive=True),
-    _spec(
+    MetricSpec("dwelling_stock", 60811, "Zasoby mieszkaniowe", "housing", "-", "mieszkań", G, additive=True),
+    MetricSpec(
         "building_permits_dwellings",
         1641096,
         "Mieszkania w pozwoleniach na budowę (rok)",
@@ -212,7 +207,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         additive=True,
         note_pl="Wiersz roczny danych kwartalnych; okresów narastających nie sumujemy.",
     ),
-    _spec(
+    MetricSpec(
         "dwelling_transactions_count",
         633097,
         "Transakcje kupna-sprzedaży lokali mieszkalnych",
@@ -224,7 +219,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         min_coverage=Decimal("0.70"),
         note_pl="Poziom powiatu; GUS utajnia małe komórki. Ceny z aktów notarialnych, nie ceny ofertowe.",
     ),
-    _spec(
+    MetricSpec(
         "dwelling_median_price_m2",
         1607914,
         "Mediana cen za 1 m² lokali mieszkalnych",
@@ -235,7 +230,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         min_coverage=Decimal("0.70"),
         note_pl="Poziom powiatu; ceny z aktów notarialnych (deed), nigdy nie mieszane z cenami ofertowymi.",
     ),
-    _spec(
+    MetricSpec(
         "average_monthly_gross_earnings",
         64428,
         "Przeciętne miesięczne wynagrodzenie brutto",
@@ -246,7 +241,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         direction=HIGHER,
         note_pl="Poziom powiatu; nie jest dochodem gospodarstwa domowego pod danym adresem.",
     ),
-    _spec(
+    MetricSpec(
         "unemployment_rate_standard",
         60270,
         "Stopa bezrobocia rejestrowanego",
@@ -256,10 +251,10 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         P,
         direction=LOWER,
         change=SIGNED,
-        **PERCENT_0_100,
+        max_value=Decimal(100),
         note_pl="Poziom powiatu; mianownik to ludność aktywna zawodowo.",
     ),
-    _spec(
+    MetricSpec(
         "unemployment_share_working_age",
         79214,
         "Udział bezrobotnych zarejestrowanych w ludności w wieku produkcyjnym",
@@ -269,10 +264,10 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         G,
         direction=LOWER,
         change=SIGNED,
-        **PERCENT_0_100,
+        max_value=Decimal(100),
         note_pl="Inny mianownik niż stopa bezrobocia rejestrowanego dla powiatu.",
     ),
-    _spec(
+    MetricSpec(
         "regon_entities_total",
         152702,
         "Podmioty gospodarki narodowej w rejestrze REGON",
@@ -282,7 +277,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         G,
         additive=True,
     ),
-    _spec(
+    MetricSpec(
         "regon_entities_per_10k",
         60530,
         "Podmioty REGON na 10 tys. mieszkańców",
@@ -292,7 +287,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         G,
         direction=HIGHER,
     ),
-    _spec(
+    MetricSpec(
         "property_tax_revenue",
         76077,
         "Dochody gminy z podatku od nieruchomości",
@@ -303,7 +298,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         additive=True,
         note_pl="Wpływy budżetu gminy, nie obciążenie podatkowe mieszkańca ani lokalu.",
     ),
-    _spec(
+    MetricSpec(
         "municipal_pit_revenue",
         76046,
         "Udziały gminy w podatku dochodowym od osób fizycznych (PIT)",
@@ -314,7 +309,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         additive=True,
         note_pl="Wpływ do budżetu gminy, nie dochód mieszkańców.",
     ),
-    _spec(
+    MetricSpec(
         "municipal_cit_revenue",
         76043,
         "Udziały gminy w podatku dochodowym od osób prawnych (CIT)",
@@ -325,7 +320,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         additive=True,
         note_pl="Wpływ do budżetu gminy.",
     ),
-    _spec(
+    MetricSpec(
         "pit_revenue_per_resident",
         149128,
         "Dochody gminy z PIT na 1 mieszkańca",
@@ -335,7 +330,7 @@ METRICS: Final[tuple[MetricSpec, ...]] = (
         G,
         direction=HIGHER,
     ),
-    _spec(
+    MetricSpec(
         "own_revenue_per_resident",
         76976,
         "Dochody własne gminy na 1 mieszkańca",
