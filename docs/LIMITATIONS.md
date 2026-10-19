@@ -645,6 +645,51 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none
 - **Target:** follow-up wiring slice (resolves L-073)
 
+### L-080 — Gmina values for powiat-native metrics are proxies
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `location_indicators.resolve_measured` direct/proxy labels
+- **Evidence:** confirmed
+- **Description:** A proxy names the unit actually measured; no property-grade claim and no financial multiplier. Whether rank and percentile wording is acceptable for proxies is undecided.
+- **Workaround:** labels travel with every value
+- **Target:** B-023
+
+### L-081 — No composite index or cross-metric score
+- **Status:** deferred
+- **Discovered:** 2026-10-19
+- **Affects:** LCTX-02b
+- **Evidence:** confirmed
+- **Description:** Blocked on the B-023 metric list, thresholds and composite policy.
+- **Workaround:** none
+- **Target:** B-023 approval
+
+### L-082 — No database index tuned for rank reads
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `observations_for_years` (scans one metric-year)
+- **Evidence:** estimate (fine at about 2.5k gminas, unmeasured)
+- **Description:** Needs a migration slot after 0017.
+- **Workaround:** none
+- **Target:** when a metric is activated
+
+### L-083 — Peer cohort is siblings under one parent only
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `compare_to_peers`
+- **Evidence:** confirmed
+- **Description:** Voivodeship-wide and size-band cohorts are undecided.
+- **Workaround:** none
+- **Target:** B-023
+
+### L-084 — Boundary breaks are an input but nothing stores or loads them
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `trend`
+- **Evidence:** confirmed
+- **Description:** Territorial boundary changes cannot yet be applied from data.
+- **Workaround:** caller supplies them
+- **Target:** reference loader slice
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built

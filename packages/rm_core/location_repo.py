@@ -432,6 +432,26 @@ class PgLocationRepo:
             ).all()
             return tuple(_observation(r) for r in rows)
 
+    async def observations_for_years(
+        self, metric_key: str, metric_version: int, years: Collection[int]
+    ) -> tuple[Observation, ...]:
+        """Read-only: every stored row of one metric version for the given years (RM-396)."""
+        if not years:
+            return ()
+        async with self._sessions() as s:
+            rows = (
+                await s.scalars(
+                    select(LocationObservation)
+                    .where(
+                        LocationObservation.metric_key == metric_key,
+                        LocationObservation.metric_version == metric_version,
+                        LocationObservation.year.in_(sorted(set(years))),
+                    )
+                    .order_by(LocationObservation.year, LocationObservation.territory_id)
+                )
+            ).all()
+            return tuple(_observation(r) for r in rows)
+
     # --- publication -----------------------------------------------------------------------------
 
     async def publish(
