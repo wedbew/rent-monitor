@@ -4,6 +4,29 @@ Agents add a row the moment they hit one and stop that work (`.agent/rules/block
 Strategy (owner decision, 2026-10-11): **work locally until the whole app works, in Docker; deploy later.** Items that only
 matter for production or a domain are *Deferred*, not blocking.
 
+## Owner decisions consolidated — 2026-10-19
+
+The owner has now supplied [explicit autonomous-delivery instructions](OWNER-DECISIONS-2026-10-19.md).
+They supersede the corresponding older questions in the historical rows below. This records authority
+and policy, **not successful implementation, configuration or launch acceptance**. The current beta
+deployment is authorized from green staging; paid launch/main promotion remain gated.
+
+| Earlier blocker | Confirmed instruction / remaining executable work |
+|---|---|
+| B-023 market policy | Fresh all-727 Otodom catalogue/bootstrap/nightly collection authorized after bounded filter/page validation; no POC dataset copy. BDL metrics/thresholds/cohort/scoring policy delegated, experimental sourced index approved, separate adverse financial scenario approved with unchanged base result. Source verification, honest coverage and policy implementation remain agent work; legal/source-use sign-off is unconfirmed under B-012. |
+| Media architecture/retention (L-051) | Separate private EU product object storage approved; metadata in Postgres, normalized images only, 30-day report/project media and 7-day abandoned uploads, account erasure. Document the narrow architecture exception; verify/provision authorized resources or record a specific external setup dependency. |
+| B-022 cancellation | Queued-only cancellation releases its reservation; running returns 409. Implement and test cancel/start/settlement races; no further product decision needed. |
+| B-017 / #43 billing choices | Gross 10/40/70 PLN for 1/5/10 reports; 3 verified-signup credits; purchased-credit expiry 12 calendar months. Existing Paddle sandbox verification authorized. Remaining resource configuration, signed event/payment/expiry evidence and external accountant/merchant acceptance are not implied by this approval. |
+| B-024 overlay CSP | `style-src-attr 'unsafe-inline'` specifically approved for the Paddle overlay. Preserve script/unrelated restrictions; configure verified hosts and test. No repeated CSP decision request. |
+| B-019 required checks | Adding existing frontend/journey/visual checks on staging/main authorized while retaining all other checks/protections. Verify live names/settings and apply through the normal process; permission is not proof enforcement already exists. |
+| B-020 / #40 configuration | Owner supplied names of configured credentials and authorizes secure app-scoped beta configuration transfer. Verify actual presence/scopes/aliases without exposing values; do not infer a browser DSN/webhook/client token from a different key. Record unavailable setup by name and continue independent work. |
+| Provider calls / beta operations | Shared USD 5 AI-test budget, at most USD 0.50 per attempt across workers; beta interior free within that same cap. Green-staging beta deploy and isolated synthetic load/restore drills authorized, never overwriting existing app data. |
+| #94 expected results | Read-only POC-report comparisons authorized as provisional references, not ground truth or fixture/data sources. Build fresh evaluation tooling and a proper strategy/expected-results template as workflows finish; independent accuracy acceptance is not yet supplied. |
+
+No further questionnaire is required for these choices. Within delegated scope choose/document/test;
+outside it record the exact external action and continue safe work. The key-name inventory does not
+establish counsel/accountant/source/Paddle approval. Never manufacture it or bypass permission systems.
+
 ## Awaiting your approval (PRs the agent will not merge)
 
 | PR | Why it waits | Owner action |

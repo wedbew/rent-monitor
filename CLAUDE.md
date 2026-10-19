@@ -13,6 +13,7 @@
 @.agent/rules/delivery.md
 @.agent/rules/parallel-work.md
 @.agent/rules/frontend.md
+@.agent/rules/session-workflow.md
 @docs/STATUS.md
 @.agent/rules/repo-layout.md
 @.agent/rules/env-example.md

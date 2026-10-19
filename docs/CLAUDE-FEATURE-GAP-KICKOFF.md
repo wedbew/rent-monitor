@@ -1,5 +1,8 @@
 # Claude kickoff: execute the complete feature-gap batch in parallel
 
+> **Latest resume point (2026-10-19, after #390):**
+> [delivery prompt](CLAUDE-DELIVERY-PROMPT-2026-10-19.md) and [tested audit](DELIVERY-AUDIT-2026-10-19.md).
+
 > **Resume after the first three merges (2026-10-18):** use
 > [the completion prompt](CLAUDE-FEATURE-GAP-FINISH-PROMPT.md) and
 > [the source/GitHub re-verification](FEATURE-GAP-REVERIFICATION-2026-10-18.md).

@@ -2,6 +2,13 @@
 
 Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded from blueprint "Limitations to carry into planning" and §5.
 
+**Owner-policy update, 2026-10-19:** [confirmed decisions](OWNER-DECISIONS-2026-10-19.md) supersede
+older entries that call media retention, metric/scoring policy, cancellation, pricing/expiry or the
+specific CSP/CI changes undecided. Implementation, source validation, configuration and quality
+limitations remain active until evidenced; permission alone does not resolve them. Do not repeat
+settled questions. BDL now includes an experimental index and separately visible adverse financial
+scenario, preserving the base result. External legal/accountant/merchant sign-offs remain unconfirmed.
+
 ## Active
 
 ### L-001 — Otodom terms of service and EU database-right exposure
@@ -478,8 +485,8 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Status:** active
 - **Discovered:** 2026-10-19
 - **Affects:** `vision.equipment` (`sale_status`, confidence), report consumers
-- **Evidence:** inferred (offline fake model only)
-- **Description:** `included` in a sale is a model claim; accuracy is unmeasured and the UI must not present it as fact.
+- **Evidence:** general accuracy unmeasured; one live `vision-v2` sample checked on 2026-10-19 (`docs/LIVE-VISION-ID4DACX-2026-10-19.md`)
+- **Description:** `included` in a sale is a model claim; accuracy is unmeasured and the UI must not present it as fact. The live sample returned five `visible_only` observations, with two incorrect source-image references despite confidence 0.8; a successful provider call is not extraction/grounding accuracy proof.
 - **Workaround:** none; no UI panel exists yet
 - **Target:** #94 accuracy set, G-02b panels
 
@@ -497,7 +504,7 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Discovered:** 2026-10-19
 - **Affects:** `vision.equipment[].media_ordinal`, `app.media_evidence` (see L-051)
 - **Evidence:** confirmed in code
-- **Description:** Photos then plans in selected order; no foreign key, and the worker does not populate the manifest yet.
+- **Description:** Photos then plans in selected order; no foreign key, and the worker does not populate the manifest yet. In the 2026-10-19 live ID4DACX sample, intercom/doorbell references pointed to an exterior photo while the devices were visible in the preceding entrance photo. A one-based model index is a possible cause, not a proven parser offset; do not automatically subtract one from every reference.
 - **Workaround:** none
 - **Target:** G-01b media population
 
