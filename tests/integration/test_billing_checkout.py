@@ -8,6 +8,8 @@ import asyncio
 import hashlib
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
+from functools import partial
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -16,9 +18,11 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from google_helpers import GOOGLE_AUDIENCE, GoogleKeys
 from paddle_fake import FakePaddle
+from rm_api import billing
 from rm_api.app import create_app
 from rm_api.auth.google import GoogleVerifier
 from rm_api.auth.sessions import create_session
+from rm_core import ratelimit
 from rm_core.billing import sync_catalog
 from rm_core.billing_catalog import Catalog, Pack
 from rm_core.db.models import BillingPack, BillingPurchase, User
@@ -391,8 +395,11 @@ async def test_a_definite_provider_failure_is_a_clean_error_and_a_new_key_can_re
 
 # ------------------------------------------------------------------------------ limits and tenancy
 async def test_checkout_is_throttled_per_user(
-    app: FastAPI, paddle: FakePaddle, make_google_token: MakeToken
+    app: FastAPI, paddle: FakePaddle, make_google_token: MakeToken, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # Pin the clock to the middle of a minute: a real window can roll over during the six requests (#371).
+    pinned = datetime(2026, 10, 19, 12, 0, 30, tzinfo=UTC)
+    monkeypatch.setattr(billing, "hit", partial(ratelimit.hit, at=pinned))
     c, _ = await sign_in(app, make_google_token)
     codes = [(await checkout(c, "reports_1")).status_code for _ in range(6)]
     assert codes == [200] * 5 + [429]  # 5 per minute
