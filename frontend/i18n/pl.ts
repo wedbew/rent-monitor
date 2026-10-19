@@ -887,6 +887,29 @@ export const pl = {
         cenyOfertoweToCenyOgloszen:
           "Ceny ofertowe to ceny z ogłoszeń, nie ceny transakcyjne. Raport nie jest poradą inwestycyjną ani prawną.",
       },
+      vision: {
+        equipmentHeading: "Wyposażenie widoczne na zdjęciach",
+        equipmentHint:
+          "To opis tego, co model zobaczył na zdjęciach. Pewność to ocena modelu, a nie potwierdzony fakt.",
+        floorPlanHeading: "Tekst odczytany z rzutu",
+        notesHeading: "Uwagi z analizy zdjęć",
+        notesHint: "Uwagi napisał model na podstawie ogłoszenia; nie są ustaleniami sprzedającego.",
+        sourcePhoto: ({ n }: { n: string }) => `zdjęcie nr ${n}`,
+        sourceFloorPlan: ({ n }: { n: string }) => `rzut, pozycja ${n} na liście zdjęć i rzutów`,
+        sourceUnattributed: "bez przypisania do zdjęcia",
+        source: ({ source }: { source: string }) => `źródło: ${source}`,
+        saleIncluded: "wg ogłoszenia: w cenie",
+        saleVisibleOnly: "tylko widoczne na zdjęciu",
+        saleUnknown: "nie wiadomo, czy w cenie",
+        confidence: ({ value }: { value: string }) => `pewność modelu ${value}`,
+        skipped: ({ count }: { count: string }) => `Nie udało się odczytać pozycji wyposażenia: ${count}.`,
+        failed:
+          "Analiza zdjęć nie zakończyła się, więc wyposażenia i tekstu z rzutu nie ma w tym raporcie. Obejrzyj zdjęcia samodzielnie.",
+        older:
+          "Ten raport powstał przed zapisywaniem wyposażenia i tekstu z rzutu, więc tych danych nie ma w nim do pokazania.",
+        unreadable: "Nie udało się odczytać zapisu analizy zdjęć, więc jej wyniki nie są pokazane.",
+        empty: "Analiza zdjęć nie wykryła wyposażenia ani tekstu z rzutu.",
+      },
       metrics: {
         helpLabel: ({ metric }: { metric: string }) => `Co oznacza: ${metric}`,
         yearsNoun: ["rok", "lata", "lat"],

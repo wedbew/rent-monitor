@@ -29,6 +29,7 @@ import {
   TITLE_FORM,
   VERDICT,
 } from "./copy";
+import { VisionEvidence } from "./VisionEvidence";
 import { orderedWarnings } from "./warnings";
 import styles from "./ReportView.module.css";
 
@@ -579,7 +580,7 @@ function CheckSection({ report }: { readonly report: DealAnalysis }) {
 }
 
 // LEGAL[republication]: shows listing fields and excerpts of the listing text to the person who analysed it (RM-274)
-function SourceSection({ report }: { readonly report: DealAnalysis }) {
+function SourceSection({ report, degraded }: { readonly report: DealAnalysis; readonly degraded: boolean }) {
   const { listing, vision, legal, ownership } = report;
   const evidence = [...legal.evidence, ...ownership.evidence];
   const items = [
@@ -611,30 +612,32 @@ function SourceSection({ report }: { readonly report: DealAnalysis }) {
     {
       value: "vision",
       title: M.ocenaZdjec,
-      children:
-        vision === null ? (
-          <p className={styles["muted"]}>{M.zdjecOcenionoWiecStanMieszkania}</p>
-        ) : (
-          <dl className={styles["rows"]}>
-            <Row label={M.zdjeciaOcenie}>{formatCount(vision.photos_total)}</Row>
-            <Row label={M.zdjeciaPominiete}>{formatCount(vision.photos_excluded)}</Row>
-            <Row label={M.stanWgZdjec}>{CONDITION[vision.condition]}</Row>
-            <Row label={M.korektaCzynszu}>
-              {vision.rent === null
-                ? M.none
-                : vision.rent.clamped
-                  ? M.adjustmentClamped({ value: formatRatio(vision.rent.applied), clamp: CLAMP })
-                  : formatRatio(vision.rent.applied)}
-            </Row>
-            <Row label={M.korektaKosztuRemontu}>
-              {vision.capex === null
-                ? M.none
-                : vision.capex.clamped
-                  ? M.adjustmentClamped({ value: formatRatio(vision.capex.applied), clamp: CLAMP })
-                  : formatRatio(vision.capex.applied)}
-            </Row>
-          </dl>
-        ),
+      children: (
+        <>
+          {vision === null ? null : (
+            <dl className={styles["rows"]}>
+              <Row label={M.zdjeciaOcenie}>{formatCount(vision.photos_total)}</Row>
+              <Row label={M.zdjeciaPominiete}>{formatCount(vision.photos_excluded)}</Row>
+              <Row label={M.stanWgZdjec}>{CONDITION[vision.condition]}</Row>
+              <Row label={M.korektaCzynszu}>
+                {vision.rent === null
+                  ? M.none
+                  : vision.rent.clamped
+                    ? M.adjustmentClamped({ value: formatRatio(vision.rent.applied), clamp: CLAMP })
+                    : formatRatio(vision.rent.applied)}
+              </Row>
+              <Row label={M.korektaKosztuRemontu}>
+                {vision.capex === null
+                  ? M.none
+                  : vision.capex.clamped
+                    ? M.adjustmentClamped({ value: formatRatio(vision.capex.applied), clamp: CLAMP })
+                    : formatRatio(vision.capex.applied)}
+              </Row>
+            </dl>
+          )}
+          <VisionEvidence vision={vision} degraded={degraded} />
+        </>
+      ),
     },
     ...(evidence.length > 0
       ? [
@@ -685,7 +688,7 @@ export function ReportView({
       <CostsSection report={report} />
       <PriceSection report={report} />
       <CheckSection report={report} />
-      <SourceSection report={report} />
+      <SourceSection report={report} degraded={degraded} />
     </div>
   );
 }
