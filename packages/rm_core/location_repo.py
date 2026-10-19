@@ -479,7 +479,12 @@ class PgLocationRepo:
             raise NotPublishableError("reference vanished")
         hierarchy = TerritoryHierarchy(reference)
         cohort = [t.territory_id for t in reference if t.level is defn.native_level]
-        observations = await self.observations(defn.key, defn.version, year)
+        in_cohort = set(cohort)
+        # Published parent aggregates (powiat, voivodeship, country) are stored next to the native rows as
+        # context; they never take part in the native ranking or its coverage gate.
+        observations = tuple(
+            o for o in await self.observations(defn.key, defn.version, year) if o.territory_id in in_cohort
+        )
         ranking = rank_territories(
             defn, hierarchy, observations, year=year, expected=cohort, cohort_id=defn.native_level.value
         )

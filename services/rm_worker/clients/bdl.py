@@ -6,10 +6,12 @@ LEGAL[scraping]: automated requests to a third-party API; kept under a request q
 timeout and a total deadline, honouring HTTP 429 (RM-386)
 GDPR[processor]: no personal data is sent or received; aggregate territorial statistics only (RM-386)
 
-Policy (B-023): nothing here selects a metric. The validator needs a `BdlMetricBinding` built from a
-`MetricDefinition` with `selection=selected` and a reviewed `bdl_variable_id`; no binding is shipped. Tests
-use explicitly test-only metric ids. The response shapes below come from the public API description and
-hand-built fixtures; they have not been checked against the live service (RM-386-L01).
+Policy: nothing here selects a metric. The validator needs a `BdlMetricBinding` built from a
+`MetricDefinition` with `selection=selected` and a reviewed `bdl_variable_id` (the reviewed set is
+`rm_core.bdl_metrics`).
+Response shapes were checked against the live service on 2026-10-20 (RM-48, closes RM-386-L01): the variable
+id is a number, a data page has no `page`/`pageSize` of its own, years arrive as strings, `attrId` 1 is a
+value, 3 an incomplete aggregate and 91 ("x") confidential or no information with a placeholder `0`.
 
 No database: the cursor is a plain value the caller persists and resumes from (part 2 of LCTX-01b).
 """
@@ -26,7 +28,7 @@ from typing import Annotated, Any, Protocol
 
 import httpx
 import structlog
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, StringConstraints, ValidationError
 from rm_contracts.location_context import (
     MetricDefinition,
     Observation,
@@ -49,6 +51,14 @@ MAX_YEARS = 40
 log = structlog.get_logger(__name__)
 
 VariableId = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9]{1,16}$")]
+
+
+def _text(value: object) -> object:
+    """The live service sends ids as numbers; the contract keeps them as strings (leading zeros matter)."""
+    return str(value) if isinstance(value, int) and not isinstance(value, bool) else value
+
+
+WireId = Annotated[str, BeforeValidator(_text), StringConstraints(min_length=1, max_length=16)]
 
 
 class BdlError(Exception):
@@ -164,16 +174,34 @@ class BdlUnitResult(_Model):
 
 
 class BdlPageBody(_Model):
-    variable_id: Annotated[str, StringConstraints(max_length=16)] = Field(alias="variableId")
-    page: int = Field(ge=0)
-    page_size: int = Field(alias="pageSize", ge=1, le=500)
+    variable_id: WireId = Field(alias="variableId")
+    page: int | None = Field(default=None, ge=0)  # the live service does not echo it
+    page_size: int | None = Field(default=None, alias="pageSize", ge=1, le=500)  # nor this
     total_records: int = Field(alias="totalRecords", ge=0)
     results: tuple[BdlUnitResult, ...]
 
 
 class BdlVariableMeta(_Model):
-    id: Annotated[str, StringConstraints(max_length=16)]
+    id: WireId
     unit: Annotated[str, StringConstraints(min_length=1, max_length=40)] = Field(alias="measureUnitName")
+    years: tuple[int, ...] = ()
+
+
+class BdlUnit(_Model):
+    """One territorial unit of `/units`; `kind` is BDL's own unit type, `parent_id` its direct parent."""
+
+    id: Annotated[str, StringConstraints(pattern=r"^[0-9]{12}$")]
+    name: Annotated[str, StringConstraints(min_length=1, max_length=120)]
+    level: int = Field(ge=0, le=7)
+    parent_id: Annotated[str, StringConstraints(pattern=r"^[0-9]{12}$")] | None = Field(
+        default=None, alias="parentId"
+    )
+    kind: Annotated[str, StringConstraints(max_length=4)] | None = None
+
+
+class BdlUnitsBody(_Model):
+    total_records: int = Field(alias="totalRecords", ge=0)
+    results: tuple[BdlUnit, ...]
 
 
 class BdlCursor(BaseModel):
@@ -232,15 +260,74 @@ class BdlClient:
             body = BdlPageBody.model_validate(raw)
         except ValidationError as exc:
             raise BdlResponseInvalid("data page is malformed") from exc
-        if body.variable_id != cursor.variable_id or body.page != cursor.page:
+        if body.variable_id != cursor.variable_id or (body.page is not None and body.page != cursor.page):
             raise BdlResponseInvalid("data page does not answer the request")
-        if len(body.results) > body.page_size:
+        page_size = body.page_size or self.page_size
+        if len(body.results) > page_size:
             raise BdlResponseInvalid("data page exceeds its page size")
-        more = (cursor.page + 1) * body.page_size < body.total_records and bool(body.results)
+        more = (cursor.page + 1) * page_size < body.total_records and bool(body.results)
         nxt = cursor.model_copy(update={"page": cursor.page + 1}) if more else None
         if nxt is not None and nxt.page > MAX_PAGE_INDEX:
             raise BdlResponseInvalid("too many pages")
         return BdlPage(cursor=cursor, body=body, next_cursor=nxt)
+
+    async def units(self, level: int, *, deadline: Deadline) -> tuple[BdlUnit, ...]:
+        """Every unit of one territorial level (`/units?level=`), all pages. Used to build the reference."""
+        found: list[BdlUnit] = []
+        page = 0
+        while True:
+            params = httpx.QueryParams(
+                [
+                    ("level", str(level)),
+                    ("page", str(page)),
+                    ("page-size", str(self.page_size)),
+                    ("format", "json"),
+                ]
+            )
+            raw = await self._get(f"{self.base_url}/units", params, deadline)
+            try:
+                body = BdlUnitsBody.model_validate(raw)
+            except ValidationError as exc:
+                raise BdlResponseInvalid("units page is malformed") from exc
+            found += body.results
+            page += 1
+            if not body.results or page * self.page_size >= body.total_records:
+                break
+            if page > MAX_PAGE_INDEX:
+                raise BdlResponseInvalid("too many pages")
+        if len(found) != len({u.id for u in found}):
+            raise BdlResponseInvalid("duplicate unit ids")
+        return tuple(found)
+
+    async def record_count(self, variable_id: str, unit_level: int, year: int, *, deadline: Deadline) -> int:
+        """How many unit rows the source holds for one variable, level and year (one tiny request)."""
+        vid = _variable_id(variable_id)
+        params = httpx.QueryParams(
+            [
+                ("unit-level", str(unit_level)),
+                ("year", str(year)),
+                ("page", "0"),
+                ("page-size", "1"),
+                ("format", "json"),
+            ]
+        )
+        raw = await self._get(f"{self.base_url}/data/by-variable/{vid}", params, deadline)
+        try:
+            return BdlPageBody.model_validate(raw).total_records
+        except ValidationError as exc:
+            raise BdlResponseInvalid("data page is malformed") from exc
+
+    async def unit_ids_with_values(
+        self, variable_id: str, unit_level: int, year: int, *, deadline: Deadline
+    ) -> frozenset[str]:
+        """Ids of the units that carry a value row for one variable and year: which units existed then."""
+        start = BdlCursor(variable_id=variable_id, unit_level=unit_level, years=(year,))
+        ids: set[str] = set()
+        async for page in self.pages(start, deadline=deadline):
+            ids |= {
+                u.id for u in page.body.results if any(v.year == year and v.val is not None for v in u.values)
+            }
+        return frozenset(ids)
 
     async def pages(self, start: BdlCursor, *, deadline: Deadline) -> AsyncIterator[BdlPage]:
         """Yield pages from `start`. After an error the last yielded `next_cursor` resumes the work."""
@@ -367,7 +454,7 @@ class BdlObservationValidator:
             raise WrongUnitError(f"variable {meta.id} reports unit {meta.unit!r}")
         return binding
 
-    def validate(
+    def validate(  # noqa: PLR0912  (one linear pass over pages, years and gaps)
         self,
         meta: BdlVariableMeta,
         pages: tuple[BdlPage, ...],
@@ -375,12 +462,15 @@ class BdlObservationValidator:
         expected: Mapping[TerritoryId, TerritoryRef],
         years: tuple[int, ...],
         strict_gaps: bool = False,
+        ignore_unknown_units: bool = False,
     ) -> ValidationReport:
         """Turn the pages of one variable into observations for every expected (territory, year).
 
         Rejects (raises) unknown variables, wrong units, foreign territories or years and conflicting
         duplicates. Gaps become `missing` / `suppressed` / `invalid_attribute` observations; with
-        `strict_gaps` any gap raises `GapError` instead.
+        `strict_gaps` any gap raises `GapError` instead. With `ignore_unknown_units` a row for a unit outside
+        `expected` is skipped (BDL lists urban/rural parts, districts and defunct gminas next to the whole
+        current ones the reference holds); the caller counts them.
         """
         binding = self.check_meta(meta)
         defn = binding.definition
@@ -392,6 +482,8 @@ class BdlObservationValidator:
             for unit in page.body.results:
                 territory = expected.get(unit.id)
                 if territory is None:
+                    if ignore_unknown_units:
+                        continue
                     raise UnexpectedDataError(f"unexpected territory {unit.id}")
                 if territory.level not in defn.published_levels:
                     raise UnexpectedDataError(f"{defn.key} is not published at {territory.level.value}")
