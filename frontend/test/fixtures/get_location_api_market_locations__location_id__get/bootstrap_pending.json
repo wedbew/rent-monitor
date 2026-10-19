@@ -1,0 +1,29 @@
+{
+  "body": {
+    "cohort": [],
+    "covered_until": null,
+    "data_status": "unavailable",
+    "last_successful_refresh_at": null,
+    "location_id": "smoke-gdansk",
+    "name": "Gdańsk",
+    "unresolved_gap_since": null,
+    "usable_for_ranking": false
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations/{location_id}",
+    "method": "GET",
+    "operation_id": "get_location_api_market_locations__location_id__get",
+    "path": "/api/market/locations/{location_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations/smoke-gdansk"
+  },
+  "scenario": "bootstrap_pending",
+  "status": 200
+}

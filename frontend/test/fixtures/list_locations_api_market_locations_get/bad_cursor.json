@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["query", "cursor"],
+        "msg": "Not a cursor from this API",
+        "type": "invalid_cursor"
+      }
+    ],
+    "instance": "/api/market/locations",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Invalid cursor",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations",
+    "method": "GET",
+    "operation_id": "list_locations_api_market_locations_get",
+    "path": "/api/market/locations"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations?cursor=garbage"
+  },
+  "scenario": "bad_cursor",
+  "status": 422
+}

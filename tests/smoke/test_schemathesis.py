@@ -56,6 +56,7 @@ EXCLUDED = {
 # for them, and every other operation keeps positive_data_acceptance on (a valid request must be accepted).
 SEMANTIC_422 = {
     "list_audits_api_audits_get": "`cursor` is opaque: only a cursor this API issued is valid",
+    "list_locations_api_market_locations_get": "`cursor` is opaque: only a cursor this API issued is valid",
     "create_audit_api_audits_post": "an optional UUID header is sent as the string `null` by the generator",
     "register_api_auth_register_post": "the password policy (length, common passwords) is not a schema rule",
     "adjust_credits_api_admin_credits_adjust_post": "`delta` must not be zero",

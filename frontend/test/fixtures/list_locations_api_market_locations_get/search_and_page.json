@@ -1,0 +1,36 @@
+{
+  "body": {
+    "items": [
+      {
+        "data_status": "unavailable",
+        "last_successful_refresh_at": null,
+        "latest_summary_date": null,
+        "location_id": "smoke-gdansk",
+        "median_ppm2": null,
+        "median_rent_pln": null,
+        "name": "Gdańsk",
+        "priced_count": null,
+        "sufficient": null,
+        "withheld_reason": null
+      }
+    ],
+    "next_cursor": "cursor-fixture"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations",
+    "method": "GET",
+    "operation_id": "list_locations_api_market_locations_get",
+    "path": "/api/market/locations"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations?q=g&limit=1"
+  },
+  "scenario": "search_and_page",
+  "status": 200
+}

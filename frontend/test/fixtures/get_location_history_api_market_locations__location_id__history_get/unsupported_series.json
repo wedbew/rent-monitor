@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["query", "series"],
+        "msg": "Input should be 'additions' or 'cohort'",
+        "type": "literal_error"
+      }
+    ],
+    "instance": "/api/market/locations/smoke-torun/history",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations/{location_id}/history",
+    "method": "GET",
+    "operation_id": "get_location_history_api_market_locations__location_id__history_get",
+    "path": "/api/market/locations/{location_id}/history"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations/smoke-torun/history?series=deed"
+  },
+  "scenario": "unsupported_series",
+  "status": 422
+}

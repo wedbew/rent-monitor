@@ -1,0 +1,49 @@
+{
+  "body": {
+    "cohort_key": "all",
+    "end": "2026-10-19",
+    "location_id": "smoke-torun",
+    "points": [
+      {
+        "archive_days": 90,
+        "as_of": "2026-10-01T10:00:00Z",
+        "backfilled": false,
+        "caveats": ["asking_not_achieved_rent", "not_active_stock", "not_deed_price"],
+        "cohort_key": "all",
+        "first_observed_count": null,
+        "measure": "original_asking_rent",
+        "median_ppm2": "45.50",
+        "median_rent_pln": "2275.00",
+        "observed_count": 12,
+        "p25_ppm2": "42.75",
+        "p75_ppm2": "48.25",
+        "price_basis": "asking",
+        "priced_count": 12,
+        "series": "cohort",
+        "source": "otodom",
+        "sufficient": true,
+        "summary_date": "2026-10-19",
+        "withheld_reason": null
+      }
+    ],
+    "series": "cohort",
+    "start": "2026-09-20"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations/{location_id}/history",
+    "method": "GET",
+    "operation_id": "get_location_history_api_market_locations__location_id__history_get",
+    "path": "/api/market/locations/{location_id}/history"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations/smoke-torun/history?days=30"
+  },
+  "scenario": "cohort_series",
+  "status": 200
+}

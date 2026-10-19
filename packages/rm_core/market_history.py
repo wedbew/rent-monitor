@@ -27,11 +27,17 @@ from typing import Literal, Protocol, cast
 
 from pydantic import BaseModel, ConfigDict
 from rm_contracts.market import FRESH_HOURS, STALE_HOURS, DataStatus
-from sqlalchemy import func, select, text
+from sqlalchemy import func, literal, select, text, tuple_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from rm_core.db.models import MarketDailySummary, MarketImportCheckpoint, MarketImportRun, MarketOffer
+from rm_core.db.models import (
+    MarketDailySummary,
+    MarketImportCheckpoint,
+    MarketImportRun,
+    MarketLocation,
+    MarketOffer,
+)
 
 DATASET = "otodom_rental"
 CALC_VERSION = 1  # bump when the cohort rules or the statistics change; old rows stay as published
@@ -285,6 +291,18 @@ class MarketView(BaseModel):
     usable_for_ranking: bool  # fresh and enough priced observations in the `all` cohort
 
 
+class LocationListing(BaseModel):
+    """One place of the catalogue with the headline of its latest published `cohort`/`all` row."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    location_id: str
+    name: str
+    data_status: DataStatus
+    last_successful_refresh_at: datetime | None
+    headline: AskingRentObservation | None
+
+
 @dataclass(frozen=True)
 class PublishResult:
     status: PublishStatus
@@ -519,3 +537,101 @@ class PgMarketHistory:
                 )
             ).all()
         return [_obs(r) for r in _latest_versions(rows)]
+
+    # --- catalogue listing (names, search, keyset paging) ----------------------------------------
+
+    async def location_name(self, location_id: str, *, catalogue_version: int) -> str | None:
+        """The name of an enabled catalogue place, or None for an unknown or switched-off one."""
+        async with self._sessions() as s:
+            return await s.scalar(
+                select(MarketLocation.name).where(
+                    MarketLocation.catalogue_version == catalogue_version,
+                    MarketLocation.location_id == location_id,
+                    MarketLocation.launch_enabled.is_(True),
+                )
+            )
+
+    async def list_locations(
+        self,
+        *,
+        catalogue_version: int,
+        now: datetime,
+        limit: int,
+        query: str | None = None,
+        after: tuple[str, str] | None = None,
+    ) -> tuple[list[LocationListing], bool]:
+        """Enabled places ordered by `(name, location_id)`, keyset after `after`. `query` is a literal
+        case-insensitive substring of the name (LIKE metacharacters are escaped). Returns the page and whether
+        more follow. A place without a published row has `headline=None`."""
+        stmt = select(MarketLocation.location_id, MarketLocation.name).where(
+            MarketLocation.catalogue_version == catalogue_version, MarketLocation.launch_enabled.is_(True)
+        )
+        if query:
+            escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            stmt = stmt.where(MarketLocation.name.ilike(f"%{escaped}%", escape="\\"))
+        if after is not None:
+            stmt = stmt.where(
+                tuple_(MarketLocation.name, MarketLocation.location_id)
+                > tuple_(literal(after[0]), literal(after[1]))
+            )
+        async with self._sessions() as s:
+            found = (
+                await s.execute(
+                    stmt.order_by(MarketLocation.name, MarketLocation.location_id).limit(limit + 1)
+                )
+            ).all()
+            page = found[:limit]
+            ids = [r.location_id for r in page]
+            checkpoints = {
+                c.location_id: c
+                for c in (
+                    await s.scalars(
+                        select(MarketImportCheckpoint).where(
+                            MarketImportCheckpoint.location_id.in_(ids),
+                            MarketImportCheckpoint.dataset == DATASET,
+                        )
+                    )
+                ).all()
+            }
+            latest = {
+                r.location_id: r
+                for r in (
+                    await s.scalars(
+                        select(MarketDailySummary)
+                        .where(
+                            MarketDailySummary.location_id.in_(ids),
+                            MarketDailySummary.dataset == DATASET,
+                            MarketDailySummary.series == "cohort",
+                            MarketDailySummary.cohort_key == ALL,
+                        )
+                        .distinct(MarketDailySummary.location_id)
+                        .order_by(
+                            MarketDailySummary.location_id,
+                            MarketDailySummary.summary_date.desc(),
+                            MarketDailySummary.calc_version.desc(),
+                        )
+                    )
+                ).all()
+            }
+        out: list[LocationListing] = []
+        for r in page:
+            cp = checkpoints.get(r.location_id)
+            status = freshness(
+                bootstrapped=cp is not None and cp.bootstrap_completed_at is not None,
+                refresh_at=cp.last_successful_refresh_at if cp else None,
+                gap_since=cp.unresolved_gap_since if cp else None,
+                now=now,
+                fresh_hours=self._fresh,
+                stale_hours=self._stale,
+            )
+            row = latest.get(r.location_id)
+            out.append(
+                LocationListing(
+                    location_id=r.location_id,
+                    name=r.name,
+                    data_status=status,
+                    last_successful_refresh_at=cp.last_successful_refresh_at if cp else None,
+                    headline=_obs(row) if row is not None and status is not DataStatus.unavailable else None,
+                )
+            )
+        return out, len(found) > limit

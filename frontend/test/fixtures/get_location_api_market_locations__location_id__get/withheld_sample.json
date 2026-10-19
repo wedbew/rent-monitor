@@ -1,0 +1,93 @@
+{
+  "body": {
+    "cohort": [
+      {
+        "archive_days": 90,
+        "as_of": "2026-10-01T10:00:00Z",
+        "backfilled": false,
+        "caveats": ["asking_not_achieved_rent", "not_active_stock", "not_deed_price"],
+        "cohort_key": "all",
+        "first_observed_count": null,
+        "measure": "original_asking_rent",
+        "median_ppm2": null,
+        "median_rent_pln": null,
+        "observed_count": 3,
+        "p25_ppm2": null,
+        "p75_ppm2": null,
+        "price_basis": "asking",
+        "priced_count": 3,
+        "series": "cohort",
+        "source": "otodom",
+        "sufficient": false,
+        "summary_date": "2026-10-19",
+        "withheld_reason": "insufficient_sample"
+      },
+      {
+        "archive_days": 90,
+        "as_of": "2026-10-01T10:00:00Z",
+        "backfilled": false,
+        "caveats": ["asking_not_achieved_rent", "not_active_stock", "not_deed_price"],
+        "cohort_key": "rooms_2",
+        "first_observed_count": null,
+        "measure": "original_asking_rent",
+        "median_ppm2": null,
+        "median_rent_pln": null,
+        "observed_count": 3,
+        "p25_ppm2": null,
+        "p75_ppm2": null,
+        "price_basis": "asking",
+        "priced_count": 3,
+        "series": "cohort",
+        "source": "otodom",
+        "sufficient": false,
+        "summary_date": "2026-10-19",
+        "withheld_reason": "insufficient_sample"
+      },
+      {
+        "archive_days": 90,
+        "as_of": "2026-10-01T10:00:00Z",
+        "backfilled": false,
+        "caveats": ["asking_not_achieved_rent", "not_active_stock", "not_deed_price"],
+        "cohort_key": "size_45_60",
+        "first_observed_count": null,
+        "measure": "original_asking_rent",
+        "median_ppm2": null,
+        "median_rent_pln": null,
+        "observed_count": 3,
+        "p25_ppm2": null,
+        "p75_ppm2": null,
+        "price_basis": "asking",
+        "priced_count": 3,
+        "series": "cohort",
+        "source": "otodom",
+        "sufficient": false,
+        "summary_date": "2026-10-19",
+        "withheld_reason": "insufficient_sample"
+      }
+    ],
+    "covered_until": "2026-10-17T21:19:16.259621Z",
+    "data_status": "fresh",
+    "last_successful_refresh_at": "2026-10-19T19:19:16.259621Z",
+    "location_id": "smoke-gdynia",
+    "name": "Gdynia",
+    "unresolved_gap_since": null,
+    "usable_for_ranking": false
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations/{location_id}",
+    "method": "GET",
+    "operation_id": "get_location_api_market_locations__location_id__get",
+    "path": "/api/market/locations/{location_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations/smoke-gdynia"
+  },
+  "scenario": "withheld_sample",
+  "status": 200
+}
