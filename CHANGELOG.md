@@ -4,6 +4,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Changed
+- `OTODOM_MARKET_IMPORT_ENABLED=false` now stops the rental corpus dispatcher and every corpus page request, not only the summaries; the nightly cron, night window end, overlap, request budget and catalogue version are read from `OTODOM_MARKET_*` (`OTODOM_MARKET_SUMMARY_CRON` is new). Operator action: restart the worker after changing any of them; the window end must be before 12:00 UTC (RM-209)
+
 ### Added
 - Report `vision.floor_plan_text`, `vision.notes` and `vision.equipment` (optional within `schema_version` 1), vision prompt `vision-v2`; no operator action (RM-387)
 

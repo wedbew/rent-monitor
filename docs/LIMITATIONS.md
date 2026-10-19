@@ -590,8 +590,9 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Target:** OTO-04 publication slice
 
 ### L-073 — Corpus scheduling knobs are module constants, with no import switch
-- **Status:** active
+- **Status:** resolved
 - **Discovered:** 2026-10-19
+- **Resolved:** 2026-10-19, RM-209 (`OTODOM_MARKET_IMPORT_ENABLED` gates dispatch and every page request; cron, night window end, overlap, request budget and catalogue version come from `OTODOM_MARKET_*`; tests in `tests/unit/test_market_settings.py` and `tests/integration/test_market_settings_pg.py`). The catalogue is still unseeded, so the dispatcher stays inert (B-023).
 - **Affects:** cron (01:00 UTC), night window end 05:00 UTC, overlap 60 min, 7-day chunk, 23 h due-after, catalogue version 1
 - **Evidence:** confirmed
 - **Description:** No `OTODOM_MARKET_IMPORT_ENABLED`; the only kill switch is `LEGAL_SCRAPING_ENABLED`. Proposed names are in `docs/parallel-handoffs/RM-392.md`.
@@ -644,8 +645,9 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Target:** OTO-04 consumers
 
 ### L-079 — Market settings are defined but mostly unread; the summary cron is a constant
-- **Status:** active
+- **Status:** resolved
 - **Discovered:** 2026-10-19
+- **Resolved:** 2026-10-19, RM-209 (the `OTODOM_MARKET_*` settings are read by the code path they name, except `OTODOM_MARKET_ARCHIVE_DAYS`, which is only validated to 90 because the database and contracts fix that policy; `OTODOM_MARKET_SUMMARY_CRON` replaces the constant; the cron settings take effect at worker start)
 - **Affects:** `OTODOM_MARKET_*` settings; `publish_market_summaries` cron `30 5 * * *`; importer constants (see L-073)
 - **Evidence:** confirmed
 - **Description:** Only `IMPORT_ENABLED`, `FRESH_HOURS`, `STALE_HOURS` and `CATALOGUE_VERSION` are read; the importer still uses its own constants.

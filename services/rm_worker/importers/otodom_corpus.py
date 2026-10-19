@@ -26,7 +26,7 @@ import asyncio
 from collections.abc import AsyncGenerator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any, Protocol, cast
 
@@ -44,6 +44,7 @@ from rm_contracts.market import (
 )
 from rm_core.deadline import Deadline
 from rm_core.legal import LegalTag, tag_names
+from rm_core.settings import Settings
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -63,16 +64,23 @@ log = structlog.get_logger(__name__)
 EPOCH = datetime(2010, 1, 1, tzinfo=UTC)  # lower bound of a bootstrap window (nothing older is claimed)
 PAGE_CAP = MAX_SEARCH_PAGE  # the client refuses deeper pages; a bigger result is partitioned, not cut
 MIN_PARTITION = timedelta(hours=1)  # a window this narrow that still exceeds the cap is truncated coverage
-OVERLAP = timedelta(minutes=60)  # recovery margin before the watermark (OTODOM_MARKET_OVERLAP_MINUTES)
+OVERLAP = timedelta(minutes=60)  # default recovery margin; OTODOM_MARKET_OVERLAP_MINUTES in production
 CHUNK = timedelta(days=7)  # widest window of one catch-up run; longer gaps chain several runs
 DUE_AFTER = timedelta(hours=23)  # a bootstrapped location is due when the watermark is this old
-NORMAL_WINDOW = timedelta(hours=24) + OVERLAP + timedelta(hours=1)  # wider than this is mode `recovery`
-RUN_PAGE_BUDGET = 3000  # pages one run may read; exceeding it ends `incomplete`, never published
+RUN_PAGE_BUDGET = 3000  # default pages per run; OTODOM_MARKET_REQUEST_BUDGET in production
 RUN_DEADLINE_S = 3600.0  # one run's total deadline; each request has its own cap in the client
 MAX_RUNS_PER_CALL = 8  # catch-up runs for one location in one call
-NIGHT_WINDOW_END_UTC = 5  # hour (UTC) after which the nightly dispatcher defers no more locations
-CATALOGUE_VERSION = 1  # catalogue version the scheduled jobs read (proposed setting, RM-392-L05)
+NIGHT_WINDOW_END_UTC = time(5)  # default OTODOM_MARKET_NIGHT_WINDOW_END_UTC
+NIGHT_WINDOW_REOPEN_UTC = time(12)  # normal fetches are closed from the window end until this time
+CATALOGUE_VERSION = 1  # default OTODOM_MARKET_CATALOGUE_VERSION; the scheduled jobs read the setting
 CREATED_AT_FIELD = "createdAtFirst"  # never `pushedUpAt`; semantics unverified (RM-392-L03)
+
+
+def in_night_window(now: datetime, window_end: time = NIGHT_WINDOW_END_UTC) -> bool:
+    """True when normal Otodom fetches must stop: from the window end until 12:00 UTC. Work left over is
+    kept resumable, so a closed window delays a location and never completes or skips it (RM-209)."""
+    return window_end <= now.astimezone(UTC).time() < NIGHT_WINDOW_REOPEN_UTC
+
 
 _TAGS = tag_names(LegalTag.scraping, LegalTag.third_party_data)
 
@@ -257,6 +265,19 @@ class CorpusImporter:
     page_cap: int = PAGE_CAP
     page_budget: int = RUN_PAGE_BUDGET
     run_deadline_s: float = RUN_DEADLINE_S
+    overlap: timedelta = OVERLAP
+    night_window_end: time = NIGHT_WINDOW_END_UTC
+    # Checked before every page request; False ends the run `incomplete` (category `night_window`) and keeps
+    # its checkpoint. The production factory checks the real time; tests inject their own.
+    may_fetch: Callable[[], bool] = field(default=lambda: True)
+
+    @property
+    def normal_window(self) -> timedelta:
+        """Wider than this is mode `recovery` (one daily window plus overlap and one hour of slack)."""
+        return timedelta(hours=24) + self.overlap + timedelta(hours=1)
+
+    def night_window_closed(self, now: datetime | None = None) -> bool:
+        return in_night_window(now or self.clock(), self.night_window_end)
 
     # -- planning -----------------------------------------------------------------------------------
 
@@ -301,9 +322,9 @@ class CorpusImporter:
                 return [RunOutcome(entry.location_id, RunMode.incremental, None, "not_due")]
             if end <= cp.covered_until:
                 break
-            start = cp.covered_until - OVERLAP
+            start = cp.covered_until - self.overlap
             window_end = min(end, start + CHUNK)
-            mode = RunMode.incremental if window_end - start <= NORMAL_WINDOW else RunMode.recovery
+            mode = RunMode.incremental if window_end - start <= self.normal_window else RunMode.recovery
             outcome = await self._run(entry, mode, start, window_end)
             outcomes.append(outcome)
             if outcome.state not in ("published", "already_published"):
@@ -373,7 +394,7 @@ class CorpusImporter:
         except asyncio.CancelledError:
             await asyncio.shield(self._close(run.run_id, "cancelled"))
             raise
-        except (FetchError, PageShapeError, TimeoutError, _BudgetExceededError) as exc:
+        except (FetchError, PageShapeError, TimeoutError, _RunStopped) as exc:
             category = _category(exc)
             blocked = isinstance(exc, UpstreamBlocked) and not exc.retryable
             await self._close(run.run_id, category)
@@ -423,6 +444,8 @@ class CorpusImporter:
             raise _BudgetExceededError
         if ctx.deadline.expired:
             raise TimeoutError("run deadline reached")
+        if not self.may_fetch():
+            raise _NightWindowClosedError
         now = self.clock()
         ads = await self.source.fetch_corpus_search(
             entry.otodom_path, page, options=options, deadline=ctx.deadline, priority="batch"
@@ -443,11 +466,28 @@ class CorpusImporter:
         return parsed.total_pages
 
 
-class _BudgetExceededError(RuntimeError):
-    """The run reached its page budget; it ends `incomplete` and the next attempt starts the window again."""
+class _RunStopped(RuntimeError):
+    """A policy stop, not a provider failure: the run ends `incomplete` with its category and keeps its
+    checkpoint, so the next attempt starts the same window again."""
+
+    category: str = "stopped"
+
+
+class _BudgetExceededError(_RunStopped):
+    """The run reached its page budget."""
+
+    category = "budget"
+
+
+class _NightWindowClosedError(_RunStopped):
+    """The night window closed mid-run; the run resumes from the same window later."""
+
+    category = "night_window"
 
 
 def _category(exc: BaseException) -> str:
+    if isinstance(exc, _RunStopped):
+        return exc.category
     if isinstance(exc, FilterContractUnverified):
         return "filter_unverified"
     if isinstance(exc, UpstreamBlocked):
@@ -456,8 +496,6 @@ def _category(exc: BaseException) -> str:
         return "schema_drift"
     if isinstance(exc, TimeoutError):
         return "deadline"
-    if isinstance(exc, _BudgetExceededError):
-        return "budget"
     return "fetch_error"
 
 
@@ -477,8 +515,7 @@ async def run_nightly(
     blocked host) and at the end of the night window; the remaining locations stay overdue and resumable."""
     outcomes: list[RunOutcome] = []
     for entry in catalogue.locations:
-        hour = (now or importer.clock()).astimezone(UTC).hour
-        if outcomes and NIGHT_WINDOW_END_UTC <= hour < 12:
+        if outcomes and importer.night_window_closed(now):
             return NightlyResult(tuple(outcomes), "night_window")
         if not entry.launch_enabled or not await importer.is_due(entry.location_id, now):
             continue
@@ -487,3 +524,25 @@ async def run_nightly(
         if any(o.blocked for o in done):
             return NightlyResult(tuple(outcomes), "blocked")
     return NightlyResult(tuple(outcomes), None)
+
+
+def importer_from_settings(
+    corpus: CorpusRepository,
+    source: CorpusSearchSource,
+    settings: Settings,
+    *,
+    lock: LocationLock | None = None,
+    may_fetch: Callable[[], bool] | None = None,
+) -> CorpusImporter:
+    """The only way production builds the importer: the configured overlap, request budget and night window
+    (`OTODOM_MARKET_*`) apply, and the window is checked against the real time before each page request."""
+    window_end = settings.night_window_end_time
+    return CorpusImporter(
+        corpus,
+        source,
+        lock=lock,
+        page_budget=settings.otodom_market_request_budget,
+        overlap=timedelta(minutes=settings.otodom_market_overlap_minutes),
+        night_window_end=window_end,
+        may_fetch=may_fetch or (lambda: not in_night_window(datetime.now(UTC), window_end)),
+    )
