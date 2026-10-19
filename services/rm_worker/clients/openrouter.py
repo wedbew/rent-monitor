@@ -57,6 +57,9 @@ class VisionRequest:
     audit_id: UUID | None = None  # recorded with the call's cost
     max_tokens: int = 1500
     json_mode: bool = False
+    # LEGAL[images]: one text label per image, sent just before it (RM-410). It carries the image's index in
+    # the request, so a model answers with the number it reads, not a count. Empty means no labels.
+    image_labels: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -132,8 +135,14 @@ class _Completion(BaseModel):
 
 
 def build_payload(req: VisionRequest) -> dict[str, Any]:
+    if req.image_labels and len(req.image_labels) != len(req.images):
+        raise ValueError(
+            "every image needs exactly one label"
+        )  # fail closed: a shifted label is a wrong answer
     content: list[dict[str, Any]] = [{"type": "text", "text": req.prompt}]
-    for image in req.images:
+    for position, image in enumerate(req.images):
+        if req.image_labels:
+            content.append({"type": "text", "text": req.image_labels[position]})
         encoded = base64.b64encode(image.jpeg).decode("ascii")
         content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded}"}})
     messages: list[dict[str, Any]] = []

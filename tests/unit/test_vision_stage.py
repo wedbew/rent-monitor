@@ -5,8 +5,10 @@ how good a real model's answers are (L-003, #94).
 """
 
 import asyncio
+import base64
 import io
 import json
+import re
 from dataclasses import dataclass, field
 from decimal import Decimal
 from uuid import uuid4
@@ -24,8 +26,14 @@ from deal_analyzer.vision import (
 )
 from PIL import Image
 from rm_core.deadline import Deadline
-from rm_worker.clients.openrouter import VisionDisabled, VisionRequest, VisionResult, VisionUnavailable
-from rm_worker.images import MAX_FLOOR_PLANS, MAX_PHOTOS
+from rm_worker.clients.openrouter import (
+    VisionDisabled,
+    VisionRequest,
+    VisionResult,
+    VisionUnavailable,
+    build_payload,
+)
+from rm_worker.images import MAX_FLOOR_PLANS, MAX_PHOTOS, PreparedImage
 from rm_worker.vision_stage import PROMPT, PROMPT_VERSION, OpenRouterVision
 
 HOSTS = ("olxcdn.com",)
@@ -313,3 +321,79 @@ def test_the_prompt_never_asks_for_a_number_from_equipment() -> None:
 
     assert "image_index" in PROMPT
     assert PROMPT_VERSION == "vision-v2"
+
+
+# ----------------------------------------------------------------------------- RM-410 grounding
+LABEL = re.compile(r"Image (\d+) of \d+")
+
+
+def _model_answer_index(req: VisionRequest, target: PreparedImage, counting_base: int) -> int:
+    """What a model answers for the image `target`: the number printed in the text label before it when the
+    request carries one, otherwise its own count of the images it was shown, from `counting_base`. A count
+    from 1 is the one-based slip seen in the live sample (ID4DACX, 2026-10-19)."""
+    parts = build_payload(req)["messages"][-1]["content"]
+    data_url = "data:image/jpeg;base64," + base64.b64encode(target.jpeg).decode("ascii")
+    before, seen = "", 0
+    for part in parts:
+        if part["type"] == "text":
+            before = part["text"]
+            continue
+        if part["image_url"]["url"] == data_url:
+            label = LABEL.match(before)
+            return int(label.group(1)) if label else seen + counting_base
+        seen += 1
+    raise AssertionError("target image not in the request")
+
+
+@dataclass
+class ReadingModel(FakeModel):
+    """A fake model that reports one item seen in `target_source` and answers its index as above."""
+
+    target_source: str = ""
+    counting_base: int = 0
+
+    async def complete(self, req: VisionRequest, *, deadline: Deadline) -> VisionResult:
+        self.requests.append(req)
+        target = next(i for i in req.images if i.source_url == self.target_source)
+        index = _model_answer_index(req, target, self.counting_base)
+        answer = {
+            **ANSWER,
+            "equipment": [
+                {"item": "Domofon", "image_index": index, "confidence": 0.8, "sale_status": "unknown"}
+            ],
+        }
+        return VisionResult(json.dumps(answer), "google/gemini-test", 100, 50, Decimal("0.001"))
+
+
+async def test_equipment_binds_to_the_image_it_is_seen_in_after_an_earlier_download_is_skipped() -> None:
+    # photo 1 (CDN+"missing") is not served, so it is skipped; the intercom is in photo 2 ("c")
+    host = FakeHost(files("a", "c", "d"))
+    model = ReadingModel(target_source=CDN + "c", counting_base=1)
+    got = await assess(stage(host, model), listing((CDN + "a", CDN + "missing", CDN + "c", CDN + "d")))
+    assert got is not None
+    (obs,) = got.output.equipment
+    assert obs.media_ordinal == 2  # the selected list: a=0, missing=1, c=2, d=3
+    assert obs.provenance.value == "photo"
+
+
+async def test_a_clean_run_without_skips_binds_each_reference_to_its_image() -> None:
+    host = FakeHost(files("a", "c", "d"))
+    model = ReadingModel(target_source=CDN + "c", counting_base=0)
+    got = await assess(stage(host, model), listing((CDN + "a", CDN + "c", CDN + "d")))
+    assert got is not None
+    (obs,) = got.output.equipment
+    assert (obs.media_ordinal, obs.provenance.value) == (1, "photo")
+
+
+async def test_every_image_sent_is_preceded_by_a_label_with_its_index() -> None:
+    host, model = FakeHost(files("a", "c", "plan")), FakeModel()
+    await assess(stage(host, model), listing((CDN + "a", CDN + "c"), (CDN + "plan",)))
+    (req,) = model.requests
+    parts = build_payload(req)["messages"][-1]["content"]
+    labels = [p["text"] for p in parts if p["type"] == "text" and p["text"].startswith("Image ")]
+    assert labels == [
+        "Image 0 of 3, listing photo",
+        "Image 1 of 3, listing photo",
+        "Image 2 of 3, floor plan",
+    ]
+    assert [p["type"] for p in parts[1:4]] == ["text", "image_url", "text"]  # label, image, label

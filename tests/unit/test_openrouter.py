@@ -119,6 +119,19 @@ def test_payload_carries_system_prompt_images_and_json_mode() -> None:
     assert base64.b64decode(url.split(",", 1)[1]) == IMG.jpeg
 
 
+def test_labels_sit_before_their_image_and_a_label_count_mismatch_is_refused() -> None:
+    labelled = VisionRequest(
+        model="m", prompt="p", images=[IMG, IMG], image_labels=("Image 0 of 2", "Image 1 of 2")
+    )
+    parts = build_payload(labelled)["messages"][0]["content"]
+    assert [p["type"] for p in parts] == ["text", "text", "image_url", "text", "image_url"]
+    assert parts[1]["text"] == "Image 0 of 2"
+    assert parts[3]["text"] == "Image 1 of 2"
+    with pytest.raises(ValueError, match="exactly one label"):
+        build_payload(VisionRequest(model="m", prompt="p", images=[IMG, IMG], image_labels=("only one",)))
+    assert build_payload(REQ)["messages"][1]["content"][1]["type"] == "image_url"  # no labels: unchanged
+
+
 def test_cost_is_parsed_as_an_exact_decimal() -> None:
     result = parse_completion(json.dumps(OK_BODY).encode())
     assert result.cost_usd == Decimal("0.00014")
