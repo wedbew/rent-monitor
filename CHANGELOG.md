@@ -5,6 +5,12 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- Report `vision.floor_plan_text`, `vision.notes` and `vision.equipment` (optional within `schema_version` 1), vision prompt `vision-v2`; no operator action (RM-387)
+
+### Fixed
+- Audits with 25 photos plus floor plans no longer degrade because the vision answer list was capped at 25 (RM-387)
+
+### Added
 - Migration 0017 adds `market_daily_summary` (expand-only, empty) and the worker task `publish_market_summaries` (daily 05:30 UTC, batch queue), inert until a catalogue is seeded; new settings `OTODOM_MARKET_IMPORT_ENABLED` (default on), `_NIGHTLY_CRON`, `_NIGHT_WINDOW_END_UTC`, `_ARCHIVE_DAYS` (only 90), `_OVERLAP_MINUTES`, `_REQUEST_BUDGET`, `_FRESH_HOURS`, `_STALE_HOURS`, `_CATALOGUE_VERSION`; operators run `make migrate` (RM-395)
 
 ### Added

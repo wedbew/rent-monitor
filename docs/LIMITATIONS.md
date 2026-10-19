@@ -474,6 +474,33 @@ Entry format and rules: `.agent/rules/limitations.md`. IDs never reused. Seeded 
 - **Workaround:** none
 - **Target:** OTO-03 and OTO-04
 
+### L-061 — Equipment observations are unverified model claims
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `vision.equipment` (`sale_status`, confidence), report consumers
+- **Evidence:** inferred (offline fake model only)
+- **Description:** `included` in a sale is a model claim; accuracy is unmeasured and the UI must not present it as fact.
+- **Workaround:** none; no UI panel exists yet
+- **Target:** #94 accuracy set, G-02b panels
+
+### L-062 — OCR text and notes may contain personal data printed on a plan
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `vision.floor_plan_text`, `vision.notes` in `audit.result` (`GDPR[personal-data]`, `GDPR[erasure]`, `LEGAL[images]`)
+- **Evidence:** inferred
+- **Description:** Free text from a third-party model; the prompt forbids personal data in notes only. Stored with the audit, erased by cascade, retention follows the audit.
+- **Workaround:** none
+- **Target:** counsel review (B-012)
+
+### L-063 — `media_ordinal` matches the media manifest only by convention
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `vision.equipment[].media_ordinal`, `app.media_evidence` (see L-051)
+- **Evidence:** confirmed in code
+- **Description:** Photos then plans in selected order; no foreign key, and the worker does not populate the manifest yet.
+- **Workaround:** none
+- **Target:** G-01b media population
+
 ### L-064 — BDL unit-level numbers are inferred, not verified live
 - **Status:** active
 - **Discovered:** 2026-10-19

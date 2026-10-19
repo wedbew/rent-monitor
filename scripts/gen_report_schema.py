@@ -21,6 +21,13 @@ SCHEMA_PATH = Path(__file__).resolve().parents[1] / "docs" / "deal-analysis.sche
 SCHEMA_ID = "urn:rentmonitor:deal-analysis"
 Schema = dict[str, Any]
 
+# Fields added after a schema version was first released. `model_dump` writes them, but reports stored
+# earlier lack them, so they stay out of `required` and a reader must default them (docs/REPORT-SCHEMA.md,
+# "Additive fields"). Keyed by definition name. Remove an entry only together with a version bump.
+ADDITIVE_FIELDS: dict[str, frozenset[str]] = {
+    "VisionRecord": frozenset({"floor_plan_text", "notes", "equipment"}),  # G-02, RM-387
+}
+
 
 def build_schema() -> Schema:
     schema = DealAnalysis.model_json_schema(mode="serialization")
@@ -30,6 +37,9 @@ def build_schema() -> Schema:
     version = schema["properties"]["schema_version"]
     version["const"] = SCHEMA_VERSION  # a document validates against the schema of its own version only
     _require_serialized_fields(schema)
+    for name, fields in ADDITIVE_FIELDS.items():
+        node = schema["$defs"][name]
+        node["required"] = [f for f in node["required"] if f not in fields]
     return schema
 
 

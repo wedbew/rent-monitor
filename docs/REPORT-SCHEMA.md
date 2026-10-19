@@ -34,6 +34,24 @@ Within one `schema_version` the schema may only **grow**:
 current version (`tests/fixtures/report_schema_v<N>.json`, a copy of the schema as first released) and lists
 what broke. Readers written against version N keep working for every N document, old or new.
 
+## Additive fields (optional within a version)
+
+A field added after a version was first released cannot be `required`: reports stored before it do not
+have it. `ADDITIVE_FIELDS` in `scripts/gen_report_schema.py` names them (per definition); they are written by
+`model_dump` but left out of `required`, and a reader treats an absent one as its default. An entry is removed
+only together with a version bump. Current entries (version 1):
+
+- `VisionRecord.floor_plan_text` (string or null), `VisionRecord.notes` (string or null) and
+  `VisionRecord.equipment` (array of `EquipmentObservation`, default empty), RM-387 / G-02. The report now keeps
+  the OCR transcription of floor plans and the equipment the vision model saw: `item`, `media_ordinal` (the
+  position in the selected media list, photos then plans, same as the media manifest `ordinal`; null when the
+  model named no usable image), `confidence` (decimal string, 0 to 1), `provenance` (`photo | floor_plan |
+  unattributed`) and `sale_status` (`included | visible_only | unknown`). It is evidence, never an input to a
+  number; a report loaded later needs no second model call. Prompt version `vision-v2`.
+  `LEGAL[images]`, `LEGAL[republication]`, `GDPR[processor]`.
+
+The SPA keeps rendering version 1 (it ignores the new fields); panels for them are G-02b.
+
 ## Changing the engine's output
 
 1. Change the models in `apps/deal_analyzer`. Additive: keep `SCHEMA_VERSION`. Breaking: raise it in

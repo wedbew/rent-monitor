@@ -146,7 +146,21 @@ export type Base = string
 export type Clamped = boolean
 export type Proposed = string
 export type Value = string
+export type Confidence2 = string
+export type Item = string
+export type MediaOrdinal = (number | null)
+export type EvidenceSource = ("photo" | "floor_plan" | "unattributed")
+/**
+ * Whether an item seen in the listing media is part of the sale. Unknown is the honest default.
+ */
+export type SaleStatus = ("included" | "visible_only" | "unknown")
+/**
+ * @maxItems 40
+ */
+export type Equipment = EquipmentObservation[]
+export type FloorPlanText = (string | null)
 export type Model = string
+export type Notes = (string | null)
 export type PhotosExcluded = number
 export type PhotosTotal = number
 export type PromptVersion = string
@@ -154,6 +168,18 @@ export type PromptVersion = string
  * Stable codes for missing or doubtful inputs; they lower confidence
  */
 export type Warnings2 = string[]
+/**
+ * This interface was referenced by `DealAnalysis`'s JSON-Schema
+ * via the `definition` "EvidenceSource".
+ */
+export type EvidenceSource1 = ("photo" | "floor_plan" | "unattributed")
+/**
+ * Whether an item seen in the listing media is part of the sale. Unknown is the honest default.
+ * 
+ * This interface was referenced by `DealAnalysis`'s JSON-Schema
+ * via the `definition` "SaleStatus".
+ */
+export type SaleStatus1 = ("included" | "visible_only" | "unknown")
 
 /**
  * The canonical result. `model_dump_json()` is what is stored, shown through the API and rendered
@@ -355,7 +381,10 @@ verdict: Verdict
 export interface VisionRecord {
 capex: (Applied | null)
 condition: Condition
+equipment?: Equipment
+floor_plan_text?: FloorPlanText
 model: Model
+notes?: Notes
 photos_excluded: PhotosExcluded
 photos_total: PhotosTotal
 prompt_version: PromptVersion
@@ -371,6 +400,25 @@ base: Base
 clamped: Clamped
 proposed: Proposed
 value: Value
+}
+/**
+ * One piece of equipment or fit-out the model saw, linked to the image it came from (G-02).
+ * 
+ * Factual evidence only: it never feeds a number (invariant 4). `media_ordinal` is the position in the
+ * selected media list (photos in listing order, then floor plans), the `ordinal` of the media manifest.
+ * LEGAL[images]: derived from listing photos and plans sent to a third party (RM-387)
+ * LEGAL[republication]: shown back to users, so bounded and stripped of control characters (RM-387)
+ * GDPR[processor]: produced by the vision model behind OpenRouter (RM-387)
+ * 
+ * This interface was referenced by `DealAnalysis`'s JSON-Schema
+ * via the `definition` "EquipmentObservation".
+ */
+export interface EquipmentObservation {
+confidence: Confidence2
+item: Item
+media_ordinal: MediaOrdinal
+provenance: EvidenceSource
+sale_status: SaleStatus
 }
 /**
  * This interface was referenced by `DealAnalysis`'s JSON-Schema
