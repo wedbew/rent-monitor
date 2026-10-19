@@ -390,16 +390,6 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Workaround:** none needed before an importer exists
 - **Target:** OTO-01 phase 2
 
-### L-050 — The Otodom filtered-listing contract is unverified; coverage relies on `pages_expected`
-- **Status:** active
-- **Discovered:** 2026-10-17
-- **Affects:** OTO-01 importer, `coverage_complete`, `docs/OTODOM-NIGHTLY-IMPORT.md` §4
-- **Evidence:** inferred (nothing fetches yet; filtered listing operation, last-24-hours semantics, partitioning past 50 pages and timestamp meanings not checked live)
-- **Description:** Publishing a location requires proven page coverage, which a future importer must supply as `pages_expected`. Until the live contract is verified (an owner-authorised request, L-002 applies), the value is not trustworthy. The verified 727-location catalogue artifact is also unidentified (B-023 item 4); nothing was seeded.
-- **Workaround:** none; no import runs
-- **Target:** `docs/OTODOM-NIGHTLY-IMPORT.md` §4, B-023 item 4
-- **Update (2026-10-19, RM-392):** the client now has typed search options but refuses created-date filters until `filters_verified` is set; `createdAtFrom`/`createdAtTo` are guesses from the count query (L-070).
-
 ### L-051 — Media manifest is metadata only: no binary store, no population, no expiry sweep
 - **Status:** active
 - **Discovered:** 2026-10-17
@@ -569,7 +559,7 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Discovered:** 2026-10-19
 - **Affects:** `otodom_corpus.py` (RM-392), `sync_corpus_location`
 - **Evidence:** confirmed (design); per-partition resume needs the unbuilt `market_import_item` (L-060)
-- **Description:** A restarted window re-reads from its first page. Page budget 3000 and a 3600 s deadline apply, so a very large location may stay `incomplete` (visible, not published) across runs. The date-filter parameter names and boundary behaviour are unverified, so `filters_verified` stays false (see L-050).
+- **Description:** A restarted window re-reads from its first page. Page budget 3000 and a 3600 s deadline apply, so a very large location may stay `incomplete` (visible, not published) across runs. The search contract is verified (L-050); chunked recovery windows no longer exist, a long gap is one wider window.
 - **Workaround:** none
 - **Target:** OTO-02 live check; `market_import_item` slice
 
@@ -581,6 +571,7 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Description:** Used instead of `pushedUpAt` (never used). A wrong choice shifts archive dates.
 - **Workaround:** none
 - **Target:** owner-authorised live check
+- **Update (2026-10-20, RM-411):** live probes show `createdAtFirst` equals `dateCreated` on the observed tiles, the `LATEST` sort and the `daysSinceCreated` window follow it, and promoted adverts carry a separate `pushedUpAt`; whether it is the first publication of a re-posted property cannot be told from the search page.
 
 ### L-072 — Unpublished runs leave offers visible; bootstrap lower bound is a constant
 - **Status:** active
@@ -715,6 +706,24 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Workaround:** the SPA shows them as prompts to check, never as findings; old audits show none.
 - **Target:** frontend display (report owner after RM-404); quality review with labelled listings (#94, B-015)
 
+### L-091 — Offset paging over a changing list can skip an advert
+- **Status:** active
+- **Discovered:** 2026-10-20
+- **Affects:** every corpus sweep (`CorpusImporter._pass`), coverage claims
+- **Evidence:** inferred from the site's offset paging (no snapshot token was observed); duplicates are harmless, a deletion during a sweep can shift one advert across a page boundary
+- **Description:** A published window means every page was read and both ends were reached by timestamp, not that the live list stood still. The window overlap (60 min) and the next nightly window make a skipped advert rare, never impossible.
+- **Workaround:** none; coverage manifests say "pages read", not "every advert"
+- **Target:** compare `totalItems` with the distinct ids read once a real bootstrap exists
+
+### L-092 — The catalogue is what Otodom lists today at gmina level, not the owner's 727 identities
+- **Status:** active
+- **Discovered:** 2026-10-20
+- **Affects:** `docs/market/otodom-catalogue-v1.json`, `rm_worker.importers.otodom_catalogue`, `scripts/seed_catalogue.py`, B-023 item 4
+- **Evidence:** confirmed (the sitemap, its SHA-256 and the reconciliation are stored in the artifact)
+- **Description:** No artifact with the owner's 727 identities exists in the repository, so equality cannot be shown and the count is neither trimmed nor padded to 727. The catalogue holds the gmina-level places Otodom lists for flats (rent or sale); districts of big cities, a city or village below a listed gmina, counties and voivodeships are not places (nested searches would double-count and leave children empty). A place without rentals is a valid empty location, not a failure.
+- **Workaround:** `scripts/seed_catalogue.py discover` regenerates the artifact (checksum changes are a new catalogue version); the owner can supply the 727 list at any time
+- **Target:** B-023 item 4
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built
@@ -809,3 +818,14 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 
 
 _None yet._
+
+### L-050 — The Otodom filtered-listing contract is unverified; coverage relies on `pages_expected`
+- **Status:** resolved
+- **Discovered:** 2026-10-17
+- **Affects:** OTO-01 importer, `coverage_complete`, `docs/OTODOM-NIGHTLY-IMPORT.md` §4
+- **Evidence:** inferred (nothing fetches yet; filtered listing operation, last-24-hours semantics, partitioning past 50 pages and timestamp meanings not checked live)
+- **Description:** Publishing a location requires proven page coverage, which a future importer must supply as `pages_expected`. Until the live contract is verified (an owner-authorised request, L-002 applies), the value is not trustworthy. The verified 727-location catalogue artifact is also unidentified (B-023 item 4); nothing was seeded.
+- **Workaround:** none; no import runs
+- **Target:** `docs/OTODOM-NIGHTLY-IMPORT.md` §4, B-023 item 4
+- **Update (2026-10-19, RM-392):** the client now has typed search options but refuses created-date filters until `filters_verified` is set; `createdAtFrom`/`createdAtTo` are guesses from the count query (L-070).
+- **Resolved:** 2026-10-20 (RM-411): probed live with single requests (Bydgoszcz and Warsaw flat rentals; no offer content kept). `daysSinceCreated=N` is a rolling N x 24 h window for any integer N, with no upper bound and no absolute-date filter (the invented `createdAtFrom`/`createdAtTo` do not exist); `by=LATEST&direction=ASC|DESC` sorts by `createdAtFirst`; `limit=24|36|72` sets the page size (100 falls back to 36); there is no 50-page ceiling (Warsaw page 107 of 107 at 72, page 51 at 36); an empty location answers `totalPages: 0`; a page past the end repeats the last page; every non-empty page ends with a sponsored `hpr/` tile with a synthetic id and a 1999 date, now rejected. The importer proves its windows from `createdAtFirst` and sets `truncated` when it cannot; tests: `tests/unit/test_corpus_search.py`, `tests/integration/test_otodom_corpus_import.py`.

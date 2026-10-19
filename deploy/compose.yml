@@ -65,8 +65,18 @@ services:
 
   worker-ops:
     <<: *app
-    command: ["procrastinate", "--app=rm_worker.app.app", "worker", "--queues=ops,batch", "--concurrency=2"]
+    command: ["procrastinate", "--app=rm_worker.app.app", "worker", "--queues=ops", "--concurrency=2"]
     stop_grace_period: 30s
+    depends_on:
+      bootstrap: { condition: service_completed_successfully }
+
+  # Market collection (Otodom corpus bootstrap and nightly windows, BDL ingestion, summaries) on its own lane, one job
+  # at a time: a bootstrap of hundreds of locations must never delay mail, billing or recovery on `worker-ops`
+  # (RM-411). The Otodom host slot (1 request per second) is shared, so more concurrency would only queue.
+  worker-batch:
+    <<: *app
+    command: ["procrastinate", "--app=rm_worker.app.app", "worker", "--queues=batch", "--concurrency=1"]
+    stop_grace_period: 60s  # a run killed here ends `incomplete` and resumes from its checkpoint
     depends_on:
       bootstrap: { condition: service_completed_successfully }
 

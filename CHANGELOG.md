@@ -5,6 +5,16 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- Otodom place catalogue from the site's own location sitemap: `docs/market/otodom-catalogue-v1.json` (787 gmina-level places, provenance, sitemap SHA-256, checksum, per-place census and a reconciliation that says plainly it is not the owner's 727 identities), `scripts/seed_catalogue.py discover|apply` and `scripts/market_manifest.py` (coverage manifest: per-place state, pages read, offers stored). Operator action: `scripts/seed_catalogue.py apply --file docs/market/otodom-catalogue-v1.json` once per database (RM-411)
+- A dedicated `worker-batch` Compose lane (queue `batch`, concurrency 1) for market collection; `worker-ops` now serves `ops` only. Operator action: `docker compose up -d worker-batch worker-ops` (RM-411)
+
+### Changed
+- The corpus search uses the contract verified against the live site on 2026-10-20: `daysSinceCreated=N` (rolling), `by=LATEST&direction=ASC|DESC`, `limit=72`; the invented `createdAtFrom/To` parameters and the unverified-filter switch are gone, there is no 50-page ceiling, and a long gap is one wider window instead of chained chunks (RM-411)
+
+### Fixed
+- The sponsored `hpr/` tile that ends every non-empty results page (synthetic id, 1999 date, another advert's price) is no longer stored as an offer; an empty location (`totalPages: 0`) is a valid complete search instead of a malformed page; a page past the end (the site repeats the last one) ends the run `incomplete` (RM-411)
+
+### Added
 - Rynek page (`/app/market`, `/app/market/:id`): searchable list of places with the latest rental asking medians, a place page with status, latest reading, history and series/cohort/period choices kept in the address; the Pulpit links to it. Frontend only; no operator action (RM-422)
 - `GET /api/market/locations`, `/api/market/locations/{id}` and `/api/market/locations/{id}/history`: session-authenticated, read-only asking-rent aggregates per catalogue place (search, keyset paging, latest cohort with freshness, daily history of the `additions` and `cohort` series). A sample under 10 priced offers keeps its counts and withholds statistics; no migration, no operator action (RM-421)
 

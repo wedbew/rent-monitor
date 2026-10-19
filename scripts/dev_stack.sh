@@ -68,7 +68,7 @@ cmd_up() {
   if [ "$(uname -m)" = "arm64" ]; then export DOCKER_DEFAULT_PLATFORM="${DOCKER_DEFAULT_PLATFORM:-linux/amd64}"; fi
 
   echo "== starting API (127.0.0.1:${API_PORT}), Postgres (127.0.0.1:${POSTGRES_PORT}) and workers"
-  "${COMPOSE[@]}" up -d --build --wait api worker-audit worker-ops
+  "${COMPOSE[@]}" up -d --build --wait api worker-audit worker-ops worker-batch
 
   local title
   title="$(curl -fsS -m 5 "http://127.0.0.1:${API_PORT}/api/openapi.json" 2>/dev/null \

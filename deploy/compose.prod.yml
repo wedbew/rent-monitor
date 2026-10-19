@@ -6,7 +6,7 @@
 #
 # Memory matrix for 4 GB (2 GB swap, vm.swappiness=10 from setup-server.sh); limits are ceilings, not reservations:
 #   postgres 1.0 G, api 0.5 G, worker-audit 1.5 G (engine child capped at AUDIT_CHILD_MEMORY_MB inside it),
-#   worker-ops 0.25 G, caddy 0.06 G. Sum 3.31 G, leaving ~0.7 G for the host. Release gate 4 measures the real peak.
+#   worker-ops 0.25 G, worker-batch 0.25 G, caddy 0.06 G. Sum 3.56 G on paper (RM-411; gate 4 measures the real peak). Release gate 4 measures the real peak.
 name: rentmonitor
 
 x-hardening: &hardening
@@ -62,6 +62,16 @@ services:
         required: true
 
   worker-ops:
+    image: rentmonitor-py:${IMAGE_TAG:-local}
+    <<: *hardening
+    mem_limit: 256m
+    cpus: 0.5
+    environment: *prod-env
+    env_file:
+      - path: ../.env
+        required: true
+
+  worker-batch:
     image: rentmonitor-py:${IMAGE_TAG:-local}
     <<: *hardening
     mem_limit: 256m
