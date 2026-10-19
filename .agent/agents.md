@@ -55,6 +55,8 @@ You may not delete, skip, `xfail`, or weaken an `invariant` test. A PR that does
 
 ## 4. Security boundaries
 - Never read, print, commit or paste real values from `.env`. `.env.example` is readable and kept current by agents.
+  Presence checks by name only (for example `grep -o '^NAME=' .env` with the value never printed) are allowed to
+  verify that a configured name exists, as `OWNER-DECISIONS-2026-10-19.md` permits (`rules/session-workflow.md` §6).
 - Never read OAuth client secrets (`client_secret*.json`, gitignored), `.env`, keys or CLI credential files. Stripe CLI: **test mode only**,
   never `--live`. OVH CLI: ask before any command that buys, renews, resizes, reinstalls or deletes. Never `git add -A` over an
   untracked file you did not create; add files by name.
@@ -126,6 +128,7 @@ Read the matching file when your change touches the area; update the doc in the 
 - `rules/delivery.md` — journey-first priority, ready/done levels, checkpoints, `docs/STATUS.md` upkeep.
 - `rules/frontend.md` — every `frontend/` change: evidence before claims, tested primitive promises, one door per session transition, untrusted network data, copy and numbers from one place, durable audits (audit 2026-10-15).
 - `rules/context.md` — keep root `CONTEXT.md` current: update it in the same PR as any change that makes it stale; bump its "Last updated" line.
+- `rules/session-workflow.md` — one issue per session, brief and stop conditions, Edit vs Write, worktrees, name-only `.env` checks.
 - `rules/parallel-work.md` — independent worker lanes, shared-file reservations, documentation handoffs and integration ownership; no waiver of same-PR docs or required checks.
 Cursor mirrors these in `.cursor/rules/*.mdc` as pointers only; edit the `.agent/rules/` file, never the pointer.
 
