@@ -345,15 +345,6 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Workaround:** The report links to the source listing where available; its availability and image retention are external. Use the existing checklist for known warnings; do not present it as generated seller questions or treat unobserved equipment as absent.
 - **Target:** [feature-gap audit and implementation guide](FEATURE-GAP-IMPLEMENTATION-GUIDE-2026-10-16.md), proposed G-01/G-02/G-03 (not filed); existing #211, #283, #284. Implement media/evidence contracts before dependent UI and preserve historical report compatibility.
 
-### L-045 — No BDL metric is selected and no publication threshold is set
-- **Status:** active
-- **Discovered:** 2026-10-17
-- **Affects:** `packages/rm_core/location_contracts.py` (`evaluate_gate`, `require_publishable`), LCTX-01 phase 2, #48, #21, #282
-- **Evidence:** confirmed (`tests/unit/test_bdl_metrics.py`: every undecided threshold fails closed)
-- **Description:** The ranking and comparison logic is implemented, but `PublicationPolicy` thresholds (`min_coverage`, `min_cohort_size`) and the selected metric list with reviewed `bdl_variable_id`s are owner decisions (B-023). Until they are recorded, gates return `undecided` and nothing can be published.
-- **Workaround:** none; do not present municipal or ranked context as available
-- **Target:** B-023 items 1 and 3, then LCTX-01 phase 2
-
 ### L-046 — BDL source staleness is not modelled
 - **Status:** active
 - **Discovered:** 2026-10-17
@@ -409,15 +400,6 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Workaround:** none; no UI should present a gallery yet
 - **Target:** G-01 follow-up slices; owner decision on binary storage (Postgres `bytea` for the beta or a private object store) and retention values
 
-### L-053 — BDL response shapes are unverified against the live API
-- **Status:** active
-- **Discovered:** 2026-10-18
-- **Affects:** `services/rm_worker/clients/bdl.py` (`variableId`, `results[].values[].attrId`, `measureUnitName`, `X-ClientId` header), LCTX-01b
-- **Evidence:** inferred (public API description; no BDL call made)
-- **Description:** The client and validator were built and tested offline against hand-built fixtures only.
-- **Workaround:** none needed offline; no metric is selected or activated
-- **Target:** one owner-authorised live BDL read (B-023), then LCTX-01b part 2
-
 ### L-054 — BDL request quota limits are not encoded and the gate is per process
 - **Status:** active
 - **Discovered:** 2026-10-18
@@ -426,15 +408,6 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Description:** Windows are caller-supplied; none are baked in. The gate is not shared across workers, and `BDL_API_KEY` has no field in `rm_core.settings`.
 - **Workaround:** a single worker with conservative caller-supplied windows
 - **Target:** LCTX-01b part 2 (Postgres-shared gate, setting, migration 0016)
-
-### L-055 — Meaning of BDL `attrId` values is an unreviewed per-binding input
-- **Status:** active
-- **Discovered:** 2026-10-18
-- **Affects:** `BdlMetricBinding`, which values count as valid, suppressed or invalid
-- **Evidence:** inferred
-- **Description:** The validator maps attribute ids per binding; no real binding is approved.
-- **Workaround:** none; no binding ships
-- **Target:** B-023 reviewed metric list
 
 ### L-056 — Location conflicts in the rental corpus are counted, not stored for review
 - **Status:** active
@@ -509,33 +482,6 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Defect status (RM-410, 2026-10-19):** the image-identity defect is resolved offline. The request now names each image by the index the model must return, and that index is the position among the images actually sent, so a skipped or duplicate photo cannot shift it. The mapping back is unchanged for existing callers. Still open: the manifest is not populated (G-01b), and the live references are unverified until a new sample is checked.
 - **Workaround:** none
 - **Target:** G-01b media population
-
-### L-064 — BDL unit-level numbers are inferred, not verified live
-- **Status:** active
-- **Discovered:** 2026-10-19
-- **Affects:** `location_territory` level codes (gmina 6, powiat 5, voivodeship 2, country 0), LCTX-01b
-- **Evidence:** inferred (with L-053)
-- **Description:** Not checked against the live API.
-- **Workaround:** none; nothing is ingested
-- **Target:** one owner-authorised live BDL read
-
-### L-065 — `BDL_REQUESTS_PER_MINUTE=10` is a placeholder cap
-- **Status:** active
-- **Discovered:** 2026-10-19
-- **Affects:** `PgQuotaGate`, ingestion pacing
-- **Evidence:** estimate
-- **Description:** The real quota for the key tier is unknown. Sharing across workers is resolved (Postgres-shared gate); that half of L-054 is closed.
-- **Workaround:** conservative default
-- **Target:** owner confirms the key tier
-
-### L-066 — The territorial reference has no loader
-- **Status:** active
-- **Discovered:** 2026-10-19
-- **Affects:** `location_reference`, `ensure_reference`
-- **Evidence:** confirmed
-- **Description:** Hierarchy and TERYT crosswalk content must come from a reviewed source (B-023).
-- **Workaround:** none
-- **Target:** after B-023 reference-source decision
 
 ### L-067 — A failed BDL ingest run is terminal with no reset path
 - **Status:** active
@@ -715,6 +661,33 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Workaround:** the SPA shows them as prompts to check, never as findings; old audits show none.
 - **Target:** frontend display (report owner after RM-404); quality review with labelled listings (#94, B-015)
 
+### L-088 — BDL refresh has run only against a fake and the live probes, not as a scheduled pass on real data
+- **Status:** active
+- **Discovered:** 2026-10-20
+- **Affects:** `services/rm_worker/importers/bdl_context.py`, `rm_worker.tasks.bdl_refresh` (weekly cron), every BDL surface
+- **Evidence:** confirmed: `tests/integration/test_bdl_context_refresh_pg.py` (live-shaped fake, real Postgres) and live probes of 2026-10-20; the first real publication is recorded in `docs/STATUS.md` when it happens
+- **Description:** Until a real pass has published releases, no profile may claim BDL data. Publication is per metric and year and fails closed below the metric's coverage threshold (0.90, 0.70 for deed transactions); thresholds are delegated policy and revisable.
+- **Workaround:** none needed; nothing is shown without a release
+- **Target:** the live refresh on the local stack, then the beta host
+
+### L-089 — The BDL reference counts a unit as current when it reports a population in the reference year
+- **Status:** active
+- **Discovered:** 2026-10-20
+- **Affects:** `packages/rm_core/bdl_reference.py`, cohort sizes and coverage of every gmina and powiat metric
+- **Evidence:** confirmed live: `/units` cannot be filtered by year and lists 4,198 level-6 units (2,705 whole gminas, their urban and rural parts, Warsaw districts) of which about 3,930 report values; 382 powiats of which 380 do
+- **Description:** Whole gminas (types 1-3) with a population in the newest year form the cohort; parts, districts and units without a value are excluded and counted in the build log. A genuinely current gmina that reports no population would be left out. Urban and rural parts of urban-rural gminas are not separate units, so a city inside an urban-rural gmina has no BDL value of its own.
+- **Workaround:** none; the exclusion counts are logged at build time
+- **Target:** revisit if the unit list gains a validity date
+
+### L-090 — Fiscal and unemployment series mix gmina types and denominators
+- **Status:** active
+- **Discovered:** 2026-10-20
+- **Affects:** `property_tax_revenue`, `municipal_pit_revenue`, `municipal_cit_revenue`, `pit_revenue_per_resident`, `own_revenue_per_resident`, `unemployment_*`
+- **Evidence:** confirmed (variable metadata `n1`: gminas including cities with powiat rights; two unemployment denominators)
+- **Description:** A city with powiat rights also carries powiat tasks in its own revenue, so per-resident fiscal values are not strictly comparable with ordinary gminas; the notes in the registry say so. The gmina unemployment share (working-age denominator) differs from the powiat rate (economically active denominator) and the two are never compared.
+- **Workaround:** labels and notes travel with each value; no composite uses them without that caveat
+- **Target:** methodology note with the experimental index
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built
@@ -809,3 +782,63 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 
 
 _None yet._
+
+### L-045 — No BDL metric is selected and no publication threshold is set
+- **Status:** resolved
+- **Discovered:** 2026-10-17
+- **Affects:** `packages/rm_core/location_contracts.py` (`evaluate_gate`, `require_publishable`), LCTX-01 phase 2, #48, #21, #282
+- **Evidence:** confirmed (`tests/unit/test_bdl_metrics.py`: every undecided threshold fails closed)
+- **Description:** The ranking and comparison logic is implemented, but `PublicationPolicy` thresholds (`min_coverage`, `min_cohort_size`) and the selected metric list with reviewed `bdl_variable_id`s are owner decisions (B-023). Until they are recorded, gates return `undecided` and nothing can be published.
+- **Workaround:** none; do not present municipal or ranked context as available
+- **Target:** B-023 items 1 and 3, then LCTX-01 phase 2
+- **Resolved:** 2026-10-20 (RM-48): the selected metric list, reviewed variable ids, directions and per-metric publication thresholds are recorded in `packages/rm_core/bdl_metrics.py` under the delegated policy (OWNER-DECISIONS section 7); thresholds default to 0.90 coverage and a cohort of 10, 0.70 for the two deed-transaction metrics whose small cells GUS withholds. Nothing is published until a refresh run passes the gates (L-088).
+
+### L-053 — BDL response shapes are unverified against the live API
+- **Status:** resolved
+- **Discovered:** 2026-10-18
+- **Affects:** `services/rm_worker/clients/bdl.py` (`variableId`, `results[].values[].attrId`, `measureUnitName`, `X-ClientId` header), LCTX-01b
+- **Evidence:** inferred (public API description; no BDL call made)
+- **Description:** The client and validator were built and tested offline against hand-built fixtures only.
+- **Workaround:** none needed offline; no metric is selected or activated
+- **Target:** one owner-authorised live BDL read (B-023), then LCTX-01b part 2
+- **Resolved:** 2026-10-20 (RM-48): checked against the live service (variable id is a number, a data page has no `page`/`pageSize`, years are strings, `attrId` 1/3/91, `X-ClientId` accepted; rate header `x-rate-limit`). The client and its fixtures now follow the live shapes; `tests/bdl_live_fake.py` reproduces them.
+
+### L-055 — Meaning of BDL `attrId` values is an unreviewed per-binding input
+- **Status:** resolved
+- **Discovered:** 2026-10-18
+- **Affects:** `BdlMetricBinding`, which values count as valid, suppressed or invalid
+- **Evidence:** inferred
+- **Description:** The validator maps attribute ids per binding; no real binding is approved.
+- **Workaround:** none; no binding ships
+- **Target:** B-023 reviewed metric list
+- **Resolved:** 2026-10-20 (RM-48): `/attributes` and data probes: 1 is a value, 3 an aggregate that may be incomplete (not used), 91 (`x`) confidential or no information with a placeholder `0` (suppressed, never a zero); recorded in the registry.
+
+### L-064 — BDL unit-level numbers are inferred, not verified live
+- **Status:** resolved
+- **Discovered:** 2026-10-19
+- **Affects:** `location_territory` level codes (gmina 6, powiat 5, voivodeship 2, country 0), LCTX-01b
+- **Evidence:** inferred (with L-053)
+- **Description:** Not checked against the live API.
+- **Workaround:** none; nothing is ingested
+- **Target:** one owner-authorised live BDL read
+- **Resolved:** 2026-10-20 (RM-48): `/units` levels 0 country, 2 voivodeship, 5 powiat, 6 gmina verified live (1, 16, 382 and 4,198 units).
+
+### L-065 — `BDL_REQUESTS_PER_MINUTE=10` is a placeholder cap
+- **Status:** resolved
+- **Discovered:** 2026-10-19
+- **Affects:** `PgQuotaGate`, ingestion pacing
+- **Evidence:** estimate
+- **Description:** The real quota for the key tier is unknown. Sharing across workers is resolved (Postgres-shared gate); that half of L-054 is closed.
+- **Workaround:** conservative default
+- **Target:** owner confirms the key tier
+- **Resolved:** 2026-10-20 (RM-48): the key's live quota is 50,000 requests per 7 days (`x-rate-limit-*` headers); the default is now 60 per minute (one full pass is about a thousand requests).
+
+### L-066 — The territorial reference has no loader
+- **Status:** resolved
+- **Discovered:** 2026-10-19
+- **Affects:** `location_reference`, `ensure_reference`
+- **Evidence:** confirmed
+- **Description:** Hierarchy and TERYT crosswalk content must come from a reviewed source (B-023).
+- **Workaround:** none
+- **Target:** after B-023 reference-source decision
+- **Resolved:** 2026-10-20 (RM-48): `packages/rm_core/bdl_reference.py` builds the reference from the live unit lists (TERYT derived from the BDL id, one-level parents, powiat rights) and `refresh_context` stores it once per version.

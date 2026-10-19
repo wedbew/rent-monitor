@@ -22,6 +22,7 @@ app = procrastinate.App(
         "rm_worker.tasks.billing",
         "rm_worker.tasks.batch",
         "rm_worker.tasks.location_context",
+        "rm_worker.tasks.bdl_refresh",
         "rm_worker.tasks.macro",
     ],
 )
