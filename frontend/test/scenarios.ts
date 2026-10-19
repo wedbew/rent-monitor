@@ -144,12 +144,18 @@ export const EMPTY_PAGE: Route = {
 
 /** Routes any signed-in screen needs. A scenario replaces a route by repeating its operation. */
 const PURCHASES_EMPTY = fromFixture("GET /api/billing/purchases", "empty");
+/** Until a scenario says otherwise nothing is published, so /app/market renders its empty state. */
+const MARKET_EMPTY: Route = {
+  operation: "GET /api/market/locations",
+  reply: { status: 200, body: { items: [], next_cursor: null } },
+};
 const SIGNED_IN: readonly Route[] = [
   me("with_credits_and_flags"),
   PACKS,
   PURCHASES_EMPTY,
   SAVED_EMPTY,
   EMPTY_PAGE,
+  MARKET_EMPTY,
 ];
 
 function scenario(
@@ -194,6 +200,244 @@ function withResult(
   const [first] = SUCCEEDED_AUDITS;
   if (first === undefined) throw new Error("no succeeded audit fixture");
   return [{ ...first, result: patch(structuredClone(first.result as Record<string, unknown>)) }];
+}
+
+// ------------------------------------------------------------------------------------------------ market
+type LocationSummary = components["schemas"]["LocationSummaryOut"];
+type LocationDetail = components["schemas"]["LocationDetailOut"];
+type AskingRent = components["schemas"]["AskingRentOut"];
+
+export interface MarketOptions {
+  /** How many places the catalogue has (default 38: two pages of 30). */
+  readonly count?: number;
+  /** The catalogue has places but nothing is published yet: the list is empty. */
+  readonly empty?: boolean;
+  /** Requests for list pages after the first fail with a 503 until `state.failing` is set false. */
+  readonly failPage?: number;
+  /** The first page of the list cannot be read. */
+  readonly listFails?: boolean;
+  /** The place cannot be read. */
+  readonly detailFails?: boolean;
+  /** The history cannot be read (or answers 429 with a Retry-After). */
+  readonly historyFails?: boolean | "rate-limited";
+  /** The history answers after this many milliseconds. */
+  readonly historyDelayMs?: number;
+  /** The history has no published day at all. */
+  readonly historyEmpty?: boolean;
+}
+
+export interface Market extends Scenario {
+  readonly state: { requests: string[]; failing: boolean };
+  readonly places: readonly LocationSummary[];
+}
+
+const CITY_NAMES = [
+  "Białystok", "Bydgoszcz", "Bytom", "Chorzów", "Częstochowa", "Elbląg", "Gdańsk", "Gdynia", "Gliwice",
+  "Gorzów Wielkopolski", "Grudziądz", "Kalisz", "Katowice", "Kielce", "Koszalin", "Kraków", "Legnica", "Lublin",
+  "Łódź", "Olsztyn", "Opole", "Płock", "Poznań", "Radom", "Rybnik", "Rzeszów", "Sopot", "Sosnowiec", "Szczecin",
+  "Tarnów", "Toruń", "Tychy", "Wałbrzych", "Warszawa", "Włocławek", "Wrocław", "Zabrze", "Zielona Góra",
+]; // prettier-ignore
+
+const MARKET_DAY = "2026-10-19";
+const MARKET_REFRESH = "2026-10-19T04:00:00Z";
+const MARKET_CAVEATS = ["asking_not_achieved_rent", "not_active_stock", "not_deed_price"];
+const COHORT_FACTOR: Record<string, number> = { all: 1, rooms_2: 1.1, size_45_60: 1.25 };
+
+const slug = (name: string) =>
+  name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/ł/g, "l")
+    .replace(/[^a-z0-9]+/g, "-");
+
+function marketPlace(name: string, i: number): LocationSummary {
+  const status = i % 9 === 4 ? "unavailable" : i % 6 === 2 ? "stale" : i % 5 === 3 ? "delayed" : "fresh";
+  const base = {
+    location_id: slug(name),
+    name,
+    data_status: status,
+    last_successful_refresh_at: status === "unavailable" ? null : MARKET_REFRESH,
+  } as const;
+  if (status === "unavailable")
+    return {
+      ...base,
+      latest_summary_date: null,
+      median_rent_pln: null,
+      median_ppm2: null,
+      priced_count: null,
+      sufficient: null,
+      withheld_reason: null,
+    };
+  const sufficient = i % 7 !== 5;
+  return {
+    ...base,
+    latest_summary_date: MARKET_DAY,
+    median_rent_pln: sufficient ? `${1800 + ((i * 37) % 2200)}.00` : null,
+    median_ppm2: sufficient ? `${40 + ((i * 13) % 30)}.50` : null,
+    priced_count: sufficient ? 12 + ((i * 17) % 300) : 3 + (i % 7),
+    sufficient,
+    withheld_reason: sufficient ? null : "insufficient_sample",
+  };
+}
+
+function marketPlaces(count: number): LocationSummary[] {
+  const names = Array.from(
+    { length: count },
+    (_, i) => CITY_NAMES[i] ?? `Miejscowość ${String(i).padStart(3, "0")}`,
+  );
+  return names.sort((a, b) => a.localeCompare(b, "pl")).map(marketPlace);
+}
+
+function marketReading(
+  place: LocationSummary,
+  cohort: string,
+  series: "cohort" | "additions",
+  offset: number,
+): AskingRent {
+  const sufficient = place.sufficient === true;
+  const factor = COHORT_FACTOR[cohort] ?? 1;
+  const drift = (offset % 9) * 10;
+  const rent = Number(place.median_rent_pln ?? "2000") * factor + drift;
+  const ppm2 = Number(place.median_ppm2 ?? "40.50") * (factor > 1 ? 1.05 : 1) + (offset % 9) / 10;
+  const day = new Date(Date.parse(`${MARKET_DAY}T00:00:00Z`) - offset * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const priced = Math.max(
+    3,
+    Math.round((place.priced_count ?? 10) / (cohort === "all" ? 1 : 3) / (series === "additions" ? 6 : 1)),
+  );
+  const enough = sufficient && priced >= 10;
+  return {
+    price_basis: "asking",
+    measure: "original_asking_rent",
+    source: "otodom",
+    archive_days: 90,
+    caveats: MARKET_CAVEATS,
+    summary_date: day,
+    series,
+    cohort_key: cohort,
+    as_of: `${day}T05:30:00Z`,
+    observed_count: priced + 2,
+    priced_count: priced,
+    first_observed_count: series === "additions" ? (priced % 5) + 1 : null,
+    median_rent_pln: enough ? rent.toFixed(2) : null,
+    median_ppm2: enough ? ppm2.toFixed(2) : null,
+    p25_ppm2: enough ? (ppm2 - 3).toFixed(2) : null,
+    p75_ppm2: enough ? (ppm2 + 3).toFixed(2) : null,
+    sufficient: enough,
+    withheld_reason: enough ? null : "insufficient_sample",
+    backfilled: offset % 10 === 3,
+  };
+}
+
+/**
+ * The catalogue and its published asking-rent readings, with the server's semantics: a case-insensitive name
+ * search, `limit`, an opaque cursor that ends with `null`, a detail that lists the cohorts published for the place
+ * and a history of `days` daily readings with gap days left out (never zero). Places differ in freshness and
+ * sample size so every state of the page can be reached from one scenario.
+ */
+export function createMarket(options: MarketOptions = {}): Market {
+  const places = options.empty === true ? [] : marketPlaces(options.count ?? 38);
+  const state = { requests: [] as string[], failing: options.failPage !== undefined };
+  const problem = (status: number, extra: Record<string, string> = {}): Reply => ({
+    status,
+    body: NOT_READY,
+    contentType: "application/problem+json",
+    headers: extra,
+  });
+  const list: Route = {
+    operation: "GET /api/market/locations",
+    reply: (request) => {
+      const q = request.url.searchParams;
+      state.requests.push(request.url.search);
+      const cursor = q.get("cursor");
+      if (options.listFails === true || (cursor !== null && state.failing)) return problem(503);
+      const needle = (q.get("q") ?? "").toLowerCase();
+      const matching = places.filter((p) => p.name.toLowerCase().includes(needle));
+      const limit = Math.min(Number(q.get("limit") ?? "50"), 100);
+      const start = cursor === null ? 0 : Number(atob(cursor).replace("cursor:", ""));
+      if (!Number.isInteger(start) || start < 0)
+        return replyFrom(fx("GET /api/market/locations", "bad_cursor"));
+      const items = matching.slice(start, start + limit);
+      return {
+        status: 200,
+        body: {
+          items,
+          next_cursor: start + limit < matching.length ? btoa(`cursor:${start + limit}`) : null,
+        },
+      };
+    },
+  };
+  const detail: Route = {
+    operation: "GET /api/market/locations/{location_id}",
+    reply: (request) => {
+      state.requests.push(request.url.pathname);
+      if (options.detailFails === true) return problem(503);
+      const place = places.find((p) => p.location_id === request.params["location_id"]);
+      if (place === undefined)
+        return replyFrom(fx("GET /api/market/locations/{location_id}", "unknown_place"));
+      const usable = place.data_status !== "unavailable";
+      return {
+        status: 200,
+        body: {
+          location_id: place.location_id,
+          name: place.name,
+          data_status: place.data_status,
+          last_successful_refresh_at: place.last_successful_refresh_at,
+          covered_until: usable ? "2026-10-17T21:00:00Z" : null,
+          unresolved_gap_since: place.data_status === "stale" ? "2026-10-14T03:00:00Z" : null,
+          usable_for_ranking: place.data_status === "fresh" && place.sufficient === true,
+          cohort: usable ? Object.keys(COHORT_FACTOR).map((k) => marketReading(place, k, "cohort", 0)) : [],
+        } satisfies LocationDetail,
+      };
+    },
+  };
+  const history: Route = {
+    operation: "GET /api/market/locations/{location_id}/history",
+    reply: (request) => {
+      state.requests.push(`${request.url.pathname}${request.url.search}`);
+      if (options.historyFails === true) return problem(503);
+      if (options.historyFails === "rate-limited")
+        return {
+          status: 429,
+          body: { ...NOT_READY, status: 429, code: "RATE_LIMITED", title: "Too many requests" },
+          contentType: "application/problem+json",
+          headers: { "retry-after": "7" },
+        };
+      const place = places.find((p) => p.location_id === request.params["location_id"]);
+      if (place === undefined)
+        return replyFrom(fx("GET /api/market/locations/{location_id}/history", "unknown_place"));
+      const q = request.url.searchParams;
+      const days = Number(q.get("days") ?? "90");
+      const series = q.get("series") === "additions" ? "additions" : "cohort";
+      const cohort = q.get("cohort") ?? "all";
+      const points =
+        options.historyEmpty === true
+          ? []
+          : Array.from({ length: days }, (_, offset) => days - 1 - offset)
+              .filter((offset) => offset % 11 !== 5) // days without a published reading are absent
+              .map((offset) => marketReading(place, cohort, series, offset));
+      return {
+        status: 200,
+        body: {
+          location_id: place.location_id,
+          series,
+          cohort_key: cohort,
+          start: points[0]?.summary_date ?? MARKET_DAY,
+          end: MARKET_DAY,
+          points,
+        },
+        ...(options.historyDelayMs === undefined ? {} : { delayMs: options.historyDelayMs }),
+      };
+    },
+  };
+  const base = scenario("market", `A catalogue of ${places.length} places with asking-rent readings.`, [
+    list,
+    detail,
+    history,
+  ]);
+  return { ...base, state, places };
 }
 
 const RICH_URL = "https://www.otodom.pl/pl/oferta/mieszkanie-2-pokoje-ID4abcd";
@@ -602,6 +846,9 @@ export const SCENARIOS = {
     ],
   ),
   savedLoaded: createSaved(),
+  market: createMarket(),
+  marketEmpty: createMarket({ empty: true }),
+  marketListFailing: createMarket({ listFails: true }),
   unsupportedReport: scenario(
     "unsupportedReport",
     "A finished audit whose stored result has a schema version this build does not know.",
@@ -999,6 +1246,7 @@ export function createAuthFlow(overrides: Record<string, Reply> = {}): AuthFlow 
     return typeof token === "string" ? token : "";
   };
   const routes: Route[] = [
+    MARKET_EMPTY,
     {
       operation: "GET /api/me",
       reply: () => (state.signedIn ? { status: 200, body: me } : replyFrom(fx("GET /api/me", "no_session"))),

@@ -18,6 +18,7 @@ import { LEGAL, PRIMARY } from "../shell/navigation";
 import {
   createAuthFlow,
   createCollection,
+  createMarket,
   createRun,
   createSaved,
   type Scenario,
@@ -443,7 +444,88 @@ export const PAGES: readonly AppPage[] = [
       },
     ],
   },
-  { id: "market", path: "/app/market", heading: "Rynek", scenarios: EVERY_SCENARIO },
+  {
+    id: "market",
+    path: "/app/market",
+    heading: "Rynek",
+    scenarios: ["empty", "market", "marketListFailing"],
+    states: [
+      {
+        name: "no-match",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByRole("textbox", { name: "Nazwa miejscowości" }).fill("zzzz");
+          await page.getByRole("button", { name: "Szukaj" }).click();
+          await page.getByText("Żadna miejscowość nie pasuje do wyszukiwania").waitFor();
+        },
+      },
+      {
+        name: "load-more-error",
+        scenario: () => createMarket({ failPage: 1 }),
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Załaduj więcej" }).click();
+          await page
+            .getByRole("alert")
+            .filter({ hasText: "Nie udało się wczytać kolejnych miejscowości" })
+            .waitFor();
+        },
+      },
+      {
+        name: "end-of-list",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Załaduj więcej" }).click();
+          await page.getByText("To wszystkie miejscowości (38).").waitFor();
+        },
+      },
+    ],
+  },
+  {
+    id: "market.place",
+    path: "/app/market/torun",
+    heading: "Toruń",
+    scenarios: ["market"],
+    states: [
+      {
+        name: "unavailable",
+        path: "/app/market/kielce",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByText("nie zakończyło się jeszcze pierwsze zbieranie ofert").waitFor();
+        },
+      },
+      {
+        name: "withheld",
+        path: "/app/market/elblag",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByText("Za mało ofert z ceną, by podać medianę").first().waitFor();
+        },
+      },
+      {
+        name: "not-found",
+        path: "/app/market/nie-ma-takiej",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByText("Nie ma takiej miejscowości").waitFor();
+        },
+      },
+      {
+        name: "detail-error",
+        scenario: () => createMarket({ detailFails: true }),
+        prepare: async (page) => {
+          await page.getByRole("alert").filter({ hasText: "Nie udało się wczytać miejscowości" }).waitFor();
+        },
+      },
+      {
+        name: "history-error",
+        scenario: () => createMarket({ historyFails: true }),
+        prepare: async (page) => {
+          await page.getByRole("alert").filter({ hasText: "Nie udało się wczytać miejscowości" }).waitFor();
+        },
+      },
+    ],
+  },
   { id: "interior", path: "/app/interior", heading: "Architekt wnętrz", scenarios: EVERY_SCENARIO },
   { id: "listing", path: "/app/listings/new", heading: "Stwórz ogłoszenie", scenarios: EVERY_SCENARIO },
   { id: "terms", path: "/terms", heading: "Regulamin", scenarios: EVERY_SCENARIO },
@@ -886,6 +968,126 @@ export const INTERACTIONS: readonly Interaction[] = [
     scenarios: ["insufficientCredits"],
     role: "link",
     name: "Kup raporty",
+    outcome: "url",
+  },
+
+  // Rynek.
+  { id: "market.search", page: "market", role: "textbox", name: "Nazwa miejscowości", outcome: "state" },
+  { id: "market.search.submit", page: "market", role: "button", name: "Szukaj", outcome: "url" },
+  {
+    id: "market.clear",
+    page: "market",
+    state: "no-match",
+    role: "button",
+    name: "Wyczyść wyszukiwanie",
+    outcome: "url",
+  },
+  {
+    id: "market.place",
+    page: "market",
+    scenarios: ["market"],
+    role: "link",
+    name: /^[A-ZĄĆĘŁŃÓŚŹŻ][\p{L} -]+$/u,
+    outcome: "url",
+  },
+  {
+    id: "market.more",
+    page: "market",
+    scenarios: ["market"],
+    role: "button",
+    name: "Załaduj więcej",
+    outcome: "request",
+  },
+  {
+    id: "market.retry",
+    page: "market",
+    scenarios: ["marketListFailing"],
+    role: "button",
+    name: "Spróbuj ponownie",
+    outcome: "request",
+  },
+  {
+    id: "market.place.back",
+    page: "market.place",
+    role: "link",
+    name: "Wszystkie miejscowości",
+    outcome: "url",
+  },
+  {
+    id: "market.place.series.cohort",
+    page: "market.place",
+    scenarios: ["market"],
+    role: "button",
+    name: "Okno 90 dni",
+    outcome: "url",
+  },
+  {
+    id: "market.place.series.additions",
+    page: "market.place",
+    scenarios: ["market"],
+    role: "button",
+    name: "Nowe ogłoszenia dnia",
+    outcome: "url",
+  },
+  ...[30, 90, 365].map((days): Interaction => ({
+    id: `market.place.period.${String(days)}`,
+    page: "market.place",
+    scenarios: ["market"],
+    role: "button",
+    name: `${String(days)} dni`,
+    outcome: "url",
+  })),
+  {
+    id: "market.place.cohort",
+    page: "market.place",
+    scenarios: ["market"],
+    role: "combobox",
+    name: "Grupa mieszkań",
+    outcome: "url",
+  },
+  {
+    id: "market.place.cohort.listbox",
+    page: "market.place",
+    scenarios: ["market"],
+    role: "listbox",
+    name: "Grupa mieszkań",
+    outcome: "state",
+    within: "market.place.cohort.list",
+  },
+  ...[
+    ["all", "Wszystkie"],
+    ["rooms_2", "2 pokoje"],
+    ["size_45_60", "45–60 m²"],
+  ].map(([id = "", label = ""]): Interaction => ({
+    id: `market.place.cohort.option.${id}`,
+    page: "market.place",
+    scenarios: ["market"],
+    role: "option",
+    name: label,
+    outcome: "url",
+    within: "market.place.cohort.list",
+  })),
+  {
+    id: "market.place.detail-retry",
+    page: "market.place",
+    state: "detail-error",
+    role: "button",
+    name: "Spróbuj ponownie",
+    outcome: "request",
+  },
+  {
+    id: "market.place.history-retry",
+    page: "market.place",
+    state: "history-error",
+    role: "button",
+    name: "Spróbuj ponownie",
+    outcome: "request",
+  },
+  {
+    id: "dashboard.market",
+    page: "dashboard",
+    role: "link",
+    name: "Otwórz Rynek",
     outcome: "url",
   },
 
@@ -1427,6 +1629,16 @@ export const INTERACTIONS: readonly Interaction[] = [
 ];
 
 export const POPUPS: readonly Popup[] = [
+  {
+    id: "market.place.cohort.list",
+    page: "market.place",
+    trigger: "market.place.cohort",
+    role: "listbox",
+    name: "Grupa mieszkań",
+    backdrop: "closes",
+    modal: false,
+    scenarios: ["market"],
+  },
   {
     id: "analyses.status.list",
     page: "analyses",

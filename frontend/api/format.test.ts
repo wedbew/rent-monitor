@@ -6,6 +6,7 @@ import {
   formatCount,
   formatPercent,
   formatArea,
+  formatPricePerArea,
   formatDate,
   formatDateTime,
   formatDecimal,
@@ -214,5 +215,18 @@ describe("Intl layout with exact digits", () => {
     expect(en.plural(1, ["one", "few", "many"])).toBe("one");
     expect(en.plural(3, ["one", "few", "many"])).toBe("many"); // English has no "few"
     expect(en.formatCount(1234)).toBe("1,234");
+  });
+});
+
+describe("formatPricePerArea", () => {
+  it("shows złoty per square metre with the exact decimals", () => {
+    expect(formatPricePerArea("45.50")).toBe("45,50\u00a0zł/m²");
+    expect(formatPricePerArea("1234.5")).toBe("1\u00a0234,50\u00a0zł/m²");
+  });
+
+  it("never appends the unit to a fallback", () => {
+    expect(formatPricePerArea(null)).toBe("nie obliczono");
+    expect(formatPricePerArea(undefined)).toBe("nie obliczono");
+    expect(formatPricePerArea("abc")).toBe("nie obliczono");
   });
 });

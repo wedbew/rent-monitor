@@ -235,7 +235,9 @@ export function DashboardPage() {
             <p className={styles["eyebrow"]}>{t.dashboard.side.marketEyebrow}</p>
             <h2 className={styles["marketTitle"]}>{t.dashboard.side.marketTitle}</h2>
             <p className={styles["soonText"]}>{t.dashboard.side.marketBody}</p>
-            <span className={styles["soon"]}>{t.common.soon}</span>
+            <LinkButton to="/app/market" icon="arrow">
+              {t.dashboard.side.marketAction}
+            </LinkButton>
           </div>
         </aside>
       </section>

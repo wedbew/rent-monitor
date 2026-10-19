@@ -743,7 +743,7 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Evidence:** confirmed (owner design assessment and prototype source review): twelve in-memory analysis fixtures with search/status filters; no pagination or table-view switch; three fictional city/rent summaries. The owner confirms substantially more market data is available than this view includes; completeness was not audited in this change.
 - **Description:** The analysis cards are temporary, inadequately designed placeholders and will be replaced. The market view exists to avoid a blank page and omits the breadth of the project's market data. Neither view is an approved complete product design.
 - **Workaround:** Use the prototype for navigation/appearance review only; see `design/v2/README.md` for explicit scope.
-- **Target:** Phase 2 design (blueprint §4.8 step 6): replacement analysis cards, proper pagination, a table-view option and a fuller market information architecture. 2026-10-15 (#262): the market data lives in Postgres only; no `/api/market/*` route exists yet (#21), so the Rynek redesign (#282) waits on it; collection paging is #265.
+- **Target:** Phase 2 design (blueprint §4.8 step 6): replacement analysis cards, proper pagination, a table-view option and a fuller market information architecture. 2026-10-15 (#262): the market data lives in Postgres only; no `/api/market/*` route exists yet (#21), so the Rynek redesign (#282) waits on it; collection paging is #265. 2026-10-19: the three read routes (RM-421) and a first Rynek page (RM-422) exist; the remaining gap is L-087.
 
 ### L-086 — Risk-free rate is one monthly ECB series, not checked against a second source
 - **Status:** active
@@ -753,6 +753,15 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Description:** A stored value is used for 120 days after the end of its observed month (`MAX_AGE_DAYS`, chosen so one missed monthly release does not refuse audits); after that the `RISK_FREE_RATE` setting is used, and with neither, audits end `CONTEXT_UNAVAILABLE`. The ECB terms (disclaimer page, read 2026-10-19) allow free use when the ECB is cited as the source and forbid reproducing authors' documents without written permission; the stored source and the audit row carry the citation. Counsel has not reviewed this use (B-012). Known gap: `scripts/journey_check.py` compares the result with the setting, so after a successful refresh its `result_matches_engine` check can fail with a correct result.
 - **Workaround:** keep `RISK_FREE_RATE` set as the fallback; compare audits with the stored `risk_free_source` and `risk_free_as_of`.
 - **Target:** #210 (RM-210); B-012 for counsel's review; ENGINE-SPEC row 9. Close the `journey_check.py` gap by reading the same context as the worker.
+
+### L-087 — Rynek shows rental asking medians only, from synthetic evidence so far
+- **Status:** active
+- **Discovered:** 2026-10-19
+- **Affects:** `frontend/features/market/`, `GET /api/market/locations*`, `docs/STATUS.md` (Frontend), #282, #21
+- **Evidence:** confirmed (source and tests): the page reads the three market routes (RM-421) and nothing else; its browser tests ran against the scenario registry (mocked lane) and against hand-made offers published through production code in an isolated Compose stack (`frontend/e2e/journey/market.spec.ts`). No fresh real Otodom data has been collected for the catalogue (L-070 to L-073), so no screen has been checked against real market numbers.
+- **Description:** Not on the page yet: BDL location context (gmina, powiat, województwo; no published metric or read route, L-064 to L-069, L-080 to L-084), deed or any other price series (asking and deed are never shown together, invariant 2), comparison across places, rankings, the free-tier top-20 limit (#43 undecided), maps and charts (a table only). The list is the catalogue as served: places without a published reading are listed as "Brak danych". The per-cohort choices are those the API publishes for the latest cohort day.
+- **Workaround:** none needed for what is shown; the page states that these are asking rents and what they are not.
+- **Target:** #282 follow-up slices (BDL context once a read route exists; charts), #21 (routes), #43 (free-tier scope).
 
 ## Resolved
 
