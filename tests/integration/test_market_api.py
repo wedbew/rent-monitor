@@ -1,5 +1,5 @@
 # ruff: noqa: F811  (the `app` fixture is imported from test_me_saved_admin and used as a parameter)
-"""`/api/market/locations`: list, detail and history on real Postgres through the real API (RM-21, #21).
+"""`/api/market/locations`: list, detail and history on real Postgres through the real API (RM-421, #21).
 
 LEGAL[third-party-data]: hand-built asking figures published through the production repository; no network.
 

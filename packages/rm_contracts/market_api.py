@@ -1,8 +1,8 @@
-"""`/api/market/locations` response schemas: asking-rent aggregates, freshness and history (RM-21, #21).
+"""`/api/market/locations` response schemas: asking-rent aggregates, freshness and history (RM-421, #21).
 
-LEGAL[third-party-data]: aggregates of original Otodom asking rents; terms unreviewed (B-012) (RM-21).
-LEGAL[republication]: aggregates only, never an offer or listing content (RM-21).
-GDPR[personal-data]: counts and quantiles; no personal data (RM-21).
+LEGAL[third-party-data]: aggregates of original Otodom asking rents; terms unreviewed (B-012) (RM-421).
+LEGAL[republication]: aggregates only, never an offer or listing content (RM-421).
+GDPR[personal-data]: counts and quantiles; no personal data (RM-421).
 
 Invariant 2: every figure is an *asking* rent (`price_basis` is the literal `asking`); no deed field exists.
 Invariant 4: the values are copied from the published summaries; nothing is computed here or in the SPA.

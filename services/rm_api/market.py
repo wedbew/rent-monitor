@@ -1,13 +1,13 @@
-"""`/api/market/locations`: asking-rent aggregates per place, freshness, daily history (RM-21, #21).
+"""`/api/market/locations`: asking-rent aggregates per place, freshness, daily history (RM-421, #21).
 
 Read-only and session-authenticated. The data is shared market data, not tenant-owned; nothing here writes.
 Searching, paging and history length are bounded on the server. A sample under the sufficiency threshold
 has its statistics withheld (`withheld_reason`); a place whose bootstrap is pending answers `unavailable`
 with no rows.
 
-LEGAL[third-party-data]: aggregates of original Otodom asking rents; terms unreviewed (B-012) (RM-21).
-LEGAL[republication]: aggregates only, never an offer or listing content (RM-21).
-GDPR[personal-data]: no personal data is read or returned (RM-21).
+LEGAL[third-party-data]: aggregates of original Otodom asking rents; terms unreviewed (B-012) (RM-421).
+LEGAL[republication]: aggregates only, never an offer or listing content (RM-421).
+GDPR[personal-data]: no personal data is read or returned (RM-421).
 """
 
 import base64
