@@ -1,5 +1,6 @@
 """Typed settings. Names mirror `.env.example`; real values come from the environment only."""
 
+from datetime import time
 from decimal import Decimal
 from functools import lru_cache
 from typing import Literal
@@ -107,8 +108,11 @@ class Settings(BaseSettings):
     otodom_market_fresh_hours: int = Field(default=36, ge=1, le=720)
     otodom_market_stale_hours: int = Field(default=72, ge=1, le=720)
     otodom_market_catalogue_version: int = Field(default=1, ge=1)
+    otodom_market_summary_cron: str = (
+        "30 5 * * *"  # UTC; after the default window end, before the day's reads
+    )
 
-    @field_validator("otodom_market_nightly_cron")
+    @field_validator("otodom_market_nightly_cron", "otodom_market_summary_cron")
     @classmethod
     def _cron_has_five_fields(cls, v: str) -> str:
         if len(v.split()) != 5:
@@ -128,6 +132,8 @@ class Settings(BaseSettings):
             and int(mm) < 60
         ):
             raise ValueError("expected HH:MM (UTC)")
+        if int(hh) >= 12:  # normal fetches are closed from this time until 12:00 UTC (in_night_window)
+            raise ValueError("OTODOM_MARKET_NIGHT_WINDOW_END_UTC must be before 12:00 UTC")
         return v
 
     @field_validator("otodom_market_archive_days")
@@ -187,6 +193,11 @@ class Settings(BaseSettings):
     @property
     def image_hosts(self) -> tuple[str, ...]:
         return tuple(h.strip().lower() for h in self.image_host_allowlist.split(",") if h.strip())
+
+    @property
+    def night_window_end_time(self) -> time:
+        """`OTODOM_MARKET_NIGHT_WINDOW_END_UTC` as a UTC time of day (validated as HH:MM before 12:00)."""
+        return time.fromisoformat(self.otodom_market_night_window_end_utc)
 
 
 @lru_cache
