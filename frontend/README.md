@@ -193,7 +193,7 @@ pnpm test:e2e:journey          # builds the SPA, serves it with `vite preview` (
 ```
 
 `deploy/compose.e2e.yml` sets `PUBLIC_APP_URL=http://localhost:4173` so the API's Origin check and Secure cookies behave
-as in production. Override the compose command with `E2E_COMPOSE`. `scripts/e2e_session.py plant-listing --kind sale|rent` plants a hand-built, fresh listing (and rental comparables in a
+as in production. Override the compose command with `E2E_COMPOSE`. `scripts/e2e_session.py plant-market` publishes four hand-made, run-tagged places through the production corpus and summary code (`age-market` backdates their checkpoints, `market-db` recomputes the figures by SQL, `unplant-market` removes only that run's rows; `e2e/journey/market.spec.ts`). `scripts/e2e_session.py plant-listing --kind sale|rent` plants a hand-built, fresh listing (and rental comparables in a
 made-up city) so the worker makes no Otodom request; `deploy/compose.e2e.yml` gives the audit worker
 `AUDIT_PROVIDERS=real` and a test `RISK_FREE_RATE`. Evidence class: fake provider data; there is no OpenRouter key,
 so a success is `succeeded_degraded`. The interaction gate counts the mocked lane; the journey lane runs the whole sign-up (register, mailed link via `register-token`, sign out, sign in);

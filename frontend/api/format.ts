@@ -146,6 +146,12 @@ export function formatPrice(value: string | null | undefined): string {
   return formatMoney(value, { decimals: whole ? 0 : 2 });
 }
 
+/** A price per square metre ("45.50" → "45,50 zł/m²"); an unknown value is "nie obliczono", never with the unit. */
+export function formatPricePerArea(value: string | null | undefined): string {
+  const text = formatMoney(value, { decimals: 2 });
+  return text === NOT_COMPUTED ? NOT_COMPUTED : `${text}/${t.format.areaUnit}`;
+}
+
 /** A ratio such as "0.0734" (7.34 %); `digits` is 0..6, default 1. */
 export function formatRatio(value: string | null | undefined, digits = 1): string {
   if (value === null || value === undefined) return NOT_COMPUTED;

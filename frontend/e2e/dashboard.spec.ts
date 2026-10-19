@@ -29,7 +29,7 @@ test.describe("dashboard", () => {
   }) => {
     await serve("empty");
     await page.goto("/app");
-    await expect(page.getByText("Wkrótce")).toHaveCount(3); // interior, listing assistant, market
+    await expect(page.getByText("Wkrótce")).toHaveCount(2); // interior, listing assistant
     await expect(page.getByRole("link", { name: "Otwórz architekta" })).toHaveCount(0);
     await expect(
       page.getByRole("main").getByRole("link", { name: "Stwórz ogłoszenie", exact: true }),

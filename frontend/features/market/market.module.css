@@ -1,0 +1,218 @@
+.page {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+/* A grid item is as wide as its widest content unless told otherwise: the tables scroll inside their region. */
+.page > * {
+  min-width: 0;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.search {
+  display: flex;
+  flex: 1;
+  min-width: min(100%, 18rem);
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.search > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.count {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.region {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.region:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.table {
+  width: 100%;
+  min-width: 42rem;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.table caption {
+  padding: var(--space-3) var(--space-4);
+  color: var(--muted);
+  text-align: left;
+  font-size: 0.8125rem;
+}
+
+.table th,
+.table td {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table th[scope="col"] {
+  background: var(--surface-hover);
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.table tbody tr:hover {
+  background: var(--surface-hover);
+}
+
+.table tbody th {
+  font-weight: 700;
+}
+
+.table .num {
+  text-align: right;
+}
+
+.withheld {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  white-space: normal;
+}
+
+.more {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+}
+
+.empty {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-8);
+  border: 1px dashed var(--control-border);
+  border-radius: var(--radius-card);
+}
+
+.empty p {
+  margin: 0;
+}
+
+.skeletons {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: var(--tone-fill);
+  color: var(--tone);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.success {
+  --tone: var(--success);
+  --tone-fill: var(--success-fill);
+}
+
+.warning {
+  --tone: var(--warning);
+  --tone-fill: var(--warning-fill);
+}
+
+.danger {
+  --tone: var(--danger);
+  --tone-fill: var(--danger-fill);
+}
+
+.neutral {
+  --tone: var(--muted);
+  --tone-fill: var(--surface-raised);
+}
+
+.statusBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-4);
+}
+
+.latest {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.latest h2,
+.page h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.metrics dt {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.metrics dd {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.caveats {
+  margin: var(--space-2) 0;
+  padding-left: var(--space-6);
+}

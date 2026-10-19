@@ -30,6 +30,12 @@ const SuccessPage = lazy(async () => ({
 const PayPage = lazy(async () => ({
   default: (await import("./features/billing/PayPage")).PayPage,
 }));
+const MarketPage = lazy(async () => ({
+  default: (await import("./features/market/MarketPage")).MarketPage,
+}));
+const LocationPage = lazy(async () => ({
+  default: (await import("./features/market/LocationPage")).LocationPage,
+}));
 const SettingsPage = lazy(async () => ({
   default: (await import("./features/settings/SettingsPage")).SettingsPage,
 }));
@@ -124,7 +130,8 @@ export const routes: RouteObject[] = [
                   { path: "/app/analyses/new", element: lazyPage(NewAnalysisPage) },
                   { path: "/app/analyses", element: lazyPage(AnalysesPage) },
                   { path: "/app/analyses/:auditId", element: lazyPage(AnalysisPage) },
-                  pending("market", "/app/market"),
+                  { path: "/app/market", element: lazyPage(MarketPage) },
+                  { path: "/app/market/:locationId", element: lazyPage(LocationPage) },
                   pending("interior", "/app/interior"),
                   pending("listing", "/app/listings/new"),
                   { path: "/app/settings", element: lazyPage(SettingsPage) },

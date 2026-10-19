@@ -5,6 +5,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- Rynek page (`/app/market`, `/app/market/:id`): searchable list of places with the latest rental asking medians, a place page with status, latest reading, history and series/cohort/period choices kept in the address; the Pulpit links to it. Frontend only; no operator action (RM-422)
 - `GET /api/market/locations`, `/api/market/locations/{id}` and `/api/market/locations/{id}/history`: session-authenticated, read-only asking-rent aggregates per catalogue place (search, keyset paging, latest cohort with freshness, daily history of the `additions` and `cohort` series). A sample under 10 priced offers keeps its counts and withholds statistics; no migration, no operator action (RM-421)
 
 ### Changed

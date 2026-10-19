@@ -50,7 +50,7 @@ export const PRIMARY: readonly Destination[] = [
     label: t.shell.destinations["market"],
     to: "/app/market",
     icon: "market",
-    availability: "unavailable",
+    availability: "ready",
     isActive: under("/app/market"),
   },
   {

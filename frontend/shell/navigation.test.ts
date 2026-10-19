@@ -47,7 +47,6 @@ describe("navigation registry", () => {
 
   it("is honest about what is not offered yet", () => {
     expect(PRIMARY.filter((d) => d.availability === "unavailable").map((d) => d.id)).toEqual([
-      "market",
       "interior",
       "listing",
     ]);

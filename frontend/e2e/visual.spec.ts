@@ -60,6 +60,17 @@ for (const theme of THEMES) {
       await shoot(page, "dashboard-loaded", { fullPage: true });
     });
 
+    test("market: the list of places and one place", async ({ page, serve }) => {
+      await serve("market");
+      await page.goto("/app/market");
+      await expect(page.getByRole("table")).toBeVisible();
+      await shoot(page, "market-list");
+      await page.goto("/app/market/torun");
+      await expect(page.getByRole("region", { name: "Ostatni odczyt" })).toBeVisible();
+      await expect(page.getByRole("table")).toBeVisible();
+      await shoot(page, "market-place");
+    });
+
     test("analyses: cards, table and the saved scope", async ({ page, serve }) => {
       await serve(createSaved());
       await page.goto("/app/analyses");
