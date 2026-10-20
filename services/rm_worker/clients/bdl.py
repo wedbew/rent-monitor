@@ -20,6 +20,7 @@ import asyncio
 import hashlib
 import json
 import random
+import re
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
@@ -395,10 +396,11 @@ def _variable_id(value: str) -> str:
 
 
 def _retry_after(header: str | None) -> float:
-    try:
-        return min(max(float(header or ""), 0.0), 86_400.0)
-    except ValueError:
+    """Seconds from `Retry-After`: a number, or the service's own words (`1 sek`, observed 2026-10-20)."""
+    match = re.match(r"\s*(\d+(?:\.\d+)?)\s*(?:s|sek|sec|seconds?)?\s*$", header or "", re.I)
+    if match is None:
         return 900.0
+    return min(max(float(match.group(1)), 0.0), 86_400.0)
 
 
 # --- validator -------------------------------------------------------------------------------------------

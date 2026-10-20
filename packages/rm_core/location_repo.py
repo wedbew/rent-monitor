@@ -31,7 +31,7 @@ from rm_contracts.location_context import (
     TerritoryLevel,
     TerritoryRef,
 )
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, tuple_, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -53,6 +53,9 @@ from rm_core.location_contracts import (
 
 RunState = Literal["planned", "running", "incomplete", "complete", "failed"]
 MAX_PAGE = 10_000
+
+
+INSERT_CHUNK = 2000  # rows per INSERT: 2,000 x ~9 columns stays far below PostgreSQL's 65,535 parameters
 
 
 class ReferenceConflictError(LocationContractError):
@@ -354,27 +357,55 @@ class PgLocationRepo:
         if not distinct:
             return PageReport(0, 0, 0)
         ordered = [distinct[k] for k in sorted(distinct)]  # stable lock order across workers
-        inserted = {
-            (m, v, t, y)
-            for m, v, t, y in await s.execute(
-                insert(LocationObservation)
-                .values([_obs_values(o, run_id) for o in ordered])
-                .on_conflict_do_nothing()
-                .returning(
-                    LocationObservation.metric_key,
-                    LocationObservation.metric_version,
-                    LocationObservation.territory_id,
-                    LocationObservation.year,
+        inserted: set[tuple[str, int, str, int]] = set()
+        # One statement carries at most 65,535 bound parameters: a whole national cohort over ten years
+        # (gap rows of a finished run) is ~25,000 rows, so insert in chunks.
+        for start in range(0, len(ordered), INSERT_CHUNK):
+            chunk = ordered[start : start + INSERT_CHUNK]
+            inserted |= {
+                (m, v, t, y)
+                for m, v, t, y in await s.execute(
+                    insert(LocationObservation)
+                    .values([_obs_values(o, run_id) for o in chunk])
+                    .on_conflict_do_nothing()
+                    .returning(
+                        LocationObservation.metric_key,
+                        LocationObservation.metric_version,
+                        LocationObservation.territory_id,
+                        LocationObservation.year,
+                    )
                 )
-            )
-        }
+            }
         duplicates = conflicts = 0
-        for key in distinct.keys() - inserted:
-            stored = await s.get_one(LocationObservation, key)
-            if stored.source_digest == distinct[key].source_digest:
-                duplicates += 1
-            else:
-                conflicts += 1  # the source changed its mind: first fact stays, the conflict is counted
+        stale = sorted(distinct.keys() - inserted)
+        for start in range(0, len(stale), INSERT_CHUNK):
+            keys = stale[start : start + INSERT_CHUNK]
+            stored = {
+                (r.metric_key, r.metric_version, r.territory_id, r.year): r.source_digest
+                for r in (
+                    await s.execute(
+                        select(
+                            LocationObservation.metric_key,
+                            LocationObservation.metric_version,
+                            LocationObservation.territory_id,
+                            LocationObservation.year,
+                            LocationObservation.source_digest,
+                        ).where(
+                            tuple_(
+                                LocationObservation.metric_key,
+                                LocationObservation.metric_version,
+                                LocationObservation.territory_id,
+                                LocationObservation.year,
+                            ).in_(keys)
+                        )
+                    )
+                ).all()
+            }
+            for key in keys:
+                if stored[key] == distinct[key].source_digest:
+                    duplicates += 1
+                else:
+                    conflicts += 1  # the source changed its mind: first fact stays, the conflict is counted
         return PageReport(len(inserted), duplicates, conflicts)
 
     async def complete_run(

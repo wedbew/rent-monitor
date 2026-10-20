@@ -36,11 +36,10 @@ from rm_worker.clients.bdl import (
     BdlMetricBinding,
     BdlObservationValidator,
     BdlUnavailable,
-    QuotaWindow,
     UnexpectedDataError,
     UnknownVariableError,
 )
-from rm_worker.clients.bdl_quota import PgQuotaGate
+from rm_worker.clients.bdl_quota import PgQuotaGate, quota_windows
 
 log = structlog.get_logger(__name__)
 
@@ -162,7 +161,8 @@ async def ingest_bdl_variable(
     try:
         sessions = make_sessionmaker(engine)
         gate = PgQuotaGate(
-            sessions, windows=(QuotaWindow(limit=settings.bdl_requests_per_minute, seconds=60.0),)
+            sessions,
+            windows=quota_windows(settings.bdl_requests_per_second, settings.bdl_requests_per_minute),
         )
         key = settings.bdl_api_key.get_secret_value()
         async with httpx.AsyncClient(follow_redirects=False) as http:
