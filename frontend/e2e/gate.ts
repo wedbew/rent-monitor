@@ -42,6 +42,8 @@ const LINE = /^([a-z]+)(?: "((?:[^"\\]|\\.)*)")?((?: \[[^\]]+\])*)(?::(?: .*)?)?
 /** The text content of a quoted YAML scalar line (Playwright quotes lines holding `:` or other specials). */
 function unquote(text: string): string {
   if (text.startsWith("'") && text.endsWith("'")) return text.slice(1, -1).replace(/''/g, "'");
+  // A node with children and a quoted name ends `':` (RM-439: names such as "Wróć do: Białystok" hold a colon).
+  if (text.startsWith("'") && text.endsWith("':")) return `${text.slice(1, -2).replace(/''/g, "'")}:`;
   return text;
 }
 

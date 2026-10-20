@@ -287,6 +287,7 @@ mock or fixture (both enforced by ESLint).
 | Prettier 3.9, Stylelint 17 + standard                       |                                                                  | formatting only / CSS correctness and no `!important`                                                                                                                             |
 | Vitest 5, Testing Library, jsdom 30                         |                                                                  | unit and component tests                                                                                                                                                          |
 | Base UI                                                     | 1.9.0 (**recorded, installed with the first primitive in #270**) | headless dialogs, tabs, menus; no unused dependency until then                                                                                                                    |
+| recharts                                                    | 3.10.1 (MIT, RM-439)                                             | the one chart library: median-over-time with its quartile band and annual series, keyboard-reachable tooltips; lazy chunk of ~98 kB gzip; see the bundle budget below             |
 | lucide-react                                                | 1.57.0 (ISC, RM-343)                                             | the one icon set (static icons); `ui/Icon.tsx` maps our names to it                                                                                                               |
 | lucide-animated + motion                                    | 1.0.5 + 14.2.0 (MIT, RM-343)                                     | animated forms of three icons on hover; lazy chunk; skipped under reduced motion; `vite.config.ts` marks its `forwardRef` calls pure so a bundler can drop the other ~1,500 icons |
 | @tanstack/react-table                                       | 9.3.1 (MIT, RM-343)                                              | headless table model for the analyses table; no client-side sort, filter or paging (the API owns them)                                                                            |
@@ -295,14 +296,16 @@ mock or fixture (both enforced by ESLint).
 
 Enforced by `pnpm check:dist` (`check-dist.mjs`, RM-312), gzip level 9, which is what a visitor downloads:
 
-| Measure                                           | Budget | At RM-312            |
-| ------------------------------------------------- | ------ | -------------------- |
-| Initial JS (entry + chunks `index.html` preloads) | 200 kB | 148.6 kB             |
-| Any lazily loaded chunk                           | 120 kB | 16.6 kB (the report) |
-| All JS                                            | 450 kB | 171 kB               |
-| CSS                                               | 40 kB  | 7.4 kB               |
+| Measure                                           | Budget | At RM-312                 |
+| ------------------------------------------------- | ------ | ------------------------- |
+| Initial JS (entry + chunks `index.html` preloads) | 200 kB | 148.6 kB                  |
+| Any lazily loaded chunk                           | 120 kB | 16.6 kB (the report)      |
+| All JS                                            | 520 kB | 171 kB (466 kB at RM-439) |
+| CSS                                               | 40 kB  | 7.4 kB                    |
 
 At RM-343 (icons, select, popover, table): initial JS 167.6 kB (161.0 kB on `staging` before), all JS 298.1 kB, CSS 8.8 kB; the animation chunk is 44.4 kB and loads on the first hover or focus of a control with an animated icon, never under reduced motion.
+
+At RM-439 the chart library (Recharts 3.10.1, chosen over Nivo and shadcn: see the PR) was added. Measured on a bare Vite build, React alone is 68.6 kB; Recharts' line and area charts add 98 kB and Nivo's line chart 96 kB, so neither is cheaper, and shadcn's chart is Recharts behind Tailwind and Radix (a second styling system). Recharts has keyboard navigation of data points built in. It is one lazy chunk (`TrendChartImpl`, `YearChartImpl`) that loads when a chart is first shown, so initial JS is 183.3 kB (177.0 before, from the new copy catalog) and the per-chunk limit is unchanged; **all JS was raised from 450 to 520 kB** for it.
 
 The analysis pages (new analysis, collection, report) load on first visit (`React.lazy` in `routes.tsx`); while
 their code loads the page says "Wczytuję stronę…", and a chunk gone after a deploy shows the "new version" notice

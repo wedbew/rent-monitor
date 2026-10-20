@@ -60,27 +60,8 @@ export function writeSelection(selection: Selection, q: string): URLSearchParams
   return params;
 }
 
-/** The way back from a place is the list view, with the search that led there. */
-export const listAddress = (q: string): string =>
-  `/app/market?${new URLSearchParams(q === "" ? { view: "list" } : { view: "list", q }).toString()}`;
-
-export const placeAddress = (locationId: string, q: string): string => {
-  const params = q === "" ? "" : `?${new URLSearchParams({ q }).toString()}`;
-  return `/app/market/${encodeURIComponent(locationId)}${params}`;
-};
-
-export const COHORT_LABELS: Readonly<Record<CohortKey, string>> = t.market.cohorts;
-
 export const PERIOD_LABELS: Readonly<Record<Period, string>> = {
-  30: t.market.periods.d30,
-  90: t.market.periods.d90,
-  365: t.market.periods.d365,
+  30: t.rynek.periods.d30,
+  90: t.rynek.periods.d90,
+  365: t.rynek.periods.d365,
 };
-
-/** The cohorts to offer: those the API published for this place, plus the one already chosen (if known). */
-export function cohortOptions(available: readonly string[], chosen: CohortKey) {
-  return COHORT_KEYS.filter((key) => key === chosen || available.includes(key)).map((key) => ({
-    value: key,
-    label: COHORT_LABELS[key],
-  }));
-}

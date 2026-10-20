@@ -145,3 +145,92 @@ class OverviewOut(_Out):
     access: Literal["full", "free"]
     free_limit: int
     free_rule_pl: str
+    cohort_key: str = "all"  # the apartment-size or rooms cohort every figure in `items` belongs to
+
+
+# --- experimental locality index (RM-439) --------------------------------------------------------------
+IndexStateOut = Literal["ok", "scored_not_ranked", "not_scored", "no_data", "unavailable"]
+
+
+class IndexComponentOut(_Out):
+    """One indicator inside the index: its value, where it stands among all gminas and what it adds."""
+
+    key: str
+    metric_key: str  # the registry indicator behind it: the key of the metric card in the place's GUS context
+    pillar: str
+    pillar_pl: str
+    name_pl: str
+    explain_pl: str
+    unit_pl: str
+    weight: int  # the share of 100 the component carries when every indicator is available
+    value: Decimal | None
+    year: int | None
+    basis: Literal["direct", "proxy"] | None
+    measured: TerritoryOut | None  # the unit the value was read from (the powiat for a proxy)
+    national_rank: int | None
+    national_of: int | None
+    score: Decimal | None  # 0..100, 100 = most favourable among the gminas that have a value
+    points: Decimal | None  # what it adds to the index (weights renormalised over the available ones)
+    favourable_pl: str  # "Wyższa wartość = korzystniej" or the opposite: the direction of the score
+
+
+class IndexCohortOut(_Out):
+    name_pl: str  # which units the position is among, e.g. "gminy w Polsce z kompletnym indeksem"
+    scope: Literal["national", "voivodeship"]
+    rank: int | None
+    of: int | None
+    percentile: Decimal | None
+    unit_name: str | None  # the voivodeship for the regional position
+
+
+class IndexOut(_Out):
+    """An experimental statistical summary of the gmina's official indicators, not a property metric."""
+
+    state: IndexStateOut
+    reasons: list[str]  # why it is not scored or not ranked
+    method_version: int
+    title_pl: str
+    caveat_pl: str
+    higher_is_better: Literal[True] = True
+    score: Decimal | None
+    weight_coverage: Decimal | None
+    positions: list[IndexCohortOut]
+    components: list[IndexComponentOut]
+    missing: list[str]  # names of the indicators with no value for this gmina
+    gmina: TerritoryOut | None  # the unit the index describes
+    oldest_year: int | None
+    newest_year: int | None
+    min_weight_coverage: Decimal
+    min_cohort: int
+
+
+class LocationIndexOut(_Out):
+    location_id: str
+    name: str
+    mapping: PlaceMappingOut
+    index: IndexOut
+    source: SourceOut
+
+
+class RankingEntryOut(_Out):
+    location_id: str
+    name: str
+    gmina_name: str | None
+    state: IndexStateOut
+    score: Decimal | None
+    rank: int | None
+    of: int | None
+    relation: Literal["gmina", "within_gmina"] | None
+
+
+class RankingOverviewOut(_Out):
+    method_version: int
+    title_pl: str
+    caveat_pl: str
+    cohort_name_pl: str
+    scored_gminas: int  # the national denominator
+    total_places: int
+    visible_places: int
+    access: Literal["full", "free"]
+    items: list[RankingEntryOut]  # best position first, places without a score last
+    source: SourceOut

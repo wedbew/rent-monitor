@@ -1430,6 +1430,59 @@ async def market_history_bad_series(w: World) -> Exchange:
     )
 
 
+@scenario(
+    "GET /api/market/locations/{location_id}/districts",
+    "two_districts",
+    200,
+    "one district with a sufficient sample, one withheld",
+)
+async def market_districts(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await market_full(w), "GET", "/api/market/locations/smoke-torun/districts")
+
+
+@scenario(
+    "GET /api/market/locations/{location_id}/districts",
+    "no_district_at_source",
+    200,
+    "coverage none: the source names no district for this place",
+)
+async def market_districts_none(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await market_full(w), "GET", "/api/market/locations/smoke-gdynia/districts")
+
+
+@scenario("GET /api/market/locations/{location_id}/districts", "unknown_place", 404)
+async def market_districts_unknown(w: World) -> Exchange:
+    return await w.send(await market_full(w), "GET", "/api/market/locations/nowhere/districts")
+
+
+@scenario(
+    "GET /api/market/locations/{location_id}/districts", "outside_free_list", 403, "FEATURE_NOT_IN_PLAN"
+)
+async def market_districts_closed(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/smoke-gdynia/districts")
+
+
+@scenario("GET /api/market/locations/{location_id}/districts", "bad_cohort", 422)
+async def market_districts_bad_cohort(w: World) -> Exchange:
+    return await w.send(
+        await market_full(w), "GET", "/api/market/locations/smoke-torun/districts", params={"cohort": "BAD"}
+    )
+
+
+@scenario("GET /api/market/overview", "rooms_cohort", 200, "every figure belongs to the two-room cohort")
+async def market_overview_cohort(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await market_full(w), "GET", "/api/market/overview", params={"cohort": "rooms_2"})
+
+
+@scenario("GET /api/market/overview", "bad_cohort", 422)
+async def market_overview_bad_cohort(w: World) -> Exchange:
+    return await w.send(await market_full(w), "GET", "/api/market/overview", params={"cohort": "BAD"})
+
+
 @scenario("GET /api/market/overview", "full_access", 200, "every place of the catalogue, mapped or not")
 async def market_overview_full(w: World) -> Exchange:
     await w.seed_market()
@@ -1458,6 +1511,34 @@ async def market_history_closed(w: World) -> Exchange:
 async def market_context(w: World) -> Exchange:
     await w.seed_market()
     return await w.send(await market_full(w), "GET", "/api/market/locations/smoke-torun/context")
+
+
+@scenario("GET /api/market/locations/{location_id}/ranking", "unmapped_place", 200, "index unavailable")
+async def market_ranking(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await market_full(w), "GET", "/api/market/locations/smoke-torun/ranking")
+
+
+@scenario("GET /api/market/locations/{location_id}/ranking", "outside_free_list", 403, "FEATURE_NOT_IN_PLAN")
+async def market_ranking_closed(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/smoke-gdynia/ranking")
+
+
+@scenario("GET /api/market/locations/{location_id}/ranking", "unknown_place", 404)
+async def market_ranking_unknown(w: World) -> Exchange:
+    return await w.send(await market_full(w), "GET", "/api/market/locations/nowhere/ranking")
+
+
+@scenario("GET /api/market/locations/{location_id}/ranking", "malformed_id", 422)
+async def market_ranking_malformed(w: World) -> Exchange:
+    return await w.send(await market_full(w), "GET", "/api/market/locations/NOT_VALID/ranking")
+
+
+@scenario("GET /api/market/ranking", "no_gus_release_yet", 200, "every place listed, none scored")
+async def market_ranking_overview(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await market_full(w), "GET", "/api/market/ranking")
 
 
 @scenario("GET /api/market/locations/{location_id}/context", "outside_free_list", 403, "FEATURE_NOT_IN_PLAN")

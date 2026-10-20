@@ -1,0 +1,279 @@
+{
+  "title": "Otodom district coverage of the stored rental corpus",
+  "date": "2026-10-20",
+  "evidence_class": "level 3 for the local stack only: a live sweep of the search results of every place with stored offers (490 places, one batch-lane task each, shared 1 req/s host slot) attached the district the site names for each advert; no deploy, no demo data",
+  "method": "CorpusImporter.sweep_districts walked each place's search pages newest-first and stored the tile's `locationLevel: district` entry (id must be a direct child path of the searched place) beside the immutable offer. Counts below are rows in app.market_offer, app.market_offer_district and app.market_district at generation time.",
+  "limits": [
+    "The source names a district only for some places (37 of 490) and not for every advert (84.6 % of all stored offers carry one); adverts that left the search results before the sweep keep none.",
+    "District names and ids are Otodom's, not administrative units: they do not join to GUS territories.",
+    "Statistics are computed from the rolling 90-day cohort of the adverts that carry the district; there is no district history."
+  ],
+  "catalogue_version": 1,
+  "places_with_offers": 490,
+  "places_with_districts": 37,
+  "offers_total": 26007,
+  "offers_with_district": 21991,
+  "places": [
+    {
+      "name": "Warszawa, mazowieckie",
+      "location_id": "warszawa-518126a3",
+      "offers": 7621,
+      "with_district": 7487,
+      "districts": 18
+    },
+    {
+      "name": "Kraków, małopolskie",
+      "location_id": "krakow-15e5d8a8",
+      "offers": 3314,
+      "with_district": 3244,
+      "districts": 18
+    },
+    {
+      "name": "Wrocław, dolnośląskie",
+      "location_id": "wroclaw-9bc1de1b",
+      "offers": 2457,
+      "with_district": 2415,
+      "districts": 5
+    },
+    {
+      "name": "Gdańsk, pomorskie",
+      "location_id": "gdansk-5d71820e",
+      "offers": 1551,
+      "with_district": 1501,
+      "districts": 35
+    },
+    {
+      "name": "Poznań, wielkopolskie",
+      "location_id": "poznan-76a615f1",
+      "offers": 1212,
+      "with_district": 1183,
+      "districts": 5
+    },
+    {
+      "name": "Łódź, łódzkie",
+      "location_id": "lodz-fba52ba3",
+      "offers": 910,
+      "with_district": 898,
+      "districts": 5
+    },
+    {
+      "name": "Katowice, śląskie",
+      "location_id": "katowice-82111dc6",
+      "offers": 773,
+      "with_district": 763,
+      "districts": 22
+    },
+    {
+      "name": "Szczecin, zachodniopomorskie",
+      "location_id": "szczecin-a9c654a1",
+      "offers": 574,
+      "with_district": 562,
+      "districts": 4
+    },
+    {
+      "name": "Gdynia, pomorskie",
+      "location_id": "gdynia-aa6fad17",
+      "offers": 464,
+      "with_district": 409,
+      "districts": 22
+    },
+    {
+      "name": "Rzeszów, podkarpackie",
+      "location_id": "rzeszow-7f592a3c",
+      "offers": 384,
+      "with_district": 345,
+      "districts": 27
+    },
+    {
+      "name": "Lublin, lubelskie",
+      "location_id": "lublin-457814c6",
+      "offers": 369,
+      "with_district": 366,
+      "districts": 23
+    },
+    {
+      "name": "Bydgoszcz, kujawsko-pomorskie",
+      "location_id": "bydgoszcz-c20e8721",
+      "offers": 298,
+      "with_district": 295,
+      "districts": 26
+    },
+    {
+      "name": "Toruń, kujawsko-pomorskie",
+      "location_id": "torun-9a2fdb84",
+      "offers": 228,
+      "with_district": 225,
+      "districts": 17
+    },
+    {
+      "name": "Gliwice, śląskie",
+      "location_id": "gliwice-3044499b",
+      "offers": 207,
+      "with_district": 203,
+      "districts": 18
+    },
+    {
+      "name": "Częstochowa, śląskie",
+      "location_id": "czestochowa-f9b8a83b",
+      "offers": 205,
+      "with_district": 201,
+      "districts": 15
+    },
+    {
+      "name": "Bielsko-Biała, śląskie",
+      "location_id": "bielsko--biala-7b19539e",
+      "offers": 200,
+      "with_district": 192,
+      "districts": 29
+    },
+    {
+      "name": "Białystok, podlaskie",
+      "location_id": "bialystok-d4be94dd",
+      "offers": 199,
+      "with_district": 197,
+      "districts": 26
+    },
+    {
+      "name": "Sopot, pomorskie",
+      "location_id": "sopot-a939ec3a",
+      "offers": 191,
+      "with_district": 191,
+      "districts": 9
+    },
+    {
+      "name": "Kielce, świętokrzyskie",
+      "location_id": "kielce-cc2db489",
+      "offers": 165,
+      "with_district": 158,
+      "districts": 28
+    },
+    {
+      "name": "Chorzów, śląskie",
+      "location_id": "chorzow-ccb278a2",
+      "offers": 162,
+      "with_district": 129,
+      "districts": 5
+    },
+    {
+      "name": "Bytom, śląskie",
+      "location_id": "bytom-9877411d",
+      "offers": 107,
+      "with_district": 104,
+      "districts": 8
+    },
+    {
+      "name": "Sosnowiec, śląskie",
+      "location_id": "sosnowiec-9aaa37d9",
+      "offers": 103,
+      "with_district": 101,
+      "districts": 14
+    },
+    {
+      "name": "Zabrze, śląskie",
+      "location_id": "zabrze-cd0bd539",
+      "offers": 102,
+      "with_district": 100,
+      "districts": 15
+    },
+    {
+      "name": "Rybnik, śląskie",
+      "location_id": "rybnik-a8cdfde3",
+      "offers": 92,
+      "with_district": 92,
+      "districts": 13
+    },
+    {
+      "name": "Zielona Góra, lubuskie",
+      "location_id": "zielona-gora-f7aaf1e8",
+      "offers": 87,
+      "with_district": 86,
+      "districts": 5
+    },
+    {
+      "name": "Opole, opolskie",
+      "location_id": "opole-0e1eeed3",
+      "offers": 77,
+      "with_district": 75,
+      "districts": 15
+    },
+    {
+      "name": "Radom, mazowieckie",
+      "location_id": "radom-8ffcba12",
+      "offers": 77,
+      "with_district": 76,
+      "districts": 20
+    },
+    {
+      "name": "Tychy, śląskie",
+      "location_id": "tychy-b42a1433",
+      "offers": 66,
+      "with_district": 64,
+      "districts": 23
+    },
+    {
+      "name": "Ruda Śląska, śląskie",
+      "location_id": "ruda-slaska-238abbea",
+      "offers": 61,
+      "with_district": 58,
+      "districts": 10
+    },
+    {
+      "name": "Gorzów Wielkopolski, lubuskie",
+      "location_id": "gorzow-wielkopolski-81b9c404",
+      "offers": 53,
+      "with_district": 52,
+      "districts": 8
+    },
+    {
+      "name": "Dąbrowa Górnicza, śląskie",
+      "location_id": "dabrowa-gornicza-97d06c50",
+      "offers": 49,
+      "with_district": 48,
+      "districts": 9
+    },
+    {
+      "name": "Olsztyn, warmińsko-mazurskie",
+      "location_id": "olsztyn-6902f66a",
+      "offers": 44,
+      "with_district": 42,
+      "districts": 19
+    },
+    {
+      "name": "Kalisz, wielkopolskie",
+      "location_id": "kalisz-38f89205",
+      "offers": 37,
+      "with_district": 37,
+      "districts": 11
+    },
+    {
+      "name": "Jelenia Góra, dolnośląskie",
+      "location_id": "jelenia-gora-eb58fde7",
+      "offers": 34,
+      "with_district": 33,
+      "districts": 5
+    },
+    {
+      "name": "Wałbrzych, dolnośląskie",
+      "location_id": "walbrzych-bd418efd",
+      "offers": 31,
+      "with_district": 31,
+      "districts": 12
+    },
+    {
+      "name": "Siemianowice Śląskie, śląskie",
+      "location_id": "siemianowice-slaskie-97c086da",
+      "offers": 26,
+      "with_district": 25,
+      "districts": 4
+    },
+    {
+      "name": "Kędzierzyn-Koźle, kędzierzyńsko-kozielski, opolskie",
+      "location_id": "kedzierzyn--kozle-baee59c4",
+      "offers": 3,
+      "with_district": 3,
+      "districts": 2
+    }
+  ],
+  "generated_at": "2026-10-20T13:23:34.404027+00:00",
+  "share_with_district": 0.8456
+}

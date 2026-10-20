@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["query", "cohort"],
+        "msg": "String should match pattern '^[a-z0-9_]{1,16}$'",
+        "type": "string_pattern_mismatch"
+      }
+    ],
+    "instance": "/api/market/overview",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/market/overview",
+    "method": "GET",
+    "operation_id": "overview_api_market_overview_get",
+    "path": "/api/market/overview"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/overview?cohort=BAD"
+  },
+  "scenario": "bad_cohort",
+  "status": 422
+}

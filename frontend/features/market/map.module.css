@@ -5,20 +5,35 @@
   min-width: 0;
 }
 
-.tools {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.map {
+/* The frame holds the drawing, the markers, the controls and the preview: everything stays inside it. */
+.frame {
+  position: relative;
+  overflow: hidden;
   width: 100%;
-  height: min(70vh, 40rem);
+  height: clamp(24rem, 68vh, 42rem);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   background: var(--surface);
-  touch-action: none;
   cursor: grab;
+  touch-action: pan-y pinch-zoom;
+}
+
+.frame:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.frame:active {
+  cursor: grabbing;
+  touch-action: none;
+}
+
+.map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
 }
 
 .land {
@@ -28,12 +43,10 @@
   vector-effect: non-scaling-stroke;
 }
 
-.area,
-.dot {
+.area {
   stroke: var(--surface);
   stroke-width: 0.6;
   vector-effect: non-scaling-stroke;
-  cursor: pointer;
 }
 
 .none {
@@ -41,29 +54,325 @@
   stroke: var(--control-border);
 }
 
-.c0 {
+.c0,
+.s0 {
   fill: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
 }
 
-.c1 {
+.c1,
+.s1 {
   fill: color-mix(in srgb, var(--accent) 30%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 30%, var(--surface));
 }
 
-.c2 {
+.c2,
+.s2 {
   fill: color-mix(in srgb, var(--accent) 50%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 50%, var(--surface));
 }
 
-.c3 {
+.c3,
+.s3 {
   fill: color-mix(in srgb, var(--accent) 72%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 72%, var(--surface));
 }
 
-.c4 {
+.c4,
+.s4 {
   fill: var(--accent);
+  background: var(--accent);
 }
 
-.selected {
-  stroke: var(--danger);
-  stroke-width: 2.5;
+.markers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* A marker is a 44 x 44 button (the target); its visible symbol is smaller and sits in the middle. */
+.marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.marker:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: -2px;
+  border-radius: 50%;
+}
+
+.symbol {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px var(--ink);
+  color: var(--accent-ink);
+  transition:
+    transform var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.marker:hover .symbol,
+.marker:focus-visible .symbol {
+  transform: scale(1.18);
+}
+
+.symbolSelected {
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 0 0 5px var(--surface),
+    0 0 0 7px var(--danger);
+}
+
+.symbol.symbolNone {
+  background: var(--surface);
+  border: 2px dashed var(--ink);
+  box-shadow: none;
+}
+
+.symbol.symbolWithheld {
+  background: var(--surface);
+  border-radius: 3px;
+  rotate: 45deg;
+  border: 2px solid var(--ink);
+  box-shadow: none;
+}
+
+.clusterSymbol {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 var(--space-1);
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  background: var(--ink);
+  box-shadow: 0 0 0 1.5px var(--ink);
+  color: var(--surface);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0 var(--space-1);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  gap: 2px;
+  max-width: 14rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-overlay);
+  background: var(--surface);
+  box-shadow: var(--shadow-overlay);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.controls {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: grid;
+  gap: var(--space-2);
+  justify-items: end;
+  z-index: 4;
+}
+
+.control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.control:hover {
+  background: var(--surface-hover);
+  border-color: var(--hover-border);
+}
+
+.control:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.hint {
+  position: absolute;
+  left: var(--space-3);
+  bottom: var(--space-3);
+  max-width: min(26rem, calc(100% - 7rem));
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  color: var(--muted);
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+.zoomState {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  color: var(--muted);
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+.preview {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 5;
+  display: grid;
+  gap: var(--space-3);
+  width: min(21rem, calc(100% - 7rem));
+  max-height: calc(100% - var(--space-6));
+  overflow: auto;
+  padding: var(--space-4);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-overlay);
+  cursor: default;
+}
+
+.previewHead {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.previewTitle {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.previewMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.previewFacts {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.previewFacts div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.previewFacts dt {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.previewFacts dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.previewNote {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-hover);
+  font-size: 0.875rem;
+}
+
+.previewList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.previewActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (width <= 40rem) {
+  /* On a phone the preview is a sheet along the bottom, so it never covers the controls or the whole map. */
+  .preview {
+    inset: auto var(--space-2) var(--space-2);
+    width: auto;
+    max-height: 60%;
+  }
+
+  .hint,
+  .zoomState {
+    display: none;
+  }
+
+  .frame {
+    height: clamp(22rem, 62vh, 34rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .symbol {
+    transition: none;
+  }
 }
 
 .caption {
@@ -71,6 +380,10 @@
   gap: var(--space-2);
   color: var(--muted);
   font-size: 0.875rem;
+}
+
+.caption p {
+  margin: 0;
 }
 
 .legend {
@@ -96,5 +409,6 @@
 }
 
 .note {
+  margin: 0;
   color: var(--muted);
 }

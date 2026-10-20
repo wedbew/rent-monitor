@@ -20,6 +20,7 @@ from rm_contracts.jobs import (
 from rm_core.comparables import city_slug
 from rm_core.db.session import make_engine, make_sessionmaker
 from rm_core.deadline import Deadline
+from rm_core.legal import LegalTag, tag_names
 from rm_core.market_corpus import PgCorpus
 from rm_core.market_history import PgMarketHistory
 from rm_core.settings import Settings, get_settings
@@ -28,6 +29,7 @@ from rm_worker.app import app
 from rm_worker.clients.otodom import FetchError
 from rm_worker.importers.otodom_corpus import (
     CorpusSearchSource,
+    DistrictSweep,
     PgLocationLock,
     RunOutcome,
     importer_from_settings,
@@ -68,6 +70,7 @@ async def import_rental_city(city: str, location_id: str) -> None:
 # Task names are local constants, not in rm_contracts.jobs: only the worker defers them (RM-392-L05).
 
 CORPUS_LOCATION_TASK = "rm_worker.tasks.batch.sync_corpus_location"
+DISTRICT_SWEEP_TASK = "rm_worker.tasks.batch.sweep_market_districts"
 CORPUS_DISPATCH_TASK = "rm_worker.tasks.batch.dispatch_corpus_nightly"
 # The periodic cron is a decorator argument, so it is read once when the worker process starts: change
 # OTODOM_MARKET_NIGHTLY_CRON and restart the worker (RM-209). Default 01:00 UTC, DST-free (section 7).
@@ -127,6 +130,65 @@ async def sync_location_now(
         return outcomes
     finally:
         await engine.dispose()
+
+
+async def sweep_districts_now(
+    settings: Settings,
+    location_id: str,
+    *,
+    catalogue_version: int | None = None,
+    source: CorpusSearchSource | None = None,
+    may_fetch: Callable[[], bool] | None = None,
+) -> DistrictSweep | None:
+    """Attach the source's districts to one place's stored offers (RM-439). Same switches, throttle, breaker
+    and location lock as the import: nothing is read when the import is off, and a place being imported is
+    skipped (`None`), never raced."""
+    if not settings.otodom_market_import_enabled:
+        log.info("district_sweep_disabled", location_id=location_id)
+        return None
+    version = settings.otodom_market_catalogue_version if catalogue_version is None else catalogue_version
+    engine = make_engine(settings, pool_size=3, max_overflow=0)
+    try:
+        sessionmaker = make_sessionmaker(engine)
+        corpus = PgCorpus(sessionmaker)
+        catalogue = await corpus.get_catalogue(version)
+        entry = (
+            next((e for e in catalogue.locations if e.location_id == location_id), None)
+            if catalogue
+            else None
+        )
+        if entry is None or not entry.launch_enabled:
+            log.warning("district_sweep_location_unknown", location_id=location_id, version=version)
+            return None
+        importer = importer_from_settings(
+            corpus,
+            source if source is not None else build_search_source(sessionmaker, settings),
+            settings,
+            lock=PgLocationLock(engine),
+            may_fetch=may_fetch,
+        )
+        lock = importer.lock
+        assert lock is not None  # noqa: S101
+        async with lock.hold(location_id) as owned:
+            if not owned:
+                return None
+            result = await importer.sweep_districts(entry)
+        log.info(
+            "district_sweep_done",
+            location_id=location_id,
+            state=result.state,
+            pages=result.pages,
+            attached=result.attached,
+            legal_tags=tag_names(LegalTag.scraping, LegalTag.third_party_data),
+        )
+        return result
+    finally:
+        await engine.dispose()
+
+
+@app.task(name=DISTRICT_SWEEP_TASK, queue=BATCH_QUEUE, retry=CORPUS_RETRY)
+async def sweep_market_districts(location_id: str, catalogue_version: int | None = None) -> None:
+    await sweep_districts_now(get_settings(), location_id, catalogue_version=catalogue_version)
 
 
 @app.task(

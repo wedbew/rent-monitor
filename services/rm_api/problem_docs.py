@@ -68,6 +68,8 @@ EXTRA: dict[str, Errors] = {
     "GET /api/market/locations/{location_id}": {403: (C.FEATURE_NOT_IN_PLAN,), 404: (C.NOT_FOUND,)},
     "GET /api/market/locations/{location_id}/history": {403: (C.FEATURE_NOT_IN_PLAN,), 404: (C.NOT_FOUND,)},
     "GET /api/market/locations/{location_id}/context": {403: (C.FEATURE_NOT_IN_PLAN,), 404: (C.NOT_FOUND,)},
+    "GET /api/market/locations/{location_id}/ranking": {403: (C.FEATURE_NOT_IN_PLAN,), 404: (C.NOT_FOUND,)},
+    "GET /api/market/locations/{location_id}/districts": {403: (C.FEATURE_NOT_IN_PLAN,), 404: (C.NOT_FOUND,)},
     "POST /api/billing/checkout": {
         403: (C.EMAIL_NOT_VERIFIED, C.BILLING_HOLD),
         409: (C.IDEMPOTENCY_CONFLICT,),

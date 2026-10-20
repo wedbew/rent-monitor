@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["query", "cohort"],
+        "msg": "String should match pattern '^[a-z0-9_]{1,16}$'",
+        "type": "string_pattern_mismatch"
+      }
+    ],
+    "instance": "/api/market/locations/smoke-torun/districts",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations/{location_id}/districts",
+    "method": "GET",
+    "operation_id": "get_location_districts_api_market_locations__location_id__districts_get",
+    "path": "/api/market/locations/{location_id}/districts"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations/smoke-torun/districts?cohort=BAD"
+  },
+  "scenario": "bad_cohort",
+  "status": 422
+}

@@ -208,6 +208,12 @@ const dateTimeFormat = new Intl.DateTimeFormat("pl-PL", {
   minute: "2-digit",
 });
 
+const dayMonthFormat = new Intl.DateTimeFormat("pl-PL", {
+  timeZone: "Europe/Warsaw",
+  day: "numeric",
+  month: "short",
+});
+
 function toDate(iso: string | null | undefined): Date | null {
   if (iso === null || iso === undefined) return null;
   const date = new Date(iso);
@@ -217,6 +223,20 @@ function toDate(iso: string | null | undefined): Date | null {
 export function formatDate(iso: string | null | undefined): string {
   const date = toDate(iso);
   return date === null ? t.format.noDate : dateFormat.format(date);
+}
+
+/** "19 paź": the short day label of a chart axis. */
+export function formatDayMonth(iso: string | null | undefined): string {
+  const date = toDate(iso);
+  return date === null ? t.format.noDate : dayMonthFormat.format(date);
+}
+
+/**
+ * A tick on a chart axis. The value is a plotting coordinate, never a money string, so this only groups it and
+ * limits its decimals; the figures a person reads as values still go through the money and ratio formatters.
+ */
+export function formatAxisNumber(value: number, maxDecimals = 0): string {
+  return Number.isFinite(value) ? formatDecimal(String(value), maxDecimals) : NOT_COMPUTED;
 }
 
 export function formatDateTime(iso: string | null | undefined): string {

@@ -36,6 +36,7 @@ class InMemoryCorpus:
         self._offers: dict[str, RentalOffer] = {}
         self._checkpoints: dict[str, LocationCheckpoint] = {}
         self._known_locations: set[str] = set()
+        self._districts: dict[str, tuple[str, str, str]] = {}  # offer id -> (place, district id, name)
 
     async def ensure_catalogue(self, catalogue: LocationCatalogue) -> LocationCatalogue:
         async with self._lock:
@@ -98,10 +99,12 @@ class InMemoryCorpus:
                         obs.model_copy(update={"location_id": run.location_id}), run_id, now
                     )
                     self._offers[obs.source_offer_id] = offer
+                    self._attach(run.location_id, obs)
                     inserted += 1
                     unpriced += 0 if offer.priced else 1
                 elif existing.location_id == run.location_id:
                     duplicates += 1
+                    self._attach(run.location_id, obs)
                 else:
                     conflicts.append(obs.source_offer_id)
             self._runs[run_id] = run.model_copy(
@@ -118,6 +121,28 @@ class InMemoryCorpus:
                 location_conflicts=tuple(conflicts),
                 unpriced=unpriced,
             )
+
+    def _attach(self, location_id: str, obs: OfferObservation) -> int:
+        owned = self._offers.get(obs.source_offer_id)
+        if obs.district_id is None or obs.district_name is None or owned is None:
+            return 0
+        if owned.location_id != location_id or obs.source_offer_id in self._districts:
+            return 0
+        self._districts[obs.source_offer_id] = (location_id, obs.district_id, obs.district_name)
+        return 1
+
+    async def record_districts(
+        self, location_id: str, observations: Sequence[OfferObservation], now: datetime
+    ) -> int:
+        async with self._lock:
+            return sum(self._attach(location_id, o) for o in observations)
+
+    async def district_counts(self, location_id: str) -> dict[str, tuple[str, int]]:
+        out: dict[str, tuple[str, int]] = {}
+        for place, district, name in self._districts.values():
+            if place == location_id:
+                out[district] = (name, out.get(district, (name, 0))[1] + 1)
+        return out
 
     async def finish_run(
         self, run_id: str, *, state: RunState, now: datetime, error_category: str | None = None
