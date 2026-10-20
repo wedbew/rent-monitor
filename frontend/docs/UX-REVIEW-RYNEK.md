@@ -10,16 +10,16 @@ States: populated, empty, loading, restricted, error (explorer, map with preview
 ranking and profile). Viewports 390, 768 and 1280 px, light and dark: 19 states x 3 x 2 = 114 runs, plus two keyboard
 walkthroughs (explorer; comparison and ranking). 116 tests passed on the final run.
 
-| Criterion | How it is asserted |
-|---|---|
-| Clipping and horizontal overflow | no element wider than the viewport outside a scroll container; page does not scroll sideways |
-| Overlap | map labels do not overlap each other; the preview does not cover the map controls; chart tick labels do not overlap |
-| Touch targets | every button, link, input, summary at least 44 px (24 px floor for axe `target-size`, which also fails a marker partly under another control) |
-| Wrapped labels | no heading, label or legend wrapped to one word per line |
-| Chart readability | axis text at least 11 px; title, axes, legend and table equivalent present |
-| Section separation | heading-to-content and section gaps are shared spacing tokens |
-| Accessibility | axe clean in each state and theme; keyboard walkthrough shows a visible focus ring on every stop and Escape closes the preview |
-| Visual regression | 16 Rynek pictures x light/dark x desktop/mobile |
+| Criterion                        | How it is asserted                                                                                                                            |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Clipping and horizontal overflow | no element wider than the viewport outside a scroll container; page does not scroll sideways                                                  |
+| Overlap                          | map labels do not overlap each other; the preview does not cover the map controls; chart tick labels do not overlap                           |
+| Touch targets                    | every button, link, input, summary at least 44 px (24 px floor for axe `target-size`, which also fails a marker partly under another control) |
+| Wrapped labels                   | no heading, label or legend wrapped to one word per line                                                                                      |
+| Chart readability                | axis text at least 11 px; title, axes, legend and table equivalent present                                                                    |
+| Section separation               | heading-to-content and section gaps are shared spacing tokens                                                                                 |
+| Accessibility                    | axe clean in each state and theme; keyboard walkthrough shows a visible focus ring on every stop and Escape closes the preview                |
+| Visual regression                | 16 Rynek pictures x light/dark x desktop/mobile                                                                                               |
 
 ## Findings fixed because of the gate
 
