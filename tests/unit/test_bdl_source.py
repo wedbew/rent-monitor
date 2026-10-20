@@ -387,3 +387,29 @@ async def test_territory_at_unpublished_level_is_rejected() -> None:
         BdlObservationValidator({"TESTV1": binding()}).validate(
             meta, pages, expected=powiat, years=(2022, 2023)
         )
+
+
+@pytest.mark.parametrize(
+    ("header", "seconds"),
+    [
+        ("1 sek", 1.0),
+        ("2", 2.0),
+        ("30 s", 30.0),
+        ("0", 0.0),
+        (None, 900.0),
+        ("tomorrow", 900.0),
+        ("999999", 86_400.0),
+    ],
+)
+def test_retry_after_understands_the_services_own_words(header: str | None, seconds: float) -> None:
+    from rm_worker.clients.bdl import _retry_after  # noqa: PLC0415
+
+    assert _retry_after(header) == seconds
+
+
+def test_quota_windows_cap_the_burst_the_service_refuses() -> None:
+    from rm_worker.clients.bdl_quota import quota_windows  # noqa: PLC0415
+
+    per_second, per_minute = quota_windows(5, 60)
+    assert (per_second.limit, per_second.seconds) == (5, 1.0)  # the service answers 429 above 10 per second
+    assert (per_minute.limit, per_minute.seconds) == (60, 60.0)
