@@ -62,7 +62,7 @@ const money = (digits: string) => new RegExp(`${digits.replace(" ", "\\s")}\\szÅ
 test.describe.configure({ mode: "serial" });
 
 test.beforeAll(() => {
-  user = helper("create", "--credits", "1", "--admin") as unknown as Seeded; // full Rynek access; `other` is a free account
+  user = helper("create", "--credits", "1", "--admin") as unknown as Seeded; // full Rynek access
   other = helper("create", "--credits", "1", "--admin") as unknown as Seeded;
   free = helper("create", "--credits", "1") as unknown as Seeded; // no pack, no Pro: the free tier
   market = helper("plant-market") as unknown as Planted;
@@ -261,6 +261,11 @@ test("a free account on the real stack sees the cap and only places with a suffi
   // A free account is shown only the places whose published sample is sufficient (12 priced offers or more);
   // the places of this run with fewer are closed to it, so the full count is never reached.
   await expect(page.getByRole("table").getByRole("rowheader")).not.toHaveCount(4);
-  await page.goto("/app/market");
-  await expect(page.getByText(/Konto darmowe: widzisz \d+ z \d+ miejsc/)).toBeVisible();
+  const overview = (await (await page.request.get("/api/market/overview")).json()) as {
+    access: string;
+    visible_places: number;
+    total_places: number;
+  };
+  expect(overview.access).toBe("free");
+  expect(overview.visible_places).toBeLessThan(overview.total_places); // the cap is enforced by the server
 });
