@@ -691,7 +691,7 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Status:** active
 - **Discovered:** 2026-10-20
 - **Affects:** `rm_core.location_mapping`, `market_location_territory`, BDL context of those places
-- **Evidence:** confirmed on the real catalogue and reference (760 of 787 mapped, 24 ambiguous, 3 unmatched in the first evaluation)
+- **Evidence:** confirmed on the real catalogue and reference (2026-10-20: 786 of 787 mapped, none ambiguous, Słupsk unmatched)
 - **Description:** A city and its rural gmina share a name in 311 powiats, so a plain slug stays ambiguous and lists its candidates; places below a listed gmina map to the containing gmina (`within_gmina`), not to themselves. Unmatched places have no BDL context.
 - **Workaround:** powiat figures remain available when only the powiat matches
 - **Target:** review the ambiguous list with the owner
