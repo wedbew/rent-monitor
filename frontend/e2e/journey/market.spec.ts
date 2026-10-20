@@ -61,7 +61,7 @@ const money = (digits: string) => new RegExp(`${digits.replace(" ", "\\s")}\\szÅ
 test.describe.configure({ mode: "serial" });
 
 test.beforeAll(() => {
-  user = helper("create", "--credits", "1") as unknown as Seeded;
+  user = helper("create", "--credits", "1", "--admin") as unknown as Seeded; // full Rynek access; `other` is a free account
   other = helper("create", "--credits", "1") as unknown as Seeded;
   market = helper("plant-market") as unknown as Planted;
 });
@@ -246,4 +246,18 @@ test("a place with no bootstrap and an unknown place are honest, and the data ne
   await expect(secondPage.getByRole("table").getByRole("rowheader")).toHaveCount(4);
   await expect(secondPage.getByRole("textbox", { name: "Nazwa miejscowoÅ›ci" })).toHaveValue(market.run);
   await second.close();
+});
+
+test("a free account on the real stack sees the cap and only places with a sufficient sample", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await signIn(context, other, baseURL);
+  await page.goto(`/app/market?view=list&q=${market.run}`);
+  // A free account is shown only the places whose published sample is sufficient (12 priced offers or more);
+  // the places of this run with fewer are closed to it, so the full count is never reached.
+  await expect(page.getByRole("table").getByRole("rowheader")).not.toHaveCount(4);
+  await page.goto("/app/market");
+  await expect(page.getByText(/Konto darmowe: widzisz \d+ z \d+ miejsc/)).toBeVisible();
 });
