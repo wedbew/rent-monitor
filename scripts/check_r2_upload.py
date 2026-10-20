@@ -17,12 +17,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-# boto3 is declared in the inline script metadata above, not in the project environment.
-import boto3  # pyright: ignore[reportMissingImports]
+import boto3
 import httpx
 import structlog
-from botocore.config import Config  # pyright: ignore[reportMissingImports]
-from botocore.exceptions import BotoCoreError, ClientError  # pyright: ignore[reportMissingImports]
+from botocore.config import Config
+from botocore.exceptions import BotoCoreError, ClientError
 from dotenv import dotenv_values
 
 log = structlog.get_logger()

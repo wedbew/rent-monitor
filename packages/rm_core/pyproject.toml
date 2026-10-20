@@ -5,6 +5,7 @@ description = "Settings, legal tags, (later) models, repositories, ledger, entit
 requires-python = ">=3.12"
 dependencies = [
   "alembic>=1.20,<2",
+  "boto3>=1.43.116",
   "psycopg[binary,pool]>=3.3,<4",
   "pydantic>=2.12",
   "pydantic-settings>=2.11",
