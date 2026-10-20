@@ -89,6 +89,42 @@ class ContractSuite:
         assert stored["10"].asking_rent_pln == Decimal("2500")  # a later sighting never changes rent
         assert stored["10"].first_seen_at == T0  # nor the clock
 
+    async def test_districts_attach_beside_the_offer_and_never_change_it(self, new_repo: NewRepo) -> None:
+        repo = await seeded(new_repo)
+        await repo.start_run(run("r1"))
+        base = "pomorskie/loc-0"
+        a = {"district_id": f"{base}/srodmiescie", "district_name": "Śródmieście"}
+        b = {"district_id": f"{base}/oliwa", "district_name": "Oliwa"}
+        await repo.record_offers("r1", [obs("10", **a), obs("11", **a), obs("12", **b), obs("13")], T0)
+        assert await repo.district_counts("loc-0") == {
+            a["district_id"]: ("Śródmieście", 2),
+            b["district_id"]: ("Oliwa", 1),
+        }
+        # a later sighting of an offer stored without a district attaches it once; the offer is unchanged
+        later = await repo.record_districts(
+            "loc-0", [obs("13", rent="9999", **b), obs("10", **b)], T0 + timedelta(days=1)
+        )
+        assert later == 1  # offer 10 already had its district; first attachment wins
+        counts = await repo.district_counts("loc-0")
+        assert counts[b["district_id"]] == ("Oliwa", 2)
+        assert counts[a["district_id"]] == ("Śródmieście", 2)
+        stored = {o.source_offer_id: o for o in await repo.list_offers("loc-0")}
+        assert stored["13"].asking_rent_pln == Decimal("2500")
+        assert await repo.record_districts("loc-0", [obs("13", **b)], T0) == 0  # idempotent
+
+    async def test_a_district_never_attaches_to_another_places_offer(self, new_repo: NewRepo) -> None:
+        repo = await seeded(new_repo)
+        await repo.start_run(run("r1", "loc-0"))
+        await repo.record_offers("r1", [obs("10")], T0)
+        other = {"district_id": "pomorskie/loc-1/x", "district_name": "X"}
+        assert (
+            await repo.record_districts(
+                "loc-1", [obs("10", loc="loc-1", **other), obs("99", loc="loc-1", **other)], T0
+            )
+            == 0
+        )
+        assert await repo.district_counts("loc-1") == {}
+
     async def test_conflicting_location_keeps_first_and_is_flagged(self, new_repo: NewRepo) -> None:
         repo = await seeded(new_repo)
         await repo.start_run(run("r1", "loc-0"))

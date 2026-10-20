@@ -83,20 +83,18 @@ test("navigation, search and the list show what the database holds, not a fixtur
   await signIn(context, user, baseURL);
   await page.goto("/app");
   await page.getByRole("link", { name: "Rynek", exact: true }).click();
-  await expect(page).toHaveURL(/\/app\/market$/); // opens on the map
+  await expect(page).toHaveURL(/\/app\/market\/otodom$/); // the Otodom tab is the default
   await expect(page.getByRole("heading", { level: 1, name: "Rynek" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Lista" }).click();
+  await page.getByRole("button", { name: "Lista", exact: true }).click();
   await expect(page).toHaveURL(/view=list/);
-  await page.getByRole("textbox", { name: "Nazwa miejscowości" }).fill(market.run);
-  await page.getByRole("button", { name: "Szukaj" }).click();
+  await page.getByRole("textbox", { name: "Szukaj miejsca na liście" }).fill(market.run);
   await expect(page).toHaveURL(new RegExp(`q=${market.run}`));
-  await expect(page.getByRole("table").getByRole("rowheader")).toHaveCount(4);
+  const names = page.getByRole("table").getByRole("rowheader");
+  await expect(names).toHaveCount(4);
   await expect
-    .poll(async () =>
-      (await page.getByRole("table").getByRole("rowheader").allTextContents()).map((n) => n.trim()),
-    )
-    .toEqual(["alfa", "beta", "delta", "gamma"].map((k) => market.names[k as keyof Planted["names"]])); // Alfa, Beta, Delta, Gamma
+    .poll(async () => (await names.allTextContents()).map((n) => n.replace(/Otwórz miejsce.*$/, "").trim()))
+    .toEqual(["alfa", "beta", "delta", "gamma"].map((k) => market.names[k as keyof Planted["names"]]));
 
   // By hand: 12 offers 2000..2550 plus 4 offers 3000..3150 -> 16 offers, median 2375.00, 47.50 PLN/m2.
   const alfa = row(page, market.names.alfa);
@@ -107,82 +105,131 @@ test("navigation, search and the list show what the database holds, not a fixtur
   await expect(alfa.getByRole("cell").nth(3)).toHaveText("16");
   // Three priced offers are too few: counts stay, the median is withheld with its reason.
   const beta = row(page, market.names.beta);
-  await expect(beta).toContainText("Za mało ofert z ceną, by podać medianę");
-  await expect(beta.getByRole("cell").nth(3)).toHaveText("3");
+  await expect(beta).toContainText("Za mało ofert z ceną (3), by podać medianę");
   await expect(beta).not.toContainText("zł/m²");
-  // No bootstrap yet, and a place that is only in the catalogue: no numbers at all.
   for (const key of ["gamma", "delta"] as const) {
     const unavailable = row(page, market.names[key]);
     await expect(unavailable).toContainText("Brak danych");
-    await expect(unavailable).not.toContainText("zł");
+    await expect(unavailable).not.toContainText("zł/m²");
   }
 
   // The same numbers by two other routes: the API's own answer and a SQL recomputation from the stored offers.
-  const api = await page.request.get(`/api/market/locations?q=${market.run}`);
-  expect(api.status()).toBe(200);
-  expect(api.headers()["cache-control"]).toBe("private, no-store");
-  const listed = (await api.json()) as { items: { location_id: string; median_rent_pln: string | null }[] };
-  expect(listed.items.map((i) => i.location_id).sort()).toEqual(Object.values(market.ids).sort());
+  const overview = await page.request.get("/api/market/overview");
+  expect(overview.status()).toBe(200);
+  expect(overview.headers()["cache-control"]).toBe("private, no-store");
+  const listed = (await overview.json()) as {
+    cohort_key: string;
+    items: { location_id: string; median_rent_pln: string | null }[];
+  };
+  expect(listed.cohort_key).toBe("all");
+  const mine = listed.items.filter((i) => Object.values(market.ids).includes(i.location_id));
+  expect(mine.map((i) => i.location_id).sort()).toEqual(Object.values(market.ids).sort());
   const sql = helper("market-db", "--run", market.run) as Record<
     string,
     { offers: number; median_rent: string; median_ppm2: string }
   >;
-  const fromSql = sql[market.ids.alfa];
-  expect(fromSql).toEqual({ offers: 16, median_rent: "2375.00", median_ppm2: "47.50" });
-  expect(listed.items.find((i) => i.location_id === market.ids.alfa)?.median_rent_pln).toBe("2375.00");
+  expect(sql[market.ids.alfa]).toEqual({ offers: 16, median_rent: "2375.00", median_ppm2: "47.50" });
+  expect(mine.find((i) => i.location_id === market.ids.alfa)?.median_rent_pln).toBe("2375.00");
   expect(sql[market.ids.beta]?.offers).toBe(3);
   expect(sql[market.ids.gamma]).toBeUndefined();
 
   await page.reload();
-  await expect(page.getByRole("textbox", { name: "Nazwa miejscowości" })).toHaveValue(market.run);
+  await expect(page.getByRole("textbox", { name: "Szukaj miejsca na liście" })).toHaveValue(market.run);
   await expect(page.getByRole("table").getByRole("rowheader")).toHaveCount(4);
 });
 
-test("a place shows its latest reading and a history whose days follow the stored offers", async ({
+test("the group of flats changes the request and the figures: two-room offers are all of them, other groups none", async ({
   context,
   page,
   baseURL,
 }) => {
   await signIn(context, user, baseURL);
-  await page.goto(`/app/market?view=list&q=${market.run}`);
-  await page.getByRole("link", { name: market.names.alfa }).click();
-  await expect(page).toHaveURL(new RegExp(`/app/market/${market.ids.alfa}\\?.*q=${market.run}`));
-  await expect(page.getByRole("heading", { level: 1, name: market.names.alfa })).toBeVisible();
-  const latest = page.getByRole("region", { name: "Ostatni odczyt" });
-  await expect(latest).toContainText(money("2 375"));
-  await expect(latest).toContainText("47,50");
-  await expect(latest).toContainText("Oferty z ceną");
-
-  // Six published days, newest first. The four late offers arrived two days ago: before that the median is 2275.
-  const days = page.getByRole("table").getByRole("rowheader");
-  await expect(days).toHaveCount(6);
-  const rents = await page.getByRole("table").getByRole("row").allTextContents();
-  const body = rents.slice(1);
-  expect(body.slice(0, 3).every((r) => money("2 375").test(r))).toBe(true);
-  expect(body.slice(3).every((r) => money("2 275").test(r))).toBe(true);
-
-  // 2 pokoje holds every offer (all are two-room), so the same figures; the choice is in the address and survives a reload.
-  await page.getByRole("combobox", { name: "Grupa mieszkań" }).click();
-  await page.getByRole("option", { name: "2 pokoje", exact: true }).click();
+  await page.goto(`/app/market/otodom?view=list&q=${market.run}`);
+  const seen: string[] = [];
+  page.on("request", (r) => {
+    if (r.url().includes("/api/market/overview")) seen.push(r.url());
+  });
+  await page.getByRole("radio", { name: "2 pokoje" }).click();
   await expect(page).toHaveURL(/cohort=rooms_2/);
-  await expect(page.getByRole("region", { name: "Ostatni odczyt" })).toContainText(money("2 375"));
+  await expect.poll(() => seen.some((u) => u.includes("cohort=rooms_2"))).toBe(true);
+  // Every planted offer has two rooms, so the two-room figures equal the whole-place figures.
+  await expect(row(page, market.names.alfa)).toContainText(money("2 375"));
+  // Every planted offer is 50 m2: the "below 30 m2" group has none, the 45 to 60 group has them all.
+  await page.getByRole("radio", { name: "Poniżej 30 m²" }).click();
+  await expect(page).toHaveURL(/cohort=size_lt30/);
+  await expect(page.getByText(/Zastąpiono filtr „2 pokoje”/)).toBeVisible();
+  await expect(row(page, market.names.alfa)).not.toContainText("zł/m²");
+  await page.getByRole("radio", { name: "45 do 60 m²" }).click();
+  await expect(row(page, market.names.alfa)).toContainText("47,50"); // 50 m2 is inside 45 to 60
+  const api = (await (await page.request.get("/api/market/overview?cohort=size_45_60")).json()) as {
+    cohort_key: string;
+    items: { location_id: string; priced_count: number | null }[];
+  };
+  expect(api.cohort_key).toBe("size_45_60");
+  expect(api.items.find((i) => i.location_id === market.ids.alfa)?.priced_count).toBe(16);
+  expect((await page.request.get("/api/market/overview?cohort=HACKED%21")).status()).toBe(422);
   await page.reload();
-  await expect(page.getByRole("combobox", { name: "Grupa mieszkań" })).toContainText("2 pokoje");
+  await expect(page.getByRole("radio", { name: "45 do 60 m²" })).toBeChecked();
+  await page.getByRole("button", { name: "Wyczyść filtr" }).click();
+  await expect(page).not.toHaveURL(/cohort=/);
+});
 
-  // The additions series is a different thing: the 12 first offers on their day, the 4 late ones (too few) later;
-  // the days between have no row at all, not a row of zeros.
+test("a place shows its latest reading, its districts and a history whose days follow the stored offers", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await signIn(context, user, baseURL);
+  await page.goto(`/app/market/otodom?view=list&q=${market.run}`);
+  await page.getByRole("link", { name: `Otwórz miejsce ${market.names.alfa}` }).click();
+  await expect(page).toHaveURL(new RegExp(`/app/market/otodom/${market.ids.alfa}`));
+  await expect(page.getByRole("heading", { level: 1, name: market.names.alfa })).toBeVisible();
+  const median = page.getByRole("article").filter({ hasText: "Mediana ceny ofertowej za m²" });
+  await expect(median).toContainText("47,50");
+  await expect(median).toContainText("Źródło");
+  await expect(page.getByRole("article").filter({ hasText: "Mediana czynszu ofertowego" })).toContainText(
+    money("2 375"),
+  );
+
+  // Districts: 12 of the 16 offers carry "Centrum"; by hand its PLN/m2 are 40..51 -> median 45.50, quartiles 42.75 / 48.25.
+  const districts = page
+    .getByRole("region")
+    .or(page.locator("section"))
+    .filter({ has: page.getByRole("heading", { name: "Dzielnice" }) });
+  await expect(districts.getByText("Dzielnicę wskazano przy 12 z 16 ofert")).toBeVisible();
+  await page.getByRole("link", { name: "Centrum", exact: true }).first().click();
+  await expect(page.getByRole("heading", { level: 1, name: "Centrum" })).toBeVisible();
+  await expect(page.getByRole("article").filter({ hasText: "Mediana ceny ofertowej za m²" })).toContainText(
+    "45,50",
+  );
+  await expect(page.getByRole("article").filter({ hasText: "Środkowa połowa ofert" })).toContainText("42,75");
+  const sqlDistricts = (await (
+    await page.request.get(`/api/market/locations/${market.ids.alfa}/districts`)
+  ).json()) as { coverage: string; districts: { name: string; priced_count: number; median_ppm2: string }[] };
+  expect(sqlDistricts.coverage).toBe("supported");
+  expect(sqlDistricts.districts.map((d) => [d.name, d.priced_count, d.median_ppm2])).toEqual([
+    ["Centrum", 12, "45.50"],
+  ]);
+  await page.getByRole("link", { name: /^Wróć do: / }).click();
+
+  // Six published days; the table equivalent of the chart lists them newest first. The four late offers arrived two
+  // days ago: before that the median is 2275.
+  await page.getByText("Pokaż dane w tabeli").first().click();
+  const history = page.getByRole("table", { name: "Zmiana mediany w czasie" });
+  await expect(history.getByRole("row")).toHaveCount(7); // header and six days
+  const body = (await history.getByRole("row").allTextContents()).slice(1);
+  expect(body.slice(0, 3).every((r) => r.includes("47,50"))).toBe(true);
+  expect(body.slice(3).every((r) => r.includes("45,50"))).toBe(true);
+
+  // The additions series is a different thing: days between have no row at all, not a row of zeros.
   await page.getByRole("button", { name: "Nowe ogłoszenia dnia" }).click();
   await expect(page).toHaveURL(/series=additions/);
-  const additions = page.getByRole("table").getByRole("row");
-  await expect(additions.filter({ hasText: money("2 275") })).toHaveCount(1);
-  await expect(additions.filter({ hasText: "Za mało ofert z ceną" }).first()).toBeVisible();
   const api = await page.request.get(
     `/api/market/locations/${market.ids.alfa}/history?series=additions&cohort=rooms_2&days=30`,
   );
   const points = ((await api.json()) as { points: { priced_count: number; series: string }[] }).points;
   expect(points.every((p) => p.series === "additions")).toBe(true);
-  expect(points.map((p) => p.priced_count).sort((a, b) => a - b)).toEqual([4, 12]); // days without 2-room offers have no row
-
+  expect(points.map((p) => p.priced_count).sort((a, b) => a - b)).toEqual([4, 12]);
   await page.goBack();
   await expect(page).not.toHaveURL(/series=additions/);
   await page.goForward();
@@ -192,13 +239,47 @@ test("a place shows its latest reading and a history whose days follow the store
   );
 });
 
+test("a place without districts says so; the district list never invents one", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await signIn(context, user, baseURL);
+  await page.goto(`/app/market/otodom/${market.ids.beta}`);
+  await expect(page.getByText("Otodom nie wskazuje dzielnic dla tego miejsca")).toBeVisible();
+  const api = (await (
+    await page.request.get(`/api/market/locations/${market.ids.beta}/districts`)
+  ).json()) as {
+    coverage: string;
+    districts: unknown[];
+  };
+  expect(api).toMatchObject({ coverage: "none", districts: [] });
+});
+
+test("the GUS tab and the ranking are reachable and honest when no GUS release is published for the place", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await signIn(context, user, baseURL);
+  await page.goto(`/app/market/otodom/${market.ids.alfa}`);
+  await page.locator("[data-tab=gus]").click();
+  await expect(page).toHaveURL(new RegExp(`/app/market/gus/${market.ids.alfa}$`));
+  const card = page.getByTestId("ranking-card");
+  await expect(card).toBeVisible();
+  await expect(card.getByTestId("index-score")).toHaveCount(0); // planted places map to no gmina: no score, said plainly
+  await expect(
+    card.getByText(/Nie podajemy wyniku|Za mało danych|nie udało się jednoznacznie/).first(),
+  ).toBeVisible();
+});
+
 test("freshness follows the checkpoint on the API's own clock: delayed, then stale, then stale with a gap", async ({
   context,
   page,
   baseURL,
 }) => {
   await signIn(context, user, baseURL);
-  const place = `/app/market/${market.ids.alfa}`;
+  const place = `/app/market/otodom/${market.ids.alfa}`;
   await page.goto(place);
   await expect(page.getByText("Aktualne", { exact: true }).first()).toBeVisible();
 
@@ -211,7 +292,7 @@ test("freshness follows the checkpoint on the API's own clock: delayed, then sta
   await page.reload();
   await expect(page.getByText("Nieaktualne", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(/Traktuj liczby jako historyczne/)).toBeVisible();
-  await expect(page.getByRole("region", { name: "Ostatni odczyt" })).toBeVisible(); // last valid data stays
+  await expect(page.getByRole("article").filter({ hasText: "Mediana ceny ofertowej za m²" })).toBeVisible(); // last valid data stays
 
   helper("age-market", "--run", market.run, "--hours", "1", "--gap-days", "1");
   await page.reload();
@@ -226,19 +307,20 @@ test("a place with no bootstrap and an unknown place are honest, and the data ne
   baseURL,
 }) => {
   await signIn(context, user, baseURL);
-  await page.goto(`/app/market/${market.ids.gamma}`);
-  await expect(page.getByText(/nie zakończyło się jeszcze pierwsze zbieranie ofert/)).toBeVisible();
-  await expect(page.getByRole("table")).toHaveCount(0);
-  await page.goto("/app/market/e2e-nie-ma-takiej");
-  await expect(page.getByText("Nie ma takiej miejscowości")).toBeVisible();
+  await page.goto(`/app/market/otodom/${market.ids.gamma}`);
+  await expect(
+    page.getByText(/Pierwsze zbieranie ofert dla tego miejsca jeszcze się nie zakończyło/),
+  ).toBeVisible();
+  await page.goto("/app/market/otodom/e2e-nie-ma-takiej");
+  await expect(page.getByText("Nie ma takiego miejsca")).toBeVisible();
 
   // Without a session the API refuses and the page sends the person to sign in.
   const anonymous = await browser.newContext({ baseURL: baseURL ?? "http://localhost:4173" });
-  const apiReply = await anonymous.request.get(`/api/market/locations?q=${market.run}`);
+  const apiReply = await anonymous.request.get("/api/market/overview");
   expect(apiReply.status()).toBe(401);
   expect((await apiReply.json()) as { code: string }).toMatchObject({ code: "UNAUTHENTICATED" });
   const visitor = await anonymous.newPage();
-  await visitor.goto(`/app/market?q=${market.run}`);
+  await visitor.goto(`/app/market/otodom?q=${market.run}`);
   await expect(visitor).toHaveURL(/\/login\?next=/);
   await expect(visitor.getByText(market.names.alfa)).toHaveCount(0);
   await anonymous.close();
@@ -247,29 +329,45 @@ test("a place with no bootstrap and an unknown place are honest, and the data ne
   const second = await browser.newContext({ baseURL: baseURL ?? "http://localhost:4173" });
   await signIn(second, other, baseURL);
   const secondPage = await second.newPage();
-  await secondPage.goto(`/app/market?view=list&q=${market.run}`);
+  await secondPage.goto(`/app/market/otodom?view=list&q=${market.run}`);
   await expect(secondPage.getByRole("table").getByRole("rowheader")).toHaveCount(4);
-  await expect(secondPage.getByRole("textbox", { name: "Nazwa miejscowości" })).toHaveValue(market.run);
   await second.close();
 });
 
-test("a free account on the real stack sees the cap and only places with a sufficient sample", async ({
+test("an account with the explicit no-limit entitlement sees the whole market while a free one is capped", async ({
   page,
   context,
+  browser,
   baseURL,
 }) => {
   await signIn(context, free, baseURL);
-  await page.goto(`/app/market?view=list&q=${market.run}`);
-  // A free account is shown only the places whose published sample is sufficient (12 priced offers or more);
-  // the places of this run with fewer are closed to it, so the full count is never reached.
-  await expect(page.getByRole("table").getByRole("rowheader")).not.toHaveCount(4);
-  const overview = (await (await page.request.get("/api/market/overview")).json()) as {
+  await page.goto("/app/market/otodom");
+  await expect(page.getByText(/Konto darmowe: widzisz \d+ z \d+ miejsc/)).toBeVisible();
+  const cap = (await (await page.request.get("/api/market/overview")).json()) as {
     access: string;
     visible_places: number;
     total_places: number;
   };
-  expect(overview.access).toBe("free");
-  expect(overview.visible_places).toBeLessThan(overview.total_places); // the cap is enforced by the server
-  await page.goto("/app/market");
-  await expect(page.getByText(/Konto darmowe: widzisz \d+ z \d+ miejsc/)).toBeVisible();
+  expect(cap.access).toBe("free");
+  expect(cap.visible_places).toBeLessThan(cap.total_places); // the server enforces the cap
+
+  // The entitlement is a row granted to the account (scripts/grant_entitlement.py), not a hard-coded address.
+  helper("session-for", "--email", free.email, "--entitlement", "unlimited_reports");
+  const entitled = await browser.newContext({ baseURL: baseURL ?? "http://localhost:4173" });
+  await signIn(entitled, free, baseURL);
+  const entitledPage = await entitled.newPage();
+  await entitledPage.goto("/app/market/otodom");
+  await expect(entitledPage.getByText("Pełny dostęp do rynku")).toBeVisible();
+  const full = (await (await entitledPage.request.get("/api/market/overview")).json()) as {
+    access: string;
+    visible_places: number;
+    total_places: number;
+  };
+  expect(full.access).toBe("full");
+  expect(full.visible_places).toBe(full.total_places);
+  const me = (await (await entitledPage.request.get("/api/me")).json()) as {
+    plan: { unlimited_reports: boolean };
+  };
+  expect(me.plan.unlimited_reports).toBe(true);
+  await entitled.close();
 });

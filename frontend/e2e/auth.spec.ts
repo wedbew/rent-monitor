@@ -153,7 +153,7 @@ test.describe("login", () => {
     await expect(page).toHaveURL(/\/login\?next=%2Fapp%2Fmarket$/);
     await fillLogin(page);
     await page.getByRole("button", { name: "Zaloguj się", exact: true }).click();
-    await expect(page).toHaveURL(/\/app\/market$/);
+    await expect(page).toHaveURL(/\/app\/market\/otodom$/); // the bare address is the Otodom tab
     await expect(heading(page, "Rynek")).toBeVisible();
   });
 
@@ -689,7 +689,7 @@ test.describe("the session boundary", () => {
     await expect(heading(other, "Rynek")).toBeVisible();
     await page.getByRole("button", { name: "Wyloguj się" }).click();
     await expect(page).toHaveURL(/\/login$/);
-    await expect(other).toHaveURL(/\/login\?next=%2Fapp%2Fmarket$/);
+    await expect(other).toHaveURL(/\/login\?next=%2Fapp%2Fmarket%2Fotodom$/);
   });
 
   test("after a whole journey nothing but the theme is in browser storage", async ({ page, serve }) => {

@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "NOT_FOUND",
+    "instance": "/api/market/locations/nowhere/ranking",
+    "request_id": "req_fixture",
+    "status": 404,
+    "title": "Location not found",
+    "type": "urn:rentmonitor:problem:NOT_FOUND"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations/{location_id}/ranking",
+    "method": "GET",
+    "operation_id": "get_location_ranking_api_market_locations__location_id__ranking_get",
+    "path": "/api/market/locations/{location_id}/ranking"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations/nowhere/ranking"
+  },
+  "scenario": "unknown_place",
+  "status": 404
+}

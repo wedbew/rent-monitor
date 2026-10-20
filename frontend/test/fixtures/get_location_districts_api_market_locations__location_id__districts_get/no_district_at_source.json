@@ -1,0 +1,33 @@
+{
+  "body": {
+    "as_of": "2026-10-01T10:00:00Z",
+    "caveats": ["asking_not_achieved_rent", "not_active_stock", "not_deed_price"],
+    "cohort_key": "all",
+    "coverage": "none",
+    "data_status": "fresh",
+    "districts": [],
+    "location_id": "smoke-gdynia",
+    "name": "Gdynia",
+    "offers_in_cohort": 3,
+    "offers_with_district": 0,
+    "price_basis": "asking",
+    "source": "otodom"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations/{location_id}/districts",
+    "method": "GET",
+    "operation_id": "get_location_districts_api_market_locations__location_id__districts_get",
+    "path": "/api/market/locations/{location_id}/districts"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations/smoke-gdynia/districts"
+  },
+  "scenario": "no_district_at_source",
+  "status": 200
+}

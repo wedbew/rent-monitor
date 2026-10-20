@@ -50,6 +50,7 @@ frontend/coverage/
 frontend/test-results/
 frontend/playwright-report/
 frontend/playwright-coverage/
+frontend/ux-out/
 *.tsbuildinfo
 npm-debug.log*
 

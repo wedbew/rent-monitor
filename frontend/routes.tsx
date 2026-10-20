@@ -1,5 +1,5 @@
 import { type ComponentType, lazy, Suspense } from "react";
-import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
+import { createBrowserRouter, Navigate, type RouteObject, useLocation, useParams } from "react-router";
 
 import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { EmailLinkPage, VerifySignupPage } from "./features/auth/LinkPages";
@@ -30,11 +30,20 @@ const SuccessPage = lazy(async () => ({
 const PayPage = lazy(async () => ({
   default: (await import("./features/billing/PayPage")).PayPage,
 }));
-const MarketPage = lazy(async () => ({
-  default: (await import("./features/market/MarketExplorer")).MarketExplorer,
+const MarketLayout = lazy(async () => ({
+  default: (await import("./features/market/MarketLayout")).MarketLayout,
 }));
-const LocationPage = lazy(async () => ({
-  default: (await import("./features/market/LocationPage")).LocationPage,
+const OtodomExplorer = lazy(async () => ({
+  default: (await import("./features/market/OtodomExplorer")).OtodomExplorer,
+}));
+const PlacePage = lazy(async () => ({
+  default: (await import("./features/market/PlacePage")).PlacePage,
+}));
+const DistrictPage = lazy(async () => ({
+  default: (await import("./features/market/DistrictPage")).DistrictPage,
+}));
+const GusPage = lazy(async () => ({
+  default: (await import("./features/market/GusPage")).GusPage,
 }));
 const SettingsPage = lazy(async () => ({
   default: (await import("./features/settings/SettingsPage")).SettingsPage,
@@ -42,6 +51,19 @@ const SettingsPage = lazy(async () => ({
 const AnalysisPage = lazy(async () => ({
   default: (await import("./features/analyses/AnalysisPage")).AnalysisPage,
 }));
+
+/** `/app/market` is the Otodom tab. */
+function MarketRoot() {
+  const location = useLocation();
+  return <Navigate to={`/app/market/otodom${location.search}`} replace />;
+}
+
+/** The place address before the tabs (`/app/market/torun`) keeps working. */
+function LegacyPlace() {
+  const location = useLocation();
+  const { locationId = "" } = useParams();
+  return <Navigate to={`/app/market/otodom/${encodeURIComponent(locationId)}${location.search}`} replace />;
+}
 
 /** A page whose code loads on first visit: a quiet status while it loads, never a blank screen. */
 function lazyPage(Page: ComponentType) {
@@ -130,8 +152,21 @@ export const routes: RouteObject[] = [
                   { path: "/app/analyses/new", element: lazyPage(NewAnalysisPage) },
                   { path: "/app/analyses", element: lazyPage(AnalysesPage) },
                   { path: "/app/analyses/:auditId", element: lazyPage(AnalysisPage) },
-                  { path: "/app/market", element: lazyPage(MarketPage) },
-                  { path: "/app/market/:locationId", element: lazyPage(LocationPage) },
+                  // Rynek: two sources, two tabs, each a path of its own (RM-439). The bare address and the old
+                  // `/app/market/:id` place address go to the Otodom tab, keeping the query.
+                  { path: "/app/market", element: <MarketRoot /> },
+                  {
+                    path: "/app/market",
+                    element: lazyPage(MarketLayout),
+                    children: [
+                      { path: "otodom", element: lazyPage(OtodomExplorer) },
+                      { path: "otodom/:locationId", element: lazyPage(PlacePage) },
+                      { path: "otodom/:locationId/:districtKey", element: lazyPage(DistrictPage) },
+                      { path: "gus", element: lazyPage(GusPage) },
+                      { path: "gus/:locationId", element: lazyPage(GusPage) },
+                      { path: ":locationId", element: <LegacyPlace /> },
+                    ],
+                  },
                   pending("interior", "/app/interior"),
                   pending("listing", "/app/listings/new"),
                   { path: "/app/settings", element: lazyPage(SettingsPage) },

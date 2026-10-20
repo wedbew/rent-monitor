@@ -28,6 +28,7 @@ EXPECTED_CATALOGUE_SIZE = (
     727  # owner-verified catalogue (B-023); a manifest is ready only when all are covered
 )
 LOCATION_PATH_RE = re.compile(r"[a-z0-9-]+(/[a-z0-9-]+){0,3}")  # same shape the Otodom client accepts
+DISTRICT_ID_RE = re.compile(r"[a-z0-9-]+(/[a-z0-9-]+){1,7}")  # a place path plus the district segment
 SOURCE_ID_RE = re.compile(r"[0-9]{1,20}")  # Otodom search ids are numeric (not the audit short id)
 MAX_PAGES = 10_000  # sanity bound on a run's page counters, not a completeness cap
 
@@ -150,6 +151,18 @@ class OfferObservation(_Model):
     rooms: int | None = Field(default=None, ge=1, le=50)
     published_at: UtcDatetime | None = None  # validated original publication time, never `pushedUpAt`
     observed_at: UtcDatetime
+    # The advert's district as the site names it (`locationLevel == "district"`), kept only when its id is a
+    # child path of the searched place. Stored beside the offer, never in it (offers are immutable).
+    district_id: str | None = Field(default=None, max_length=200, pattern=DISTRICT_ID_RE.pattern)
+    district_name: str | None = Field(
+        default=None, min_length=1, max_length=80, pattern=r"^[^\x00-\x1f\x7f]+$"
+    )
+
+    @model_validator(mode="after")
+    def _district_pair(self) -> Self:
+        if (self.district_id is None) != (self.district_name is None):
+            raise ValueError("a district needs both its id and its name")
+        return self
 
 
 class RentalOffer(_Model):
@@ -364,6 +377,18 @@ class CorpusRepository(Protocol):
         self, run_id: str, observations: Sequence[OfferObservation], now: datetime
     ) -> SightingReport:
         """Insert unknown offers; never update an existing one. Retry-safe."""
+        ...
+
+    async def record_districts(
+        self, location_id: str, observations: Sequence[OfferObservation], now: datetime
+    ) -> int:
+        """Attach each observation's district to the offer already stored for this place; nothing else is
+        written and an offer never changes. Offers the corpus does not hold, or holds for another place,
+        are skipped. Returns the number of new attachments. Retry-safe."""
+        ...
+
+    async def district_counts(self, location_id: str) -> dict[str, tuple[str, int]]:
+        """`district_id -> (name, offers carrying it)` for the place."""
         ...
 
     async def finish_run(

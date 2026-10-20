@@ -609,6 +609,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/market/locations/{location_id}/districts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Location Districts
+         * @description The districts the source names under one place, with asking-rent statistics per district.
+         *
+         *     Computed from the place's own stored adverts; a place whose adverts carry no district answers
+         *     `coverage: none` with an empty list, a district under the sufficiency threshold keeps its counts and
+         *     withholds its statistics.
+         */
+        get: operations["get_location_districts_api_market_locations__location_id__districts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/market/locations/{location_id}/history": {
         parameters: {
             query?: never;
@@ -621,6 +645,28 @@ export interface paths {
          * @description Daily history of one series and cohort, oldest first. A day without a published row is absent.
          */
         get: operations["get_location_history_api_market_locations__location_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/market/locations/{location_id}/ranking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Location Ranking
+         * @description The experimental locality index of the gmina a place belongs to: score, national and regional
+         *     position with their denominators, every component with its value, year, unit and contribution, and the
+         *     reasons when there is no score. Statistics about the area, never a property valuation.
+         */
+        get: operations["get_location_ranking_api_market_locations__location_id__ranking_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -643,6 +689,27 @@ export interface paths {
          *     One answer for a map, a sort and a comparison. The free tier gets the fixed top list only.
          */
         get: operations["overview_api_market_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/market/ranking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ranking Overview
+         * @description Every place this account may see with the index of its gmina, best position first; a place that has
+         *     no score (unmatched, ambiguous or too little data) is listed last with its state, never hidden.
+         */
+        get: operations["ranking_overview_api_market_ranking_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1023,6 +1090,35 @@ export interface components {
          * @enum {string}
          */
         DataStatus: "unavailable" | "fresh" | "delayed" | "stale";
+        /**
+         * DistrictOut
+         * @description One district the source named under a place, over the same rolling cohort as the place's own series.
+         *
+         *     Statistics are withheld (null with a reason) under the sufficiency threshold; the counts stay. Nothing
+         *     here is a share of the city's figures: it is what this district's own adverts say.
+         */
+        DistrictOut: {
+            /** District Id */
+            district_id: string;
+            /** Median Ppm2 */
+            median_ppm2: string | null;
+            /** Median Rent Pln */
+            median_rent_pln: string | null;
+            /** Name */
+            name: string;
+            /** Observed Count */
+            observed_count: number;
+            /** P25 Ppm2 */
+            p25_ppm2: string | null;
+            /** P75 Ppm2 */
+            p75_ppm2: string | null;
+            /** Priced Count */
+            priced_count: number;
+            /** Sufficient */
+            sufficient: boolean;
+            /** Withheld Reason */
+            withheld_reason: "insufficient_sample" | null;
+        };
         /** EmailStart */
         EmailStart: {
             /** Email */
@@ -1236,6 +1332,107 @@ export interface components {
             /** Credential */
             credential: string;
         };
+        /** IndexCohortOut */
+        IndexCohortOut: {
+            /** Name Pl */
+            name_pl: string;
+            /** Of */
+            of: number | null;
+            /** Percentile */
+            percentile: string | null;
+            /** Rank */
+            rank: number | null;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "national" | "voivodeship";
+            /** Unit Name */
+            unit_name: string | null;
+        };
+        /**
+         * IndexComponentOut
+         * @description One indicator inside the index: its value, where it stands among all gminas and what it adds.
+         */
+        IndexComponentOut: {
+            /** Basis */
+            basis: ("direct" | "proxy") | null;
+            /** Explain Pl */
+            explain_pl: string;
+            /** Favourable Pl */
+            favourable_pl: string;
+            /** Key */
+            key: string;
+            measured: components["schemas"]["TerritoryOut"] | null;
+            /** Metric Key */
+            metric_key: string;
+            /** Name Pl */
+            name_pl: string;
+            /** National Of */
+            national_of: number | null;
+            /** National Rank */
+            national_rank: number | null;
+            /** Pillar */
+            pillar: string;
+            /** Pillar Pl */
+            pillar_pl: string;
+            /** Points */
+            points: string | null;
+            /** Score */
+            score: string | null;
+            /** Unit Pl */
+            unit_pl: string;
+            /** Value */
+            value: string | null;
+            /** Weight */
+            weight: number;
+            /** Year */
+            year: number | null;
+        };
+        /**
+         * IndexOut
+         * @description An experimental statistical summary of the gmina's official indicators, not a property metric.
+         */
+        IndexOut: {
+            /** Caveat Pl */
+            caveat_pl: string;
+            /** Components */
+            components: components["schemas"]["IndexComponentOut"][];
+            gmina: components["schemas"]["TerritoryOut"] | null;
+            /**
+             * Higher Is Better
+             * @default true
+             * @constant
+             */
+            higher_is_better: true;
+            /** Method Version */
+            method_version: number;
+            /** Min Cohort */
+            min_cohort: number;
+            /** Min Weight Coverage */
+            min_weight_coverage: string;
+            /** Missing */
+            missing: string[];
+            /** Newest Year */
+            newest_year: number | null;
+            /** Oldest Year */
+            oldest_year: number | null;
+            /** Positions */
+            positions: components["schemas"]["IndexCohortOut"][];
+            /** Reasons */
+            reasons: string[];
+            /** Score */
+            score: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "ok" | "scored_not_ranked" | "not_scored" | "no_data" | "unavailable";
+            /** Title Pl */
+            title_pl: string;
+            /** Weight Coverage */
+            weight_coverage: string | null;
+        };
         /**
          * InvoiceOut
          * @description A link to the document Paddle issued for this sale. Short-lived: fetched on demand, never stored.
@@ -1306,6 +1503,46 @@ export interface components {
             /** Usable For Ranking */
             usable_for_ranking: boolean;
         };
+        /** LocationDistrictsOut */
+        LocationDistrictsOut: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Caveats */
+            caveats: string[];
+            /** Cohort Key */
+            cohort_key: string;
+            /**
+             * Coverage
+             * @enum {string}
+             */
+            coverage: "supported" | "none";
+            data_status: components["schemas"]["DataStatus"];
+            /** Districts */
+            districts: components["schemas"]["DistrictOut"][];
+            /** Location Id */
+            location_id: string;
+            /** Name */
+            name: string;
+            /** Offers In Cohort */
+            offers_in_cohort: number;
+            /** Offers With District */
+            offers_with_district: number;
+            /**
+             * Price Basis
+             * @default asking
+             * @constant
+             */
+            price_basis: "asking";
+            /**
+             * Source
+             * @default otodom
+             * @constant
+             */
+            source: "otodom";
+        };
         /** LocationHistoryOut */
         LocationHistoryOut: {
             /** Cohort Key */
@@ -1329,6 +1566,16 @@ export interface components {
              * Format: date
              */
             start: string;
+        };
+        /** LocationIndexOut */
+        LocationIndexOut: {
+            index: components["schemas"]["IndexOut"];
+            /** Location Id */
+            location_id: string;
+            mapping: components["schemas"]["PlaceMappingOut"];
+            /** Name */
+            name: string;
+            source: components["schemas"]["SourceOut"];
         };
         /** LocationPage */
         LocationPage: {
@@ -1558,6 +1805,11 @@ export interface components {
              * @enum {string}
              */
             access: "full" | "free";
+            /**
+             * Cohort Key
+             * @default all
+             */
+            cohort_key: string;
             /** Free Limit */
             free_limit: number;
             /** Free Rule Pl */
@@ -1832,6 +2084,53 @@ export interface components {
              * @enum {string}
              */
             state: "ok" | "suppressed" | "unavailable";
+        };
+        /** RankingEntryOut */
+        RankingEntryOut: {
+            /** Gmina Name */
+            gmina_name: string | null;
+            /** Location Id */
+            location_id: string;
+            /** Name */
+            name: string;
+            /** Of */
+            of: number | null;
+            /** Rank */
+            rank: number | null;
+            /** Relation */
+            relation: ("gmina" | "within_gmina") | null;
+            /** Score */
+            score: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "ok" | "scored_not_ranked" | "not_scored" | "no_data" | "unavailable";
+        };
+        /** RankingOverviewOut */
+        RankingOverviewOut: {
+            /**
+             * Access
+             * @enum {string}
+             */
+            access: "full" | "free";
+            /** Caveat Pl */
+            caveat_pl: string;
+            /** Cohort Name Pl */
+            cohort_name_pl: string;
+            /** Items */
+            items: components["schemas"]["RankingEntryOut"][];
+            /** Method Version */
+            method_version: number;
+            /** Scored Gminas */
+            scored_gminas: number;
+            source: components["schemas"]["SourceOut"];
+            /** Title Pl */
+            title_pl: string;
+            /** Total Places */
+            total_places: number;
+            /** Visible Places */
+            visible_places: number;
         };
         /** RefundOut */
         RefundOut: {
@@ -4664,6 +4963,86 @@ export interface operations {
             };
         };
     };
+    get_location_districts_api_market_locations__location_id__districts_get: {
+        parameters: {
+            query?: {
+                /** @description apartment size or rooms cohort, `all` by default */
+                cohort?: string;
+            };
+            header?: never;
+            path: {
+                /** @description stable internal place id */
+                location_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationDistrictsOut"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     get_location_history_api_market_locations__location_id__history_get: {
         parameters: {
             query?: {
@@ -4748,7 +5127,143 @@ export interface operations {
             };
         };
     };
+    get_location_ranking_api_market_locations__location_id__ranking_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description stable internal place id */
+                location_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationIndexOut"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     overview_api_market_overview_get: {
+        parameters: {
+            query?: {
+                /** @description apartment size or rooms cohort, `all` by default */
+                cohort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewOut"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    ranking_overview_api_market_ranking_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4763,7 +5278,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OverviewOut"];
+                    "application/json": components["schemas"]["RankingOverviewOut"];
                 };
             };
             /** @description Problem: UNAUTHENTICATED */

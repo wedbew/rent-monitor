@@ -709,6 +709,104 @@
         "title": "DataStatus",
         "type": "string"
       },
+      "DistrictOut": {
+        "additionalProperties": false,
+        "description": "One district the source named under a place, over the same rolling cohort as the place's own series.\n\nStatistics are withheld (null with a reason) under the sufficiency threshold; the counts stay. Nothing\nhere is a share of the city's figures: it is what this district's own adverts say.",
+        "properties": {
+          "district_id": {
+            "title": "District Id",
+            "type": "string"
+          },
+          "median_ppm2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Ppm2"
+          },
+          "median_rent_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Rent Pln"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "observed_count": {
+            "minimum": 0.0,
+            "title": "Observed Count",
+            "type": "integer"
+          },
+          "p25_ppm2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P25 Ppm2"
+          },
+          "p75_ppm2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P75 Ppm2"
+          },
+          "priced_count": {
+            "minimum": 0.0,
+            "title": "Priced Count",
+            "type": "integer"
+          },
+          "sufficient": {
+            "title": "Sufficient",
+            "type": "boolean"
+          },
+          "withheld_reason": {
+            "anyOf": [
+              {
+                "const": "insufficient_sample",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withheld Reason"
+          }
+        },
+        "required": [
+          "district_id",
+          "name",
+          "observed_count",
+          "priced_count",
+          "median_rent_pln",
+          "median_ppm2",
+          "p25_ppm2",
+          "p75_ppm2",
+          "sufficient",
+          "withheld_reason"
+        ],
+        "title": "DistrictOut",
+        "type": "object"
+      },
       "EmailStart": {
         "additionalProperties": false,
         "properties": {
@@ -1314,6 +1412,375 @@
         "title": "GoogleCredential",
         "type": "object"
       },
+      "IndexCohortOut": {
+        "additionalProperties": false,
+        "properties": {
+          "name_pl": {
+            "title": "Name Pl",
+            "type": "string"
+          },
+          "of": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Of"
+          },
+          "percentile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentile"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "scope": {
+            "enum": [
+              "national",
+              "voivodeship"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "unit_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Name"
+          }
+        },
+        "required": [
+          "name_pl",
+          "scope",
+          "rank",
+          "of",
+          "percentile",
+          "unit_name"
+        ],
+        "title": "IndexCohortOut",
+        "type": "object"
+      },
+      "IndexComponentOut": {
+        "additionalProperties": false,
+        "description": "One indicator inside the index: its value, where it stands among all gminas and what it adds.",
+        "properties": {
+          "basis": {
+            "anyOf": [
+              {
+                "enum": [
+                  "direct",
+                  "proxy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "explain_pl": {
+            "title": "Explain Pl",
+            "type": "string"
+          },
+          "favourable_pl": {
+            "title": "Favourable Pl",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "measured": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TerritoryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metric_key": {
+            "title": "Metric Key",
+            "type": "string"
+          },
+          "name_pl": {
+            "title": "Name Pl",
+            "type": "string"
+          },
+          "national_of": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "National Of"
+          },
+          "national_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "National Rank"
+          },
+          "pillar": {
+            "title": "Pillar",
+            "type": "string"
+          },
+          "pillar_pl": {
+            "title": "Pillar Pl",
+            "type": "string"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "unit_pl": {
+            "title": "Unit Pl",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "integer"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "key",
+          "metric_key",
+          "pillar",
+          "pillar_pl",
+          "name_pl",
+          "explain_pl",
+          "unit_pl",
+          "weight",
+          "value",
+          "year",
+          "basis",
+          "measured",
+          "national_rank",
+          "national_of",
+          "score",
+          "points",
+          "favourable_pl"
+        ],
+        "title": "IndexComponentOut",
+        "type": "object"
+      },
+      "IndexOut": {
+        "additionalProperties": false,
+        "description": "An experimental statistical summary of the gmina's official indicators, not a property metric.",
+        "properties": {
+          "caveat_pl": {
+            "title": "Caveat Pl",
+            "type": "string"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/IndexComponentOut"
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "gmina": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TerritoryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "higher_is_better": {
+            "const": true,
+            "default": true,
+            "title": "Higher Is Better",
+            "type": "boolean"
+          },
+          "method_version": {
+            "title": "Method Version",
+            "type": "integer"
+          },
+          "min_cohort": {
+            "title": "Min Cohort",
+            "type": "integer"
+          },
+          "min_weight_coverage": {
+            "title": "Min Weight Coverage",
+            "type": "string"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "newest_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Newest Year"
+          },
+          "oldest_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldest Year"
+          },
+          "positions": {
+            "items": {
+              "$ref": "#/components/schemas/IndexCohortOut"
+            },
+            "title": "Positions",
+            "type": "array"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "state": {
+            "enum": [
+              "ok",
+              "scored_not_ranked",
+              "not_scored",
+              "no_data",
+              "unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "title_pl": {
+            "title": "Title Pl",
+            "type": "string"
+          },
+          "weight_coverage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight Coverage"
+          }
+        },
+        "required": [
+          "state",
+          "reasons",
+          "method_version",
+          "title_pl",
+          "caveat_pl",
+          "score",
+          "weight_coverage",
+          "positions",
+          "components",
+          "missing",
+          "gmina",
+          "oldest_year",
+          "newest_year",
+          "min_weight_coverage",
+          "min_cohort"
+        ],
+        "title": "IndexOut",
+        "type": "object"
+      },
       "InvoiceOut": {
         "description": "A link to the document Paddle issued for this sale. Short-lived: fetched on demand, never stored.",
         "properties": {
@@ -1525,6 +1992,89 @@
         "title": "LocationDetailOut",
         "type": "object"
       },
+      "LocationDistrictsOut": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "caveats": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Caveats",
+            "type": "array"
+          },
+          "cohort_key": {
+            "title": "Cohort Key",
+            "type": "string"
+          },
+          "coverage": {
+            "enum": [
+              "supported",
+              "none"
+            ],
+            "title": "Coverage",
+            "type": "string"
+          },
+          "data_status": {
+            "$ref": "#/components/schemas/DataStatus"
+          },
+          "districts": {
+            "items": {
+              "$ref": "#/components/schemas/DistrictOut"
+            },
+            "title": "Districts",
+            "type": "array"
+          },
+          "location_id": {
+            "title": "Location Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "offers_in_cohort": {
+            "minimum": 0.0,
+            "title": "Offers In Cohort",
+            "type": "integer"
+          },
+          "offers_with_district": {
+            "minimum": 0.0,
+            "title": "Offers With District",
+            "type": "integer"
+          },
+          "price_basis": {
+            "const": "asking",
+            "default": "asking",
+            "title": "Price Basis",
+            "type": "string"
+          },
+          "source": {
+            "const": "otodom",
+            "default": "otodom",
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "location_id",
+          "name",
+          "data_status",
+          "coverage",
+          "cohort_key",
+          "as_of",
+          "offers_in_cohort",
+          "offers_with_district",
+          "districts",
+          "caveats"
+        ],
+        "title": "LocationDistrictsOut",
+        "type": "object"
+      },
       "LocationHistoryOut": {
         "additionalProperties": false,
         "properties": {
@@ -1571,6 +2121,37 @@
           "points"
         ],
         "title": "LocationHistoryOut",
+        "type": "object"
+      },
+      "LocationIndexOut": {
+        "additionalProperties": false,
+        "properties": {
+          "index": {
+            "$ref": "#/components/schemas/IndexOut"
+          },
+          "location_id": {
+            "title": "Location Id",
+            "type": "string"
+          },
+          "mapping": {
+            "$ref": "#/components/schemas/PlaceMappingOut"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceOut"
+          }
+        },
+        "required": [
+          "location_id",
+          "name",
+          "mapping",
+          "index",
+          "source"
+        ],
+        "title": "LocationIndexOut",
         "type": "object"
       },
       "LocationPage": {
@@ -2325,6 +2906,11 @@
               "free"
             ],
             "title": "Access",
+            "type": "string"
+          },
+          "cohort_key": {
+            "default": "all",
+            "title": "Cohort Key",
             "type": "string"
           },
           "free_limit": {
@@ -3201,6 +3787,166 @@
           "reasons"
         ],
         "title": "RankOut",
+        "type": "object"
+      },
+      "RankingEntryOut": {
+        "additionalProperties": false,
+        "properties": {
+          "gmina_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gmina Name"
+          },
+          "location_id": {
+            "title": "Location Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "of": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Of"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "relation": {
+            "anyOf": [
+              {
+                "enum": [
+                  "gmina",
+                  "within_gmina"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relation"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "state": {
+            "enum": [
+              "ok",
+              "scored_not_ranked",
+              "not_scored",
+              "no_data",
+              "unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "location_id",
+          "name",
+          "gmina_name",
+          "state",
+          "score",
+          "rank",
+          "of",
+          "relation"
+        ],
+        "title": "RankingEntryOut",
+        "type": "object"
+      },
+      "RankingOverviewOut": {
+        "additionalProperties": false,
+        "properties": {
+          "access": {
+            "enum": [
+              "full",
+              "free"
+            ],
+            "title": "Access",
+            "type": "string"
+          },
+          "caveat_pl": {
+            "title": "Caveat Pl",
+            "type": "string"
+          },
+          "cohort_name_pl": {
+            "title": "Cohort Name Pl",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RankingEntryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "method_version": {
+            "title": "Method Version",
+            "type": "integer"
+          },
+          "scored_gminas": {
+            "title": "Scored Gminas",
+            "type": "integer"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceOut"
+          },
+          "title_pl": {
+            "title": "Title Pl",
+            "type": "string"
+          },
+          "total_places": {
+            "title": "Total Places",
+            "type": "integer"
+          },
+          "visible_places": {
+            "title": "Visible Places",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "method_version",
+          "title_pl",
+          "caveat_pl",
+          "cohort_name_pl",
+          "scored_gminas",
+          "total_places",
+          "visible_places",
+          "access",
+          "items",
+          "source"
+        ],
+        "title": "RankingOverviewOut",
         "type": "object"
       },
       "RefundOut": {
@@ -7793,6 +8539,133 @@
         ]
       }
     },
+    "/api/market/locations/{location_id}/districts": {
+      "get": {
+        "description": "The districts the source names under one place, with asking-rent statistics per district.\n\nComputed from the place's own stored adverts; a place whose adverts carry no district answers\n`coverage: none` with an empty list, a district under the sufficiency threshold keeps its counts and\nwithholds its statistics.",
+        "operationId": "get_location_districts_api_market_locations__location_id__districts_get",
+        "parameters": [
+          {
+            "description": "stable internal place id",
+            "in": "path",
+            "name": "location_id",
+            "required": true,
+            "schema": {
+              "description": "stable internal place id",
+              "pattern": "^[a-z0-9-]{1,64}$",
+              "title": "Location Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "apartment size or rooms cohort, `all` by default",
+            "in": "query",
+            "name": "cohort",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "apartment size or rooms cohort, `all` by default",
+              "pattern": "^[a-z0-9_]{1,16}$",
+              "title": "Cohort",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationDistrictsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Get Location Districts",
+        "tags": [
+          "market"
+        ]
+      }
+    },
     "/api/market/locations/{location_id}/history": {
       "get": {
         "description": "Daily history of one series and cohort, oldest first. A day without a published row is absent.",
@@ -7950,16 +8823,219 @@
         ]
       }
     },
+    "/api/market/locations/{location_id}/ranking": {
+      "get": {
+        "description": "The experimental locality index of the gmina a place belongs to: score, national and regional\nposition with their denominators, every component with its value, year, unit and contribution, and the\nreasons when there is no score. Statistics about the area, never a property valuation.",
+        "operationId": "get_location_ranking_api_market_locations__location_id__ranking_get",
+        "parameters": [
+          {
+            "description": "stable internal place id",
+            "in": "path",
+            "name": "location_id",
+            "required": true,
+            "schema": {
+              "description": "stable internal place id",
+              "pattern": "^[a-z0-9-]{1,64}$",
+              "title": "Location Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationIndexOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Get Location Ranking",
+        "tags": [
+          "market"
+        ]
+      }
+    },
     "/api/market/overview": {
       "get": {
         "description": "Every place this account may see, with its headline, what it maps to and its administrative area.\n\nOne answer for a map, a sort and a comparison. The free tier gets the fixed top list only.",
         "operationId": "overview_api_market_overview_get",
+        "parameters": [
+          {
+            "description": "apartment size or rooms cohort, `all` by default",
+            "in": "query",
+            "name": "cohort",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "apartment size or rooms cohort, `all` by default",
+              "pattern": "^[a-z0-9_]{1,16}$",
+              "title": "Cohort",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OverviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Overview",
+        "tags": [
+          "market"
+        ]
+      }
+    },
+    "/api/market/ranking": {
+      "get": {
+        "description": "Every place this account may see with the index of its gmina, best position first; a place that has\nno score (unmatched, ambiguous or too little data) is listed last with its state, never hidden.",
+        "operationId": "ranking_overview_api_market_ranking_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankingOverviewOut"
                 }
               }
             },
@@ -8005,7 +9081,7 @@
             ]
           }
         },
-        "summary": "Overview",
+        "summary": "Ranking Overview",
         "tags": [
           "market"
         ]

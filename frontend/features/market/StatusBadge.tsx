@@ -12,5 +12,5 @@ const TONE: Record<DataStatus, string> = {
 
 /** The state is in the words; the colour only repeats it. */
 export function StatusBadge({ status }: { readonly status: DataStatus }) {
-  return <span className={`${styles["badge"]} ${styles[TONE[status]]}`}>{t.market.status[status]}</span>;
+  return <span className={`${styles["badge"]} ${styles[TONE[status]]}`}>{t.rynek.place.status[status]}</span>;
 }

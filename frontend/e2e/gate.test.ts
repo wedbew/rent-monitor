@@ -40,6 +40,19 @@ const entry = (over: Partial<Interaction> & Pick<Interaction, "id" | "role" | "n
   ...over,
 });
 
+describe("parseAriaSnapshot: a quoted name that has children", () => {
+  it("reads a link whose name holds a colon and which contains another node", () => {
+    const nodes = parseAriaSnapshot(
+      `- 'link "Wróć do: Białystok" [ref=e122] [cursor=pointer]':\n  - img\n- 'button "Dodaj do porównania: Toruń" [ref=e5]'`,
+    );
+    expect(nodes.map((n) => [n.role, n.name])).toEqual([
+      ["link", "Wróć do: Białystok"],
+      ["img", null],
+      ["button", "Dodaj do porównania: Toruń"],
+    ]);
+  });
+});
+
 describe("parseAriaSnapshot", () => {
   it("reads roles, names and attributes, and skips properties and plain text", () => {
     const nodes = parseAriaSnapshot(SNAPSHOT);

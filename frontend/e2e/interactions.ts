@@ -445,58 +445,38 @@ export const PAGES: readonly AppPage[] = [
     ],
   },
   {
-    id: "market",
-    path: "/app/market?view=list",
+    id: "rynek.otodom",
+    path: "/app/market/otodom",
     heading: "Rynek",
-    scenarios: ["marketEmpty", "market", "marketListFailing"],
+    scenarios: ["market", "marketFree", "marketUnlimited"],
     states: [
       {
-        name: "no-match",
+        name: "filtered",
+        path: "/app/market/otodom?view=list&cohort=rooms_2",
         scenario: () => createMarket(),
         prepare: async (page) => {
-          await page.getByRole("textbox", { name: "Nazwa miejscowości" }).fill("zzzz");
-          await page.getByRole("button", { name: "Szukaj" }).click();
-          await page.getByText("Żadna miejscowość nie pasuje do wyszukiwania").waitFor();
+          await page.getByText("Aktywny filtr: 2 pokoje").waitFor();
         },
       },
-      {
-        name: "load-more-error",
-        scenario: () => createMarket({ failPage: 1 }),
-        prepare: async (page) => {
-          await page.getByRole("button", { name: "Załaduj więcej" }).click();
-          await page
-            .getByRole("alert")
-            .filter({ hasText: "Nie udało się wczytać kolejnych miejscowości" })
-            .waitFor();
-        },
-      },
-      {
-        name: "end-of-list",
-        scenario: () => createMarket(),
-        prepare: async (page) => {
-          await page.getByRole("button", { name: "Załaduj więcej" }).click();
-          await page.getByText("To wszystkie miejscowości (38).").waitFor();
-        },
-      },
-    ],
-  },
-  {
-    id: "market.explore",
-    path: "/app/market",
-    heading: "Rynek",
-    scenarios: ["market", "marketFree"],
-    states: [
       {
         name: "selected",
-        path: "/app/market?sel=bialystok",
+        path: "/app/market/otodom?sel=bialystok",
         scenario: () => createMarket(),
         prepare: async (page) => {
-          await page.getByRole("link", { name: "Otwórz miejsce" }).waitFor();
+          await page.getByTestId("map-preview").waitFor();
+        },
+      },
+      {
+        name: "compare-empty",
+        path: "/app/market/otodom?view=compare",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByText("Wybierz co najmniej dwa miejsca").waitFor();
         },
       },
       {
         name: "compare",
-        path: "/app/market?view=compare&ids=bialystok,bydgoszcz",
+        path: "/app/market/otodom?view=compare&ids=bialystok,bydgoszcz",
         scenario: () => createMarket(),
         prepare: async (page) => {
           await page.getByRole("table", { name: "Porównanie miejsc" }).waitFor();
@@ -506,53 +486,130 @@ export const PAGES: readonly AppPage[] = [
         name: "overview-error",
         scenario: () => createMarket({ overviewFails: true }),
         prepare: async (page) => {
-          await page.getByRole("alert").filter({ hasText: "Nie udało się wczytać rynku" }).waitFor();
+          await page.getByRole("alert").filter({ hasText: "Nie udało się wczytać miejsc" }).waitFor();
         },
       },
     ],
   },
   {
-    id: "market.place",
-    path: "/app/market/torun",
-    heading: "Toruń",
+    id: "rynek.place",
+    path: "/app/market/otodom/bialystok",
+    heading: "Białystok",
     scenarios: ["market"],
     states: [
       {
-        name: "unavailable",
-        path: "/app/market/kielce",
+        name: "no-districts",
+        path: "/app/market/otodom/bydgoszcz",
         scenario: () => createMarket(),
         prepare: async (page) => {
-          await page.getByText("nie zakończyło się jeszcze pierwsze zbieranie ofert").waitFor();
+          await page.getByText("Otodom nie wskazuje dzielnic dla tego miejsca").waitFor();
         },
       },
       {
-        name: "withheld",
-        path: "/app/market/elblag",
+        name: "unavailable",
+        path: "/app/market/otodom/kielce",
         scenario: () => createMarket(),
         prepare: async (page) => {
-          await page.getByText("Za mało ofert z ceną, by podać medianę").first().waitFor();
+          await page.getByText("Brak danych dla tego miejsca").waitFor();
         },
       },
       {
         name: "not-found",
-        path: "/app/market/nie-ma-takiej",
+        path: "/app/market/otodom/nie-ma-takiej",
         scenario: () => createMarket(),
         prepare: async (page) => {
-          await page.getByText("Nie ma takiej miejscowości").waitFor();
+          await page.getByText("Nie ma takiego miejsca").waitFor();
         },
       },
       {
         name: "detail-error",
         scenario: () => createMarket({ detailFails: true }),
         prepare: async (page) => {
-          await page.getByRole("alert").filter({ hasText: "Nie udało się wczytać miejscowości" }).waitFor();
+          await page.getByRole("alert").filter({ hasText: "Nie udało się wczytać miejsca" }).waitFor();
         },
       },
       {
         name: "history-error",
         scenario: () => createMarket({ historyFails: true }),
         prepare: async (page) => {
-          await page.getByRole("alert").filter({ hasText: "Nie udało się wczytać miejscowości" }).waitFor();
+          await page
+            .getByRole("alert")
+            .filter({ hasText: "Nie udało się wczytać historii odczytów" })
+            .waitFor();
+        },
+      },
+      {
+        name: "districts-error",
+        scenario: () => createMarket({ districtsFail: true }),
+        prepare: async (page) => {
+          await page.getByRole("alert").filter({ hasText: "Nie udało się wczytać dzielnic" }).waitFor();
+        },
+      },
+    ],
+  },
+  {
+    id: "rynek.district",
+    path: "/app/market/otodom/bialystok/centrum",
+    heading: "Centrum",
+    scenarios: ["market"],
+    states: [
+      {
+        name: "insufficient",
+        path: "/app/market/otodom/bialystok/rubinkowo",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByText("Za mało ofert z ceną, by podać medianę", { exact: true }).first().waitFor();
+        },
+      },
+      {
+        name: "unsupported",
+        path: "/app/market/otodom/bydgoszcz/centrum",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByText("Otodom nie wskazuje dzielnic dla tego miejsca").first().waitFor();
+        },
+      },
+      {
+        name: "missing",
+        path: "/app/market/otodom/bialystok/nigdzie",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByText("Nie ma takiej dzielnicy w tym miejscu").waitFor();
+        },
+      },
+    ],
+  },
+  {
+    id: "rynek.gus",
+    path: "/app/market/gus/bialystok",
+    heading: "Białystok",
+    scenarios: ["market", "marketFree"],
+    states: [
+      {
+        name: "overview",
+        path: "/app/market/gus",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByRole("table", { name: /Mianownik pozycji/ }).waitFor();
+        },
+      },
+      {
+        name: "compare",
+        path: "/app/market/gus/bialystok?ids=bialystok,bydgoszcz",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByRole("table", { name: "Porównanie wskaźników" }).waitFor();
+        },
+      },
+      {
+        name: "ranking-error",
+        scenario: () => createMarket({ rankingFails: true }),
+        prepare: async (page) => {
+          await page
+            .getByRole("alert")
+            .filter({ hasText: "Nie udało się wczytać rankingu" })
+            .first()
+            .waitFor();
         },
       },
     ],
@@ -1002,236 +1059,410 @@ export const INTERACTIONS: readonly Interaction[] = [
     outcome: "url",
   },
 
-  // Rynek: mapa, lista i porównanie.
-  ...[
-    ["map", "Mapa"],
-    ["list", "Lista"],
-    ["compare", "Porównanie"],
-  ].map(([id = "", label = ""]): Interaction => ({
-    id: `market.explore.view.${id}`,
-    page: "market.explore",
-    scenarios: ["market", "marketFree"],
-    role: "button",
-    name: label,
-    outcome: "url",
-  })),
+  // Rynek: two tabs (Otodom, GUS), the filters, the map, the comparison, a place, a district, the ranking (RM-439).
+  ...(["rynek.otodom", "rynek.place", "rynek.district", "rynek.gus"] as const).flatMap(
+    (page): Interaction[] => [
+      { id: `${page}.tab.otodom`, page, role: "link", name: /^Otodom/, outcome: "url" },
+      { id: `${page}.tab.gus`, page, role: "link", name: /^GUS/, outcome: "url" },
+    ],
+  ),
+  ...(["rynek.otodom", "rynek.place", "rynek.district"] as const).flatMap((page): Interaction[] => [
+    {
+      id: `${page}.filter.area`,
+      page,
+      role: "radio",
+      name: /^(Poniżej 30 m²|30 do 45 m²|45 do 60 m²|60 do 80 m²|80 m² i więcej)$/,
+      outcome: "url",
+    },
+    {
+      id: `${page}.filter.rooms`,
+      page,
+      role: "radio",
+      name: /^(1 pokój|2 pokoje|3 pokoje|4 pokoje i więcej)$/,
+      outcome: "url",
+    },
+  ]),
   {
-    id: "market.explore.metric",
-    page: "market.explore",
-    scenarios: ["market", "marketFree"],
+    id: "rynek.otodom.filter.reset",
+    page: "rynek.otodom",
+    state: "filtered",
+    role: "button",
+    name: "Wyczyść filtr",
+    outcome: "url",
+  },
+  {
+    id: "rynek.otodom.view.map",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
+    role: "button",
+    name: "Mapa",
+    outcome: "url",
+  },
+  {
+    id: "rynek.otodom.view.list",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
+    role: "button",
+    name: "Lista",
+    outcome: "url",
+  },
+  {
+    id: "rynek.otodom.metric",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
     role: "combobox",
-    name: "Kolor mapy",
+    name: "Co pokazuje kolor",
     outcome: "url",
   },
   {
-    id: "market.explore.sort",
-    page: "market.explore",
-    scenarios: ["market", "marketFree"],
+    id: "rynek.otodom.sort",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
     role: "combobox",
-    name: "Kolejność miejsc",
+    name: "Kolejność na liście",
     outcome: "url",
   },
   {
-    id: "market.explore.zoom-in",
-    page: "market.explore",
-    scenarios: ["market", "marketFree"],
+    id: "rynek.otodom.compare-cta",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
     role: "button",
-    name: "Przybliż",
+    name: /^Porównaj miejsca/,
+    outcome: "url",
+  },
+  {
+    id: "rynek.map.zoom-in",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
+    role: "button",
+    name: "Przybliż mapę",
     outcome: "state",
   },
   {
-    id: "market.explore.zoom-out",
-    page: "market.explore",
-    scenarios: ["market", "marketFree"],
+    id: "rynek.map.zoom-out",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
     role: "button",
-    name: "Oddal",
+    name: "Oddal mapę",
     outcome: "state",
   },
   {
-    id: "market.explore.reset",
-    page: "market.explore",
-    scenarios: ["market", "marketFree"],
+    id: "rynek.map.reset",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
     role: "button",
-    name: "Cała Polska",
+    name: "Pokaż całą Polskę",
     outcome: "state",
   },
   {
-    id: "market.explore.pick",
-    page: "market.explore",
-    scenarios: ["market", "marketFree"],
+    id: "rynek.map.cluster",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
+    role: "button",
+    name: /^Skupisko: /,
+    outcome: "state",
+  },
+  {
+    id: "rynek.map.marker",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
+    role: "button",
+    name: /: (?:\d|za mało ofert|brak danych)/,
+    outcome: "url",
+  },
+  {
+    id: "rynek.otodom.search",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
+    role: "textbox",
+    name: "Szukaj miejsca na liście",
+    outcome: "state",
+  },
+  {
+    id: "rynek.otodom.pick",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
     role: "button",
     name: /^Wybierz miejsce /,
     outcome: "url",
   },
   {
-    id: "market.explore.compare.add",
-    page: "market.explore",
-    scenarios: ["market", "marketFree"],
-    role: "button",
-    name: /^Dodaj do porównania /,
-    outcome: "url",
-  },
-  {
-    id: "market.explore.open",
-    page: "market.explore",
-    state: "selected",
+    id: "rynek.otodom.open",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
     role: "link",
-    name: "Otwórz miejsce",
+    name: /^Otwórz miejsce /,
     outcome: "url",
   },
   {
-    id: "market.explore.compare.remove",
-    page: "market.explore",
-    state: "compare",
+    id: "rynek.otodom.compare-toggle",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketFree", "marketUnlimited"],
     role: "button",
-    name: /^Usuń z porównania /,
+    name: /^(Dodaj do porównania|Usuń z porównania) /,
     outcome: "url",
   },
   {
-    id: "market.explore.compare.place",
-    page: "market.explore",
-    state: "compare",
+    id: "rynek.otodom.more",
+    page: "rynek.otodom",
+    scenarios: ["market", "marketUnlimited"],
+    role: "button",
+    name: "Pokaż więcej miejsc",
+    outcome: "state",
+  },
+  {
+    id: "rynek.otodom.upgrade",
+    page: "rynek.otodom",
+    scenarios: ["marketFree"],
     role: "link",
-    name: /^[A-ZĄĆĘŁŃÓŚŹŻ][\p{L} -]+$/u,
+    name: "Kup pakiet raportów",
     outcome: "url",
   },
   {
-    id: "market.explore.retry",
-    page: "market.explore",
+    id: "rynek.otodom.retry",
+    page: "rynek.otodom",
     state: "overview-error",
     role: "button",
     name: "Spróbuj ponownie",
     outcome: "request",
   },
   {
-    id: "market.explore.upgrade",
-    page: "market.explore",
-    scenarios: ["marketFree"],
+    id: "rynek.preview.open",
+    page: "rynek.otodom",
+    state: "selected",
     role: "link",
-    name: "Kup pakiet raportów",
-    outcome: "url",
-  },
-
-  // The same view switch on the list view.
-  ...[
-    ["map", "Mapa"],
-    ["compare", "Porównanie"],
-    ["list", "Lista"],
-  ].map(([id = "", label = ""]): Interaction => ({
-    id: `market.list.view.${id}`,
-    page: "market",
-    role: "button",
-    name: label,
-    outcome: "url",
-  })),
-  // Rynek.
-  { id: "market.search", page: "market", role: "textbox", name: "Nazwa miejscowości", outcome: "state" },
-  { id: "market.search.submit", page: "market", role: "button", name: "Szukaj", outcome: "url" },
-  {
-    id: "market.clear",
-    page: "market",
-    state: "no-match",
-    role: "button",
-    name: "Wyczyść wyszukiwanie",
+    name: "Otwórz miejsce",
     outcome: "url",
   },
   {
-    id: "market.place",
-    page: "market",
-    scenarios: ["market"],
+    id: "rynek.preview.close",
+    page: "rynek.otodom",
+    state: "selected",
+    role: "button",
+    name: "Zamknij podgląd",
+    outcome: "url",
+  },
+  {
+    id: "rynek.preview.compare",
+    page: "rynek.otodom",
+    state: "selected",
+    role: "button",
+    name: /^(Dodaj do porównania|Usuń z porównania|Limit porównania osiągnięty)$/,
+    outcome: "url",
+  },
+  {
+    id: "rynek.compare.back",
+    page: "rynek.otodom",
+    state: "compare",
+    role: "button",
+    name: "Wróć do mapy",
+    outcome: "url",
+  },
+  {
+    id: "rynek.compare.clear",
+    page: "rynek.otodom",
+    state: "compare",
+    role: "button",
+    name: "Wyczyść porównanie",
+    outcome: "url",
+  },
+  {
+    id: "rynek.compare.search",
+    page: "rynek.otodom",
+    state: "compare",
+    role: "textbox",
+    name: "Szukaj miejsca do dodania",
+    outcome: "state",
+  },
+  {
+    id: "rynek.compare.place",
+    page: "rynek.otodom",
+    state: "compare",
     role: "link",
     name: /^[A-ZĄĆĘŁŃÓŚŹŻ][\p{L} -]+$/u,
     outcome: "url",
   },
   {
-    id: "market.more",
-    page: "market",
-    scenarios: ["market"],
+    id: "rynek.compare.back-empty",
+    page: "rynek.otodom",
+    state: "compare-empty",
     role: "button",
-    name: "Załaduj więcej",
-    outcome: "request",
-  },
-  {
-    id: "market.retry",
-    page: "market",
-    scenarios: ["marketListFailing"],
-    role: "button",
-    name: "Spróbuj ponownie",
-    outcome: "request",
-  },
-  {
-    id: "market.place.back",
-    page: "market.place",
-    role: "link",
-    name: "Wszystkie miejscowości",
+    name: "Wróć do mapy",
     outcome: "url",
   },
   {
-    id: "market.place.series.cohort",
-    page: "market.place",
-    scenarios: ["market"],
+    id: "rynek.compare.add-empty",
+    page: "rynek.otodom",
+    state: "compare-empty",
     role: "button",
-    name: "Okno 90 dni",
+    name: /^Dodaj do porównania /,
     outcome: "url",
   },
   {
-    id: "market.place.series.additions",
-    page: "market.place",
-    scenarios: ["market"],
+    id: "rynek.compare.search-empty",
+    page: "rynek.otodom",
+    state: "compare-empty",
+    role: "textbox",
+    name: "Szukaj miejsca do dodania",
+    outcome: "state",
+  },
+  // The place page.
+  { id: "rynek.place.crumb", page: "rynek.place", role: "link", name: "Otodom", outcome: "url" },
+  { id: "rynek.place.back", page: "rynek.place", role: "link", name: "Wszystkie miejsca", outcome: "url" },
+  {
+    id: "rynek.place.series.cohort",
+    page: "rynek.place",
+    role: "button",
+    name: "Okno 90 dób",
+    outcome: "url",
+  },
+  {
+    id: "rynek.place.series.additions",
+    page: "rynek.place",
     role: "button",
     name: "Nowe ogłoszenia dnia",
     outcome: "url",
   },
-  ...[30, 90, 365].map((days): Interaction => ({
-    id: `market.place.period.${String(days)}`,
-    page: "market.place",
-    scenarios: ["market"],
+  ...([30, 90, 365] as const).map((days): Interaction => ({
+    id: `rynek.place.period.${String(days)}`,
+    page: "rynek.place",
     role: "button",
     name: `${String(days)} dni`,
     outcome: "url",
   })),
   {
-    id: "market.place.cohort",
-    page: "market.place",
-    scenarios: ["market"],
-    role: "combobox",
-    name: "Grupa mieszkań",
+    id: "rynek.place.group",
+    page: "rynek.place",
+    role: "button",
+    name: /^Pokaż tylko grupę /,
     outcome: "url",
   },
   {
-    id: "market.place.cohort.listbox",
-    page: "market.place",
-    scenarios: ["market"],
-    role: "listbox",
-    name: "Grupa mieszkań",
-    outcome: "state",
-    within: "market.place.cohort.list",
-  },
-  ...[
-    ["all", "Wszystkie"],
-    ["rooms_2", "2 pokoje"],
-    ["size_45_60", "45–60 m²"],
-  ].map(([id = "", label = ""]): Interaction => ({
-    id: `market.place.cohort.option.${id}`,
-    page: "market.place",
-    scenarios: ["market"],
-    role: "option",
-    name: label,
+    id: "rynek.place.district-bar",
+    page: "rynek.place",
+    role: "link",
+    name: /^(Centrum|Północ|Południe|Rubinkowo)$/,
     outcome: "url",
-    within: "market.place.cohort.list",
-  })),
+  },
+  { id: "rynek.place.gus", page: "rynek.place", role: "link", name: "Zobacz profil GUS", outcome: "url" },
   {
-    id: "market.place.detail-retry",
-    page: "market.place",
+    id: "rynek.place.back-nodistricts",
+    page: "rynek.place",
+    state: "no-districts",
+    role: "link",
+    name: "Wszystkie miejsca",
+    outcome: "url",
+  },
+  {
+    id: "rynek.place.back-unavailable",
+    page: "rynek.place",
+    state: "unavailable",
+    role: "link",
+    name: "Wszystkie miejsca",
+    outcome: "url",
+  },
+  {
+    id: "rynek.place.back-notfound",
+    page: "rynek.place",
+    state: "not-found",
+    role: "link",
+    name: "Wszystkie miejsca",
+    outcome: "url",
+  },
+  {
+    id: "rynek.place.retry-detail",
+    page: "rynek.place",
     state: "detail-error",
     role: "button",
     name: "Spróbuj ponownie",
     outcome: "request",
   },
   {
-    id: "market.place.history-retry",
-    page: "market.place",
+    id: "rynek.place.retry-history",
+    page: "rynek.place",
     state: "history-error",
+    role: "button",
+    name: "Spróbuj ponownie",
+    outcome: "request",
+  },
+  {
+    id: "rynek.place.retry-districts",
+    page: "rynek.place",
+    state: "districts-error",
+    role: "button",
+    name: "Spróbuj ponownie",
+    outcome: "request",
+  },
+  // The district page.
+  { id: "rynek.district.crumb", page: "rynek.district", role: "link", name: "Otodom", outcome: "url" },
+  {
+    id: "rynek.district.crumb-place",
+    page: "rynek.district",
+    role: "link",
+    name: /^(Białystok|Bydgoszcz)$/,
+    outcome: "url",
+  },
+  { id: "rynek.district.back", page: "rynek.district", role: "link", name: /^Wróć do: /, outcome: "url" },
+  {
+    id: "rynek.district.other",
+    page: "rynek.district",
+    role: "link",
+    name: /^(Północ|Południe|Rubinkowo|Centrum)$/,
+    outcome: "url",
+  },
+  // The GUS tab.
+  {
+    id: "rynek.gus.picker.search",
+    page: "rynek.gus",
+    scenarios: ["market", "marketFree"],
+    role: "textbox",
+    name: "Miejsce",
+    outcome: "state",
+  },
+  {
+    id: "rynek.gus.picker.pick",
+    page: "rynek.gus",
+    scenarios: ["market", "marketFree"],
+    role: "button",
+    name: /^[A-ZĄĆĘŁŃÓŚŹŻ][\p{L} -]+$/u,
+    outcome: "url",
+  },
+  {
+    id: "rynek.gus.leaderboard.pick",
+    page: "rynek.gus",
+    scenarios: ["market", "marketFree"],
+    role: "button",
+    name: /^Pokaż wynik /,
+    outcome: "url",
+  },
+  {
+    id: "rynek.gus.leaderboard.compare",
+    page: "rynek.gus",
+    scenarios: ["market", "marketFree"],
+    role: "button",
+    name: /^(Dodaj do porównania|Usuń z porównania) /,
+    outcome: "url",
+  },
+  {
+    id: "rynek.gus.leaderboard.more",
+    page: "rynek.gus",
+    scenarios: ["market"],
+    role: "button",
+    name: "Pokaż więcej miejsc",
+    outcome: "state",
+  },
+  {
+    id: "rynek.gus.component",
+    page: "rynek.gus",
+    scenarios: ["market", "marketFree"],
+    role: "link",
+    name: /^Szczegóły wskaźnika: /,
+    outcome: "url",
+  },
+  {
+    id: "rynek.gus.retry",
+    page: "rynek.gus",
+    state: "ranking-error",
     role: "button",
     name: "Spróbuj ponownie",
     outcome: "request",
@@ -1782,16 +2013,6 @@ export const INTERACTIONS: readonly Interaction[] = [
 ];
 
 export const POPUPS: readonly Popup[] = [
-  {
-    id: "market.place.cohort.list",
-    page: "market.place",
-    trigger: "market.place.cohort",
-    role: "listbox",
-    name: "Grupa mieszkań",
-    backdrop: "closes",
-    modal: false,
-    scenarios: ["market"],
-  },
   {
     id: "analyses.status.list",
     page: "analyses",

@@ -459,6 +459,14 @@ class World:
                         area_m2=Decimal(50),
                         rooms=2,
                         observed_at=seen,
+                        district_id=(
+                            f"cala-polska/{loc}/{'centrum' if i < 10 else 'rubinkowo'}"
+                            if loc == "smoke-torun"
+                            else None
+                        ),
+                        district_name=(
+                            ("Centrum" if i < 10 else "Rubinkowo") if loc == "smoke-torun" else None
+                        ),  # Toruń: two districts (10 and 2 adverts); the other place's source names none
                     )
                     for i in range(count)
                 ]

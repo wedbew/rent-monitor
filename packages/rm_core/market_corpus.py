@@ -40,10 +40,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from rm_core.db.models import (
     MarketCatalogue,
+    MarketDistrict,
     MarketImportCheckpoint,
     MarketImportRun,
     MarketLocation,
     MarketOffer,
+    MarketOfferDistrict,
+    MarketOfferRooms,
 )
 
 DATASET = "otodom_rental"
@@ -247,6 +250,7 @@ class PgCorpus:
                     )
                 }
             rest = [int(o.source_offer_id) for o in offers if int(o.source_offer_id) not in inserted_ids]
+            await self._attach_districts(s, row.location_id, observations, inserted_ids)
             owner: dict[int, str] = {}
             if rest:
                 found = await s.execute(
@@ -269,6 +273,115 @@ class PgCorpus:
                 location_conflicts=conflicts,
                 unpriced=unpriced,
             )
+
+    async def _attach_districts(
+        self,
+        s: AsyncSession,
+        location_id: str,
+        observations: Sequence[OfferObservation],
+        fresh_ids: set[int],
+    ) -> int:
+        """Store the district of every observation whose offer belongs to `location_id`. The offer is read
+        first, so a conflicting place or an unknown id attaches nothing; the offer row is never touched."""
+        await self._attach_rooms(s, location_id, observations)
+        wanted = {
+            int(o.source_offer_id): o
+            for o in observations
+            if o.district_id is not None and o.district_name is not None
+        }
+        if not wanted:
+            return 0
+        mine = {
+            int(i)
+            for i in await s.scalars(
+                select(MarketOffer.source_offer_id).where(
+                    MarketOffer.source == "otodom",
+                    MarketOffer.location_id == location_id,
+                    MarketOffer.source_offer_id.in_([Decimal(i) for i in wanted]),
+                )
+            )
+        } | (fresh_ids & wanted.keys())
+        chosen = {i: o for i, o in wanted.items() if i in mine}
+        if not chosen:
+            return 0
+        names = {o.district_id: o.district_name for o in chosen.values()}
+        await s.execute(
+            insert(MarketDistrict)
+            .values([{"location_id": location_id, "district_id": d, "name": n} for d, n in names.items()])
+            .on_conflict_do_nothing(index_elements=["location_id", "district_id"])
+        )
+        attached = await s.scalars(
+            insert(MarketOfferDistrict)
+            .values(
+                [
+                    {
+                        "source": "otodom",
+                        "source_offer_id": Decimal(i),
+                        "location_id": location_id,
+                        "district_id": o.district_id,
+                    }
+                    for i, o in sorted(chosen.items())
+                ]
+            )
+            .on_conflict_do_nothing(index_elements=["source", "source_offer_id"])
+            .returning(MarketOfferDistrict.source_offer_id)
+        )
+        return len(attached.all())
+
+    async def district_counts(self, location_id: str) -> dict[str, tuple[str, int]]:
+        async with self._sessions() as s:
+            rows = await s.execute(
+                select(
+                    MarketDistrict.district_id,
+                    MarketDistrict.name,
+                    func.count(MarketOfferDistrict.source_offer_id),
+                )
+                .join(
+                    MarketOfferDistrict,
+                    (MarketOfferDistrict.location_id == MarketDistrict.location_id)
+                    & (MarketOfferDistrict.district_id == MarketDistrict.district_id),
+                    isouter=True,
+                )
+                .where(MarketDistrict.location_id == location_id)
+                .group_by(MarketDistrict.district_id, MarketDistrict.name)
+            )
+            return {d: (n, int(c)) for d, n, c in rows}
+
+    async def _attach_rooms(
+        self, s: AsyncSession, location_id: str, observations: Sequence[OfferObservation]
+    ) -> None:
+        """Store the room count for offers of this place that were stored without one. Insert-once."""
+        counted = {int(o.source_offer_id): o.rooms for o in observations if o.rooms is not None}
+        if not counted:
+            return
+        missing = (
+            await s.scalars(
+                select(MarketOffer.source_offer_id).where(
+                    MarketOffer.source == "otodom",
+                    MarketOffer.location_id == location_id,
+                    MarketOffer.rooms.is_(None),
+                    MarketOffer.source_offer_id.in_([Decimal(i) for i in counted]),
+                )
+            )
+        ).all()
+        if not missing:
+            return
+        await s.execute(
+            insert(MarketOfferRooms)
+            .values(
+                [
+                    {"source": "otodom", "source_offer_id": Decimal(i), "rooms": counted[int(i)]}
+                    for i in missing
+                ]
+            )
+            .on_conflict_do_nothing(index_elements=["source", "source_offer_id"])
+        )
+
+    async def record_districts(
+        self, location_id: str, observations: Sequence[OfferObservation], now: datetime
+    ) -> int:
+        async with self._sessions() as s, s.begin():
+            return await self._attach_districts(s, location_id, observations, set())
 
     async def finish_run(
         self, run_id: str, *, state: RunState, now: datetime, error_category: str | None = None

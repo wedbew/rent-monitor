@@ -1,0 +1,77 @@
+{
+  "body": {
+    "access": "full",
+    "caveat_pl": "To eksperymentalne podsumowanie oficjalnych wskaźników GUS: porównuje gminę z innymi gminami w Polsce. Nie jest wyceną nieruchomości, prognozą czynszów ani cen i nie wchodzi do żadnego wyniku finansowego.",
+    "cohort_name_pl": "gminy w Polsce z kompletnym indeksem",
+    "items": [
+      {
+        "gmina_name": null,
+        "location_id": "smoke-gdansk",
+        "name": "Gdańsk",
+        "of": null,
+        "rank": null,
+        "relation": null,
+        "score": null,
+        "state": "unavailable"
+      },
+      {
+        "gmina_name": null,
+        "location_id": "smoke-gdynia",
+        "name": "Gdynia",
+        "of": null,
+        "rank": null,
+        "relation": null,
+        "score": null,
+        "state": "unavailable"
+      },
+      {
+        "gmina_name": null,
+        "location_id": "smoke-kielce",
+        "name": "Kielce",
+        "of": null,
+        "rank": null,
+        "relation": null,
+        "score": null,
+        "state": "unavailable"
+      },
+      {
+        "gmina_name": null,
+        "location_id": "smoke-torun",
+        "name": "Toruń",
+        "of": null,
+        "rank": null,
+        "relation": null,
+        "score": null,
+        "state": "unavailable"
+      }
+    ],
+    "method_version": 1,
+    "scored_gminas": 0,
+    "source": {
+      "attribution_pl": "Źródło: GUS, Bank Danych Lokalnych (BDL); obliczenia własne.",
+      "name": "GUS BDL",
+      "note_pl": "Dane roczne, najnowszy opublikowany rok każdego wskaźnika.",
+      "url": "https://example.test/fixture/72"
+    },
+    "title_pl": "Eksperymentalny indeks warunków lokalnych",
+    "total_places": 4,
+    "visible_places": 4
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/market/ranking",
+    "method": "GET",
+    "operation_id": "ranking_overview_api_market_ranking_get",
+    "path": "/api/market/ranking"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/ranking"
+  },
+  "scenario": "no_gus_release_yet",
+  "status": 200
+}

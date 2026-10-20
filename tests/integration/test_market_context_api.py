@@ -31,7 +31,9 @@ from test_me_saved_admin import MakeToken, app, make_admin  # noqa: F401  (fixtu
 pytestmark = [pytest.mark.integration]
 
 TABLES = (
-    "app.market_location_territory, app.market_daily_summary, app.market_offer, app.market_import_run,"
+    "app.market_location_territory, app.market_daily_summary,"
+    " app.market_offer_rooms, app.market_offer_district, app.market_district,"
+    " app.market_offer, app.market_import_run,"
     " app.market_import_checkpoint, app.market_location, app.market_catalogue, app.location_quota_stamp,"
     " app.location_publication_pointer, app.location_publication, app.location_ingest_run,"
     " app.location_observation, app.location_territory, app.location_reference"

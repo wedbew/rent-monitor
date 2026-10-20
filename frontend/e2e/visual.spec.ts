@@ -60,18 +60,55 @@ for (const theme of THEMES) {
       await shoot(page, "dashboard-loaded", { fullPage: true });
     });
 
-    test("market: the map, the list of places and one place", async ({ page, serve }) => {
-      await serve("market");
-      await page.goto("/app/market");
-      await expect(page.locator("path[data-place]").first()).toBeVisible();
-      await shoot(page, "market-map");
-      await page.goto("/app/market?view=list");
-      await expect(page.getByRole("table")).toBeVisible();
-      await shoot(page, "market-list");
-      await page.goto("/app/market/torun");
-      await expect(page.getByRole("region", { name: "Ostatni odczyt" })).toBeVisible();
-      await expect(page.getByRole("article", { name: "Ludność ogółem" })).toBeVisible();
-      await shoot(page, "market-place");
+    const MARKET: [string, string, string, string, boolean][] = [
+      [
+        "the map with a preview",
+        "market-map-preview",
+        "/app/market/otodom?sel=bialystok",
+        "map-preview",
+        false,
+      ],
+      [
+        "the list filtered to two rooms",
+        "market-list-rooms",
+        "/app/market/otodom?view=list&cohort=rooms_2",
+        "",
+        false,
+      ],
+      [
+        "the comparison",
+        "market-compare",
+        "/app/market/otodom?view=compare&ids=bialystok,bydgoszcz",
+        "",
+        true,
+      ],
+      ["a place", "market-place", "/app/market/otodom/bialystok", "", true],
+      ["a district", "market-district", "/app/market/otodom/bialystok/centrum", "", true],
+      ["the GUS ranking", "market-gus", "/app/market/gus/bialystok", "ranking-card", true],
+    ];
+    for (const [title, name, url, testId, full] of MARKET) {
+      test(`market: ${title}`, async ({ page, serve }) => {
+        test.slow();
+        await serve("market");
+        await page.goto(url);
+        if (testId !== "") await expect(page.getByTestId(testId)).toBeVisible({ timeout: 15_000 });
+        else await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        if (full) await expect(page.locator("[aria-busy=true]")).toHaveCount(0, { timeout: 15_000 });
+        if (testId === "map-preview") await page.getByTestId("market-map").scrollIntoViewIfNeeded();
+        await page.waitForTimeout(600); // lazy chart chunks and the map camera settle
+        await shoot(page, name, { fullPage: full });
+      });
+    }
+
+    test("market: a restricted account and an empty catalogue", async ({ page, serve }) => {
+      await serve("marketFree");
+      await page.goto("/app/market/otodom?view=list");
+      await expect(page.getByText(/Konto darmowe/)).toBeVisible();
+      await shoot(page, "market-restricted");
+      await serve("marketEmpty");
+      await page.goto("/app/market/otodom");
+      await expect(page.getByText("Filtry mieszkań")).toBeVisible();
+      await shoot(page, "market-empty");
     });
 
     test("analyses: cards, table and the saved scope", async ({ page, serve }) => {
