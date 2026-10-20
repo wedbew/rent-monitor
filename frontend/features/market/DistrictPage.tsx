@@ -187,6 +187,7 @@ export function DistrictPage() {
       <section aria-labelledby="district-vs-city" className={styles["section"]}>
         <h2 id="district-vs-city">{t.rynek.district.vsCity}</h2>
         <ChartFigure
+          compact
           title={t.rynek.district.vsCity}
           meta={{
             ...ppm2Meta(ctx),

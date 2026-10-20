@@ -34,7 +34,8 @@ interface BarCompareProps {
  * why in words: an unknown is not a short bar and never a zero. Bars differ by fill pattern as well as colour.
  */
 export function BarCompare({ items, max, label }: BarCompareProps) {
-  const scale = max ?? Math.max(...items.map((i) => i.value ?? 0), 1e-9);
+  // The quartile band is drawn on the same scale, so its upper end counts: a band past the track would run under the value.
+  const scale = max ?? Math.max(...items.flatMap((i) => [i.value ?? 0, i.high ?? 0]), 1e-9);
   return (
     <ul className={styles["bars"]} aria-label={label}>
       {items.map((item) => {
@@ -62,7 +63,7 @@ export function BarCompare({ items, max, label }: BarCompareProps) {
                   className={styles["barRange"]}
                   style={{
                     left: `${Math.max(0, (low / scale) * 100)}%`,
-                    width: `${Math.max(1, ((high - low) / scale) * 100)}%`,
+                    width: `${Math.max(1, Math.min(100 - Math.max(0, (low / scale) * 100), ((high - low) / scale) * 100))}%`,
                   }}
                 />
               ) : null}

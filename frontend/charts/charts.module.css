@@ -144,6 +144,10 @@
   min-height: 16rem;
 }
 
+.chartBoxCompact {
+  min-width: 0;
+}
+
 .caption {
   display: grid;
   gap: var(--space-1);

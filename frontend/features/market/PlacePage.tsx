@@ -269,6 +269,7 @@ function Structure({
       <h2 id="place-structure">{t.rynek.place.structure.heading}</h2>
       <div className={styles["pair"]}>
         <ChartFigure
+          compact
           title={t.rynek.place.structure.sizeTitle}
           meta={{ ...meta, measure: t.rynek.place.structure.sizeTitle }}
           table={
@@ -289,6 +290,7 @@ function Structure({
           <BarCompare items={sizes} max={max} label={t.rynek.place.structure.sizeTitle} />
         </ChartFigure>
         <ChartFigure
+          compact
           title={t.rynek.place.structure.roomsTitle}
           meta={{ ...meta, measure: t.rynek.place.structure.roomsTitle }}
           table={
@@ -367,6 +369,7 @@ function Districts({
             <InlineNotice tone="warning" title={t.rynek.place.districts.emptyGroup} live="status" />
           ) : null}
           <ChartFigure
+            compact
             title={t.rynek.place.districts.chartTitle}
             meta={{
               ...ppm2Meta({

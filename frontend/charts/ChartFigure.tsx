@@ -16,6 +16,8 @@ interface ChartFigureProps {
   /** A sentence about the chart that is not part of the five answers (a gap, a single reading). */
   readonly note?: ReactNode;
   readonly headingLevel?: 2 | 3 | 4;
+  /** Rows of bars size themselves; only a lazily loaded chart reserves height. */
+  readonly compact?: boolean;
 }
 
 /**
@@ -31,6 +33,7 @@ export function ChartFigure({
   table,
   note,
   headingLevel = 3,
+  compact = false,
 }: ChartFigureProps) {
   const id = useId();
   const Heading = `h${headingLevel}` as const;
@@ -42,7 +45,7 @@ export function ChartFigure({
       <p className={styles["figureLead"]}>{meta.interpretation}</p>
       {note === undefined ? null : <p className={styles["note"]}>{note}</p>}
       {legend === undefined ? null : <ul className={styles["legend"]}>{legend}</ul>}
-      <div className={styles["chartBox"]}>{children}</div>
+      <div className={compact ? styles["chartBoxCompact"] : styles["chartBox"]}>{children}</div>
       <figcaption id={`${id}-caption`} className={styles["caption"]}>
         <p>
           {meta.measure}, {meta.unit}. {meta.area}. {meta.period}.

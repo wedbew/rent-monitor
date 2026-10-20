@@ -210,6 +210,7 @@ export function RankingCard({
 
       {scored ? (
         <ChartFigure
+          compact
           title={t.rynek.gus.components.chartTitle}
           meta={{
             measure: t.rynek.gus.components.chartTitle,
