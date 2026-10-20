@@ -36,7 +36,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 pytestmark = [pytest.mark.integration]
 
 TABLES = (
-    "app.market_offer, app.market_import_run, app.market_import_checkpoint,"
+    "app.market_offer_district, app.market_district,"
+    " app.market_offer, app.market_import_run, app.market_import_checkpoint,"
     " app.market_location_territory, app.market_location, app.market_catalogue"
 )
 D0 = datetime(2026, 9, 1, 1, 10, tzinfo=UTC)  # the bootstrap night; target floors to 01:00
@@ -342,3 +343,68 @@ async def test_a_long_place_id_still_gets_a_valid_run_id(corpus: PgCorpus) -> No
     assert out.run_id is not None
     assert len(out.run_id) <= 64
     assert out.run_id.startswith("bootstrap-")
+
+
+def in_district(offer: dict, district: str, name: str, place: str = "testowe/alfa") -> dict:
+    """The tile's reverse geocoding as the live site shapes it, with one district entry."""
+    location = {
+        "reverseGeocoding": {
+            "locations": [
+                {"id": place, "name": "Alfa", "locationLevel": "city_or_village"},
+                {"id": f"{place}/{district}", "name": name, "locationLevel": "district"},
+            ]
+        }
+    }
+    return offer | {"location": location}
+
+
+async def test_a_bootstrap_stores_each_adverts_district_beside_the_offer(corpus: PgCorpus) -> None:
+    tiles = [
+        in_district(tile(7000 + i, D0 - timedelta(days=3, hours=i)), "centrum", "Centrum") for i in range(5)
+    ] + [tile(7100, D0 - timedelta(days=4))]  # one advert the site gave no district
+    source = FakeCorpusSearch(tiles, page_size=4)
+    (out,) = await sync_at(importer(corpus, source), source, A, D0)
+    assert out.state == "published"
+    assert await corpus.district_counts("loc-a") == {"testowe/alfa/centrum": ("Centrum", 5)}
+
+
+async def test_the_district_sweep_attaches_districts_to_offers_stored_before_and_changes_nothing_else(
+    corpus: PgCorpus,
+) -> None:
+    plain = spread(8000, 6, D0 - timedelta(days=5), timedelta(hours=7))
+    source = FakeCorpusSearch(plain, page_size=4)
+    imp = importer(corpus, source)
+    (out,) = await sync_at(imp, source, A, D0)
+    assert out.state == "published"
+    before = {o.source_offer_id: o for o in await corpus.list_offers("loc-a", limit=100)}
+    assert await corpus.district_counts("loc-a") == {}  # stored without districts
+
+    source.tiles = [in_district(t, "oliwa" if t["id"] % 2 else "wrzeszcz", "Oliwa") for t in plain]
+    source.calls.clear()
+    swept = await imp.sweep_districts(A)
+    assert (swept.state, swept.attached, swept.blocked) == ("complete", 6, False)
+    assert swept.pages == len(source.calls) == 2
+    assert {c[3] for c in source.calls} == {"batch"}  # the batch lane, like every import read
+    counts = await corpus.district_counts("loc-a")
+    assert sum(n for _, n in counts.values()) == 6
+    assert set(counts) == {"testowe/alfa/oliwa", "testowe/alfa/wrzeszcz"}
+    after = {o.source_offer_id: o for o in await corpus.list_offers("loc-a", limit=100)}
+    assert after == before  # offers are exactly as they were
+    runs = [await corpus.get_run(r) for r in (out.run_id or "",)]
+    assert [r.state.value for r in runs if r is not None] == ["published"]  # no run was created or changed
+    again = await imp.sweep_districts(A)
+    assert again.attached == 0  # repeating changes nothing
+
+
+async def test_the_district_sweep_stops_at_the_night_window_and_when_blocked(corpus: PgCorpus) -> None:
+    plain = spread(8500, 6, D0 - timedelta(days=5), timedelta(hours=7))
+    source = FakeCorpusSearch(plain, page_size=4)
+    await sync_at(importer(corpus, source), source, A, D0)
+    source.tiles = [in_district(t, "oliwa", "Oliwa") for t in plain]
+    source.calls.clear()
+    closed = await importer(corpus, source, may_fetch=lambda: False).sweep_districts(A)
+    assert (closed.state, closed.pages, source.calls) == ("night_window", 0, [])
+    source.fail_on_call = 1
+    source.retryable = False
+    blocked = await importer(corpus, source).sweep_districts(A)
+    assert (blocked.state, blocked.blocked, blocked.attached) == ("blocked", True, 0)

@@ -26,7 +26,8 @@ from test_me_saved_admin import MakeToken, app, client_for, make_admin, sign_in 
 pytestmark = [pytest.mark.integration]
 
 TABLES = (
-    "app.market_daily_summary, app.market_offer, app.market_import_run, app.market_import_checkpoint,"
+    "app.market_daily_summary, app.market_offer_district, app.market_district,"
+    " app.market_offer, app.market_import_run, app.market_import_checkpoint,"
     " app.market_location_territory, app.market_location, app.market_catalogue"
 )
 BOOT = datetime(2026, 10, 10, 3, 0, tzinfo=UTC)

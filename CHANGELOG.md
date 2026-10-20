@@ -5,6 +5,11 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- Districts: search tiles carry the district the site lists an advert in; it is stored beside the immutable offer (tables `market_district`, `market_offer_district`, migration 0022, expand-only) and the nightly import records it from now on. `GET /api/market/locations/{id}/districts?cohort=` returns each district with its own asking-rent statistics over the rolling 90-day cohort, `coverage: none` for a place whose source names no district, and counts with withheld statistics under 10 priced adverts. Operator action: `sweep_market_districts` (batch queue) attaches districts to adverts stored before this change (RM-439, L-097)
+- `GET /api/market/overview?cohort=` returns every place's figures for one apartment-size or rooms cohort (`rooms_1`..`rooms_4plus`, `size_lt30`..`size_80plus`), not only for all adverts (RM-439)
+- Experimental locality index from published GUS statistics: `GET /api/market/locations/{id}/ranking` (score, national and voivodeship position with denominators, every component with value, year, unit, proxy basis and contribution, reasons when not scored) and `GET /api/market/ranking` (places best first). Not a property valuation; method version 1 (RM-439, L-096)
+
+### Added
 - Explicit account entitlement `unlimited_reports` (table `account_entitlement`, migration 0021, expand-only): the account submits analyses without spending credit (the audit is reserved with charge source `admin_free` and settles through the same idempotent claim, so usage stays on the audit row) and sees the whole Rynek catalogue; provider budgets, throttles and the one-active-audit-per-listing rule are unchanged. `GET /api/me` returns `plan.unlimited_reports` and the SPA shows "Bez limitu". Operator action: `docker compose exec -T api python scripts/grant_entitlement.py grant --email <address> --note <why>` (idempotent; never creates an account; `revoke` undoes it) (RM-438)
 
 ### Fixed

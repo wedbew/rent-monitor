@@ -714,6 +714,24 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Workaround:** none
 - **Target:** counsel review
 
+### L-096 — The experimental locality index is a delegated, unvalidated policy
+- **Status:** active
+- **Discovered:** 2026-10-20
+- **Affects:** `rm_core.location_index` (weights, gates, components), `GET /api/market/locations/{id}/ranking`, `GET /api/market/ranking`
+- **Evidence:** confirmed for the arithmetic (`tests/unit/test_location_index.py`, hand-computed; `tests/integration/test_market_ranking_api.py`); inferred for the choice of components and weights (owner-delegated policy of 2026-10-19, not validated against any outcome)
+- **Description:** The index averages national percentile ranks of six official indicators (migration and natural increase per 1,000, unemployment share, earnings as a powiat proxy, REGON density, own revenue) with weights 20/10/15/15/20/20. It needs every pillar and 80 % of the weight; a rank needs 50 scored gminas. It describes the area's statistics: it is not a property valuation or forecast and feeds no financial number. Earnings are a powiat value shown for every gmina of the powiat. Years differ per indicator and are shown. The indicator set was chosen from the registry's directional metrics, not copied from the reference project's score.
+- **Workaround:** the SPA labels it experimental, shows every component and says what a higher value means
+- **Target:** owner review of weights; counsel review of GUS terms (B-012)
+
+### L-097 — Districts exist only where the source names one, and only for adverts read after this change
+- **Status:** active
+- **Discovered:** 2026-10-20
+- **Affects:** `market_district`, `market_offer_district` (migration 0022), `GET /api/market/locations/{id}/districts`, `CorpusImporter.sweep_districts`
+- **Evidence:** confirmed (live Gdańsk search tile 2026-10-20 carries `reverseGeocoding` with a `district` id and name; hand-built tests); the geographic coverage of the live collection is recorded in `docs/market/district-coverage-2026-10-20.json`
+- **Description:** Offers are immutable and were stored without a district, so the district of an existing offer is attached by a sweep over the place's current search pages (`sweep_market_districts`); an advert that has left the search results before the sweep keeps no district. The source names a district only for some places (large cities) and not for every advert; the API reports `coverage: none` for a place with none and `offers_with_district` of `offers_in_cohort` otherwise. District statistics are computed now from the rolling 90-day cohort of the adverts that carry the district: there is no district history and nothing is allocated from the city to a district. District names and ids are the source's, not administrative units (they do not join to GUS territories).
+- **Workaround:** none; new adverts carry their district from the nightly import on
+- **Target:** repeat the sweep after catalogue changes; SIMC or other administrative mapping of districts would be new work
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built

@@ -33,10 +33,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from rm_core.db.models import (
     MarketDailySummary,
+    MarketDistrict,
     MarketImportCheckpoint,
     MarketImportRun,
     MarketLocation,
     MarketOffer,
+    MarketOfferDistrict,
 )
 
 DATASET = "otodom_rental"
@@ -80,6 +82,7 @@ class OfferFacts:
     age_basis: str
     expires_at: datetime
     initial_load: bool = False  # read by a bootstrap run: the place's backlog, not a day's arrivals
+    district_id: str | None = None  # the source's district of the advert, beside the offer (RM-439)
 
     @property
     def priced(self) -> bool:
@@ -313,6 +316,25 @@ class LocationListing(BaseModel):
 
 
 @dataclass(frozen=True)
+class DistrictRow:
+    district_id: str
+    name: str
+    observation: SummaryRow
+
+
+@dataclass(frozen=True)
+class DistrictsView:
+    location_id: str
+    data_status: DataStatus
+    coverage: Literal["supported", "none"]
+    cohort_key: str
+    as_of: datetime
+    offers_in_cohort: int
+    offers_with_district: int
+    districts: tuple[DistrictRow, ...]
+
+
+@dataclass(frozen=True)
 class PublishResult:
     status: PublishStatus
     rows: int = 0
@@ -447,8 +469,15 @@ class PgMarketHistory:
                 MarketOffer.age_basis,
                 MarketOffer.expires_at,
                 MarketImportRun.mode,
+                MarketOfferDistrict.district_id,
             )
             .join(MarketImportRun, MarketImportRun.run_id == MarketOffer.run_id)
+            .join(
+                MarketOfferDistrict,
+                (MarketOfferDistrict.source == MarketOffer.source)
+                & (MarketOfferDistrict.source_offer_id == MarketOffer.source_offer_id),
+                isouter=True,
+            )
             .where(
                 (MarketImportRun.state == "published") | covered,
                 MarketOffer.location_id == location_id,
@@ -459,8 +488,8 @@ class PgMarketHistory:
             )
         )
         return [
-            OfferFacts(int(i), rent, area, rooms, pub, seen, basis, exp, mode == "bootstrap")
-            for i, rent, area, rooms, pub, seen, basis, exp, mode in result
+            OfferFacts(int(i), rent, area, rooms, pub, seen, basis, exp, mode == "bootstrap", district)
+            for i, rent, area, rooms, pub, seen, basis, exp, mode, district in result
         ]
 
     async def backfill(
@@ -536,6 +565,75 @@ class PgMarketHistory:
             usable_for_ranking=status is DataStatus.fresh
             and everything is not None
             and everything.sufficient,
+        )
+
+    async def districts(
+        self, location_id: str, *, cohort_key: str, now: datetime, summarise: Summariser
+    ) -> DistrictsView:
+        """The districts the source named under the place, each summarised over the same rolling cohort the
+        place's own `cohort` series uses, computed now from the stored offers. Nothing is allocated from the
+        city to a district and no history is invented: a district is only what its own adverts say.
+
+        `coverage` is `none` when the source has named no district for any stored offer of the place (a
+        place without a district level), otherwise `supported`; a known district with fewer than
+        `MIN_PRICED` priced adverts keeps its counts and withholds its statistics."""
+        today = now.astimezone(UTC)
+        day_start = datetime.combine(today.date(), datetime.min.time(), UTC)
+        async with self._sessions() as s:
+            cp = await s.get(MarketImportCheckpoint, (location_id, DATASET))
+            status = freshness(
+                bootstrapped=cp is not None and cp.bootstrap_completed_at is not None,
+                refresh_at=cp.last_successful_refresh_at if cp else None,
+                gap_since=cp.unresolved_gap_since if cp else None,
+                now=now,
+                fresh_hours=self._fresh,
+                stale_hours=self._stale,
+            )
+            found = await s.execute(
+                select(MarketDistrict.district_id, MarketDistrict.name).where(
+                    MarketDistrict.location_id == location_id
+                )
+            )
+            names = {district_id: name for district_id, name in found.all()}  # noqa: C416  (rows are tuples)
+            offers = (
+                await self._offers(s, location_id, as_of=now, day_start=day_start)
+                if status is not DataStatus.unavailable
+                else []
+            )
+        eligible = [
+            o for o in offers if o.first_seen_at < now and o.expires_at > now and cohort_key in cohort_keys(o)
+        ]
+        by_district: dict[str, list[OfferFacts]] = defaultdict(list)
+        for o in eligible:
+            if o.district_id is not None:
+                by_district[o.district_id].append(o)
+        rows: list[DistrictRow] = []
+        for district_id, name in names.items():
+            members = by_district.get(district_id, [])
+            row = _row(
+                location_id=location_id,
+                day=today.date(),
+                series="cohort",
+                key=cohort_key,
+                members=members,
+                first_observed=None,
+                as_of=now,
+                summarise=summarise,
+                backfilled=False,
+                refresh_at=cp.last_successful_refresh_at if cp else None,
+                gap_since=cp.unresolved_gap_since if cp else None,
+            )
+            rows.append(DistrictRow(district_id=district_id, name=name, observation=row))
+        rows.sort(key=lambda r: (-r.observation.priced_count, r.name))
+        return DistrictsView(
+            location_id=location_id,
+            data_status=status,
+            coverage="supported" if names else "none",
+            cohort_key=cohort_key,
+            as_of=now,
+            offers_in_cohort=len(eligible),
+            offers_with_district=sum(1 for o in eligible if o.district_id is not None),
+            districts=tuple(rows),
         )
 
     async def history(
@@ -629,6 +727,7 @@ class PgMarketHistory:
         query: str | None = None,
         after: tuple[str, str] | None = None,
         only_ids: Collection[str] | None = None,
+        cohort_key: str = ALL,
     ) -> tuple[list[LocationListing], bool]:
         """Enabled places ordered by `(name, location_id)`, keyset after `after`. `query` is a literal
         case-insensitive substring of the name (LIKE metacharacters are escaped). Returns the page and whether
@@ -674,7 +773,7 @@ class PgMarketHistory:
                             MarketDailySummary.location_id.in_(ids),
                             MarketDailySummary.dataset == DATASET,
                             MarketDailySummary.series == "cohort",
-                            MarketDailySummary.cohort_key == ALL,
+                            MarketDailySummary.cohort_key == cohort_key,
                         )
                         .distinct(MarketDailySummary.location_id)
                         .order_by(

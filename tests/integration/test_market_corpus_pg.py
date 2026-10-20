@@ -24,7 +24,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 pytestmark = [pytest.mark.integration]
 
 TABLES = (
-    "app.market_offer, app.market_import_run, app.market_import_checkpoint,"
+    "app.market_offer_district, app.market_district,"
+    " app.market_offer, app.market_import_run, app.market_import_checkpoint,"
     " app.market_location_territory, app.market_location, app.market_catalogue"
 )
 

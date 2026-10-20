@@ -26,6 +26,7 @@ sorts by `createdAtFirst`, and a page past the end repeats the last page (so `cu
 
 import asyncio
 import hashlib
+import re
 from collections.abc import AsyncGenerator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass, field
@@ -37,6 +38,7 @@ from typing import Any, Protocol, cast
 import structlog
 from deal_analyzer.rent import PPM2_RANGE
 from rm_contracts.market import (
+    DISTRICT_ID_RE,
     CorpusRepository,
     CoverageNotProvenError,
     ImportRun,
@@ -66,6 +68,7 @@ from rm_worker.importers.otodom_rental import AREA_RANGE, MAX_ITEMS_PER_PAGE, RE
 log = structlog.get_logger(__name__)
 
 EPOCH = datetime(2010, 1, 1, tzinfo=UTC)  # lower bound of a bootstrap window (nothing older is claimed)
+CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
 PROMOTED_HREF_PREFIX = "hpr/"  # a sponsored tile repeated on every page with a synthetic id and a 1999 date
 PAGE_CAP = MAX_SEARCH_PAGE  # the client refuses deeper pages; a bigger result is partitioned, not cut
 DAY = timedelta(days=1)
@@ -179,8 +182,41 @@ def _published_at(value: object) -> datetime | None:
     return parsed.astimezone(UTC) if parsed.tzinfo is not None else None  # a naive time is not guessed
 
 
+def _district(item: dict[str, Any], place_path: str | None) -> tuple[str, str] | None:
+    """The `district` entry of the tile's reverse geocoding, only when its id is a child of the searched place
+    (a tile listed under another area never lends its district). Anything malformed is simply no district."""
+    if place_path is None:
+        return None
+    location = _obj(item.get("location"))
+    geocoding = _obj(location.get("reverseGeocoding")) if location else None
+    entries: object = geocoding.get("locations") if geocoding else None
+    if not isinstance(entries, list):
+        return None
+    for raw in cast("list[object]", entries):
+        entry = _obj(raw)
+        if entry is None or entry.get("locationLevel") != "district":
+            continue
+        ident, name = entry.get("id"), entry.get("name")
+        if (
+            isinstance(ident, str)
+            and isinstance(name, str)
+            and DISTRICT_ID_RE.fullmatch(ident)
+            and ident.startswith(f"{place_path}/")
+            and ident.count("/") == place_path.count("/") + 1
+            and 0 < len(name.strip()) <= 80
+            and not CONTROL_CHARS.search(name)
+        ):
+            return ident, name.strip()
+    return None
+
+
 def parse_search_page(
-    search_ads: dict[str, Any], *, location_id: str, observed_at: datetime, page: int = 1
+    search_ads: dict[str, Any],
+    *,
+    location_id: str,
+    observed_at: datetime,
+    page: int = 1,
+    place_path: str | None = None,
 ) -> ParsedPage:
     raw_items: object = search_ads.get("items")
     pagination = _obj(search_ads.get("pagination")) or {}
@@ -217,6 +253,7 @@ def parse_search_page(
         if rent is not None and area is not None and not PPM2_RANGE[0] <= rent / area <= PPM2_RANGE[1]:
             rent = area = None
         rooms = item.get("roomsNumber")
+        district = _district(item, place_path)
         found.append(
             OfferObservation(
                 source_offer_id=str(offer_id),
@@ -228,6 +265,8 @@ def parse_search_page(
                 else None,
                 published_at=_published_at(item.get(CREATED_AT_FIELD)),
                 observed_at=observed_at,
+                district_id=district[0] if district else None,
+                district_name=district[1] if district else None,
             )
         )
     dated = [o.published_at for o in found if o.published_at is not None]
@@ -271,6 +310,15 @@ class RunOutcome:
     blocked: bool = False  # upstream refused: the caller stops hammering the host
 
 
+@dataclass(frozen=True)
+class DistrictSweep:
+    location_id: str
+    pages: int
+    attached: int
+    state: str  # complete | page_cap | page_budget | deadline | night_window | fetch_failed | blocked
+    blocked: bool = False
+
+
 @dataclass
 class CorpusImporter:
     corpus: CorpusRepository
@@ -312,6 +360,56 @@ class CorpusImporter:
             for e in catalogue.locations
             if e.launch_enabled and await self.is_due(e.location_id, now)
         ]
+
+    # -- districts of stored offers -----------------------------------------------------------------
+
+    async def sweep_districts(self, entry: LocationEntry) -> DistrictSweep:
+        """Walk the place's results newest-first and attach each tile's district to the offer already stored.
+
+        Offers are immutable and were stored before the district was read, so this writes nothing but the
+        district link; it creates no run, moves no checkpoint and inserts no offer. It stops at the last
+        page, the page cap, the page budget, the night window or the first refused request, and reports which
+        (`complete` only when the last page was read). Safe to repeat."""
+        deadline = Deadline.after(self.run_deadline_s)
+        attached = fetched = 0
+        total = 1
+        stopped: str | None = None
+        options = SearchOptions(order="newest")
+        page = 1
+        while page <= min(total, self.page_cap):
+            if fetched >= self.page_budget:
+                stopped = "page_budget"
+                break
+            if deadline.expired:
+                stopped = "deadline"
+                break
+            if not self.may_fetch():
+                stopped = "night_window"
+                break
+            now = self.clock()
+            try:
+                ads = await self.source.fetch_corpus_search(
+                    entry.otodom_path, page, options=options, deadline=deadline, priority="batch"
+                )
+                parsed = parse_search_page(
+                    ads,
+                    location_id=entry.location_id,
+                    observed_at=now,
+                    page=page,
+                    place_path=entry.otodom_path,
+                )
+            except UpstreamBlocked:
+                return DistrictSweep(entry.location_id, fetched, attached, "blocked", blocked=True)
+            except (FetchError, PageShapeError):
+                stopped = "fetch_failed"
+                break
+            fetched += 1
+            total = parsed.total_pages
+            attached += await self.corpus.record_districts(entry.location_id, parsed.observations, now)
+            page += 1
+        if stopped is None and total > self.page_cap:
+            stopped = "page_cap"  # a place deeper than the cap keeps its deeper adverts without a district
+        return DistrictSweep(entry.location_id, fetched, attached, stopped or "complete")
 
     # -- one location -------------------------------------------------------------------------------
 
@@ -515,7 +613,9 @@ class CorpusImporter:
         ads = await self.source.fetch_corpus_search(
             entry.otodom_path, page, options=options, deadline=ctx.deadline, priority="batch"
         )
-        parsed = parse_search_page(ads, location_id=entry.location_id, observed_at=now, page=page)
+        parsed = parse_search_page(
+            ads, location_id=entry.location_id, observed_at=now, page=page, place_path=entry.otodom_path
+        )
         report = await self.corpus.record_offers(ctx.run_id, parsed.observations, now)
         sweep.fetched += 1
         sweep.inserted += report.inserted

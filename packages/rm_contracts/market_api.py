@@ -79,6 +79,39 @@ class LocationDetailOut(_Out):
     cohort: list[AskingRentOut]  # the latest `cohort` series day, one entry per cohort key
 
 
+class DistrictOut(_Out):
+    """One district the source named under a place, over the same rolling cohort as the place's own series.
+
+    Statistics are withheld (null with a reason) under the sufficiency threshold; the counts stay. Nothing
+    here is a share of the city's figures: it is what this district's own adverts say."""
+
+    district_id: str
+    name: str
+    observed_count: int = Field(ge=0)
+    priced_count: int = Field(ge=0)
+    median_rent_pln: Decimal | None
+    median_ppm2: Decimal | None
+    p25_ppm2: Decimal | None
+    p75_ppm2: Decimal | None
+    sufficient: bool
+    withheld_reason: WithheldReason | None
+
+
+class LocationDistrictsOut(_Out):
+    price_basis: Literal["asking"] = "asking"
+    source: Literal["otodom"] = "otodom"
+    location_id: str
+    name: str
+    data_status: DataStatus
+    coverage: Literal["supported", "none"]  # `none`: the source names no district for this place's adverts
+    cohort_key: str
+    as_of: datetime
+    offers_in_cohort: int = Field(ge=0)
+    offers_with_district: int = Field(ge=0)  # the rest carry no district at the source and are in no row
+    districts: list[DistrictOut]
+    caveats: list[str]
+
+
 class LocationHistoryOut(_Out):
     location_id: str
     series: Series

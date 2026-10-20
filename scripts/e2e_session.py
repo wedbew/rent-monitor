@@ -356,6 +356,7 @@ async def market_db(run: str) -> dict[str, Any]:
 
 _DELETES = (
     ("market_daily_summary", text("DELETE FROM app.market_daily_summary WHERE location_id LIKE :p")),
+    ("market_district", text("DELETE FROM app.market_district WHERE location_id LIKE :p")),
     ("market_offer", text("DELETE FROM app.market_offer WHERE location_id LIKE :p")),
     ("market_import_run", text("DELETE FROM app.market_import_run WHERE location_id LIKE :p")),
     ("market_import_checkpoint", text("DELETE FROM app.market_import_checkpoint WHERE location_id LIKE :p")),

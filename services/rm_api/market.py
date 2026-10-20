@@ -16,10 +16,13 @@ import json
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
+from deal_analyzer.market_stats import summarise_asking
 from fastapi import APIRouter, Depends, Path, Query, Request, Response
 from rm_contracts.market_api import (
     AskingRentOut,
+    DistrictOut,
     LocationDetailOut,
+    LocationDistrictsOut,
     LocationHistoryOut,
     LocationPage,
     LocationSummaryOut,
@@ -27,26 +30,40 @@ from rm_contracts.market_api import (
 )
 from rm_contracts.market_context import (
     LocationContextOut,
+    LocationIndexOut,
     OverviewOut,
     OverviewPlaceOut,
     PlaceMappingOut,
+    RankingEntryOut,
+    RankingOverviewOut,
     SourceOut,
 )
 from rm_contracts.problems import ProblemCode
 from rm_core.bdl_metrics import METRICS
 from rm_core.location_contracts import TerritoryHierarchy
+from rm_core.location_index import INDEX_VERSION
+from rm_core.location_index_read import IndexSnapshot, current_signature, load_index
+from rm_core.location_index_view import CAVEAT_PL, COHORT_PL, TITLE_PL, index_out, unavailable
 from rm_core.location_mapping import MappingStatus, PlaceMapping
 from rm_core.location_places import PgPlaceMapping
 from rm_core.location_profile import metric_view, territory_out
 from rm_core.location_repo import PgLocationRepo
 from rm_core.market_access import FREE_PLACE_LIMIT, FREE_RULE_PL, MarketAccess, account_access, top_by_depth
-from rm_core.market_history import ALL, MAX_HISTORY_DAYS, AskingRentObservation, PgMarketHistory
+from rm_core.market_history import (
+    ALL,
+    CAVEATS,
+    MAX_HISTORY_DAYS,
+    AskingRentObservation,
+    PgMarketHistory,
+)
 
 from rm_api.deps import PrincipalDep, SessionDep, SettingsDep
 from rm_api.problems import Problem
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
+INDEX_ATTRIBUTION_PL = "Źródło: GUS, Bank Danych Lokalnych (BDL); obliczenia własne."
+COHORT_PATTERN = r"^[a-z0-9_]{1,16}$"
 LocationId = Annotated[str, Path(pattern=r"^[a-z0-9-]{1,64}$", description="stable internal place id")]
 
 
@@ -256,9 +273,73 @@ async def get_location_history(
     )
 
 
+@router.get("/locations/{location_id}/districts", response_model=LocationDistrictsOut)
+async def get_location_districts(
+    location_id: LocationId,
+    request: Request,
+    response: Response,
+    settings: SettingsDep,
+    access: AccessDep,
+    *,
+    cohort: Annotated[
+        str, Query(pattern=COHORT_PATTERN, description="apartment size or rooms cohort, `all` by default")
+    ] = ALL,
+) -> LocationDistrictsOut:
+    """The districts the source names under one place, with asking-rent statistics per district.
+
+    Computed from the place's own stored adverts; a place whose adverts carry no district answers
+    `coverage: none` with an empty list, a district under the sufficiency threshold keeps its counts and
+    withholds its statistics."""
+    response.headers["Cache-Control"] = "private, no-store"
+    repo = _history(request, settings)
+    name = await repo.location_name(location_id, catalogue_version=settings.otodom_market_catalogue_version)
+    if name is None:
+        raise Problem.not_found("Location")
+    if not access.allows(location_id):
+        raise _not_in_plan()
+    view = await repo.districts(location_id, cohort_key=cohort, now=_now(request), summarise=summarise_asking)
+    rows: list[DistrictOut] = []
+    for d in view.districts:
+        o = d.observation
+        withheld = not o.sufficient
+        rows.append(
+            DistrictOut(
+                district_id=d.district_id,
+                name=d.name,
+                observed_count=o.observed_count,
+                priced_count=o.priced_count,
+                median_rent_pln=None if withheld else o.median_rent_pln,
+                median_ppm2=None if withheld else o.median_ppm2,
+                p25_ppm2=None if withheld else o.p25_ppm2,
+                p75_ppm2=None if withheld else o.p75_ppm2,
+                sufficient=o.sufficient,
+                withheld_reason="insufficient_sample" if withheld else None,
+            )
+        )
+    return LocationDistrictsOut(
+        location_id=location_id,
+        name=name,
+        data_status=view.data_status,
+        coverage=view.coverage,
+        cohort_key=view.cohort_key,
+        as_of=view.as_of,
+        offers_in_cohort=view.offers_in_cohort,
+        offers_with_district=view.offers_with_district,
+        districts=rows,
+        caveats=list(CAVEATS),
+    )
+
+
 @router.get("/overview", response_model=OverviewOut)
 async def overview(
-    request: Request, response: Response, settings: SettingsDep, access: AccessDep
+    request: Request,
+    response: Response,
+    settings: SettingsDep,
+    access: AccessDep,
+    *,
+    cohort: Annotated[
+        str, Query(pattern=COHORT_PATTERN, description="apartment size or rooms cohort, `all` by default")
+    ] = ALL,
 ) -> OverviewOut:
     """Every place this account may see, with its headline, what it maps to and its administrative area.
 
@@ -270,7 +351,12 @@ async def overview(
     after: tuple[str, str] | None = None
     while True:
         page, more = await repo.list_locations(
-            catalogue_version=version, now=_now(request), limit=100, after=after, only_ids=access.allowed_ids
+            catalogue_version=version,
+            now=_now(request),
+            limit=100,
+            after=after,
+            only_ids=access.allowed_ids,
+            cohort_key=cohort,
         )
         for p in page:
             h = _out(p.headline) if p.headline is not None else None
@@ -317,6 +403,142 @@ async def overview(
         access=access.level,
         free_limit=FREE_PLACE_LIMIT,
         free_rule_pl=FREE_RULE_PL,
+        cohort_key=cohort,
+    )
+
+
+async def _index_snapshot(
+    request: Request, settings: SettingsDep
+) -> tuple[IndexSnapshot, TerritoryHierarchy] | None:
+    """The finished index of every gmina, kept in process memory under the identity of the BDL releases it
+    was built from (a new publication changes the key). None while no reference or no release exists."""
+    tree = await _reference(request, settings)
+    sessions = request.app.state.sessionmaker
+    if tree is None or sessions is None:
+        return None
+    repo = PgLocationRepo(sessions)
+    signature = await current_signature(repo)
+    if not signature:
+        return None
+    cache: dict[int, IndexSnapshot] = request.app.state.__dict__.setdefault("index_cache", {})
+    version = settings.location_reference_version
+    held = cache.get(version)
+    if held is None or held.signature != signature:
+        held = await load_index(repo, tree)
+        cache[version] = held
+    return held, tree
+
+
+def _place_target(mapping: PlaceMapping | None) -> str | None:
+    """The gmina an index describes for a place: only a settled mapping, never a guess among candidates."""
+    if mapping is None or mapping.status is not MappingStatus.mapped:
+        return None
+    return mapping.gmina_id
+
+
+@router.get("/locations/{location_id}/ranking", response_model=LocationIndexOut)
+async def get_location_ranking(
+    location_id: LocationId, request: Request, response: Response, settings: SettingsDep, access: AccessDep
+) -> LocationIndexOut:
+    """The experimental locality index of the gmina a place belongs to: score, national and regional
+    position with their denominators, every component with its value, year, unit and contribution, and the
+    reasons when there is no score. Statistics about the area, never a property valuation."""
+    response.headers["Cache-Control"] = "private, no-store"
+    version = settings.otodom_market_catalogue_version
+    name = await _history(request, settings).location_name(location_id, catalogue_version=version)
+    if name is None:
+        raise Problem.not_found("Location")
+    if not access.allows(location_id):
+        raise _not_in_plan()
+    mapping = await PgPlaceMapping(request.app.state.sessionmaker).get(version, location_id)
+    tree = await _reference(request, settings)
+    status = mapping.status if mapping else MappingStatus.unmatched
+    candidates = [territory_out(tree.get(c)) for c in mapping.candidates] if tree and mapping else []
+    mapping_out = PlaceMappingOut(
+        status=status.value,
+        relation=mapping.relation.value if mapping and mapping.relation else None,
+        method=mapping.method if mapping else "not_mapped",
+        candidates=candidates if status is not MappingStatus.mapped else [],
+    )
+    source = SourceOut(
+        attribution_pl=INDEX_ATTRIBUTION_PL,
+        note_pl="Dane roczne, najnowszy opublikowany rok każdego wskaźnika; metoda opisana w wyniku.",
+    )
+    target = _place_target(mapping)
+    held = await _index_snapshot(request, settings)
+    if target is None:
+        why = (
+            "Nazwa miejsca pasuje do kilku gmin: nie zgadujemy, której dotyczy wynik."
+            if status is MappingStatus.ambiguous
+            else "Tego miejsca nie udało się jednoznacznie przypisać do gminy GUS."
+        )
+        index = unavailable([why])
+    elif held is None:
+        index = unavailable(["GUS nie opublikował jeszcze danych potrzebnych do wskaźnika."])
+    else:
+        index = index_out(held[0], held[1], target)
+    return LocationIndexOut(
+        location_id=location_id, name=name, mapping=mapping_out, index=index, source=source
+    )
+
+
+@router.get("/ranking", response_model=RankingOverviewOut)
+async def ranking_overview(
+    request: Request, response: Response, settings: SettingsDep, access: AccessDep
+) -> RankingOverviewOut:
+    """Every place this account may see with the index of its gmina, best position first; a place that has
+    no score (unmatched, ambiguous or too little data) is listed last with its state, never hidden."""
+    response.headers["Cache-Control"] = "private, no-store"
+    version = settings.otodom_market_catalogue_version
+    repo = _history(request, settings)
+    places: list[tuple[str, str]] = []
+    after: tuple[str, str] | None = None
+    while True:
+        page, more = await repo.list_locations(
+            catalogue_version=version,
+            now=_now(request),
+            limit=100,
+            after=after,
+            only_ids=access.allowed_ids,
+        )
+        places.extend((p.location_id, p.name) for p in page)
+        if not more or not page:
+            break
+        after = (page[-1].name, page[-1].location_id)
+    mappings = await PgPlaceMapping(request.app.state.sessionmaker).all_for(version)
+    held = await _index_snapshot(request, settings)
+    items: list[RankingEntryOut] = []
+    for location_id, name in places:
+        m = mappings.get(location_id)
+        target = _place_target(m)
+        g = held[0].index.get(target) if held and target else None
+        items.append(
+            RankingEntryOut(
+                location_id=location_id,
+                name=name,
+                gmina_name=held[1].get(target).name if held and target and g else None,
+                state=g.state.value if g else "unavailable",
+                score=g.score if g else None,
+                rank=g.rank if g else None,
+                of=g.of if g else None,
+                relation=m.relation.value if m and m.relation else None,
+            )
+        )
+    items.sort(key=lambda e: (e.rank is None, e.rank or 0, e.name))
+    return RankingOverviewOut(
+        method_version=INDEX_VERSION,
+        title_pl=TITLE_PL,
+        caveat_pl=CAVEAT_PL,
+        cohort_name_pl=COHORT_PL,
+        scored_gminas=held[0].scored if held else 0,
+        total_places=await repo.count_locations(catalogue_version=version),
+        visible_places=len(items),
+        access=access.level,
+        items=items,
+        source=SourceOut(
+            attribution_pl=INDEX_ATTRIBUTION_PL,
+            note_pl="Dane roczne, najnowszy opublikowany rok każdego wskaźnika.",
+        ),
     )
 
 
