@@ -113,6 +113,7 @@ async def test_overlap_from_settings_moves_the_first_catch_up_window(
 
     source.calls.clear()
     later = D0 + DUE_AFTER + timedelta(hours=1)
+    source.now = later
     (out,) = await batch.sync_location_now(
         db_settings(migrated_url, otodom_market_overlap_minutes=15),
         "loc-a",
@@ -121,8 +122,9 @@ async def test_overlap_from_settings_moves_the_first_catch_up_window(
         may_fetch=ALWAYS_OPEN,
     )
     assert (out.mode, out.state) == (RunMode.incremental, "published")
-    starts = [c[2].created_from for c in source.calls if c[2].created_from is not None]
-    assert min(starts) == boot.covered_until - timedelta(minutes=15)
+    run = await corpus.get_run(out.run_id or "")
+    assert run is not None
+    assert run.window_start == boot.covered_until - timedelta(minutes=15)
 
 
 async def test_closed_night_window_stops_before_any_request_and_keeps_the_checkpoint(

@@ -1,17 +1,32 @@
-"""Fake Otodom corpus search: a hand-built set of adverts filtered by created-date bounds and paginated.
+"""Fake Otodom corpus search that behaves like the live contract verified on 2026-10-20 (RM-411, L-050).
 
-Hand-made data only (no seller fields). Bounds are treated as inclusive on both ends, an assumption that the
-live site has not confirmed (L-050); the importer must not depend on it beyond idempotent inserts.
+Hand-made data only (no seller fields). Modelled behaviour, each observed live with small probes:
+- `daysSinceCreated=N` keeps the adverts created in the last N x 24 hours, measured at `now` (rolling,
+  no upper bound);
+- `by=LATEST` sorts by creation time, `direction=ASC|DESC`;
+- pages hold `page_size` adverts (36 live); `totalPages` is 0 for an empty search;
+- every non-empty page repeats a sponsored `hpr/` tile with a synthetic id and a 1999 date;
+- a page past the end answers the last page again (so `currentPage` differs from the request).
 """
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from math import ceil
 from typing import Any
 
 from rm_core.deadline import Deadline
 from rm_worker.clients.otodom import Priority, SearchOptions, UpstreamBlocked
+
+SPONSORED: dict[str, Any] = {
+    "id": 9_000_062_237,
+    "estate": "FLAT",
+    "transaction": "RENT",
+    "href": "hpr/[lang]/ad/sponsored-ID9P5lk9",
+    "createdAtFirst": "1999-02-29 00:00:01",
+    "totalPrice": {"value": 2600, "currency": "PLN"},
+    "areaInSquareMeters": 36,
+}
 
 
 def tile(
@@ -22,6 +37,7 @@ def tile(
         "estate": "FLAT",
         "transaction": "RENT",
         "hidePrice": False,
+        "href": f"[lang]/ad/test-{offer_id}",
         "areaInSquareMeters": area,
         "totalPrice": {"value": rent, "currency": "PLN"},
         "rentPrice": {"value": 650, "currency": "PLN"},  # admin fee: must never be read as rent
@@ -36,6 +52,7 @@ def tile(
 class FakeCorpusSearch:
     tiles: list[dict[str, Any]] = field(default_factory=list[dict[str, Any]])
     page_size: int = 4
+    now: datetime = datetime(2026, 9, 1, 1, 10, tzinfo=UTC)  # the site's clock; tests move it
     calls: list[tuple[str, int, SearchOptions, str]] = field(
         default_factory=list[tuple[str, int, SearchOptions, str]]
     )
@@ -43,9 +60,13 @@ class FakeCorpusSearch:
     retryable: bool = True
     delay_s: float = 0.0
     raw_override: dict[str, Any] | None = None
+    sponsored: bool = True
 
     def created(self, t: dict[str, Any]) -> datetime:
-        return datetime.fromisoformat(t.get("_filter_at") or t["createdAtFirst"])  # `_filter_at`: test-only
+        try:
+            return datetime.fromisoformat(t["createdAtFirst"]).astimezone(UTC)
+        except ValueError:  # the live sponsored tile has a naive 1999 date: it sorts as ancient
+            return datetime(1999, 2, 28, tzinfo=UTC)
 
     async def fetch_corpus_search(
         self,
@@ -63,15 +84,28 @@ class FakeCorpusSearch:
             raise UpstreamBlocked("HTTP 429", retryable=self.retryable)
         if self.raw_override is not None:
             return self.raw_override
-        inside = sorted(
-            (
-                t
-                for t in self.tiles
-                if (options.created_from is None or self.created(t) >= options.created_from)
-                and (options.created_to is None or self.created(t) <= options.created_to)
-            ),
-            key=lambda t: t.get("id", 0),
+        floor = (
+            None
+            if options.days_since_created is None
+            else self.now - timedelta(days=options.days_since_created)
         )
-        total = max(1, ceil(len(inside) / self.page_size))
-        start = (page - 1) * self.page_size
-        return {"items": inside[start : start + self.page_size], "pagination": {"totalPages": total}}
+        inside = sorted(
+            (t for t in self.tiles if floor is None or self.created(t) >= floor),
+            key=lambda t: (self.created(t), t["id"]),
+            reverse=options.order == "newest",
+        )
+        total = ceil(len(inside) / self.page_size)
+        shown = min(page, max(total, 1))  # past the end repeats the last page
+        start = (shown - 1) * self.page_size
+        items = inside[start : start + self.page_size]
+        if items and self.sponsored:
+            items = [*items, SPONSORED]
+        return {
+            "items": items,
+            "pagination": {
+                "itemsPerPage": self.page_size,
+                "totalItems": len(inside),
+                "totalPages": total,
+                "currentPage": shown,
+            },
+        }

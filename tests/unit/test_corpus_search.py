@@ -1,62 +1,64 @@
-"""Typed corpus search options and the client's refusal to send an unverified date filter (RM-392).
+"""The corpus search wire contract verified against the live site on 2026-10-20 (RM-411, L-050).
 
 LEGAL[scraping]: asserts the request shape of an Otodom search against a fake transport; no network.
+Live probes (Bydgoszcz flat rentals, one request each, no content kept): `daysSinceCreated=N` limits the
+list to the last N x 24 hours for any integer N, and `by=LATEST&direction=ASC|DESC` sorts by creation time.
 """
-
-from datetime import UTC, datetime, timedelta
 
 import pytest
 from rm_core.deadline import Deadline
 from rm_worker.app import app
-from rm_worker.clients.otodom import FilterContractUnverified, OtodomClient, SearchOptions
+from rm_worker.clients.otodom import OtodomClient, SearchOptions
 from rm_worker.tasks import batch
 from test_rental_search import LOC, Breaker, Slots, Transport, offer, page
 
-T = datetime(2026, 9, 1, 1, 0, tzinfo=UTC)
+BASE = f"https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie/{LOC}"
 
 
-def client(*, verified: bool) -> tuple[OtodomClient, Transport]:
+def client() -> tuple[OtodomClient, Transport]:
     transport = Transport(page([offer()]))
-    return OtodomClient(
-        transport=transport, slots=Slots(), breaker=Breaker(), filters_verified=verified
-    ), transport
+    return OtodomClient(transport=transport, slots=Slots(), breaker=Breaker()), transport
 
 
-def test_options_require_aware_ordered_bounds() -> None:
-    with pytest.raises(ValueError, match="timezone-aware"):
-        SearchOptions(datetime(2026, 9, 1), T)  # noqa: DTZ001
-    with pytest.raises(ValueError, match="precede"):
-        SearchOptions(T, T)
-    assert SearchOptions().query() == {}
-    assert SearchOptions(T - timedelta(days=1), T).query() == {
-        "createdAtFrom": "2026-08-31T01:00:00Z",
-        "createdAtTo": "2026-09-01T01:00:00Z",
+@pytest.mark.parametrize("days", [0, -1, 3651])
+def test_days_since_created_is_bounded(days: int) -> None:
+    with pytest.raises(ValueError, match="out of range"):
+        SearchOptions(days)
+
+
+@pytest.mark.parametrize("size", [0, 35, 100])
+def test_page_size_is_one_the_site_honours(size: int) -> None:
+    """Live: limit=100 silently fell back to 36 pages, which would break page arithmetic."""
+    with pytest.raises(ValueError, match="page_size"):
+        SearchOptions(page_size=size)
+
+
+def test_options_always_carry_an_explicit_creation_order() -> None:
+    assert SearchOptions().query() == {"limit": "72", "by": "LATEST", "direction": "DESC"}
+    assert SearchOptions(7, "oldest").query() == {
+        "limit": "72",
+        "by": "LATEST",
+        "direction": "ASC",
+        "daysSinceCreated": "7",
     }
 
 
-async def test_date_filter_is_refused_until_verified_and_sends_nothing() -> None:
-    c, transport = client(verified=False)
-    with pytest.raises(FilterContractUnverified):
-        await c.fetch_corpus_search(LOC, 1, options=SearchOptions(None, T), deadline=Deadline.after(30))
-    assert transport.urls == []
-
-
-async def test_unfiltered_search_needs_no_verification_and_filtered_goes_out_when_verified() -> None:
-    c, transport = client(verified=False)
+async def test_the_request_uses_the_verified_parameters_and_no_invented_ones() -> None:
+    c, transport = client()
     await c.fetch_corpus_search(LOC, 2, options=SearchOptions(), deadline=Deadline.after(30))
-    assert transport.urls == [f"https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie/{LOC}?page=2"]
-    v, vt = client(verified=True)
-    await v.fetch_corpus_search(LOC, 1, options=SearchOptions(None, T), deadline=Deadline.after(30))
-    assert vt.urls == [
-        f"https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie/{LOC}?page=1&createdAtTo=2026-09-01T01%3A00%3A00Z"
+    await c.fetch_corpus_search(LOC, 1, options=SearchOptions(45, "oldest"), deadline=Deadline.after(30))
+    assert transport.urls == [
+        f"{BASE}?page=2&limit=72&by=LATEST&direction=DESC",
+        f"{BASE}?page=1&limit=72&by=LATEST&direction=ASC&daysSinceCreated=45",
     ]
+    assert not any("createdAt" in u for u in transport.urls)  # the unverified bound names are gone
 
 
-@pytest.mark.parametrize(("location", "page_no"), [("../x", 1), ("a?b=1", 1), (LOC, 0), (LOC, 51)])
+@pytest.mark.parametrize(("location", "page_no"), [("../x", 1), ("a?b=1", 1), (LOC, 0), (LOC, 401)])
 async def test_corpus_search_validates_location_and_page_before_any_request(
     location: str, page_no: int
 ) -> None:
-    c, transport = client(verified=True)
+    c, transport = client()
     with pytest.raises(ValueError, match="invalid"):
         await c.fetch_corpus_search(location, page_no, options=SearchOptions(), deadline=Deadline.after(30))
     assert transport.urls == []

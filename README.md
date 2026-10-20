@@ -17,7 +17,7 @@ make ci          # everything CI runs: tests+coverage, invariants, migrations+sq
 make ci-full     # make ci + the Docker smoke test
 make hooks       # install git hooks incl. a pre-push that runs make ci-fast
 cp .env.example .env   # names only; fill values locally, never commit .env
-make up          # the WHOLE app in Docker: Postgres 17, bootstrap (migrations, queue schema, seed), API on :8000, audit and ops workers
+make up          # the WHOLE app in Docker: Postgres 17, bootstrap (migrations, queue schema, seed), API on :8000, audit, ops and batch workers
 make smoke       # build, start, check /api/health, /readyz, both workers and seed, then stop (Apple Silicon: DOCKER_DEFAULT_PLATFORM=linux/amd64, L-021)
 make down        # stop the containers (add -v via docker compose to drop the data volume)
 make dev         # only Postgres in Docker + bootstrap; run API/worker on the host with uv run
@@ -34,6 +34,8 @@ make api-samples  # run every API operation over loopback HTTP, keep the answers
 make api-samples-clean  # delete every capture
 make backup-drill  # dump and restore the dev database into a scratch DB and compare row counts
 make db-down     # stop the dev database
+uv run python scripts/seed_catalogue.py apply --file docs/market/otodom-catalogue-v1.json   # seed the Otodom place catalogue (idempotent; `discover` regenerates the artifact)
+uv run python scripts/market_manifest.py --summary   # coverage manifest of the Otodom corpus (counts and states per place)
 ```
 
 `dev_stack.sh` is a manual local-testing helper, not provider or production evidence. It needs Docker,

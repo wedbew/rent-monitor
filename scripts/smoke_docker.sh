@@ -7,7 +7,7 @@ COMPOSE=(docker compose -f deploy/compose.yml)
 cleanup() { "${COMPOSE[@]}" --profile web down >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
-"${COMPOSE[@]}" up -d --build --wait api worker-audit worker-ops
+"${COMPOSE[@]}" up -d --build --wait api worker-audit worker-ops worker-batch
 
 fail() { echo "smoke: FAIL: $1" >&2; "${COMPOSE[@]}" logs --tail=40 >&2; exit 1; }
 curl -fsS "http://127.0.0.1:${API_PORT}/api/health" | grep -q '"ok"' || fail "/api/health"
