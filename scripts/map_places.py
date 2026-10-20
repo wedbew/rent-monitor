@@ -1,8 +1,9 @@
 """Map every catalogue place to its GUS BDL gmina, powiat and voivodeship and store the result (RM-282).
 
-Usage: `uv run python scripts/map_places.py` (reads DATABASE_URL and the catalogue and reference versions from the
-settings). Recomputable and idempotent: it replaces the stored mapping of the catalogue version. Prints how many
-places are `mapped`, `ambiguous` and `unmatched`; the last two are listed in the context API with their candidates.
+Usage: `uv run python scripts/map_places.py` (reads DATABASE_URL and the catalogue and reference
+versions from the settings). Recomputable and idempotent: it replaces the stored mapping of the
+catalogue version. Prints how many places are `mapped`, `ambiguous` and `unmatched`; the last two are
+listed in the context API with their candidates.
 
 LEGAL[third-party-data]: relates public Otodom place paths to public GUS administrative units (RM-282).
 """

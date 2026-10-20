@@ -5,7 +5,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
-- `scripts/map_places.py` stores the place-to-gmina mapping (run once per catalogue and reference); gmina names with the source's year qualifier (`Wałbrzych od 2013`) or capital prefix (`M.st.Warszawa od 2002`) now match their Otodom paths: on the real data 784 of 787 places map, 3 stay unmatched (RM-282)
+- `scripts/map_places.py` stores the place-to-gmina mapping (run once per catalogue and reference); gmina names with the source's year qualifier (`Wałbrzych od 2013`) or capital prefix (`M.st.Warszawa od 2002`) now match their Otodom paths: on the real data 786 of 787 places map and one (Słupsk, listed under the rural powiat) stays unmatched (RM-282)
 
 ### Added
 - `GET /api/market/overview` (every place the account may see, with headline, mapping and gmina TERYT) and `GET /api/market/locations/{id}/context` (GUS BDL hierarchy, per-metric value, ten-year series, trend, parent values, national and peer ranks only past their gates, proxies labelled); migration 0020 `market_location_territory` (expand-only) stores the explicit Otodom-place-to-gmina mapping (never by name alone; ambiguous names list their candidates). Map geometry from the official PRG boundaries in `frontend/public/geo/` (joined by TERYT). Operator action: run the mapping once per catalogue and reference (RM-282)
