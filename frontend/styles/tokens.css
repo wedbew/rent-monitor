@@ -43,6 +43,11 @@
 
   /* geometry */
   --font-ui: arial, helvetica, -apple-system, blinkmacsystemfont, "Segoe UI", sans-serif;
+  --chart-line: #182c28;
+  --chart-band: #c3d3c6;
+  --chart-compare: #2c4d6b;
+  --chart-grid: #d1dbd4;
+  --chart-text: #52625c;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -100,6 +105,11 @@
   --info: #b6d0e8;
   --info-fill: #16212b;
   --shadow-overlay: 0 24px 90px #0009;
+  --chart-line: #f5f6f7;
+  --chart-band: #41484f;
+  --chart-compare: #b6d0e8;
+  --chart-grid: #353a40;
+  --chart-text: #a9aeb4;
 }
 
 @media (prefers-reduced-motion: reduce) {

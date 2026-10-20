@@ -182,6 +182,30 @@ def _published_at(value: object) -> datetime | None:
     return parsed.astimezone(UTC) if parsed.tzinfo is not None else None  # a naive time is not guessed
 
 
+# Live finding 2026-10-20 (RM-439): the site sends `roomsNumber` as a word ("TWO"), not a number; the importer
+# stored no rooms until then. "MORE" has no count and stays unknown, never guessed.
+_ROOM_WORDS = {
+    "ONE": 1,
+    "TWO": 2,
+    "THREE": 3,
+    "FOUR": 4,
+    "FIVE": 5,
+    "SIX": 6,
+    "SEVEN": 7,
+    "EIGHT": 8,
+    "NINE": 9,
+    "TEN": 10,
+}
+
+
+def _rooms(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if 1 <= value <= 50 else None
+    return _ROOM_WORDS.get(value) if isinstance(value, str) else None
+
+
 def _district(item: dict[str, Any], place_path: str | None) -> tuple[str, str] | None:
     """The `district` entry of the tile's reverse geocoding, only when its id is a child of the searched place
     (a tile listed under another area never lends its district). Anything malformed is simply no district."""
@@ -252,7 +276,7 @@ def parse_search_page(
         area = _stored_decimal(_decimal(item.get("areaInSquareMeters")), AREA_RANGE)
         if rent is not None and area is not None and not PPM2_RANGE[0] <= rent / area <= PPM2_RANGE[1]:
             rent = area = None
-        rooms = item.get("roomsNumber")
+        rooms = _rooms(item.get("roomsNumber"))
         district = _district(item, place_path)
         found.append(
             OfferObservation(
@@ -260,9 +284,7 @@ def parse_search_page(
                 location_id=location_id,
                 asking_rent_pln=rent,
                 area_m2=area,
-                rooms=rooms
-                if isinstance(rooms, int) and not isinstance(rooms, bool) and 1 <= rooms <= 50
-                else None,
+                rooms=rooms,
                 published_at=_published_at(item.get(CREATED_AT_FIELD)),
                 observed_at=observed_at,
                 district_id=district[0] if district else None,

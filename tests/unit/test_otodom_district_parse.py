@@ -80,3 +80,25 @@ def test_without_the_place_path_no_district_is_read() -> None:
         tile(1, geocoding(CITY, (f"{PLACE}/srodmiescie", "Śródmieście", "district"))), place_path=None
     )
     assert o.district_id is None
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("ONE", 1),
+        ("TWO", 2),
+        ("FOUR", 4),
+        ("TEN", 10),
+        ("MORE", None),
+        ("two", None),
+        (3, 3),
+        (0, None),
+        (True, None),
+        (None, None),
+    ],
+)
+def test_the_site_sends_rooms_as_a_word_and_unknown_stays_unknown(raw: object, expected: int | None) -> None:
+    item = tile(7, None)
+    item["roomsNumber"] = raw
+    (o,) = parse(item)
+    assert o.rooms == expected

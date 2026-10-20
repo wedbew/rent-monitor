@@ -14,7 +14,7 @@ from datetime import timedelta
 import pytest
 from deal_analyzer.market_stats import summarise_asking
 from fastapi import FastAPI
-from market_corpus_contract import obs
+from market_corpus_contract import obs, run
 from rm_contracts.market import RunMode
 from rm_core.market_corpus import PgCorpus
 from rm_core.market_history import PgMarketHistory
@@ -150,3 +150,37 @@ async def test_the_overview_follows_the_chosen_cohort_for_every_place(
     assert gdynia["priced_count"] == 12
     assert next(p for p in three["items"] if p["location_id"] == "gdynia")["priced_count"] is None  # no row
     assert (await get(c, "/api/market/overview", cohort="BAD")).status_code == 422
+
+
+async def test_rooms_of_offers_stored_without_them_are_attached_beside_the_offer_and_make_rooms_cohorts(
+    app: FastAPI, market: PgMarketHistory, engine: AsyncEngine, make_google_token: MakeToken
+) -> None:
+    """Live finding: the importer stored no rooms (the site sends a word). The sweep attaches the count in a
+    sidecar; the offers themselves are untouched."""
+    sm = async_sessionmaker(engine, expire_on_commit=False)
+    corpus = PgCorpus(sm)
+    # offers 100..111 (Toruń) already have rooms=2 in this fixture; add three stored WITHOUT rooms
+    await corpus.start_run(run("r-extra", "torun", RunMode.incremental, start=BOOT))
+    bare = [obs(str(900 + i), loc="torun", rent="2500", area="50", rooms=None) for i in range(3)]
+    await corpus.record_offers("r-extra", bare, NOW - timedelta(hours=1))
+    attached = await corpus.record_districts(
+        "torun", [obs(str(900 + i), loc="torun", rent="2500", area="50", rooms=3) for i in range(3)], NOW
+    )
+    assert attached == 0  # no district was named; the rooms went to the sidecar
+    async with engine.connect() as c:
+        rows = (
+            await c.execute(text("SELECT count(*), min(rooms), max(rooms) FROM app.market_offer_rooms"))
+        ).one()
+        stored = (
+            await c.execute(text("SELECT count(*) FROM app.market_offer WHERE rooms IS NULL"))
+        ).scalar_one()
+    assert tuple(rows) == (3, 3, 3)
+    assert stored == 3  # the offers still carry no rooms: only the sidecar does
+    again = await corpus.record_districts(
+        "torun", [obs(str(900), loc="torun", rent="2500", area="50", rooms=4)], NOW
+    )
+    assert again == 0
+    async with engine.connect() as c:
+        assert (
+            await c.execute(text("SELECT rooms FROM app.market_offer_rooms WHERE source_offer_id = 900"))
+        ).scalar_one() == 3

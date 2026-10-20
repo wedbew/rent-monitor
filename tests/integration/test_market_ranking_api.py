@@ -35,7 +35,8 @@ from test_me_saved_admin import MakeToken, app, make_admin, sign_in  # noqa: F40
 pytestmark = [pytest.mark.integration]
 
 TABLES = (
-    "app.market_location_territory, app.market_daily_summary, app.market_offer_district, app.market_district,"
+    "app.market_location_territory, app.market_daily_summary,"
+    " app.market_offer_rooms, app.market_offer_district, app.market_district,"
     " app.market_offer, app.market_import_run,"
     " app.market_import_checkpoint, app.market_location, app.market_catalogue, app.location_quota_stamp,"
     " app.location_publication_pointer, app.location_publication, app.location_ingest_run,"
@@ -146,6 +147,7 @@ async def test_a_mapped_place_gets_a_scored_ranked_index_with_every_component_ex
     assert national["of"] == 4  # all four fictional gminas are scored
     comps = {x["key"]: x for x in idx["components"]}
     assert set(comps) == {c.key for c in li.COMPONENTS}
+    assert comps["net_migration_per_1000"]["metric_key"] == "net_migration"  # the card to open for details
     unemployment = comps["unemployment_share"]  # lower is better: Bieruń (1) first, Bochnia 101 ties Kraków
     assert (unemployment["national_rank"], unemployment["national_of"]) == (2, 4)
     assert unemployment["favourable_pl"] == "Niższa wartość = korzystniej"

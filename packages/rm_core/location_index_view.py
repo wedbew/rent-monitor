@@ -69,6 +69,7 @@ def index_out(snapshot: IndexSnapshot, hierarchy: TerritoryHierarchy, gmina_id: 
         components.append(
             IndexComponentOut(
                 key=spec.key,
+                metric_key=spec.metric,
                 pillar=spec.pillar.value,
                 pillar_pl=PILLAR_NAMES_PL[spec.pillar],
                 name_pl=spec.name_pl,

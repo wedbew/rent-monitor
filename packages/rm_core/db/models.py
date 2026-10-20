@@ -1056,6 +1056,29 @@ class MarketOfferDistrict(Base):
     district_id: Mapped[str] = mapped_column(String(200))
 
 
+class MarketOfferRooms(Base):
+    """The room count of an offer stored without one (RM-439), beside the immutable offer. Insert-once.
+
+    LEGAL[scraping]: from Otodom search results. GDPR[personal-data]: none.
+    """
+
+    __tablename__ = "market_offer_rooms"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["source", "source_offer_id"],
+            ["market_offer.source", "market_offer.source_offer_id"],
+            ondelete="CASCADE",
+        ),
+        CheckConstraint("rooms >= 1 AND rooms <= 50", name="rooms_range"),
+    )
+
+    source: Mapped[str] = mapped_column(
+        String(16), primary_key=True, default="otodom", server_default="otodom"
+    )
+    source_offer_id: Mapped[Decimal] = mapped_column(Numeric(20, 0), primary_key=True)
+    rooms: Mapped[int] = mapped_column(Integer)
+
+
 class MarketDailySummary(Base):
     """Published daily summary of original *asking* rents per location (RM-395, OTO-04). Immutable (trigger).
 

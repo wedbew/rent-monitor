@@ -46,6 +46,7 @@ from rm_core.db.models import (
     MarketLocation,
     MarketOffer,
     MarketOfferDistrict,
+    MarketOfferRooms,
 )
 
 DATASET = "otodom_rental"
@@ -282,6 +283,7 @@ class PgCorpus:
     ) -> int:
         """Store the district of every observation whose offer belongs to `location_id`. The offer is read
         first, so a conflicting place or an unknown id attaches nothing; the offer row is never touched."""
+        await self._attach_rooms(s, location_id, observations)
         wanted = {
             int(o.source_offer_id): o
             for o in observations
@@ -344,6 +346,36 @@ class PgCorpus:
                 .group_by(MarketDistrict.district_id, MarketDistrict.name)
             )
             return {d: (n, int(c)) for d, n, c in rows}
+
+    async def _attach_rooms(
+        self, s: AsyncSession, location_id: str, observations: Sequence[OfferObservation]
+    ) -> None:
+        """Store the room count for offers of this place that were stored without one. Insert-once."""
+        counted = {int(o.source_offer_id): o.rooms for o in observations if o.rooms is not None}
+        if not counted:
+            return
+        missing = (
+            await s.scalars(
+                select(MarketOffer.source_offer_id).where(
+                    MarketOffer.source == "otodom",
+                    MarketOffer.location_id == location_id,
+                    MarketOffer.rooms.is_(None),
+                    MarketOffer.source_offer_id.in_([Decimal(i) for i in counted]),
+                )
+            )
+        ).all()
+        if not missing:
+            return
+        await s.execute(
+            insert(MarketOfferRooms)
+            .values(
+                [
+                    {"source": "otodom", "source_offer_id": Decimal(i), "rooms": counted[int(i)]}
+                    for i in missing
+                ]
+            )
+            .on_conflict_do_nothing(index_elements=["source", "source_offer_id"])
+        )
 
     async def record_districts(
         self, location_id: str, observations: Sequence[OfferObservation], now: datetime

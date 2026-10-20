@@ -2,6 +2,8 @@
 
     C="docker compose -f deploy/compose.yml exec -T api python scripts/e2e_session.py"
     $C create [--credits 5] [--admin]
+    $C session-for --email e2e-<x>@example.test [--entitlement unlimited_reports]   # existing account
+    $C end-sessions --email e2e-<x>@example.test
     $C register-token --email e2e-<x>@example.test --password <p>
     $C delete <user_id>
     $C delete-email e2e-<x>@example.test
@@ -89,6 +91,63 @@ async def create(credits: int, *, admin: bool) -> dict[str, object]:
                 "cookie_value": token,
                 "public_origin": settings.public_origin,
             }
+    finally:
+        await engine.dispose()
+
+
+async def session_for(email: str, *, entitlement: str | None = None) -> dict[str, object]:
+    """A session for an EXISTING e2e-*@example.test account (the designated test account), to drive the real
+    SPA against the real API without a password. Optionally grants an entitlement first (idempotent). Refuses
+    any other address; creates nothing but the session row (`end-sessions` removes the ones made here)."""
+    if not email.startswith("e2e-") or not email.endswith("@example.test"):
+        msg = "refusing: only e2e-*@example.test addresses"
+        raise SystemExit(msg)
+    settings = get_settings()
+    engine = make_engine(settings, pool_size=1, max_overflow=0)
+    sm = make_sessionmaker(engine)
+    try:
+        async with sm() as session:
+            if entitlement is not None:
+                from rm_core.entitlement_grants import grant  # noqa: PLC0415
+
+                await grant(session, email, kind=entitlement, note="e2e session helper")
+        async with sm() as session, session.begin():
+            user_id = await session.scalar(select(User.id).where(User.email == email))
+            if user_id is None:
+                msg = "no such account"
+                raise SystemExit(msg)
+            token = await create_session(
+                session, user_id, user_agent="playwright-e2e", ip=None, settings=settings
+            )
+            return {
+                "user_id": user_id,
+                "email": email,
+                "cookie_name": settings.cookie_name,
+                "cookie_value": token,
+                "public_origin": settings.public_origin,
+            }
+    finally:
+        await engine.dispose()
+
+
+async def end_sessions(email: str) -> int:
+    """Delete every session of an e2e-*@example.test account (the ones this helper made and any other)."""
+    if not email.startswith("e2e-") or not email.endswith("@example.test"):
+        msg = "refusing: only e2e-*@example.test addresses"
+        raise SystemExit(msg)
+    engine = make_engine(get_settings(), pool_size=1, max_overflow=0)
+    sm = make_sessionmaker(engine)
+    try:
+        async with sm() as session, session.begin():
+            result = await session.execute(
+                text(
+                    "DELETE FROM app.user_session"
+                    " WHERE user_id = (SELECT id FROM app.app_user WHERE email = :e)"
+                    " AND user_agent = 'playwright-e2e'"
+                ),
+                {"e": email},
+            )
+            return int(getattr(result, "rowcount", 0) or 0)
     finally:
         await engine.dispose()
 
@@ -245,7 +304,9 @@ async def plant_market(run: str | None) -> dict[str, Any]:
             await corpus.ensure_catalogue(LocationCatalogue.build(version, MARKET_SOURCE_REF, entries))
         base = int(tag, 16) * 1000 if all(c in "0123456789abcdef" for c in tag) else 7_000_000
 
-        def offers(loc: str, first: int, rents: list[int], seen: datetime) -> list[OfferObservation]:
+        def offers(
+            loc: str, first: int, rents: list[int], seen: datetime, *, district: bool = False
+        ) -> list[OfferObservation]:
             return [
                 OfferObservation(
                     source_offer_id=str(base + first + i),
@@ -254,6 +315,8 @@ async def plant_market(run: str | None) -> dict[str, Any]:
                     area_m2=Decimal(50),
                     rooms=2,
                     observed_at=seen,
+                    district_id=f"cala-polska/{loc}/centrum" if district else None,
+                    district_name="Centrum" if district else None,
                 )
                 for i, r in enumerate(rents)
             ]
@@ -280,7 +343,7 @@ async def plant_market(run: str | None) -> dict[str, Any]:
                 loc,
                 RunMode.bootstrap,
                 (boot - timedelta(hours=24), boot),
-                offers(loc, spread * 500, first_rents, boot),
+                offers(loc, spread * 500, first_rents, boot, district=key == "alfa"),  # alfa: 12 in "Centrum"
             )
             second = [3000, 3050, 3100, 3150] if key == "alfa" else []
             await run_one(
@@ -385,7 +448,7 @@ async def unplant_market(run: str) -> dict[str, int]:
         await engine.dispose()
 
 
-def main() -> int:  # noqa: PLR0911  (one early return per sub-command)
+def main() -> int:  # noqa: PLR0911, PLR0915  (one early return per sub-command)
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -393,6 +456,11 @@ def main() -> int:  # noqa: PLR0911  (one early return per sub-command)
     make = sub.add_parser("create")
     make.add_argument("--credits", type=int, default=5)
     make.add_argument("--admin", action="store_true")
+    sess = sub.add_parser("session-for")
+    sess.add_argument("--email", required=True)
+    sess.add_argument("--entitlement", choices=["unlimited_reports"])
+    ends = sub.add_parser("end-sessions")
+    ends.add_argument("--email", required=True)
     drop = sub.add_parser("delete")
     drop.add_argument("user_id")
     token = sub.add_parser("register-token")
@@ -416,6 +484,12 @@ def main() -> int:  # noqa: PLR0911  (one early return per sub-command)
     um = sub.add_parser("unplant-market")
     um.add_argument("--run", required=True)
     args = parser.parse_args()
+    if args.command == "session-for":
+        print(json.dumps(asyncio.run(session_for(args.email, entitlement=args.entitlement))))
+        return 0
+    if args.command == "end-sessions":
+        print(json.dumps({"ended": asyncio.run(end_sessions(args.email))}))
+        return 0
     if args.command == "plant-market":
         print(json.dumps(asyncio.run(plant_market(args.run))))
         return 0

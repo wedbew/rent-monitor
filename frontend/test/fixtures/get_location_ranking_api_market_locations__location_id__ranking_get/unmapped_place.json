@@ -1,0 +1,53 @@
+{
+  "body": {
+    "index": {
+      "caveat_pl": "To eksperymentalne podsumowanie oficjalnych wskaźników GUS: porównuje gminę z innymi gminami w Polsce. Nie jest wyceną nieruchomości, prognozą czynszów ani cen i nie wchodzi do żadnego wyniku finansowego.",
+      "components": [],
+      "gmina": null,
+      "higher_is_better": true,
+      "method_version": 1,
+      "min_cohort": 50,
+      "min_weight_coverage": "0.80",
+      "missing": [],
+      "newest_year": null,
+      "oldest_year": null,
+      "positions": [],
+      "reasons": ["Tego miejsca nie udało się jednoznacznie przypisać do gminy GUS."],
+      "score": null,
+      "state": "unavailable",
+      "title_pl": "Eksperymentalny indeks warunków lokalnych",
+      "weight_coverage": null
+    },
+    "location_id": "smoke-torun",
+    "mapping": {
+      "candidates": [],
+      "method": "not_mapped",
+      "relation": null,
+      "status": "unmatched"
+    },
+    "name": "Toruń",
+    "source": {
+      "attribution_pl": "Źródło: GUS, Bank Danych Lokalnych (BDL); obliczenia własne.",
+      "name": "GUS BDL",
+      "note_pl": "Dane roczne, najnowszy opublikowany rok każdego wskaźnika; metoda opisana w wyniku.",
+      "url": "https://example.test/fixture/72"
+    }
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations/{location_id}/ranking",
+    "method": "GET",
+    "operation_id": "get_location_ranking_api_market_locations__location_id__ranking_get",
+    "path": "/api/market/locations/{location_id}/ranking"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations/smoke-torun/ranking"
+  },
+  "scenario": "unmapped_place",
+  "status": 200
+}

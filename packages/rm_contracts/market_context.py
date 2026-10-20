@@ -156,6 +156,7 @@ class IndexComponentOut(_Out):
     """One indicator inside the index: its value, where it stands among all gminas and what it adds."""
 
     key: str
+    metric_key: str  # the registry indicator behind it: the key of the metric card in the place's GUS context
     pillar: str
     pillar_pl: str
     name_pl: str

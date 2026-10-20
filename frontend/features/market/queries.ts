@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 import { api, unwrap } from "../../api/client";
 import { tenantKey } from "../../api/query";
@@ -17,6 +17,13 @@ export type Overview = components["schemas"]["OverviewOut"];
 export type OverviewPlace = components["schemas"]["OverviewPlaceOut"];
 export type LocationContext = components["schemas"]["LocationContextOut"];
 export type MetricView = components["schemas"]["MetricViewOut"];
+export type LocationDistricts = components["schemas"]["LocationDistrictsOut"];
+export type DistrictRow = components["schemas"]["DistrictOut"];
+export type LocationIndex = components["schemas"]["LocationIndexOut"];
+export type IndexView = components["schemas"]["IndexOut"];
+export type IndexComponent = components["schemas"]["IndexComponentOut"];
+export type RankingOverview = components["schemas"]["RankingOverviewOut"];
+export type RankingEntry = components["schemas"]["RankingEntryOut"];
 
 export const PAGE_SIZE = 30;
 
@@ -102,14 +109,73 @@ export function useLocationHistory(locationId: string, selection: Selection, ena
   });
 }
 
-/** Every place this account may see, in one answer: what the map, the sort and the comparison read. */
-export function useOverview() {
+/**
+ * Every place this account may see, in one answer, for one apartment-size or rooms group (`cohort`): what the map,
+ * the sort and the comparison read. The group is part of the key, so a different group is a different answer; the
+ * previous one stays on screen (marked busy) until the new one arrives, never a blank map.
+ */
+export function useOverview(cohort: string = "all") {
   const me = useMe();
   return useQuery({
-    queryKey: tenantKey(me.id, "market", "overview"),
+    queryKey: tenantKey(me.id, "market", "overview", cohort),
     queryFn: async ({ signal }): Promise<Overview> =>
-      unwrap(await api.GET("/api/market/overview", { signal })),
+      unwrap(
+        await api.GET("/api/market/overview", {
+          params: { query: cohort === "all" ? {} : { cohort } },
+          signal,
+        }),
+      ),
     staleTime: 60_000,
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** The districts the source names under one place, with their own statistics for one group of flats. */
+export function useDistricts(locationId: string, cohort: string, enabled = true) {
+  const me = useMe();
+  return useQuery({
+    queryKey: tenantKey(me.id, "market", "districts", locationId, cohort),
+    queryFn: async ({ signal }): Promise<LocationDistricts> =>
+      unwrap(
+        await api.GET("/api/market/locations/{location_id}/districts", {
+          params: {
+            path: { location_id: locationId },
+            query: cohort === "all" ? {} : { cohort },
+          },
+          signal,
+        }),
+      ),
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
+    enabled,
+  });
+}
+
+/** The experimental GUS locality index of the gmina a place belongs to. */
+export function useLocationRanking(locationId: string, enabled = true) {
+  const me = useMe();
+  return useQuery({
+    queryKey: tenantKey(me.id, "market", "ranking", locationId),
+    queryFn: async ({ signal }): Promise<LocationIndex> =>
+      unwrap(
+        await api.GET("/api/market/locations/{location_id}/ranking", {
+          params: { path: { location_id: locationId } },
+          signal,
+        }),
+      ),
+    staleTime: 5 * 60_000,
+    enabled,
+  });
+}
+
+/** The places of the account with the index of their gmina, best position first. */
+export function useRankingOverview() {
+  const me = useMe();
+  return useQuery({
+    queryKey: tenantKey(me.id, "market", "ranking-overview"),
+    queryFn: async ({ signal }): Promise<RankingOverview> =>
+      unwrap(await api.GET("/api/market/ranking", { signal })),
+    staleTime: 5 * 60_000,
   });
 }
 

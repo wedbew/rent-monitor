@@ -1,0 +1,281 @@
+.page {
+  display: grid;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.page > * {
+  min-width: 0;
+}
+
+.muted {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.context {
+  margin: 0;
+  font-weight: 600;
+}
+
+.card {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 1.375rem;
+}
+
+.badge {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--warning);
+  border-radius: 999px;
+  background: var(--warning-fill);
+  color: var(--warning);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.scoreBlock {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  align-items: start;
+}
+
+.scoreLabel {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.score {
+  margin: 0;
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.scoreOf {
+  color: var(--muted);
+  font-size: 1.125rem;
+  font-weight: 400;
+}
+
+.meter {
+  height: 0.875rem;
+  margin-top: var(--space-2);
+  border: 1px solid var(--control-border);
+  border-radius: 999px;
+  background: var(--surface-hover);
+  overflow: hidden;
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  background: var(--chart-line);
+}
+
+.direction {
+  margin: var(--space-2) 0 0;
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+.positions {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.position {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.componentsSection {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.componentsSection h3 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.tableWrap:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.table {
+  width: 100%;
+  min-width: 46rem;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.table caption {
+  padding: var(--space-3) var(--space-4);
+  color: var(--muted);
+  text-align: left;
+  font-size: 0.8125rem;
+}
+
+.table th,
+.table td {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th.num,
+.table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.componentName {
+  display: block;
+  font-weight: 700;
+}
+
+.componentNote {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.detailLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  margin-top: var(--space-1);
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+
+.facts dt {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.facts dd {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.plain {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+.section {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.section h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.picker {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pick {
+  min-height: 44px;
+  padding: 0 var(--space-1);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.pick:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+tr[data-selected] th,
+tr[data-selected] td {
+  background: var(--selected-bg);
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+}
+
+.live {
+  min-height: 1.25rem;
+  margin: 0;
+  color: var(--info);
+  font-weight: 600;
+}
+
+.metric {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+  min-width: 0;
+}
+
+.context2 {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--muted);
+}

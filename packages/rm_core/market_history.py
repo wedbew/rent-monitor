@@ -39,13 +39,15 @@ from rm_core.db.models import (
     MarketLocation,
     MarketOffer,
     MarketOfferDistrict,
+    MarketOfferRooms,
 )
 
 DATASET = "otodom_rental"
 # Bump when the cohort rules or the statistics change; old rows stay as published, readers take the newest.
 # 2: offers left on a dead run count once a later published run covers them; no first-seen count on a
 # bootstrap day.
-CALC_VERSION = 2
+# 3: the room count of an offer stored without one is read from its sidecar (RM-439), so rooms cohorts exist.
+CALC_VERSION = 3
 MIN_PRICED = 10  # below this a published row says "insufficient evidence" (matches the CHECK)
 MAX_HISTORY_DAYS = 400
 ALL = "all"
@@ -463,7 +465,7 @@ class PgMarketHistory:
                 MarketOffer.source_offer_id,
                 MarketOffer.asking_rent_pln,
                 MarketOffer.area_m2,
-                MarketOffer.rooms,
+                func.coalesce(MarketOffer.rooms, MarketOfferRooms.rooms),
                 MarketOffer.published_at,
                 MarketOffer.first_seen_at,
                 MarketOffer.age_basis,
@@ -472,6 +474,12 @@ class PgMarketHistory:
                 MarketOfferDistrict.district_id,
             )
             .join(MarketImportRun, MarketImportRun.run_id == MarketOffer.run_id)
+            .join(
+                MarketOfferRooms,
+                (MarketOfferRooms.source == MarketOffer.source)
+                & (MarketOfferRooms.source_offer_id == MarketOffer.source_offer_id),
+                isouter=True,
+            )
             .join(
                 MarketOfferDistrict,
                 (MarketOfferDistrict.source == MarketOffer.source)

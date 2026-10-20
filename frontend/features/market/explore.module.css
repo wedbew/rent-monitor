@@ -86,3 +86,83 @@
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
+
+.compare {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.compareHead {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.compareHead h2,
+.chosen h3,
+.picker h3 {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.chosen,
+.picker {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.liveMessage {
+  min-height: 1.25rem;
+  margin: 0;
+  color: var(--info);
+  font-weight: 600;
+}
+
+.rowLink {
+  margin-left: var(--space-3);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-4);
+}
+
+.toolbarEnd {
+  margin-left: auto;
+}
+
+.search {
+  min-width: min(100%, 16rem);
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+}
+
+.busy {
+  opacity: 0.6;
+  transition: opacity var(--motion-ui);
+}
+
+tr[data-selected] th,
+tr[data-selected] td {
+  background: var(--selected-bg);
+  font-weight: 700;
+}

@@ -11,7 +11,9 @@ const DIST = process.env["DIST_DIR"] ?? "dist";
 export const BUDGET = {
   initialJs: 200 * 1024,
   anyLazyChunk: 120 * 1024,
-  totalJs: 450 * 1024,
+  // Raised from 450 kB in RM-439: the chart library (Recharts, one lazy chunk of about 98 kB) that only Rynek pages
+  // with a chart load. The initial-JS and per-chunk limits are unchanged.
+  totalJs: 520 * 1024,
   css: 40 * 1024,
 };
 

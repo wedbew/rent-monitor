@@ -24,7 +24,7 @@ test.describe("desktop rail", () => {
       const link = page.getByRole("link", { name: destination.label, exact: true });
       await exercise(`shell.nav.${destination.id}`, async () => {
         await link.click();
-        return [await outcome.url(page, new RegExp(`${destination.to}$`))];
+        return [await outcome.url(page, new RegExp(`${destination.to}(/otodom)?$`))]; // Rynek opens its default tab;
       });
       await expect(link).toHaveAttribute("aria-current", "page");
       await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
@@ -158,7 +158,7 @@ test.describe("mobile sheet", () => {
       const dialog = page.getByRole("dialog", { name: "Nawigacja" });
       await exercise(`shell.menu.nav.${destination.id}`, async () => {
         await dialog.getByRole("link", { name: destination.label, exact: true }).click();
-        return [await outcome.url(page, new RegExp(`${destination.to}$`))];
+        return [await outcome.url(page, new RegExp(`${destination.to}(/otodom)?$`))]; // Rynek opens its default tab;
       });
       await expect(dialog).toBeHidden();
       await expect(page.getByRole("heading", { level: 1 })).toBeFocused();

@@ -1,0 +1,9 @@
+---
+description: Statistical presentation rule for any chart, metric card or ranking in frontend/ (RM-439)
+globs: frontend/**
+alwaysApply: false
+---
+
+Canonical rule lives in `.agent/rules/statistics.md`. Follow it:
+
+@.agent/rules/statistics.md

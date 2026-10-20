@@ -127,6 +127,7 @@ Read the matching file when your change touches the area; update the doc in the 
 - `rules/blockers.md` — stop and record owner-only blockers in `docs/BLOCKERS.md`; work only in this checkout; pull `staging` after every merge.
 - `rules/delivery.md` — journey-first priority, ready/done levels, checkpoints, `docs/STATUS.md` upkeep.
 - `rules/frontend.md` — every `frontend/` change: evidence before claims, tested primitive promises, one door per session transition, untrusted network data, copy and numbers from one place, durable audits (audit 2026-10-15).
+- `rules/statistics.md` — every chart, metric and ranking answers what / unit and area / period / source and sample / how to read it; denominators on ranks, table equivalents, honest gaps (RM-439).
 - `rules/context.md` — keep root `CONTEXT.md` current: update it in the same PR as any change that makes it stale; bump its "Last updated" line.
 - `rules/session-workflow.md` — one issue per session, brief and stop conditions, Edit vs Write, worktrees, name-only `.env` checks.
 - `rules/parallel-work.md` — independent worker lanes, shared-file reservations, documentation handoffs and integration ownership; no waiver of same-PR docs or required checks.

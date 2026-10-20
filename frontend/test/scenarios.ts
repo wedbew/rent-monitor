@@ -245,6 +245,14 @@ export interface MarketOptions {
   readonly overviewFails?: boolean;
   /** The context of a place cannot be read. */
   readonly contextFails?: boolean;
+  /** The districts of a place cannot be read. */
+  readonly districtsFail?: boolean;
+  /** The experimental index cannot be read. */
+  readonly rankingFails?: boolean;
+  /** No place has any district at the source. */
+  readonly noDistricts?: boolean;
+  /** The account holds the no-limit entitlement (zero balance, full market). */
+  readonly unlimited?: boolean;
 }
 
 type OverviewOut = components["schemas"]["OverviewOut"];
@@ -311,7 +319,18 @@ const CITY_NAMES = [
 const MARKET_DAY = "2026-10-19";
 const MARKET_REFRESH = "2026-10-19T04:00:00Z";
 const MARKET_CAVEATS = ["asking_not_achieved_rent", "not_active_stock", "not_deed_price"];
-const COHORT_FACTOR: Record<string, number> = { all: 1, rooms_2: 1.1, size_45_60: 1.25 };
+const COHORT_FACTOR: Record<string, number> = {
+  all: 1,
+  rooms_1: 0.9,
+  rooms_2: 1.1,
+  rooms_3: 1.3,
+  rooms_4plus: 1.6,
+  size_lt30: 0.8,
+  size_30_45: 1,
+  size_45_60: 1.25,
+  size_60_80: 1.4,
+  size_80plus: 1.8,
+};
 
 const slug = (name: string) =>
   name
@@ -507,15 +526,32 @@ export function createMarket(options: MarketOptions = {}): Market {
   const visible = options.free === true ? places.slice(0, FREE_VISIBLE) : places;
   const closed = (id: string) => !visible.some((p) => p.location_id === id);
   const mappingOf = (i: number) => (i % 11 === 10 ? "unmatched" : i % 7 === 6 ? "ambiguous" : "mapped");
+  const scaled = (p: LocationSummary, cohort: string): LocationSummary => {
+    if (cohort === "all" || p.data_status === "unavailable") return p;
+    const factor = COHORT_FACTOR[cohort] ?? 1;
+    const priced = Math.max(2, Math.round((p.priced_count ?? 0) / 3));
+    const enough = p.sufficient === true && priced >= 10;
+    return {
+      ...p,
+      priced_count: priced,
+      sufficient: enough,
+      withheld_reason: enough ? null : "insufficient_sample",
+      median_rent_pln: enough ? (Number(p.median_rent_pln ?? "2000") * factor).toFixed(2) : null,
+      median_ppm2: enough ? (Number(p.median_ppm2 ?? "40") * factor).toFixed(2) : null,
+    };
+  };
   const overview: Route = {
     operation: "GET /api/market/overview",
-    reply: () => {
+    reply: (request) => {
       if (options.overviewFails === true) return problem(503);
+      const cohort = request.url.searchParams.get("cohort") ?? "all";
+      state.requests.push(`/api/market/overview${request.url.search}`);
+      if (!(cohort in COHORT_FACTOR)) return replyFrom(fx("GET /api/market/overview", "bad_cohort"));
       const items: OverviewPlaceOut[] = visible.map((p) => {
         const i = places.indexOf(p);
         const mapping = mappingOf(i);
         return {
-          ...p,
+          ...scaled(p, cohort),
           mapping,
           relation: mapping === "mapped" ? (i % 5 === 4 ? "within_gmina" : "gmina") : null,
           gmina_teryt: mapping === "mapped" ? (MARKET_TERYT[i % MARKET_TERYT.length] ?? null) : null,
@@ -532,7 +568,256 @@ export function createMarket(options: MarketOptions = {}): Market {
           access: options.free === true ? "free" : "full",
           free_limit: FREE_VISIBLE,
           free_rule_pl: "Darmowe konto widzi 20 miejsc z największą liczbą opublikowanych ofert z ceną.",
+          cohort_key: cohort,
         } satisfies OverviewOut,
+      };
+    },
+  };
+  const DISTRICT_NAMES = ["Centrum", "Północ", "Południe", "Rubinkowo"];
+  const districts: Route = {
+    operation: "GET /api/market/locations/{location_id}/districts",
+    reply: (request) => {
+      state.requests.push(`${request.url.pathname}${request.url.search}`);
+      if (options.districtsFail === true) return problem(503);
+      const id = String(request.params["location_id"]);
+      const place = places.find((p) => p.location_id === id);
+      if (place === undefined)
+        return replyFrom(fx("GET /api/market/locations/{location_id}/districts", "unknown_place"));
+      if (closed(id))
+        return replyFrom(fx("GET /api/market/locations/{location_id}/districts", "outside_free_list"));
+      const cohort = request.url.searchParams.get("cohort") ?? "all";
+      const i = places.indexOf(place);
+      const supported = options.noDistricts !== true && place.data_status !== "unavailable" && i % 3 === 0;
+      const factor = COHORT_FACTOR[cohort] ?? 1;
+      const rows = supported
+        ? DISTRICT_NAMES.map((name, k) => {
+            const priced =
+              k === 3
+                ? 4
+                : Math.max(0, Math.round((place.priced_count ?? 30) / (k + 2) / (cohort === "all" ? 1 : 3)));
+            const enough = priced >= 10;
+            const ppm2 = (Number(place.median_ppm2 ?? "40") * factor * (1 + k / 20)).toFixed(2);
+            return {
+              district_id: `cala-polska/${id}/${slug(name)}`,
+              name,
+              observed_count: priced + 1,
+              priced_count: priced,
+              median_rent_pln: enough ? (Number(ppm2) * 48).toFixed(2) : null,
+              median_ppm2: enough ? ppm2 : null,
+              p25_ppm2: enough ? (Number(ppm2) - 3).toFixed(2) : null,
+              p75_ppm2: enough ? (Number(ppm2) + 3).toFixed(2) : null,
+              sufficient: enough,
+              withheld_reason: enough ? null : ("insufficient_sample" as const),
+            };
+          })
+        : [];
+      return {
+        status: 200,
+        body: {
+          price_basis: "asking",
+          source: "otodom",
+          location_id: id,
+          name: place.name,
+          data_status: place.data_status,
+          coverage: supported ? "supported" : "none",
+          cohort_key: cohort,
+          as_of: `${MARKET_DAY}T05:30:00Z`,
+          offers_in_cohort: supported ? rows.reduce((n, r) => n + r.priced_count, 0) + 3 : 0,
+          offers_with_district: supported ? rows.reduce((n, r) => n + r.priced_count, 0) : 0,
+          districts: rows,
+          caveats: MARKET_CAVEATS,
+        } satisfies components["schemas"]["LocationDistrictsOut"],
+      };
+    },
+  };
+  const COMPONENTS = [
+    ["net_migration_per_1000", "net_migration", "demography", "Demografia", "Saldo migracji na pobyt stały na 1000 mieszkańców", "osób na 1000 mieszkańców", 20, "higher"],
+    ["natural_increase_per_1000", "natural_increase", "demography", "Demografia", "Przyrost naturalny na 1000 mieszkańców", "osób na 1000 mieszkańców", 10, "higher"],
+    ["unemployment_share", "unemployment_share_working_age", "labour", "Rynek pracy i dochody", "Udział zarejestrowanych bezrobotnych w ludności w wieku produkcyjnym", "%", 15, "lower"],
+    ["earnings", "average_monthly_gross_earnings", "labour", "Rynek pracy i dochody", "Przeciętne miesięczne wynagrodzenie brutto", "zł", 15, "higher"],
+    ["business_density", "regon_entities_per_10k", "business", "Przedsiębiorczość", "Podmioty gospodarcze (REGON) na 10 tys. mieszkańców", "podmiotów na 10 tys. mieszkańców", 20, "higher"],
+    ["own_revenue", "own_revenue_per_resident", "fiscal", "Dochody własne gminy", "Dochody własne gminy na mieszkańca", "zł na mieszkańca", 20, "higher"],
+  ] as const; // prettier-ignore
+  const indexOf = (i: number): components["schemas"]["IndexOut"] => {
+    const state = i % 7 === 3 ? "not_scored" : i % 11 === 6 ? "scored_not_ranked" : "ok";
+    const scoreValue = 82 - (i % 37) * 1.7;
+    const have = state !== "not_scored";
+    const comps = COMPONENTS.map(([key, metric, pillar, pillarPl, name, unit, weight, dir], k) => {
+      const missing = state === "not_scored" && k === 4;
+      const score = Math.max(4, 90 - ((i * 7 + k * 13) % 80));
+      return {
+        key,
+        metric_key: metric,
+        pillar,
+        pillar_pl: pillarPl,
+        name_pl: name,
+        explain_pl: "Opis wskaźnika w tym teście.",
+        unit_pl: unit,
+        weight,
+        value: missing ? null : (12 + k * 3.25 + i / 10).toFixed(2),
+        year: missing ? null : 2024 + (k % 2),
+        basis: missing ? null : k === 3 ? ("proxy" as const) : ("direct" as const),
+        measured: missing
+          ? null
+          : {
+              territory_id: `t${k}`,
+              name: k === 3 ? "Powiat testowy" : "Gmina testowa",
+              level: k === 3 ? ("powiat" as const) : ("gmina" as const),
+              teryt: "",
+            },
+        national_rank: missing ? null : 100 + i + k * 9,
+        national_of: missing ? null : 2479,
+        score: missing ? null : score.toFixed(2),
+        points: missing || !have ? null : ((weight / 100) * score).toFixed(2),
+        favourable_pl: dir === "lower" ? "Niższa wartość = korzystniej" : "Wyższa wartość = korzystniej",
+      };
+    });
+    return {
+      state,
+      reasons:
+        state === "not_scored"
+          ? ["brak danych w obszarze „Przedsiębiorczość”"]
+          : state === "scored_not_ranked"
+            ? ["kohorta mniejsza niż 50 gmin: brak pozycji"]
+            : [],
+      method_version: 1,
+      title_pl: "Eksperymentalny indeks warunków lokalnych",
+      caveat_pl:
+        "To eksperymentalne podsumowanie oficjalnych wskaźników GUS: porównuje gminę z innymi gminami w Polsce. Nie jest wyceną nieruchomości, prognozą czynszów ani cen i nie wchodzi do żadnego wyniku finansowego.",
+      higher_is_better: true,
+      score: state === "not_scored" ? null : scoreValue.toFixed(2),
+      weight_coverage: state === "not_scored" ? "0.80" : "1.00",
+      positions:
+        state === "ok"
+          ? [
+              {
+                name_pl: "gminy w Polsce z kompletnym indeksem",
+                scope: "national" as const,
+                rank: 120 + i,
+                of: 2479,
+                percentile: "95.20",
+                unit_name: null,
+              },
+              {
+                name_pl: "gminy z kompletnym indeksem w tym samym województwie",
+                scope: "voivodeship" as const,
+                rank: 3 + (i % 5),
+                of: 160,
+                percentile: null,
+                unit_name: "Województwo testowe",
+              },
+            ]
+          : [],
+      components: comps,
+      missing: state === "not_scored" ? ["Podmioty gospodarcze (REGON) na 10 tys. mieszkańców"] : [],
+      gmina: {
+        territory_id: `g${i}`,
+        name: `Gmina ${places[i]?.name ?? ""}`,
+        level: "gmina" as const,
+        teryt: MARKET_TERYT[i % MARKET_TERYT.length] ?? "",
+      },
+      oldest_year: 2024,
+      newest_year: 2025,
+      min_weight_coverage: "0.80",
+      min_cohort: 50,
+    };
+  };
+  const ranking: Route = {
+    operation: "GET /api/market/locations/{location_id}/ranking",
+    reply: (request) => {
+      state.requests.push(request.url.pathname);
+      if (options.rankingFails === true) return problem(503);
+      const id = String(request.params["location_id"]);
+      const place = places.find((p) => p.location_id === id);
+      if (place === undefined)
+        return replyFrom(fx("GET /api/market/locations/{location_id}/ranking", "unknown_place"));
+      if (closed(id))
+        return replyFrom(fx("GET /api/market/locations/{location_id}/ranking", "outside_free_list"));
+      const i = places.indexOf(place);
+      const mapping = mappingOf(i);
+      const index =
+        mapping === "mapped"
+          ? indexOf(i)
+          : {
+              ...indexOf(i),
+              state: "unavailable" as const,
+              reasons: ["Tego miejsca nie udało się jednoznacznie przypisać do gminy GUS."],
+              score: null,
+              positions: [],
+              components: [],
+              missing: [],
+              gmina: null,
+              weight_coverage: null,
+              oldest_year: null,
+              newest_year: null,
+            };
+      return {
+        status: 200,
+        body: {
+          location_id: id,
+          name: place.name,
+          mapping: {
+            status: mapping,
+            relation: mapping === "mapped" ? (i % 5 === 4 ? "within_gmina" : "gmina") : null,
+            method: "name_in_powiat",
+            candidates: [],
+          },
+          index,
+          source: {
+            name: "GUS BDL",
+            url: "https://example.test/fixture/1",
+            attribution_pl: "Źródło: GUS, Bank Danych Lokalnych (BDL); obliczenia własne.",
+            note_pl: "Dane roczne.",
+          },
+        } satisfies components["schemas"]["LocationIndexOut"],
+      };
+    },
+  };
+  const rankingOverview: Route = {
+    operation: "GET /api/market/ranking",
+    reply: () => {
+      if (options.rankingFails === true) return problem(503);
+      const items = visible
+        .map((p) => {
+          const i = places.indexOf(p);
+          const mapped = mappingOf(i) === "mapped";
+          const idx = indexOf(i);
+          return {
+            location_id: p.location_id,
+            name: p.name,
+            gmina_name: mapped ? `Gmina ${p.name}` : null,
+            state: mapped ? idx.state : ("unavailable" as const),
+            score: mapped ? idx.score : null,
+            rank: mapped && idx.state === "ok" ? 120 + i : null,
+            of: mapped && idx.state === "ok" ? 2479 : null,
+            relation: mapped ? (i % 5 === 4 ? ("within_gmina" as const) : ("gmina" as const)) : null,
+          };
+        })
+        .sort(
+          (a, b) =>
+            (a.rank === null ? 1 : 0) - (b.rank === null ? 1 : 0) ||
+            (a.rank ?? 0) - (b.rank ?? 0) ||
+            a.name.localeCompare(b.name, "pl"),
+        );
+      return {
+        status: 200,
+        body: {
+          method_version: 1,
+          title_pl: "Eksperymentalny indeks warunków lokalnych",
+          caveat_pl: "To eksperymentalne podsumowanie oficjalnych wskaźników GUS.",
+          cohort_name_pl: "gminy w Polsce z kompletnym indeksem",
+          scored_gminas: 2400,
+          total_places: places.length,
+          visible_places: items.length,
+          access: options.free === true ? "free" : "full",
+          items,
+          source: {
+            name: "GUS BDL",
+            url: "https://example.test/fixture/1",
+            attribution_pl: "Źródło: GUS, Bank Danych Lokalnych (BDL); obliczenia własne.",
+            note_pl: "Dane roczne.",
+          },
+        } satisfies components["schemas"]["RankingOverviewOut"],
       };
     },
   };
@@ -666,10 +951,16 @@ export function createMarket(options: MarketOptions = {}): Market {
     },
   };
   const base = scenario("market", `A catalogue of ${places.length} places with asking-rent readings.`, [
+    ...(options.unlimited === true
+      ? [withMe((m) => ({ ...m, credit_balance: 0, plan: { ...m.plan, unlimited_reports: true } }))]
+      : []),
     list,
     detail,
     history,
     overview,
+    districts,
+    ranking,
+    rankingOverview,
     context,
   ]);
   return { ...base, state, places };
@@ -1089,6 +1380,7 @@ export const SCENARIOS = {
   market: createMarket(),
   marketEmpty: createMarket({ empty: true }),
   marketFree: createMarket({ free: true }),
+  marketUnlimited: createMarket({ unlimited: true }),
   marketListFailing: createMarket({ listFails: true }),
   unsupportedReport: scenario(
     "unsupportedReport",

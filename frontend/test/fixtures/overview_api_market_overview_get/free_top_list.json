@@ -1,13 +1,14 @@
 {
   "body": {
     "access": "free",
+    "cohort_key": "all",
     "free_limit": 20,
     "free_rule_pl": "Darmowe konto widzi 20 miejsc z największą liczbą opublikowanych ofert z ceną; pełny rynek odblokowuje zakup pakietu raportów lub plan Pro.",
     "items": [
       {
         "data_status": "fresh",
         "gmina_teryt": null,
-        "last_successful_refresh_at": "2026-10-19T22:08:10.966160Z",
+        "last_successful_refresh_at": "2026-10-20T11:31:16.441377Z",
         "latest_summary_date": "2026-10-20",
         "location_id": "smoke-torun",
         "mapping": null,

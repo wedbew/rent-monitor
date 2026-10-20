@@ -1524,6 +1524,10 @@
               }
             ]
           },
+          "metric_key": {
+            "title": "Metric Key",
+            "type": "string"
+          },
           "name_pl": {
             "title": "Name Pl",
             "type": "string"
@@ -1613,6 +1617,7 @@
         },
         "required": [
           "key",
+          "metric_key",
           "pillar",
           "pillar_pl",
           "name_pl",
