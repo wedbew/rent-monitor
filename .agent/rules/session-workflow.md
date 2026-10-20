@@ -8,7 +8,7 @@ From `docs/SESSION-REPORT-2026-10-11-to-18.md` (31 sessions, 4,618 tool calls). 
    or PR open with checks watched) and when to ask. Do not ask for approval the brief or `OWNER-DECISIONS` already gives.
 3. **Edit with `Edit`, create with `Write`.** Do not rewrite existing files with heredocs or inline Python string
    replacement, so diffs stay reviewable and Read-before-edit holds.
-4. **One checkout, one writer.** Parallel work runs in its own worktree under `.claude/worktrees/` (`parallel-work.md`).
+4. **One checkout, one writer.** Parallel work runs in its own worktree under `.claude/worktrees/` (`parallel-work.md`) and is removed when the task completes (`parallel-work.md` §6).
    Never switch branches in a shared checkout.
 5. **Test auth with `claude -p`.** Use one scripted one-shot call, not an interactive session, to check a token.
 6. **Check before claiming a value is missing.** Check names and presence only (for example `grep -o '^NAME=' .env`,
