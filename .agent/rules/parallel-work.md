@@ -86,3 +86,19 @@ Canonical rules, `CLAUDE.md`, skill instructions, settings, workflows and PR tem
 owner during a batch. Changes to `.github/`, rulesets or `.claude/settings.json` keep existing approval
 requirements. Never loosen permissions, tests, limits or branch protections to enable concurrency.
 This protocol is an agent instruction, not a scheduler, durable lease service or proof Claude auth works.
+
+## 6. Clean up the worktree when the task completes
+
+A worktree exists for one task. The moment that task ends, the agent that created it (or the coordinator who
+dispatched it) removes it; leftovers clutter the editor's source control and hold stale locks.
+
+1. **When:** the PR is merged, or the task is abandoned or handed off. A handoff removes the worker's checkout
+   only after the integrator owns the branch at a named pushed SHA (`§3`).
+2. **Before removing, check:** `git -C <path> status --porcelain` is empty, and the branch tip is on `origin`
+   (`git rev-list --count origin/<branch>..<branch>` is 0). Anything else is reported, never discarded.
+3. **Remove:** `git worktree remove <path>`, then `git worktree prune` and delete the local branch
+   (`git branch -D <branch>`; a squash merge makes `-d` refuse). No `--force` on a dirty tree.
+4. **Locks:** unlock only when the process named in the lock reason is no longer running
+   (`ps -p <pid>`). A live lock belongs to someone else's active session; leave it and say so.
+5. **Never** remove a worktree you did not create or were not assigned, or the main checkout.
+6. The final message of the task states that the worktree was removed (or why not).

@@ -635,8 +635,14 @@ async def test_sign_out_revokes_the_session_and_is_idempotent(
         out = await c.post("/api/auth/signout")
         assert out.status_code == 204
         assert "max-age=0" in out.headers["set-cookie"].lower()
-        c.cookies.set("rm_session", raw)  # replay the old cookie: the server must refuse it
-        assert (await c.get("/api/auth/sessions")).status_code == 401
+
+        async def replay_is_refused() -> bool:  # replay the old cookie: the server must refuse it
+            c.cookies.set("rm_session", raw)
+            return (await c.get("/api/auth/sessions")).status_code == 401
+
+        # The cached principal is evicted by NOTIFY, which crosses processes: wait for it, as the
+        # sign-out-everywhere tests do (a busy runner made an immediate replay flaky).
+        await wait_until(replay_is_refused, within=3.0)
         assert (await c.post("/api/auth/signout")).status_code == 204
     async with engine.connect() as conn:
         assert (

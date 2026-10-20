@@ -33,7 +33,7 @@ from pathlib import Path
 import pytest
 import pytest_asyncio
 from contract import OPENAPI_PATH, load_spec, operations
-from db_fixtures import engine, migrated_url, pg_url, procrastinate_schema
+from db_fixtures import engine, migrated_url, pg_url, procrastinate_schema, template_url
 from scenarios import all_scenarios
 from world import ORIGIN, World
 

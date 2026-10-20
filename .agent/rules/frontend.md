@@ -14,7 +14,10 @@ that touches `frontend/`, and to backend PRs that change a contract the SPA cons
   `pnpm test:e2e` when a page, popup, form or stream changes. Paste the summary lines in the PR. GitHub runs the
   `frontend`, `frontend-e2e` and `frontend-journey` jobs (RM-296); until the owner makes them required checks
   (L-031), a merge does not wait for them, so read their result before merging. Never write "CI green" for
-  frontend work unless those jobs ran and passed on the head commit.
+  frontend work unless those jobs ran and passed on the head commit. The jobs are skipped when nothing the SPA
+  depends on changed (`scripts/changed_paths.py`: `frontend/`, the OpenAPI document, the report schema, workflows; the
+  journey lane also for backend and deploy changes): a skipped job is not evidence, so a PR that touches `frontend/`
+  must show them as run, never as skipped.
 - A stage that did not run is **SKIPPED** in the PR, with the reason. Browser runs use their own `E2E_PORT`,
   `--output` and `E2E_COVERAGE_DIR`; results from a shared or reused server are not evidence.
 - Coverage numbers are reported **with their scope** (today `api/**` only). Never quote a percentage as covering

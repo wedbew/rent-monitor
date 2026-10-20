@@ -33,6 +33,7 @@ dev = [
   "pyright==1.1.414",
   "commitizen>=4.19,<5",
   "defusedxml>=0.7.1",
+  "pytest-xdist>=3.8,<4",
 ]
 
 [tool.ruff]
