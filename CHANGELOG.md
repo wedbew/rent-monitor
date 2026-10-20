@@ -6,6 +6,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ### Fixed
 - BDL requests respect the service's limit of 10 per second (new `BDL_REQUESTS_PER_SECOND`, default 5; `Retry-After: 1 sek` is understood), and the observations of a finished national run are stored in chunks instead of one statement over PostgreSQL's parameter limit. Both were found by the first live BDL pass (RM-48)
+- A corpus run whose place id was long (up to 64 characters) failed before its first page because the run id embedded it and overflowed 64 characters; run ids now carry a short hash of the place id. Found by the first live bootstrap (RM-411)
 
 ### Added
 - Otodom place catalogue from the site's own location sitemap: `docs/market/otodom-catalogue-v1.json` (787 gmina-level places, provenance, sitemap SHA-256, checksum, per-place census and a reconciliation that says plainly it is not the owner's 727 identities), `scripts/seed_catalogue.py discover|apply` and `scripts/market_manifest.py` (coverage manifest: per-place state, pages read, offers stored). Operator action: `scripts/seed_catalogue.py apply --file docs/market/otodom-catalogue-v1.json` once per database (RM-411)
