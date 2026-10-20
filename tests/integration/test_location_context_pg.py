@@ -521,3 +521,91 @@ async def test_ingestion_shares_the_quota_with_other_workers(
             deadline=Deadline.after(30),
         )
     assert (await the_run(repo)).state == "incomplete"
+
+
+async def test_a_national_sized_batch_is_stored_in_chunks_and_a_repeat_counts_duplicates(
+    repo: PgLocationRepo,
+) -> None:
+    """Live finding 2026-10-20: the gap rows of a finished gmina run (2,479 units x 10 years) are one batch;
+    a single INSERT of that size exceeds PostgreSQL's 65,535 bound parameters."""
+    years = tuple(range(2016, 2026))
+    base = territories()[:3]
+    gminas = [
+        TerritoryRef(
+            territory_id=f"{i:012d}",
+            teryt=f"{i // 10000:02d}{(i // 100) % 100:02d}{i % 100:02d}1",  # unique per gmina
+            name=f"G{i}",
+            level=G,
+            parent_id="P0201",
+        )
+        for i in range(2600)
+    ]
+    refs = [*base, *gminas]
+    await repo.ensure_reference(5, "national-sized", refs)
+    run = await repo.start_run(
+        variable_id="TESTV1",
+        unit_level=6,
+        years=years,
+        reference_version=5,
+        metric_key="test_population",
+        metric_version=1,
+    )
+    claimed = await repo.claim_run(run.run_id, "w1", 300)
+    assert claimed is not None
+    rows = [
+        Observation(
+            territory_id=r.territory_id,
+            metric_key="test_population",
+            metric_version=1,
+            year=y,
+            status=ObservationStatus.measured,
+            value=Decimal(i + y),
+            source_digest=f"{i:032x}{y:032x}",
+        )
+        for i, r in enumerate(gminas)
+        for y in years
+    ]
+    first = await repo.record_page(run.run_id, "w1", page_index=0, observations=rows, lease_s=300)
+    assert (first.inserted, first.duplicates, first.conflicts) == (26_000, 0, 0)
+    again = await repo.record_page(run.run_id, "w1", page_index=1, observations=rows, lease_s=300)
+    assert (again.inserted, again.duplicates, again.conflicts) == (0, 26_000, 0)
+
+
+async def test_completing_a_national_sized_run_stores_gap_rows_in_chunks(repo: PgLocationRepo) -> None:
+    """The first live pass died here: `complete_run` wrote 2,479 units x 10 years of gaps in one INSERT."""
+    years = tuple(range(2016, 2026))
+    gminas = [
+        TerritoryRef(
+            territory_id=f"{i:012d}",
+            teryt=f"{i // 10000:02d}{(i // 100) % 100:02d}{i % 100:02d}1",
+            name=f"G{i}",
+            level=G,
+            parent_id="P0201",
+        )
+        for i in range(2600)
+    ]
+    await repo.ensure_reference(6, "national-gaps", [*territories()[:3], *gminas])
+    run = await repo.start_run(
+        variable_id="TESTV1",
+        unit_level=6,
+        years=years,
+        reference_version=6,
+        metric_key="test_population",
+        metric_version=1,
+    )
+    assert await repo.claim_run(run.run_id, "w1", 300) is not None
+    gaps = [
+        Observation(
+            territory_id=g.territory_id,
+            metric_key="test_population",
+            metric_version=1,
+            year=y,
+            status=ObservationStatus.missing,
+            reason="source returned no row",
+            source_digest=f"{i:032x}{y:032x}",
+        )
+        for i, g in enumerate(gminas)
+        for y in years
+    ]
+    done = await repo.complete_run(run.run_id, "w1", gap_observations=gaps)
+    assert (done.state, done.inserted) == ("complete", 26_000)
