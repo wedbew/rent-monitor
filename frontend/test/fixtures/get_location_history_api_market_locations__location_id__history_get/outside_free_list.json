@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "FEATURE_NOT_IN_PLAN",
+    "detail": "Darmowe konto widzi 20 miejsc z największą liczbą opublikowanych ofert z ceną; pełny rynek odblokowuje zakup pakietu raportów lub plan Pro.",
+    "instance": "/api/market/locations/smoke-gdynia/history",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "This place is outside the free Rynek list",
+    "type": "urn:rentmonitor:problem:FEATURE_NOT_IN_PLAN",
+    "upgrade_url": "/app/credits"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations/{location_id}/history",
+    "method": "GET",
+    "operation_id": "get_location_history_api_market_locations__location_id__history_get",
+    "path": "/api/market/locations/{location_id}/history"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations/smoke-gdynia/history"
+  },
+  "scenario": "outside_free_list",
+  "status": 403
+}

@@ -4,6 +4,10 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+- `GET /api/market/overview` (every place the account may see, with headline, mapping and gmina TERYT) and `GET /api/market/locations/{id}/context` (GUS BDL hierarchy, per-metric value, ten-year series, trend, parent values, national and peer ranks only past their gates, proxies labelled); migration 0020 `market_location_territory` (expand-only) stores the explicit Otodom-place-to-gmina mapping (never by name alone; ambiguous names list their candidates). Map geometry from the official PRG boundaries in `frontend/public/geo/` (joined by TERYT). Operator action: run the mapping once per catalogue and reference (RM-282)
+- Free tier: an account without Pro, a pass or an unrevoked purchased pack sees exactly the 20 places with the largest published samples across list, overview, detail, history and context; any other place answers 403 `FEATURE_NOT_IN_PLAN` (RM-282)
+
 ### Fixed
 - BDL requests respect the service's limit of 10 per second (new `BDL_REQUESTS_PER_SECOND`, default 5; `Retry-After: 1 sek` is understood), and the observations of a finished national run are stored in chunks instead of one statement over PostgreSQL's parameter limit. Both were found by the first live BDL pass (RM-48)
 - A corpus run whose place id was long (up to 64 characters) failed before its first page because the run id embedded it and overflowed 64 characters; run ids now carry a short hash of the place id. Found by the first live bootstrap (RM-411)

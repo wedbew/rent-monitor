@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "HTTP_ERROR",
+    "instance": "/api/auth/register/verify",
+    "request_id": "req_fixture",
+    "status": 400,
+    "title": "HTTP error",
+    "type": "urn:rentmonitor:problem:HTTP_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/register/verify",
+    "method": "POST",
+    "operation_id": "register_verify_api_auth_register_verify_post",
+    "path": "/api/auth/register/verify"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/auth/register/verify"
+  },
+  "scenario": "undecodable_body",
+  "status": 400
+}

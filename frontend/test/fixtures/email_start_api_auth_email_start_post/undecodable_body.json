@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "HTTP_ERROR",
+    "instance": "/api/auth/email/start",
+    "request_id": "req_fixture",
+    "status": 400,
+    "title": "HTTP error",
+    "type": "urn:rentmonitor:problem:HTTP_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/email/start",
+    "method": "POST",
+    "operation_id": "email_start_api_auth_email_start_post",
+    "path": "/api/auth/email/start"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/auth/email/start"
+  },
+  "scenario": "undecodable_body",
+  "status": 400
+}

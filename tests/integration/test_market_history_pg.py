@@ -24,7 +24,7 @@ pytestmark = [pytest.mark.integration]
 
 TABLES = (
     "app.market_daily_summary, app.market_offer, app.market_import_run, app.market_import_checkpoint,"
-    " app.market_location, app.market_catalogue"
+    " app.market_location_territory, app.market_location, app.market_catalogue"
 )
 BOOT = datetime(2026, 10, 10, 3, 0, tzinfo=UTC)
 NOW = datetime(2026, 10, 19, 6, 0, tzinfo=UTC)

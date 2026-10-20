@@ -696,6 +696,33 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Workaround:** labels and notes travel with each value; no composite uses them without that caveat
 - **Target:** methodology note with the experimental index
 
+### L-093 — Some Otodom places map to no gmina or to several
+- **Status:** active
+- **Discovered:** 2026-10-20
+- **Affects:** `rm_core.location_mapping`, `market_location_territory`, BDL context of those places
+- **Evidence:** confirmed on the real catalogue and reference (760 of 787 mapped, 24 ambiguous, 3 unmatched in the first evaluation)
+- **Description:** A city and its rural gmina share a name in 311 powiats, so a plain slug stays ambiguous and lists its candidates; places below a listed gmina map to the containing gmina (`within_gmina`), not to themselves. Unmatched places have no BDL context.
+- **Workaround:** powiat figures remain available when only the powiat matches
+- **Target:** review the ambiguous list with the owner
+
+### L-094 — The free-tier rule is a delegated policy, not a commercial decision
+- **Status:** active
+- **Discovered:** 2026-10-20
+- **Affects:** `rm_core.market_access`, every Rynek route
+- **Evidence:** confirmed (`tests/integration/test_market_api.py`)
+- **Description:** Free accounts see the 20 places with the largest published sample of priced offers (ties by id); the set can change as samples grow. Full access: admin, Pro, pass, or a purchased pack not fully revoked.
+- **Workaround:** none
+- **Target:** owner may change the number or the order
+
+### L-095 — Map geometry terms are unconfirmed and shapes are simplified
+- **Status:** active
+- **Discovered:** 2026-10-20
+- **Affects:** `frontend/public/geo/*.json`, `scripts/build_map_geometry.py`, B-012
+- **Evidence:** confirmed (source, free download); licence text not reviewed by counsel
+- **Description:** PRG boundaries simplified to about 400 m; attribution "Źródło: Państwowy Rejestr Granic, GUGiK" must be shown with the map.
+- **Workaround:** none
+- **Target:** counsel review
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built

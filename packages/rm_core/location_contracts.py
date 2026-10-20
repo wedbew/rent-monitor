@@ -90,6 +90,9 @@ class TerritoryHierarchy:
                 raise HierarchyError(f"{ref.territory_id}: parent must be one level above")
         self._by_id = by_id
 
+    def all(self) -> list[TerritoryRef]:
+        return list(self._by_id.values())
+
     def get(self, territory_id: str) -> TerritoryRef:
         try:
             return self._by_id[territory_id]

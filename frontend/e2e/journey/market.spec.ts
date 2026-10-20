@@ -39,6 +39,7 @@ interface Planted {
 
 let user: Seeded;
 let other: Seeded;
+let free: Seeded;
 let market: Planted;
 
 async function signIn(context: BrowserContext, who: Seeded, baseURL: string | undefined) {
@@ -61,8 +62,9 @@ const money = (digits: string) => new RegExp(`${digits.replace(" ", "\\s")}\\szÅ
 test.describe.configure({ mode: "serial" });
 
 test.beforeAll(() => {
-  user = helper("create", "--credits", "1") as unknown as Seeded;
-  other = helper("create", "--credits", "1") as unknown as Seeded;
+  user = helper("create", "--credits", "1", "--admin") as unknown as Seeded; // full Rynek access; `other` is a free account
+  other = helper("create", "--credits", "1", "--admin") as unknown as Seeded;
+  free = helper("create", "--credits", "1") as unknown as Seeded; // no pack, no Pro: the free tier
   market = helper("plant-market") as unknown as Planted;
 });
 
@@ -70,6 +72,7 @@ test.afterAll(() => {
   if (market !== undefined) helper("unplant-market", "--run", market.run);
   if (user !== undefined) helper("delete", user.user_id);
   if (other !== undefined) helper("delete", other.user_id);
+  if (free !== undefined) helper("delete", free.user_id);
 });
 
 test("navigation, search and the list show what the database holds, not a fixture", async ({
@@ -246,4 +249,18 @@ test("a place with no bootstrap and an unknown place are honest, and the data ne
   await expect(secondPage.getByRole("table").getByRole("rowheader")).toHaveCount(4);
   await expect(secondPage.getByRole("textbox", { name: "Nazwa miejscowoÅ›ci" })).toHaveValue(market.run);
   await second.close();
+});
+
+test("a free account on the real stack sees the cap and only places with a sufficient sample", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await signIn(context, free, baseURL);
+  await page.goto(`/app/market?view=list&q=${market.run}`);
+  // A free account is shown only the places whose published sample is sufficient (12 priced offers or more);
+  // the places of this run with fewer are closed to it, so the full count is never reached.
+  await expect(page.getByRole("table").getByRole("rowheader")).not.toHaveCount(4);
+  await page.goto("/app/market");
+  await expect(page.getByText(/Konto darmowe: widzisz \d+ z \d+ miejsc/)).toBeVisible();
 });

@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/market/locations/smoke-torun/context",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations/{location_id}/context",
+    "method": "GET",
+    "operation_id": "get_location_context_api_market_locations__location_id__context_get",
+    "path": "/api/market/locations/{location_id}/context"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations/smoke-torun/context"
+  },
+  "scenario": "no_session",
+  "status": 401
+}
