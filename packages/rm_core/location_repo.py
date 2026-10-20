@@ -416,10 +416,13 @@ class PgLocationRepo:
             row = await self._held(s, run_id, owner)
             # Gap rows only fill cells nobody wrote; an existing fact is never compared or counted here.
             distinct = {(o.territory_id, o.year): o for o in gap_observations}
-            if distinct:
+            keys = sorted(distinct)
+            for start in range(
+                0, len(keys), INSERT_CHUNK
+            ):  # a national cohort over ten years is ~25,000 rows
                 filled = await s.scalars(
                     insert(LocationObservation)
-                    .values([_obs_values(distinct[k], run_id) for k in sorted(distinct)])
+                    .values([_obs_values(distinct[k], run_id) for k in keys[start : start + INSERT_CHUNK]])
                     .on_conflict_do_nothing()
                     .returning(LocationObservation.territory_id)
                 )

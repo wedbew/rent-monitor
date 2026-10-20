@@ -569,3 +569,43 @@ async def test_a_national_sized_batch_is_stored_in_chunks_and_a_repeat_counts_du
     assert (first.inserted, first.duplicates, first.conflicts) == (26_000, 0, 0)
     again = await repo.record_page(run.run_id, "w1", page_index=1, observations=rows, lease_s=300)
     assert (again.inserted, again.duplicates, again.conflicts) == (0, 26_000, 0)
+
+
+async def test_completing_a_national_sized_run_stores_gap_rows_in_chunks(repo: PgLocationRepo) -> None:
+    """The first live pass died here: `complete_run` wrote 2,479 units x 10 years of gap rows in one INSERT."""
+    years = tuple(range(2016, 2026))
+    gminas = [
+        TerritoryRef(
+            territory_id=f"{i:012d}",
+            teryt=f"{i // 10000:02d}{(i // 100) % 100:02d}{i % 100:02d}1",
+            name=f"G{i}",
+            level=G,
+            parent_id="P0201",
+        )
+        for i in range(2600)
+    ]
+    await repo.ensure_reference(6, "national-gaps", [*territories()[:3], *gminas])
+    run = await repo.start_run(
+        variable_id="TESTV1",
+        unit_level=6,
+        years=years,
+        reference_version=6,
+        metric_key="test_population",
+        metric_version=1,
+    )
+    assert await repo.claim_run(run.run_id, "w1", 300) is not None
+    gaps = [
+        Observation(
+            territory_id=g.territory_id,
+            metric_key="test_population",
+            metric_version=1,
+            year=y,
+            status=ObservationStatus.missing,
+            reason="source returned no row",
+            source_digest=f"{i:032x}{y:032x}",
+        )
+        for i, g in enumerate(gminas)
+        for y in years
+    ]
+    done = await repo.complete_run(run.run_id, "w1", gap_observations=gaps)
+    assert (done.state, done.inserted) == ("complete", 26_000)
