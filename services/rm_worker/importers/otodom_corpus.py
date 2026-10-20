@@ -25,6 +25,7 @@ sorts by `createdAtFirst`, and a page past the end repeats the last page (so `cu
 """
 
 import asyncio
+import hashlib
 from collections.abc import AsyncGenerator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass, field
@@ -343,7 +344,9 @@ class CorpusImporter:
         self, entry: LocationEntry, mode: RunMode, start: datetime, end: datetime, now: datetime | None
     ) -> RunOutcome:
         loc = entry.location_id
-        base = f"{mode.value}-{loc}-{end:%Y%m%dT%H%M%SZ}"
+        base = (
+            f"{mode.value}-{_short(loc)}-{end:%Y%m%dT%H%M%SZ}"  # a long place id would overflow 64 characters
+        )
         attempt = 1
         while (existing := await self.corpus.get_run(f"{base}-a{attempt}")) is not None:
             if existing.state is RunState.published:
@@ -532,6 +535,11 @@ class CorpusImporter:
 class _Pass:
     done: bool
     edge: datetime | None
+
+
+def _short(location_id: str) -> str:
+    """Twelve hex characters of the place id: stable, and keeps `<mode>-<id>-<UTC time>-aN` under 64."""
+    return hashlib.sha256(location_id.encode()).hexdigest()[:12]
 
 
 class _RunStopped(RuntimeError):
