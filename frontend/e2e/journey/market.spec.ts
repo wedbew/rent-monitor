@@ -268,4 +268,6 @@ test("a free account on the real stack sees the cap and only places with a suffi
   };
   expect(overview.access).toBe("free");
   expect(overview.visible_places).toBeLessThan(overview.total_places); // the cap is enforced by the server
+  await page.goto("/app/market");
+  await expect(page.getByText(/Konto darmowe: widzisz \d+ z \d+ miejsc/)).toBeVisible();
 });
