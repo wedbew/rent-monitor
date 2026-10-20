@@ -34,6 +34,8 @@ REF = [
     gmina("G3", "1201033", "Nowy Wiśnicz", "P1201"),
     gmina("G4", "1261011", "Kraków", "P1261"),
     gmina("G5", "1206013", "Krzeszowice", "P1206"),
-    gmina("G6", "1465011", "Warszawa", "P1465"),
+    gmina("G6", "1465011", "M.st.Warszawa od 2002", "P1465"),
     gmina("G7", "0401013", "Koronowo", "P0401"),
+    powiat("P1470", "1470", "Powiat m. Wałbrzych od 2013", "W14"),
+    gmina("G8", "1470011", "Wałbrzych od 2013", "P1470"),
 ]

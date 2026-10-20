@@ -60,6 +60,13 @@ def _powiat_key(name: str) -> str:
     return slug(re.sub(r"\s+od\s+\d{4}$", "", bare))
 
 
+def _gmina_key(name: str) -> str:
+    """`Wałbrzych od 2013` -> walbrzych, `M.st.Warszawa od 2002` -> warszawa: the source's year qualifier
+    and capital prefix are not part of the name an Otodom path carries."""
+    bare = re.sub(r"\s+od\s+\d{4}$", "", name)
+    return slug(re.sub(r"^m\.\s*st\.\s*", "", bare, flags=re.I))
+
+
 def map_places(places: Iterable[tuple[str, str]], reference: Sequence[TerritoryRef]) -> list[PlaceMapping]:
     """`places` are `(location_id, otodom_path)`; `reference` is the stored territorial reference."""
     woj = {slug(t.name): t for t in reference if t.level is TerritoryLevel.wojewodztwo}
@@ -69,7 +76,7 @@ def map_places(places: Iterable[tuple[str, str]], reference: Sequence[TerritoryR
         if t.level is TerritoryLevel.powiat and t.parent_id:
             powiats[(t.parent_id, _powiat_key(t.name))].append(t)
         elif t.level is TerritoryLevel.gmina and t.parent_id:
-            gminas[(t.parent_id, slug(t.name))].append(t)
+            gminas[(t.parent_id, _gmina_key(t.name))].append(t)
     return [_map_one(lid, path, woj, powiats, gminas) for lid, path in places]
 
 

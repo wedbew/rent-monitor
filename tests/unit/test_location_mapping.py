@@ -63,3 +63,8 @@ def test_wrong_hierarchy_is_unmatched_even_when_the_gmina_name_exists_elsewhere(
     assert one("malopolskie/bochenski/nieistnieje").method == "gmina_unknown"
     assert one("malopolskie/bochenski").method == "path_too_short"
     assert one("kujawsko--pomorskie/bydgoski/koronowo").gmina_id == "G7"
+
+
+def test_the_sources_year_qualifier_and_capital_prefix_are_not_part_of_the_name() -> None:
+    assert one("mazowieckie/warszawa/warszawa/warszawa").gmina_id == "G6"  # `M.st.Warszawa od 2002`
+    assert one("mazowieckie/walbrzych/walbrzych/walbrzych").gmina_id == "G8"  # `Wałbrzych od 2013`
