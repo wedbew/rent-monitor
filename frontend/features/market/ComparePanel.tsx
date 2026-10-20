@@ -205,6 +205,7 @@ export function ComparePanel({ places, ids, cohort, onToggle, onClear, message }
       ) : (
         <>
           <ChartFigure
+            compact
             title={t.rynek.compare.chartTitle}
             meta={{
               measure: t.rynek.compare.ppm2,
