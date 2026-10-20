@@ -157,7 +157,7 @@ async def test_other_users_rows_never_appear_and_a_foreign_cursor_pages_only_you
         "garbage",
         base64.urlsafe_b64encode(b"not json").decode(),
         base64.urlsafe_b64encode(
-            json.dumps(["2026-09-01T12:00:00", str(uuid4())]).encode()
+            json.dumps(["2026-09-01T12:00:00", "8b0abe6d-c96b-466f-9cdb-0963bbaba16f"]).encode()
         ).decode(),  # naive
         base64.urlsafe_b64encode(json.dumps(["2026-09-01T12:00:00+00:00", "not-a-uuid"]).encode()).decode(),
         base64.urlsafe_b64encode(json.dumps({"a": 1}).encode()).decode(),
