@@ -22,7 +22,13 @@ class ChartBoundary extends Component<{ readonly children: ReactNode }, { readon
 export function TrendChart(props: TrendChartProps) {
   return (
     <ChartBoundary>
-      <Suspense fallback={<p role="status">{t.rynek.stats.chartLoading}</p>}>
+      <Suspense
+        fallback={
+          <p role="status" style={{ minHeight: props.height ?? 320 }}>
+            {t.rynek.stats.chartLoading}
+          </p>
+        }
+      >
         <Impl {...props} />
       </Suspense>
     </ChartBoundary>

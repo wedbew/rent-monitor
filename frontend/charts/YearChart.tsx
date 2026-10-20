@@ -21,7 +21,13 @@ class Boundary extends Component<{ readonly children: ReactNode }, { readonly fa
 export function YearChart(props: YearChartProps) {
   return (
     <Boundary>
-      <Suspense fallback={<p role="status">{t.rynek.stats.chartLoading}</p>}>
+      <Suspense
+        fallback={
+          <p role="status" style={{ minHeight: props.height ?? 240 }}>
+            {t.rynek.stats.chartLoading}
+          </p>
+        }
+      >
         <Impl {...props} />
       </Suspense>
     </Boundary>
