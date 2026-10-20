@@ -30,7 +30,7 @@ ENTRIES = [
 
 
 @pytest_asyncio.fixture(loop_scope="session")
-async def stores(engine: AsyncEngine):  # type: ignore[no-untyped-def]
+async def stores(engine: AsyncEngine):
     async with engine.begin() as c:
         await c.execute(text(f"TRUNCATE {TABLES} CASCADE"))
     sessions = async_sessionmaker(engine, expire_on_commit=False)
@@ -41,7 +41,7 @@ async def stores(engine: AsyncEngine):  # type: ignore[no-untyped-def]
         await c.execute(text(f"TRUNCATE {TABLES} CASCADE"))
 
 
-async def test_every_place_gets_exactly_one_honest_row_and_a_rerun_replaces_it(stores) -> None:  # type: ignore[no-untyped-def]
+async def test_every_place_gets_exactly_one_honest_row_and_a_rerun_replaces_it(stores) -> None:
     mapping, _ = stores
     counts = await mapping.map_catalogue(1, 1)
     assert dict(counts) == {"mapped": 2, "ambiguous": 1, "unmatched": 1}
@@ -55,7 +55,7 @@ async def test_every_place_gets_exactly_one_honest_row_and_a_rerun_replaces_it(s
     assert await mapping.get(1, "zzz") is None
 
 
-async def test_a_mapped_row_without_a_gmina_is_refused_by_the_database(stores) -> None:  # type: ignore[no-untyped-def]
+async def test_a_mapped_row_without_a_gmina_is_refused_by_the_database(stores) -> None:
     _, engine = stores
     with pytest.raises(IntegrityError):
         async with engine.begin() as conn:

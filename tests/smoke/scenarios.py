@@ -1336,7 +1336,7 @@ def not_an_admin(key: str, path: str) -> Run:
 
 
 # ============================================================================================== market
-async def market_full(w: World):  # type: ignore[no-untyped-def]
+async def market_full(w: World):
     """An account with full Rynek access (the admin role stands in for Pro or a purchased pack)."""
     return await w.user(label="market-full", role="admin")
 

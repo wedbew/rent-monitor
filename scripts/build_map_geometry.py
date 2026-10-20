@@ -2,16 +2,18 @@
 
 Run (the two libraries are build-time only and are not project dependencies):
 
-  uvx --with pyshp --with shapely python scripts/build_map_geometry.py <dir with the PRG shapefiles> frontend/public/geo
+uvx --with pyshp --with shapely python scripts/build_map_geometry.py <dir with the PRG shapefiles>
+frontend/public/geo
 
 Input: `A01_Granice_wojewodztw` and `A03_Granice_gmin` from GUGiK's Państwowy Rejestr Granic
-(https://opendata.geoportal.gov.pl/prg/granice/00_jednostki_administracyjne.zip, ETRS89 longitude/latitude, free of
-charge; attribution "Źródło: Państwowy Rejestr Granic, GUGiK"). Output: `gminas.json` (every current gmina keyed by its
-7-digit TERYT code, simplified to about 400 m, with one interior point each) and `wojewodztwa.json` (16 outlines).
-Joined to Renti data by TERYT code, never by name. Nothing here is a listing position.
+(https://opendata.geoportal.gov.pl/prg/granice/00_jednostki_administracyjne.zip, ETRS89
+longitude/latitude, free of charge; attribution "Źródło: Państwowy Rejestr Granic, GUGiK"). Output:
+`gminas.json` (every current gmina keyed by its 7-digit TERYT code, simplified to about 400 m, with one
+interior point each) and `wojewodztwa.json` (16 outlines). Joined to Renti data by TERYT code, never by
+name. Nothing here is a listing position.
 
-LEGAL[third-party-data]: official public boundaries; source terms to be confirmed with counsel (B-012) (RM-282).
-"""
+LEGAL[third-party-data]: official public boundaries; source terms to be confirmed with counsel (B-012)
+  (RM-282)."""
 
 import json
 import sys
@@ -37,7 +39,9 @@ def rings(geometry: Any, tolerance: float) -> list[list[list[float]]]:
     ]
 
 
-def read(path: Path, key: str, tolerance: float) -> tuple[dict[str, Any], dict[str, list[float]], list[float]]:
+def read(
+    path: Path, key: str, tolerance: float
+) -> tuple[dict[str, Any], dict[str, list[float]], list[float]]:
     reader = shapefile.Reader(str(path), encoding="utf-8")
     shapes: dict[str, Any] = {}
     points: dict[str, list[float]] = {}
@@ -55,7 +59,9 @@ def main(source: Path, out: Path) -> None:
     gminas, points, bbox = read(source / "A03_Granice_gmin", "JPT_KOD_JE", GMINA_TOLERANCE)
     voivodeships, _, _ = read(source / "A01_Granice_wojewodztw", "JPT_KOD_JE", VOIVODESHIP_TOLERANCE)
     (out / "gminas.json").write_text(
-        json.dumps({"source": SOURCE, "bbox": bbox, "gminas": gminas, "points": points}, separators=(",", ":"))
+        json.dumps(
+            {"source": SOURCE, "bbox": bbox, "gminas": gminas, "points": points}, separators=(",", ":")
+        )
     )
     (out / "wojewodztwa.json").write_text(
         json.dumps({"source": SOURCE, "bbox": bbox, "wojewodztwa": voivodeships}, separators=(",", ":"))
