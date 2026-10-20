@@ -49,8 +49,8 @@ describe("the search text", () => {
   });
 
   it("is encoded into the addresses, never concatenated", () => {
-    expect(listAddress("")).toBe("/app/market");
-    expect(listAddress("zielona góra")).toBe("/app/market?q=zielona+g%C3%B3ra");
+    expect(listAddress("")).toBe("/app/market?view=list");
+    expect(listAddress("zielona góra")).toBe("/app/market?view=list&q=zielona+g%C3%B3ra");
     expect(placeAddress("torun", "a&b=c")).toBe("/app/market/torun?q=a%26b%3Dc");
     expect(placeAddress("a/b", "")).toBe("/app/market/a%2Fb");
   });

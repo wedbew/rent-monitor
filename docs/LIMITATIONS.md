@@ -767,9 +767,10 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Discovered:** 2026-10-19
 - **Affects:** `frontend/features/market/`, `GET /api/market/locations*`, `docs/STATUS.md` (Frontend), #282, #21
 - **Evidence:** confirmed (source and tests): the page reads the three market routes (RM-421) and nothing else; its browser tests ran against the scenario registry (mocked lane) and against hand-made offers published through production code in an isolated Compose stack (`frontend/e2e/journey/market.spec.ts`). No fresh real Otodom data has been collected for the catalogue (L-070 to L-073), so no screen has been checked against real market numbers.
-- **Description:** Not on the page yet: BDL location context (gmina, powiat, województwo; no published metric or read route, L-064 to L-069, L-080 to L-084), deed or any other price series (asking and deed are never shown together, invariant 2), comparison across places, rankings, the free-tier top-20 limit (#43 undecided), maps and charts (a table only). The list is the catalogue as served: places without a published reading are listed as "Brak danych". The per-cohort choices are those the API publishes for the latest cohort day.
+- **Description:** Since RM-282 the page has a map, a comparison and a GUS context section. Still not there: deed or any other price series next to the asking rents (asking and deed are never shown together, invariant 2; the GUS deed statistics appear only in the context section, labelled), a ranking of places by a GUS metric, charts of the asking-rent history (the history is a table) and the experimental location index. The list is the catalogue as served: places without a published reading are listed as "Brak danych". The per-cohort choices are those the API publishes for the latest cohort day.
 - **Workaround:** none needed for what is shown; the page states that these are asking rents and what they are not.
 - **Target:** #282 follow-up slices (BDL context once a read route exists; charts), #21 (routes), #43 (free-tier scope).
+- **Update (2026-10-20, RM-282):** map, comparison, context section and the free-tier cap are built and tested offline; real-data screens are recorded in STATUS when verified in the owner's app.
 
 ## Resolved
 

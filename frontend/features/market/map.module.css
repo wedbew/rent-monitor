@@ -1,0 +1,100 @@
+.figure {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  min-width: 0;
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.map {
+  width: 100%;
+  height: min(70vh, 40rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  touch-action: none;
+  cursor: grab;
+}
+
+.land {
+  fill: var(--surface-raised);
+  stroke: var(--border);
+  stroke-width: 0.15;
+  vector-effect: non-scaling-stroke;
+}
+
+.area,
+.dot {
+  stroke: var(--surface);
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
+  cursor: pointer;
+}
+
+.none {
+  fill: var(--surface-hover);
+  stroke: var(--control-border);
+}
+
+.c0 {
+  fill: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.c1 {
+  fill: color-mix(in srgb, var(--accent) 30%, var(--surface));
+}
+
+.c2 {
+  fill: color-mix(in srgb, var(--accent) 50%, var(--surface));
+}
+
+.c3 {
+  fill: color-mix(in srgb, var(--accent) 72%, var(--surface));
+}
+
+.c4 {
+  fill: var(--accent);
+}
+
+.selected {
+  stroke: var(--danger);
+  stroke-width: 2.5;
+}
+
+.caption {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.swatch {
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--control-border);
+  border-radius: 2px;
+}
+
+.note {
+  color: var(--muted);
+}

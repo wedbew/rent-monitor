@@ -5,6 +5,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- Rynek is now a map, a list and a comparison (`/app/market?view=map|list|compare`): areas of the gminas coloured by the chosen published figure (official PRG boundaries, joined by TERYT, never a listing position), a table that selects the same place by keyboard or pointer, up to four places side by side with the unit and year of every figure, and a banner that says what a free account sees. A place page gets "Kontekst lokalizacji (GUS)": value, unit, year, proxy label, trend, parent values, national and peer ranks only past their gates, and each series as a table. Frontend only on top of the overview and context routes; no operator action (RM-282)
+
+### Added
 - `GET /api/market/overview` (every place the account may see, with headline, mapping and gmina TERYT) and `GET /api/market/locations/{id}/context` (GUS BDL hierarchy, per-metric value, ten-year series, trend, parent values, national and peer ranks only past their gates, proxies labelled); migration 0020 `market_location_territory` (expand-only) stores the explicit Otodom-place-to-gmina mapping (never by name alone; ambiguous names list their candidates). Map geometry from the official PRG boundaries in `frontend/public/geo/` (joined by TERYT). Operator action: run the mapping once per catalogue and reference (RM-282)
 - Free tier: an account without Pro, a pass or an unrevoked purchased pack sees exactly the 20 places with the largest published samples across list, overview, detail, history and context; any other place answers 403 `FEATURE_NOT_IN_PLAN` (RM-282)
 

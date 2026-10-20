@@ -446,9 +446,9 @@ export const PAGES: readonly AppPage[] = [
   },
   {
     id: "market",
-    path: "/app/market",
+    path: "/app/market?view=list",
     heading: "Rynek",
-    scenarios: ["empty", "market", "marketListFailing"],
+    scenarios: ["marketEmpty", "market", "marketListFailing"],
     states: [
       {
         name: "no-match",
@@ -476,6 +476,37 @@ export const PAGES: readonly AppPage[] = [
         prepare: async (page) => {
           await page.getByRole("button", { name: "Załaduj więcej" }).click();
           await page.getByText("To wszystkie miejscowości (38).").waitFor();
+        },
+      },
+    ],
+  },
+  {
+    id: "market.explore",
+    path: "/app/market",
+    heading: "Rynek",
+    scenarios: ["market", "marketFree"],
+    states: [
+      {
+        name: "selected",
+        path: "/app/market?sel=bialystok",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByRole("link", { name: "Otwórz miejsce" }).waitFor();
+        },
+      },
+      {
+        name: "compare",
+        path: "/app/market?view=compare&ids=bialystok,bydgoszcz",
+        scenario: () => createMarket(),
+        prepare: async (page) => {
+          await page.getByRole("table", { name: "Porównanie miejsc" }).waitFor();
+        },
+      },
+      {
+        name: "overview-error",
+        scenario: () => createMarket({ overviewFails: true }),
+        prepare: async (page) => {
+          await page.getByRole("alert").filter({ hasText: "Nie udało się wczytać rynku" }).waitFor();
         },
       },
     ],
@@ -971,6 +1002,128 @@ export const INTERACTIONS: readonly Interaction[] = [
     outcome: "url",
   },
 
+  // Rynek: mapa, lista i porównanie.
+  ...[
+    ["map", "Mapa"],
+    ["list", "Lista"],
+    ["compare", "Porównanie"],
+  ].map(([id = "", label = ""]): Interaction => ({
+    id: `market.explore.view.${id}`,
+    page: "market.explore",
+    scenarios: ["market", "marketFree"],
+    role: "button",
+    name: label,
+    outcome: "url",
+  })),
+  {
+    id: "market.explore.metric",
+    page: "market.explore",
+    scenarios: ["market", "marketFree"],
+    role: "combobox",
+    name: "Kolor mapy",
+    outcome: "url",
+  },
+  {
+    id: "market.explore.sort",
+    page: "market.explore",
+    scenarios: ["market", "marketFree"],
+    role: "combobox",
+    name: "Kolejność miejsc",
+    outcome: "url",
+  },
+  {
+    id: "market.explore.zoom-in",
+    page: "market.explore",
+    scenarios: ["market", "marketFree"],
+    role: "button",
+    name: "Przybliż",
+    outcome: "state",
+  },
+  {
+    id: "market.explore.zoom-out",
+    page: "market.explore",
+    scenarios: ["market", "marketFree"],
+    role: "button",
+    name: "Oddal",
+    outcome: "state",
+  },
+  {
+    id: "market.explore.reset",
+    page: "market.explore",
+    scenarios: ["market", "marketFree"],
+    role: "button",
+    name: "Cała Polska",
+    outcome: "state",
+  },
+  {
+    id: "market.explore.pick",
+    page: "market.explore",
+    scenarios: ["market", "marketFree"],
+    role: "button",
+    name: /^Wybierz miejsce /,
+    outcome: "url",
+  },
+  {
+    id: "market.explore.compare.add",
+    page: "market.explore",
+    scenarios: ["market", "marketFree"],
+    role: "button",
+    name: /^Dodaj do porównania /,
+    outcome: "url",
+  },
+  {
+    id: "market.explore.open",
+    page: "market.explore",
+    state: "selected",
+    role: "link",
+    name: "Otwórz miejsce",
+    outcome: "url",
+  },
+  {
+    id: "market.explore.compare.remove",
+    page: "market.explore",
+    state: "compare",
+    role: "button",
+    name: /^Usuń z porównania /,
+    outcome: "url",
+  },
+  {
+    id: "market.explore.compare.place",
+    page: "market.explore",
+    state: "compare",
+    role: "link",
+    name: /^[A-ZĄĆĘŁŃÓŚŹŻ][\p{L} -]+$/u,
+    outcome: "url",
+  },
+  {
+    id: "market.explore.retry",
+    page: "market.explore",
+    state: "overview-error",
+    role: "button",
+    name: "Spróbuj ponownie",
+    outcome: "request",
+  },
+  {
+    id: "market.explore.upgrade",
+    page: "market.explore",
+    scenarios: ["marketFree"],
+    role: "link",
+    name: "Kup pakiet raportów",
+    outcome: "url",
+  },
+
+  // The same view switch on the list view.
+  ...[
+    ["map", "Mapa"],
+    ["compare", "Porównanie"],
+    ["list", "Lista"],
+  ].map(([id = "", label = ""]): Interaction => ({
+    id: `market.list.view.${id}`,
+    page: "market",
+    role: "button",
+    name: label,
+    outcome: "url",
+  })),
   // Rynek.
   { id: "market.search", page: "market", role: "textbox", name: "Nazwa miejscowości", outcome: "state" },
   { id: "market.search.submit", page: "market", role: "button", name: "Szukaj", outcome: "url" },

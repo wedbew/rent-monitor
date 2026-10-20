@@ -54,7 +54,7 @@ function Row({ place, q }: { readonly place: LocationSummary; readonly q: string
  * over its cursor, never sliced here, and its end is the absence of a cursor. A place with no published reading
  * says so instead of showing a zero.
  */
-export function MarketPage() {
+export function MarketPage({ embedded = false }: { readonly embedded?: boolean }) {
   const [params, setParams] = useSearchParams();
   const q = cleanSearch(params.get("q"));
   const { query, items } = useLocations(q);
@@ -63,14 +63,21 @@ export function MarketPage() {
   function search(event: FormEvent) {
     event.preventDefault();
     const next = cleanSearch(draft ?? q);
-    setParams(next === "" ? {} : { q: next });
+    setParams((prev) => {
+      const params = new URLSearchParams(prev);
+      if (next === "") params.delete("q");
+      else params.set("q", next);
+      return params;
+    });
     setDraft(null);
   }
   const refreshing = query.isFetching && !query.isPending && !query.isFetchingNextPage;
 
   return (
     <div className={styles["page"]}>
-      <PageHeading title={t.market.title} eyebrow={t.market.eyebrow} lead={t.market.lead} />
+      {embedded ? null : (
+        <PageHeading title={t.market.title} eyebrow={t.market.eyebrow} lead={t.market.lead} />
+      )}
 
       <section className={styles["filters"]} aria-label={t.market.list.filtersLabel}>
         <form
@@ -96,7 +103,11 @@ export function MarketPage() {
             type="button"
             small
             onClick={() => {
-              setParams({});
+              setParams((prev) => {
+                const params = new URLSearchParams(prev);
+                params.delete("q");
+                return params;
+              });
               setDraft(null);
             }}
           >

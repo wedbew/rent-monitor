@@ -149,6 +149,20 @@ const MARKET_EMPTY: Route = {
   operation: "GET /api/market/locations",
   reply: { status: 200, body: { items: [], next_cursor: null } },
 };
+const OVERVIEW_EMPTY: Route = {
+  operation: "GET /api/market/overview",
+  reply: {
+    status: 200,
+    body: {
+      items: [],
+      total_places: 0,
+      visible_places: 0,
+      access: "full",
+      free_limit: 20,
+      free_rule_pl: "Darmowe konto widzi 20 miejsc z największą liczbą opublikowanych ofert z ceną.",
+    },
+  },
+};
 const SIGNED_IN: readonly Route[] = [
   me("with_credits_and_flags"),
   PACKS,
@@ -156,6 +170,7 @@ const SIGNED_IN: readonly Route[] = [
   SAVED_EMPTY,
   EMPTY_PAGE,
   MARKET_EMPTY,
+  OVERVIEW_EMPTY,
 ];
 
 function scenario(
@@ -224,7 +239,62 @@ export interface MarketOptions {
   readonly historyDelayMs?: number;
   /** The history has no published day at all. */
   readonly historyEmpty?: boolean;
+  /** A free account: the overview shows only the first `FREE_VISIBLE` places and the rest answer 403. */
+  readonly free?: boolean;
+  /** The overview cannot be read. */
+  readonly overviewFails?: boolean;
+  /** The context of a place cannot be read. */
+  readonly contextFails?: boolean;
 }
+
+type OverviewOut = components["schemas"]["OverviewOut"];
+type OverviewPlaceOut = components["schemas"]["OverviewPlaceOut"];
+type LocationContextOut = components["schemas"]["LocationContextOut"];
+
+/** Real TERYT codes of gminas in the committed geometry, so the map has areas to draw. */
+const MARKET_TERYT = [
+  "0201011",
+  "0209062",
+  "0220042",
+  "0402062",
+  "0411032",
+  "0419033",
+  "0604062",
+  "0610033",
+  "0618032",
+  "0804043",
+  "1001032",
+  "1009013",
+  "1015062",
+  "1201092",
+  "1208022",
+  "1214023",
+  "1402033",
+  "1410023",
+  "1416072",
+  "1423032",
+  "1429082",
+  "1465011",
+  "1610023",
+  "1807083",
+  "1815033",
+  "2002063",
+  "2010011",
+  "2203011",
+  "2212022",
+  "2402072",
+  "2408052",
+  "2417042",
+  "2604092",
+  "2612053",
+  "2808053",
+  "2819012",
+  "3008072",
+  "3017052",
+  "3024063",
+  "3203052",
+];
+export const FREE_VISIBLE = 20;
 
 export interface Market extends Scenario {
   readonly state: { requests: string[]; failing: boolean };
@@ -377,6 +447,8 @@ export function createMarket(options: MarketOptions = {}): Market {
       const place = places.find((p) => p.location_id === request.params["location_id"]);
       if (place === undefined)
         return replyFrom(fx("GET /api/market/locations/{location_id}", "unknown_place"));
+      if (options.free === true && !places.slice(0, FREE_VISIBLE).includes(place))
+        return replyFrom(fx("GET /api/market/locations/{location_id}", "outside_free_list"));
       const usable = place.data_status !== "unavailable";
       return {
         status: 200,
@@ -432,10 +504,173 @@ export function createMarket(options: MarketOptions = {}): Market {
       };
     },
   };
+  const visible = options.free === true ? places.slice(0, FREE_VISIBLE) : places;
+  const closed = (id: string) => !visible.some((p) => p.location_id === id);
+  const mappingOf = (i: number) => (i % 11 === 10 ? "unmatched" : i % 7 === 6 ? "ambiguous" : "mapped");
+  const overview: Route = {
+    operation: "GET /api/market/overview",
+    reply: () => {
+      if (options.overviewFails === true) return problem(503);
+      const items: OverviewPlaceOut[] = visible.map((p) => {
+        const i = places.indexOf(p);
+        const mapping = mappingOf(i);
+        return {
+          ...p,
+          mapping,
+          relation: mapping === "mapped" ? (i % 5 === 4 ? "within_gmina" : "gmina") : null,
+          gmina_teryt: mapping === "mapped" ? (MARKET_TERYT[i % MARKET_TERYT.length] ?? null) : null,
+          powiat_name: mapping === "unmatched" ? null : "Powiat testowy",
+          wojewodztwo_name: mapping === "unmatched" ? null : "Województwo testowe",
+        };
+      });
+      return {
+        status: 200,
+        body: {
+          items,
+          total_places: places.length,
+          visible_places: items.length,
+          access: options.free === true ? "free" : "full",
+          free_limit: FREE_VISIBLE,
+          free_rule_pl: "Darmowe konto widzi 20 miejsc z największą liczbą opublikowanych ofert z ceną.",
+        } satisfies OverviewOut,
+      };
+    },
+  };
+  const context: Route = {
+    operation: "GET /api/market/locations/{location_id}/context",
+    reply: (request) => {
+      state.requests.push(request.url.pathname);
+      if (options.contextFails === true) return problem(503);
+      const id = String(request.params["location_id"]);
+      const place = places.find((p) => p.location_id === id);
+      if (place === undefined)
+        return replyFrom(fx("GET /api/market/locations/{location_id}/context", "unknown_place"));
+      if (closed(id))
+        return replyFrom(fx("GET /api/market/locations/{location_id}/context", "outside_free_list"));
+      const i = places.indexOf(place);
+      const mapping = mappingOf(i);
+      const territory = (name: string, level: "gmina" | "powiat" | "wojewodztwo" | "country") => ({
+        territory_id: `${level}-${i}`,
+        name,
+        level,
+        teryt: "",
+      });
+      const series = Array.from({ length: 10 }, (_, k) => ({
+        year: 2016 + k,
+        value: String(20_000 + i * 100 + k * 150),
+        status: "measured",
+      }));
+      const metric = (
+        key: string,
+        name: string,
+        state: "direct" | "proxy",
+        unit: string,
+        family: string,
+      ) => ({
+        key,
+        name_pl: name,
+        family,
+        family_pl:
+          family === "population" ? "Ludność i wiek" : "Transakcje na rynku lokali (akty notarialne)",
+        unit,
+        note_pl: "",
+        direction: "neutral" as const,
+        state,
+        reason: null,
+        measured: territory(
+          state === "direct" ? place.name : "Powiat testowy",
+          state === "direct" ? "gmina" : "powiat",
+        ),
+        year: 2025,
+        value: series.at(-1)?.value ?? null,
+        value_status: "measured",
+        series,
+        trend: {
+          state: "ok" as const,
+          movement: "up" as const,
+          favorable: null,
+          from_year: 2016,
+          to_year: 2025,
+          absolute_change: "1350",
+          percent_change: "6.7",
+          comparable_steps: 9,
+          reasons: [],
+        },
+        parents: [
+          { territory: territory("Powiat testowy", "powiat"), value: "180000", relation: "below" as const },
+        ],
+        national: {
+          scope: "kraj",
+          scope_level: "gmina" as const,
+          state: "ok" as const,
+          rank: 120,
+          of: 2479,
+          percentile: "0.95",
+          median: "9000",
+          coverage: "1",
+          reasons: [],
+        },
+        peers: {
+          scope: "ten sam powiat",
+          scope_level: "gmina" as const,
+          state: "suppressed" as const,
+          rank: null,
+          of: null,
+          percentile: null,
+          median: null,
+          coverage: null,
+          reasons: ["za mało"],
+        },
+        release_id: "release-test",
+      });
+      const body: LocationContextOut = {
+        location_id: id,
+        name: place.name,
+        mapping: {
+          status: mapping,
+          relation: mapping === "mapped" ? (i % 5 === 4 ? "within_gmina" : "gmina") : null,
+          method: "name_in_powiat",
+          candidates:
+            mapping === "ambiguous" ? [territory("Gmina A", "gmina"), territory("Gmina B", "gmina")] : [],
+        },
+        chain:
+          mapping === "unmatched"
+            ? []
+            : [
+                territory(place.name, "gmina"),
+                territory("Powiat testowy", "powiat"),
+                territory("Polska", "country"),
+              ],
+        metrics:
+          mapping === "unmatched"
+            ? []
+            : [
+                metric("population_total", "Ludność ogółem", "direct", "osób", "population"),
+                metric(
+                  "dwelling_median_price_m2",
+                  "Mediana cen za 1 m² lokali mieszkalnych",
+                  "proxy",
+                  "zł/m²",
+                  "market",
+                ),
+              ],
+        published_metrics: mapping === "unmatched" ? 0 : 2,
+        source: {
+          name: "GUS BDL",
+          url: "https://example.test/fixture/1",
+          attribution_pl: "Źródło: Główny Urząd Statystyczny, Bank Danych Lokalnych (BDL).",
+          note_pl: "Dane roczne.",
+        },
+      };
+      return { status: 200, body };
+    },
+  };
   const base = scenario("market", `A catalogue of ${places.length} places with asking-rent readings.`, [
     list,
     detail,
     history,
+    overview,
+    context,
   ]);
   return { ...base, state, places };
 }
@@ -848,6 +1083,7 @@ export const SCENARIOS = {
   savedLoaded: createSaved(),
   market: createMarket(),
   marketEmpty: createMarket({ empty: true }),
+  marketFree: createMarket({ free: true }),
   marketListFailing: createMarket({ listFails: true }),
   unsupportedReport: scenario(
     "unsupportedReport",
@@ -1247,6 +1483,7 @@ export function createAuthFlow(overrides: Record<string, Reply> = {}): AuthFlow 
   };
   const routes: Route[] = [
     MARKET_EMPTY,
+    OVERVIEW_EMPTY,
     {
       operation: "GET /api/me",
       reply: () => (state.signedIn ? { status: 200, body: me } : replyFrom(fx("GET /api/me", "no_session"))),

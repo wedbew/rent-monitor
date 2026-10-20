@@ -15,7 +15,7 @@ import { Segmented } from "../../ui/Segmented";
 import { Select } from "../../ui/Select";
 import { Skeleton } from "../../ui/Skeleton";
 import { InlineNotice } from "../../ui/Status";
-import { failureOf, isNotFound } from "./failure";
+import { failureOf, isClosed, isNotFound } from "./failure";
 import {
   type CohortKey,
   cleanSearch,
@@ -28,6 +28,7 @@ import {
   SERIES,
   writeSelection,
 } from "./filters";
+import { ContextSection } from "./ContextSection";
 import { type AskingRent, type LocationDetail, useLocationDetail, useLocationHistory } from "./queries";
 import { ScrollRegion } from "./ScrollRegion";
 import { StatusBadge } from "./StatusBadge";
@@ -191,6 +192,28 @@ export function LocationPage() {
       </div>
     );
   }
+  if (place === undefined && isClosed(detail.error)) {
+    return (
+      <div className={styles["page"]}>
+        <PageHeading title={t.market.title} eyebrow={t.market.eyebrow} />
+        <InlineNotice
+          tone="info"
+          title={t.market.explore.closedTitle}
+          live="alert"
+          actions={
+            <>
+              {back}
+              <LinkButton to="/app/credits" small>
+                {t.market.explore.freeBannerAction}
+              </LinkButton>
+            </>
+          }
+        >
+          {t.market.explore.closedBody}
+        </InlineNotice>
+      </div>
+    );
+  }
   if (place === undefined) {
     const missing = isNotFound(detail.error);
     return (
@@ -304,6 +327,8 @@ export function LocationPage() {
               <History points={points} />
             </>
           )}
+
+          <ContextSection locationId={locationId} />
 
           <section aria-labelledby="market-caveats">
             <h2 id="market-caveats">{t.market.detail.caveatsHeading}</h2>
