@@ -1,0 +1,1726 @@
+{
+ "generated_at": "2026-10-20",
+ "source": "GUS BDL (live, key tier 50,000 requests per 7 days)",
+ "reference": {
+  "version": 1,
+  "gminas": 2479,
+  "powiats": 380,
+  "voivodeships": 16,
+  "country": 1
+ },
+ "published_metric_years": 214,
+ "releases": [
+  {
+   "metric_key": "average_monthly_gross_earnings",
+   "year": 2016,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "average_monthly_gross_earnings",
+   "year": 2017,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "average_monthly_gross_earnings",
+   "year": 2018,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "average_monthly_gross_earnings",
+   "year": 2019,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "average_monthly_gross_earnings",
+   "year": 2020,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "average_monthly_gross_earnings",
+   "year": 2021,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "average_monthly_gross_earnings",
+   "year": 2022,
+   "expected": 380,
+   "eligible": 379,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "average_monthly_gross_earnings",
+   "year": 2023,
+   "expected": 380,
+   "eligible": 379,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "average_monthly_gross_earnings",
+   "year": 2024,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "average_monthly_gross_earnings",
+   "year": 2025,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "building_permits_dwellings",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "building_permits_dwellings",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2394,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "building_permits_dwellings",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2397,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "building_permits_dwellings",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2404,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "building_permits_dwellings",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2410,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "building_permits_dwellings",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2427,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "building_permits_dwellings",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2460,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "building_permits_dwellings",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_median_price_m2",
+   "year": 2019,
+   "expected": 380,
+   "eligible": 379,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_median_price_m2",
+   "year": 2020,
+   "expected": 380,
+   "eligible": 378,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_median_price_m2",
+   "year": 2021,
+   "expected": 380,
+   "eligible": 379,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_median_price_m2",
+   "year": 2022,
+   "expected": 380,
+   "eligible": 373,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_median_price_m2",
+   "year": 2023,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_median_price_m2",
+   "year": 2024,
+   "expected": 380,
+   "eligible": 379,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2365,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2369,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2366,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2377,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2399,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2414,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2422,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2451,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2455,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed_floor_area",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2365,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed_floor_area",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2369,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed_floor_area",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2366,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed_floor_area",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2377,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed_floor_area",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed_floor_area",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2399,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed_floor_area",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2414,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed_floor_area",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2422,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed_floor_area",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2451,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwellings_completed_floor_area",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2455,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_stock",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2375,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_stock",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_stock",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_stock",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2397,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_stock",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2401,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_stock",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2411,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_stock",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2421,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_stock",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2436,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_stock",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_stock",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2479,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_transactions_count",
+   "year": 2015,
+   "expected": 380,
+   "eligible": 376,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_transactions_count",
+   "year": 2016,
+   "expected": 380,
+   "eligible": 374,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_transactions_count",
+   "year": 2017,
+   "expected": 380,
+   "eligible": 379,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_transactions_count",
+   "year": 2018,
+   "expected": 380,
+   "eligible": 378,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_transactions_count",
+   "year": 2019,
+   "expected": 380,
+   "eligible": 379,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_transactions_count",
+   "year": 2020,
+   "expected": 380,
+   "eligible": 378,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_transactions_count",
+   "year": 2021,
+   "expected": 380,
+   "eligible": 379,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_transactions_count",
+   "year": 2022,
+   "expected": 380,
+   "eligible": 373,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_transactions_count",
+   "year": 2023,
+   "expected": 380,
+   "eligible": 302,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "dwelling_transactions_count",
+   "year": 2024,
+   "expected": 380,
+   "eligible": 300,
+   "min_coverage": 0.7,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_cit_revenue",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2337,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_cit_revenue",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2331,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_cit_revenue",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2363,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_cit_revenue",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2358,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_cit_revenue",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2369,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_cit_revenue",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2393,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_cit_revenue",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2418,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_cit_revenue",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2434,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_cit_revenue",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_cit_revenue",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_pit_revenue",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2375,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_pit_revenue",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_pit_revenue",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_pit_revenue",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2396,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_pit_revenue",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2401,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_pit_revenue",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2411,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_pit_revenue",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2421,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_pit_revenue",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2436,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_pit_revenue",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "municipal_pit_revenue",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2479,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "natural_increase",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2325,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "natural_increase",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2344,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "natural_increase",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2348,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "natural_increase",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2366,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "natural_increase",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2383,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "natural_increase",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2395,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "natural_increase",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2390,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "natural_increase",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2409,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "natural_increase",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2459,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "natural_increase",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2463,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "net_migration",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2342,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "net_migration",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2354,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "net_migration",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2364,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "net_migration",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2377,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "net_migration",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2375,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "net_migration",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2382,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "net_migration",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2403,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "net_migration",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2414,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "net_migration",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2446,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "net_migration",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2451,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "own_revenue_per_resident",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2375,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "own_revenue_per_resident",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "own_revenue_per_resident",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "own_revenue_per_resident",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2396,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "own_revenue_per_resident",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2401,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "own_revenue_per_resident",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2411,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "own_revenue_per_resident",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2421,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "own_revenue_per_resident",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2436,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "own_revenue_per_resident",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "own_revenue_per_resident",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2479,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "pit_revenue_per_resident",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2375,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "pit_revenue_per_resident",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "pit_revenue_per_resident",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "pit_revenue_per_resident",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2396,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "pit_revenue_per_resident",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2401,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "pit_revenue_per_resident",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2411,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "pit_revenue_per_resident",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2421,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "pit_revenue_per_resident",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2436,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "pit_revenue_per_resident",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "pit_revenue_per_resident",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2479,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_post_working_age",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2375,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_post_working_age",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_post_working_age",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_post_working_age",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2397,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_post_working_age",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2401,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_post_working_age",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2411,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_post_working_age",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2421,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_post_working_age",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2436,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_post_working_age",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_post_working_age",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2479,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_pre_working_age",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2375,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_pre_working_age",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_pre_working_age",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_pre_working_age",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2397,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_pre_working_age",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2401,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_pre_working_age",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2411,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_pre_working_age",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2421,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_pre_working_age",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2436,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_pre_working_age",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_pre_working_age",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2479,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_total",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2375,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_total",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_total",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_total",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2397,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_total",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2401,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_total",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2411,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_total",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2421,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_total",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2436,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_total",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_total",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2479,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_working_age",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2375,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_working_age",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_working_age",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_working_age",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2397,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_working_age",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2401,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_working_age",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2411,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_working_age",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2421,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_working_age",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2436,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_working_age",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "population_working_age",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2479,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "property_tax_revenue",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2374,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "property_tax_revenue",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "property_tax_revenue",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2386,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "property_tax_revenue",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2396,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "property_tax_revenue",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2401,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "property_tax_revenue",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2410,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "property_tax_revenue",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2420,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "property_tax_revenue",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2435,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "property_tax_revenue",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2469,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "property_tax_revenue",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2479,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_per_10k",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2375,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_per_10k",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_per_10k",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_per_10k",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2397,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_per_10k",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2401,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_per_10k",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2411,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_per_10k",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2421,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_per_10k",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2436,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_per_10k",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_per_10k",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2479,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_total",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2375,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_total",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_total",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_total",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2397,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_total",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2401,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_total",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2411,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_total",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2421,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_total",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2436,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_total",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "regon_entities_total",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2479,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_rate_standard",
+   "year": 2016,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_rate_standard",
+   "year": 2017,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_rate_standard",
+   "year": 2018,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_rate_standard",
+   "year": 2019,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_rate_standard",
+   "year": 2020,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_rate_standard",
+   "year": 2021,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_rate_standard",
+   "year": 2022,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_rate_standard",
+   "year": 2023,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_rate_standard",
+   "year": 2024,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_rate_standard",
+   "year": 2025,
+   "expected": 380,
+   "eligible": 380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_share_working_age",
+   "year": 2016,
+   "expected": 2479,
+   "eligible": 2375,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_share_working_age",
+   "year": 2017,
+   "expected": 2479,
+   "eligible": 2380,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_share_working_age",
+   "year": 2018,
+   "expected": 2479,
+   "eligible": 2387,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_share_working_age",
+   "year": 2019,
+   "expected": 2479,
+   "eligible": 2397,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_share_working_age",
+   "year": 2020,
+   "expected": 2479,
+   "eligible": 2401,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_share_working_age",
+   "year": 2021,
+   "expected": 2479,
+   "eligible": 2411,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_share_working_age",
+   "year": 2022,
+   "expected": 2479,
+   "eligible": 2421,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_share_working_age",
+   "year": 2023,
+   "expected": 2479,
+   "eligible": 2436,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_share_working_age",
+   "year": 2024,
+   "expected": 2479,
+   "eligible": 2470,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  },
+  {
+   "metric_key": "unemployment_share_working_age",
+   "year": 2025,
+   "expected": 2479,
+   "eligible": 2479,
+   "min_coverage": 0.9,
+   "reference_version": 1
+  }
+ ]
+}

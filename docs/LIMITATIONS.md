@@ -669,15 +669,6 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Description:** No artifact with the owner's 727 identities exists in the repository, so equality cannot be shown and the count is neither trimmed nor padded to 727. The catalogue holds the gmina-level places Otodom lists for flats (rent or sale); districts of big cities, a city or village below a listed gmina, counties and voivodeships are not places (nested searches would double-count and leave children empty). A place without rentals is a valid empty location, not a failure.
 - **Workaround:** `scripts/seed_catalogue.py discover` regenerates the artifact (checksum changes are a new catalogue version); the owner can supply the 727 list at any time
 - **Target:** B-023 item 4
-### L-088 — BDL refresh has run only against a fake and the live probes, not as a scheduled pass on real data
-- **Status:** active
-- **Discovered:** 2026-10-20
-- **Affects:** `services/rm_worker/importers/bdl_context.py`, `rm_worker.tasks.bdl_refresh` (weekly cron), every BDL surface
-- **Evidence:** confirmed: `tests/integration/test_bdl_context_refresh_pg.py` (live-shaped fake, real Postgres) and live probes of 2026-10-20; the first real publication is recorded in `docs/STATUS.md` when it happens
-- **Description:** Until a real pass has published releases, no profile may claim BDL data. Publication is per metric and year and fails closed below the metric's coverage threshold (0.90, 0.70 for deed transactions); thresholds are delegated policy and revisable.
-- **Workaround:** none needed; nothing is shown without a release
-- **Target:** the live refresh on the local stack, then the beta host
-
 ### L-089 — The BDL reference counts a unit as current when it reports a population in the reference year
 - **Status:** active
 - **Discovered:** 2026-10-20
@@ -888,3 +879,13 @@ _None yet._
 - **Workaround:** none
 - **Target:** after B-023 reference-source decision
 - **Resolved:** 2026-10-20 (RM-48): `packages/rm_core/bdl_reference.py` builds the reference from the live unit lists (TERYT derived from the BDL id, one-level parents, powiat rights) and `refresh_context` stores it once per version.
+
+### L-088 — BDL refresh has run only against a fake and the live probes, not as a scheduled pass on real data
+- **Status:** resolved
+- **Discovered:** 2026-10-20
+- **Affects:** `services/rm_worker/importers/bdl_context.py`, `rm_worker.tasks.bdl_refresh` (weekly cron), every BDL surface
+- **Evidence:** confirmed: `tests/integration/test_bdl_context_refresh_pg.py` (live-shaped fake, real Postgres) and live probes of 2026-10-20; the first real publication is recorded in `docs/STATUS.md` when it happens
+- **Description:** Until a real pass has published releases, no profile may claim BDL data. Publication is per metric and year and fails closed below the metric's coverage threshold (0.90, 0.70 for deed transactions); thresholds are delegated policy and revisable.
+- **Workaround:** none needed; nothing is shown without a release
+- **Target:** the live refresh on the local stack, then the beta host
+- **Resolved:** 2026-10-20 (RM-48, RM-282): the first real pass published 22 metrics, 214 metric-years, resumed after an interrupted run; two building-permit years with no data were refused by the gate. The weekly schedule itself has not fired yet (next Monday 03:30 UTC).
