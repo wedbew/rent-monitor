@@ -76,6 +76,7 @@ class Settings(BaseSettings):
     # The real server quota is unconfirmed (RM-391-L02); the cap is a conservative placeholder, not a policy.
     bdl_api_key: SecretStr = SecretStr("")
     bdl_requests_per_minute: int = Field(default=60, ge=1, le=600)
+    bdl_requests_per_second: int = Field(default=5, ge=1, le=10)  # live limit: 10/s, 429 above
     audit_child_memory_mb: int = Field(default=1024, ge=128)  # RLIMIT_AS of the engine child process (#186)
 
     openrouter_api_key: SecretStr = Field(  # blueprint §4.2 spells it OPEN_ROUTER_API_KEY

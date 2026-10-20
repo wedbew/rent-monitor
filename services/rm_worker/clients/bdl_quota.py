@@ -22,6 +22,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from rm_worker.clients.bdl import BdlQuotaExhausted, QuotaWindow
 
 
+def quota_windows(per_second: int, per_minute: int) -> tuple[QuotaWindow, ...]:
+    """The service answers 429 above 10 requests per second; add our own per-minute cap."""
+    return (QuotaWindow(limit=per_second, seconds=1.0), QuotaWindow(limit=per_minute, seconds=60.0))
+
+
 @dataclass
 class PgQuotaGate:
     sessions: async_sessionmaker[AsyncSession]

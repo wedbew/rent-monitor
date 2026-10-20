@@ -21,8 +21,8 @@ from rm_core.location_repo import PgLocationRepo
 from rm_core.settings import Settings, get_settings
 
 from rm_worker.app import app
-from rm_worker.clients.bdl import BdlClient, BdlObservationValidator, BdlUnavailable, QuotaWindow
-from rm_worker.clients.bdl_quota import PgQuotaGate
+from rm_worker.clients.bdl import BdlClient, BdlObservationValidator, BdlUnavailable
+from rm_worker.clients.bdl_quota import PgQuotaGate, quota_windows
 from rm_worker.importers.bdl_context import RefreshReport, refresh_context
 from rm_worker.tasks.location_context import BDL_BINDINGS
 
@@ -37,7 +37,8 @@ async def refresh_now(settings: Settings) -> RefreshReport:
     try:
         sessions = make_sessionmaker(engine)
         gate = PgQuotaGate(
-            sessions, windows=(QuotaWindow(limit=settings.bdl_requests_per_minute, seconds=60.0),)
+            sessions,
+            windows=quota_windows(settings.bdl_requests_per_second, settings.bdl_requests_per_minute),
         )
         key = settings.bdl_api_key.get_secret_value()
         async with httpx.AsyncClient(follow_redirects=False) as http:
