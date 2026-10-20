@@ -11,6 +11,7 @@ caller and never inferred from the rows present; thresholds left undecided (`Non
 `require_publishable` refuses like a failure. Money-like values stay `Decimal`; there is no float here.
 """
 
+from bisect import bisect_left, bisect_right
 from collections.abc import Collection, Iterable
 from decimal import ROUND_HALF_EVEN, Decimal
 
@@ -188,13 +189,14 @@ def rank_territories(
     descending = defn.direction is not Direction.lower_is_favorable
     ordered = sorted(measured.items(), key=lambda kv: (-kv[1] if descending else kv[1], kv[0]))
 
-    def better(a: Decimal, b: Decimal) -> bool:  # is a strictly ahead of b
-        return a > b if descending else a < b
-
+    # Smaller key = strictly ahead. Two bisections per entry replace a pairwise count, which took
+    # seconds on the 2,479-gmina cohort; the comparisons are the same exact Decimal ones.
+    keys = sorted(-v if descending else v for v in measured.values())
     entries: list[RankedEntry] = []
     for tid, value in ordered:
-        ahead = sum(1 for v in measured.values() if better(v, value))
-        behind = sum(1 for v in measured.values() if better(value, v))
+        key = -value if descending else value
+        ahead = bisect_left(keys, key)
+        behind = eligible - bisect_right(keys, key)
         equal = eligible - ahead - behind  # includes the territory itself
         percentile = None
         if eligible >= 2:

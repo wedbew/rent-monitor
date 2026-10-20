@@ -3,6 +3,8 @@
 from decimal import Decimal
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 from pydantic import ValidationError
 from rm_contracts.location_context import (
     BoundaryBreak,
@@ -417,3 +419,25 @@ def test_missing_or_suppressed_parent_value_is_unavailable_not_a_neighbour() -> 
     assert (
         view_metric(m, h, "g1", 2025, [obs("P0202", "1", key="median_price")]).state is ViewState.unavailable
     )
+
+
+@pytest.mark.parametrize("lower", [False, True])
+def test_rank_matches_the_pairwise_definition_with_ties(lower: bool) -> None:
+    h = TerritoryHierarchy(tree())
+    defn = metric(**({"direction": Direction.lower_is_favorable} if lower else {}))
+
+    @given(st.lists(st.integers(min_value=0, max_value=4), min_size=5, max_size=5))
+    def check(values: list[int]) -> None:  # few distinct values, so ties are the common case
+        rows = [obs(t, str(v)) for t, v in zip(GMINAS, values, strict=True)]
+        r = rank_territories(defn, h, rows, year=2025, expected=GMINAS, cohort_id="c")
+        vals = [D(v) for v in values]
+        for e in r.entries:
+            ahead = sum(1 for v in vals if (v < e.value if lower else v > e.value))
+            behind = sum(1 for v in vals if (v > e.value if lower else v < e.value))
+            equal = len(vals) - ahead - behind
+            assert e.rank == ahead + 1
+            assert e.percentile == ((D(behind) + D("0.5") * D(equal)) / D(len(vals))).quantize(
+                D("0.0001"), rounding="ROUND_HALF_EVEN"
+            )
+
+    check()
