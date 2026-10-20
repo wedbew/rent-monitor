@@ -103,7 +103,7 @@ class MetricViewOut(_Out):
 
 class SourceOut(_Out):
     name: Literal["GUS BDL"] = "GUS BDL"
-    url: Literal["https://bdl.stat.gov.pl"] = "https://bdl.stat.gov.pl"
+    url: str = "https://bdl.stat.gov.pl"  # a plain string: fixtures rewrite every URL
     attribution_pl: str
     note_pl: str
 

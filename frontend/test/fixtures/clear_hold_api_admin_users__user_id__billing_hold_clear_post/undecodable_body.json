@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "HTTP_ERROR",
+    "instance": "/api/admin/users/nobody/billing-hold/clear",
+    "request_id": "req_fixture",
+    "status": 400,
+    "title": "HTTP error",
+    "type": "urn:rentmonitor:problem:HTTP_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/admin/users/{user_id}/billing-hold/clear",
+    "method": "POST",
+    "operation_id": "clear_hold_api_admin_users__user_id__billing_hold_clear_post",
+    "path": "/api/admin/users/{user_id}/billing-hold/clear"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/admin/users/nobody/billing-hold/clear"
+  },
+  "scenario": "undecodable_body",
+  "status": 400
+}

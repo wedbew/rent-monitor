@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "HTTP_ERROR",
+    "instance": "/api/me",
+    "request_id": "req_fixture",
+    "status": 400,
+    "title": "HTTP error",
+    "type": "urn:rentmonitor:problem:HTTP_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "DELETE /api/me",
+    "method": "DELETE",
+    "operation_id": "delete_my_account_api_me_delete",
+    "path": "/api/me"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/me"
+  },
+  "scenario": "undecodable_body",
+  "status": 400
+}

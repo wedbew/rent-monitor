@@ -589,6 +589,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/market/locations/{location_id}/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Location Context
+         * @description GUS BDL context of a place: hierarchy, per-metric value, trend, parent and peer comparison, sources.
+         */
+        get: operations["get_location_context_api_market_locations__location_id__context_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/market/locations/{location_id}/history": {
         parameters: {
             query?: never;
@@ -601,6 +621,28 @@ export interface paths {
          * @description Daily history of one series and cohort, oldest first. A day without a published row is absent.
          */
         get: operations["get_location_history_api_market_locations__location_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/market/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Overview
+         * @description Every place this account may see, with its headline, what it maps to and its administrative area.
+         *
+         *     One answer for a map, a sort and a comparison. The free tier gets the fixed top list only.
+         */
+        get: operations["overview_api_market_overview_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1231,6 +1273,21 @@ export interface components {
             /** Recent */
             recent: components["schemas"]["JobOut"][];
         };
+        /** LocationContextOut */
+        LocationContextOut: {
+            /** Chain */
+            chain: components["schemas"]["TerritoryOut"][];
+            /** Location Id */
+            location_id: string;
+            mapping: components["schemas"]["PlaceMappingOut"];
+            /** Metrics */
+            metrics: components["schemas"]["MetricViewOut"][];
+            /** Name */
+            name: string;
+            /** Published Metrics */
+            published_metrics: number;
+            source: components["schemas"]["SourceOut"];
+        };
         /** LocationDetailOut */
         LocationDetailOut: {
             /** Cohort */
@@ -1427,6 +1484,49 @@ export interface components {
          * @enum {string}
          */
         MediaState: "pending" | "stored" | "rejected" | "failed" | "expired";
+        /** MetricViewOut */
+        MetricViewOut: {
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "higher_is_favorable" | "lower_is_favorable" | "neutral";
+            /** Family */
+            family: string;
+            /** Family Pl */
+            family_pl: string;
+            /** Key */
+            key: string;
+            measured: components["schemas"]["TerritoryOut"] | null;
+            /** Name Pl */
+            name_pl: string;
+            national: components["schemas"]["RankOut"] | null;
+            /** Note Pl */
+            note_pl: string;
+            /** Parents */
+            parents: components["schemas"]["ParentValueOut"][];
+            peers: components["schemas"]["RankOut"] | null;
+            /** Reason */
+            reason: string | null;
+            /** Release Id */
+            release_id: string | null;
+            /** Series */
+            series: components["schemas"]["PointOut"][];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "direct" | "proxy" | "unavailable";
+            trend: components["schemas"]["TrendOut"] | null;
+            /** Unit */
+            unit: string;
+            /** Value */
+            value: string | null;
+            /** Value Status */
+            value_status: string | null;
+            /** Year */
+            year: number | null;
+        };
         /** OverrideOut */
         OverrideOut: {
             /** Created By */
@@ -1450,6 +1550,59 @@ export interface components {
             expires_at?: string | null;
             /** Reason */
             reason: string;
+        };
+        /** OverviewOut */
+        OverviewOut: {
+            /**
+             * Access
+             * @enum {string}
+             */
+            access: "full" | "free";
+            /** Free Limit */
+            free_limit: number;
+            /** Free Rule Pl */
+            free_rule_pl: string;
+            /** Items */
+            items: components["schemas"]["OverviewPlaceOut"][];
+            /** Total Places */
+            total_places: number;
+            /** Visible Places */
+            visible_places: number;
+        };
+        /**
+         * OverviewPlaceOut
+         * @description One place of the catalogue with what a map, a sort and a comparison need, from published data only.
+         */
+        OverviewPlaceOut: {
+            data_status: components["schemas"]["DataStatus"];
+            /** Gmina Teryt */
+            gmina_teryt: string | null;
+            /** Last Successful Refresh At */
+            last_successful_refresh_at: string | null;
+            /** Latest Summary Date */
+            latest_summary_date: string | null;
+            /** Location Id */
+            location_id: string;
+            /** Mapping */
+            mapping: ("mapped" | "ambiguous" | "unmatched") | null;
+            /** Median Ppm2 */
+            median_ppm2: string | null;
+            /** Median Rent Pln */
+            median_rent_pln: string | null;
+            /** Name */
+            name: string;
+            /** Powiat Name */
+            powiat_name: string | null;
+            /** Priced Count */
+            priced_count: number | null;
+            /** Relation */
+            relation: ("gmina" | "within_gmina") | null;
+            /** Sufficient */
+            sufficient: boolean | null;
+            /** Withheld Reason */
+            withheld_reason: "insufficient_sample" | null;
+            /** Wojewodztwo Name */
+            wojewodztwo_name: string | null;
         };
         /** PackOut */
         PackOut: {
@@ -1478,6 +1631,14 @@ export interface components {
             /** Packs */
             packs: components["schemas"]["PackOut"][];
         };
+        /** ParentValueOut */
+        ParentValueOut: {
+            /** Relation */
+            relation: ("above" | "below" | "equal") | null;
+            territory: components["schemas"]["TerritoryOut"];
+            /** Value */
+            value: string | null;
+        };
         /** PeriodOut */
         PeriodOut: {
             /** Allowance */
@@ -1494,6 +1655,20 @@ export interface components {
             /** Used */
             used: number;
         };
+        /** PlaceMappingOut */
+        PlaceMappingOut: {
+            /** Candidates */
+            candidates: components["schemas"]["TerritoryOut"][];
+            /** Method */
+            method: string;
+            /** Relation */
+            relation: ("gmina" | "within_gmina") | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "mapped" | "ambiguous" | "unmatched";
+        };
         /** PlanOut */
         PlanOut: {
             /**
@@ -1508,6 +1683,15 @@ export interface components {
             period: components["schemas"]["PeriodOut"] | null;
             /** Subscription Status */
             subscription_status: string | null;
+        };
+        /** PointOut */
+        PointOut: {
+            /** Status */
+            status: string;
+            /** Value */
+            value: string | null;
+            /** Year */
+            year: number;
         };
         /**
          * Problem
@@ -1615,6 +1799,33 @@ export interface components {
         PurchasesOut: {
             /** Purchases */
             purchases: components["schemas"]["PurchaseOut"][];
+        };
+        /** RankOut */
+        RankOut: {
+            /** Coverage */
+            coverage: string | null;
+            /** Median */
+            median: string | null;
+            /** Of */
+            of: number | null;
+            /** Percentile */
+            percentile: string | null;
+            /** Rank */
+            rank: number | null;
+            /** Reasons */
+            reasons: string[];
+            /** Scope */
+            scope: string;
+            /**
+             * Scope Level
+             * @enum {string}
+             */
+            scope_level: "gmina" | "powiat" | "wojewodztwo" | "country";
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "ok" | "suppressed" | "unavailable";
         };
         /** RefundOut */
         RefundOut: {
@@ -1746,6 +1957,62 @@ export interface components {
             ip: string | null;
             /** User Agent */
             user_agent: string | null;
+        };
+        /** SourceOut */
+        SourceOut: {
+            /** Attribution Pl */
+            attribution_pl: string;
+            /**
+             * Name
+             * @default GUS BDL
+             * @constant
+             */
+            name: "GUS BDL";
+            /** Note Pl */
+            note_pl: string;
+            /**
+             * Url
+             * @default https://bdl.stat.gov.pl
+             */
+            url: string;
+        };
+        /** TerritoryOut */
+        TerritoryOut: {
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "gmina" | "powiat" | "wojewodztwo" | "country";
+            /** Name */
+            name: string;
+            /** Territory Id */
+            territory_id: string;
+            /** Teryt */
+            teryt: string;
+        };
+        /** TrendOut */
+        TrendOut: {
+            /** Absolute Change */
+            absolute_change: string | null;
+            /** Comparable Steps */
+            comparable_steps: number;
+            /** Favorable */
+            favorable: boolean | null;
+            /** From Year */
+            from_year: number | null;
+            /** Movement */
+            movement: ("up" | "down" | "flat") | null;
+            /** Percent Change */
+            percent_change: string | null;
+            /** Reasons */
+            reasons: string[];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "ok" | "suppressed" | "unavailable";
+            /** To Year */
+            to_year: number | null;
         };
         /**
          * UpstreamOut
@@ -4267,6 +4534,92 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
+            /** @description Problem: FEATURE_NOT_IN_PLAN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_location_context_api_market_locations__location_id__context_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description stable internal place id */
+                location_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationContextOut"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: NOT_FOUND */
             404: {
                 headers: {
@@ -4342,6 +4695,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
+            /** @description Problem: FEATURE_NOT_IN_PLAN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Problem: NOT_FOUND */
             404: {
                 headers: {
@@ -4353,6 +4715,53 @@ export interface operations {
             };
             /** @description Problem: VALIDATION_ERROR */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    overview_api_market_overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewOut"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

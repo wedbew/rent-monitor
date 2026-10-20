@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "HTTP_ERROR",
+    "instance": "/api/auth/password/change",
+    "request_id": "req_fixture",
+    "status": 400,
+    "title": "HTTP error",
+    "type": "urn:rentmonitor:problem:HTTP_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/password/change",
+    "method": "POST",
+    "operation_id": "password_change_api_auth_password_change_post",
+    "path": "/api/auth/password/change"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/auth/password/change"
+  },
+  "scenario": "undecodable_body",
+  "status": 400
+}

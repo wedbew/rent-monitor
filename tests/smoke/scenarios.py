@@ -1336,39 +1336,40 @@ def not_an_admin(key: str, path: str) -> Run:
 
 
 # ============================================================================================== market
+async def market_full(w: World):  # type: ignore[no-untyped-def]
+    """An account with full Rynek access (the admin role stands in for Pro or a purchased pack)."""
+    return await w.user(label="market-full", role="admin")
+
+
 @scenario(
     "GET /api/market/locations", "populated", 200, "two published places, one pending, one never imported"
 )
 async def market_list(w: World) -> Exchange:
     await w.seed_market()
-    return await w.send(await w.user(label="market"), "GET", "/api/market/locations")
+    return await w.send(await market_full(w), "GET", "/api/market/locations")
 
 
 @scenario("GET /api/market/locations", "search_and_page", 200, "a one-row page of a name search")
 async def market_list_search(w: World) -> Exchange:
     await w.seed_market()
-    return await w.send(
-        await w.user(label="market"), "GET", "/api/market/locations", params={"q": "g", "limit": 1}
-    )
+    return await w.send(await market_full(w), "GET", "/api/market/locations", params={"q": "g", "limit": 1})
 
 
 @scenario("GET /api/market/locations", "no_match", 200, "an empty page is a valid answer")
 async def market_list_empty(w: World) -> Exchange:
     await w.seed_market()
-    return await w.send(await w.user(label="market"), "GET", "/api/market/locations", params={"q": "zzzz"})
+    return await w.send(await market_full(w), "GET", "/api/market/locations", params={"q": "zzzz"})
 
 
 @scenario("GET /api/market/locations", "bad_cursor", 422)
 async def market_list_bad_cursor(w: World) -> Exchange:
-    return await w.send(
-        await w.user(label="market"), "GET", "/api/market/locations", params={"cursor": "garbage"}
-    )
+    return await w.send(await market_full(w), "GET", "/api/market/locations", params={"cursor": "garbage"})
 
 
 @scenario("GET /api/market/locations/{location_id}", "fresh_sufficient", 200)
 async def market_detail(w: World) -> Exchange:
     await w.seed_market()
-    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/smoke-torun")
+    return await w.send(await market_full(w), "GET", "/api/market/locations/smoke-torun")
 
 
 @scenario(
@@ -1376,30 +1377,30 @@ async def market_detail(w: World) -> Exchange:
 )
 async def market_detail_withheld(w: World) -> Exchange:
     await w.seed_market()
-    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/smoke-gdynia")
+    return await w.send(await market_full(w), "GET", "/api/market/locations/smoke-gdynia")
 
 
 @scenario("GET /api/market/locations/{location_id}", "bootstrap_pending", 200, "unavailable, no rows")
 async def market_detail_pending(w: World) -> Exchange:
     await w.seed_market()
-    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/smoke-gdansk")
+    return await w.send(await market_full(w), "GET", "/api/market/locations/smoke-gdansk")
 
 
 @scenario("GET /api/market/locations/{location_id}", "unknown_place", 404)
 async def market_detail_unknown(w: World) -> Exchange:
-    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/nowhere")
+    return await w.send(await market_full(w), "GET", "/api/market/locations/nowhere")
 
 
 @scenario("GET /api/market/locations/{location_id}", "malformed_id", 422)
 async def market_detail_malformed(w: World) -> Exchange:
-    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/NOT_VALID")
+    return await w.send(await market_full(w), "GET", "/api/market/locations/NOT_VALID")
 
 
 @scenario("GET /api/market/locations/{location_id}/history", "cohort_series", 200)
 async def market_history(w: World) -> Exchange:
     await w.seed_market()
     return await w.send(
-        await w.user(label="market"), "GET", "/api/market/locations/smoke-torun/history", params={"days": 30}
+        await market_full(w), "GET", "/api/market/locations/smoke-torun/history", params={"days": 30}
     )
 
 
@@ -1407,7 +1408,7 @@ async def market_history(w: World) -> Exchange:
 async def market_history_additions(w: World) -> Exchange:
     await w.seed_market()
     return await w.send(
-        await w.user(label="market"),
+        await market_full(w),
         "GET",
         "/api/market/locations/smoke-torun/history",
         params={"series": "additions", "cohort": "rooms_2"},
@@ -1416,17 +1417,63 @@ async def market_history_additions(w: World) -> Exchange:
 
 @scenario("GET /api/market/locations/{location_id}/history", "unknown_place", 404)
 async def market_history_unknown(w: World) -> Exchange:
-    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/nowhere/history")
+    return await w.send(await market_full(w), "GET", "/api/market/locations/nowhere/history")
 
 
 @scenario("GET /api/market/locations/{location_id}/history", "unsupported_series", 422)
 async def market_history_bad_series(w: World) -> Exchange:
     return await w.send(
-        await w.user(label="market"),
+        await market_full(w),
         "GET",
         "/api/market/locations/smoke-torun/history",
         params={"series": "deed"},
     )
+
+
+@scenario("GET /api/market/overview", "full_access", 200, "every place of the catalogue, mapped or not")
+async def market_overview_full(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await market_full(w), "GET", "/api/market/overview")
+
+
+@scenario("GET /api/market/overview", "free_top_list", 200, "a free account sees only the fixed top list")
+async def market_overview_free(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await w.user(label="market"), "GET", "/api/market/overview")
+
+
+@scenario("GET /api/market/locations/{location_id}", "outside_free_list", 403, "FEATURE_NOT_IN_PLAN")
+async def market_detail_closed(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/smoke-gdynia")
+
+
+@scenario("GET /api/market/locations/{location_id}/history", "outside_free_list", 403, "FEATURE_NOT_IN_PLAN")
+async def market_history_closed(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/smoke-gdynia/history")
+
+
+@scenario("GET /api/market/locations/{location_id}/context", "unmapped_place", 200, "no BDL context yet")
+async def market_context(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await market_full(w), "GET", "/api/market/locations/smoke-torun/context")
+
+
+@scenario("GET /api/market/locations/{location_id}/context", "outside_free_list", 403, "FEATURE_NOT_IN_PLAN")
+async def market_context_closed(w: World) -> Exchange:
+    await w.seed_market()
+    return await w.send(await w.user(label="market"), "GET", "/api/market/locations/smoke-gdynia/context")
+
+
+@scenario("GET /api/market/locations/{location_id}/context", "unknown_place", 404)
+async def market_context_unknown(w: World) -> Exchange:
+    return await w.send(await market_full(w), "GET", "/api/market/locations/nowhere/context")
+
+
+@scenario("GET /api/market/locations/{location_id}/context", "malformed_id", 422)
+async def market_context_malformed(w: World) -> Exchange:
+    return await w.send(await market_full(w), "GET", "/api/market/locations/NOT_VALID/context")
 
 
 PUBLIC = frozenset(
