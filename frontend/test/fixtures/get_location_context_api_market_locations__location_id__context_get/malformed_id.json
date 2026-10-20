@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["path", "location_id"],
+        "msg": "String should match pattern '^[a-z0-9-]{1,64}$'",
+        "type": "string_pattern_mismatch"
+      }
+    ],
+    "instance": "/api/market/locations/NOT_VALID/context",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/market/locations/{location_id}/context",
+    "method": "GET",
+    "operation_id": "get_location_context_api_market_locations__location_id__context_get",
+    "path": "/api/market/locations/{location_id}/context"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/locations/NOT_VALID/context"
+  },
+  "scenario": "malformed_id",
+  "status": 422
+}

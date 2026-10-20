@@ -1,0 +1,45 @@
+{
+  "body": {
+    "access": "free",
+    "free_limit": 20,
+    "free_rule_pl": "Darmowe konto widzi 20 miejsc z największą liczbą opublikowanych ofert z ceną; pełny rynek odblokowuje zakup pakietu raportów lub plan Pro.",
+    "items": [
+      {
+        "data_status": "fresh",
+        "gmina_teryt": null,
+        "last_successful_refresh_at": "2026-10-19T22:08:10.966160Z",
+        "latest_summary_date": "2026-10-20",
+        "location_id": "smoke-torun",
+        "mapping": null,
+        "median_ppm2": "45.50",
+        "median_rent_pln": "2275.00",
+        "name": "Toruń",
+        "powiat_name": null,
+        "priced_count": 12,
+        "relation": null,
+        "sufficient": true,
+        "withheld_reason": null,
+        "wojewodztwo_name": null
+      }
+    ],
+    "total_places": 4,
+    "visible_places": 1
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/market/overview",
+    "method": "GET",
+    "operation_id": "overview_api_market_overview_get",
+    "path": "/api/market/overview"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/market/overview"
+  },
+  "scenario": "free_top_list",
+  "status": 200
+}

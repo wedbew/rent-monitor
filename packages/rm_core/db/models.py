@@ -839,6 +839,45 @@ class MarketLocation(Base):
     launch_enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
 
 
+class MarketLocationTerritory(Base):
+    """Derived mapping of a catalogue place to GUS BDL territories (RM-282); recomputable, never financial.
+
+    LEGAL[third-party-data]: relates public Otodom place paths to public GUS administrative units (RM-282).
+    GDPR[retention]: public identifiers; removed with the catalogue version (cascade).
+    """
+
+    __tablename__ = "market_location_territory"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["catalogue_version", "location_id"],
+            ["market_location.catalogue_version", "market_location.location_id"],
+            ondelete="CASCADE",
+        ),
+        CheckConstraint("status IN ('mapped','ambiguous','unmatched')", name="status_vocab"),
+        CheckConstraint("relation IS NULL OR relation IN ('gmina','within_gmina')", name="relation_vocab"),
+        CheckConstraint(
+            "status <> 'mapped' OR (gmina_id IS NOT NULL AND relation IS NOT NULL)", name="mapped_is_complete"
+        ),
+        Index(
+            "ix_market_location_territory_gmina", "gmina_id", postgresql_where=text("gmina_id IS NOT NULL")
+        ),
+    )
+
+    catalogue_version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    location_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    reference_version: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(10))
+    method: Mapped[str] = mapped_column(String(32))
+    relation: Mapped[str | None] = mapped_column(String(14))
+    gmina_id: Mapped[str | None] = mapped_column(String(32))
+    powiat_id: Mapped[str | None] = mapped_column(String(32))
+    wojewodztwo_id: Mapped[str | None] = mapped_column(String(32))
+    candidates: Mapped[list[str]] = mapped_column(
+        ARRAY(String(32)), server_default=text("'{}'::varchar[]"), default=list
+    )
+    mapped_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
 class MarketImportRun(Base):
     """One import attempt for one location: page checkpoint, counters and completion evidence.
 

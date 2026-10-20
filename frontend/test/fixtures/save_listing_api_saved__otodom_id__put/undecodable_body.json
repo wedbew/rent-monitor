@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "HTTP_ERROR",
+    "instance": "/api/saved/ID00000000",
+    "request_id": "req_fixture",
+    "status": 400,
+    "title": "HTTP error",
+    "type": "urn:rentmonitor:problem:HTTP_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "PUT /api/saved/{otodom_id}",
+    "method": "PUT",
+    "operation_id": "save_listing_api_saved__otodom_id__put",
+    "path": "/api/saved/{otodom_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/saved/ID00000000"
+  },
+  "scenario": "undecodable_body",
+  "status": 400
+}

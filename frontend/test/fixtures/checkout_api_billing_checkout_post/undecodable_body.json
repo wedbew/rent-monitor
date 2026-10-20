@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "HTTP_ERROR",
+    "instance": "/api/billing/checkout",
+    "request_id": "req_fixture",
+    "status": 400,
+    "title": "HTTP error",
+    "type": "urn:rentmonitor:problem:HTTP_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/billing/checkout",
+    "method": "POST",
+    "operation_id": "checkout_api_billing_checkout_post",
+    "path": "/api/billing/checkout"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/billing/checkout"
+  },
+  "scenario": "undecodable_body",
+  "status": 400
+}

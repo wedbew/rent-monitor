@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "HTTP_ERROR",
+    "instance": "/api/auth/google",
+    "request_id": "req_fixture",
+    "status": 400,
+    "title": "HTTP error",
+    "type": "urn:rentmonitor:problem:HTTP_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/auth/google",
+    "method": "POST",
+    "operation_id": "google_sign_in_api_auth_google_post",
+    "path": "/api/auth/google"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/auth/google"
+  },
+  "scenario": "undecodable_body",
+  "status": 400
+}
