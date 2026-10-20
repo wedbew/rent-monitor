@@ -5,6 +5,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- Rynek is now a map, a list and a comparison (`/app/market?view=map|list|compare`): areas of the gminas coloured by the chosen published figure (official PRG boundaries, joined by TERYT, never a listing position), a table that selects the same place by keyboard or pointer, up to four places side by side with the unit and year of every figure, and a banner that says what a free account sees. A place page gets "Kontekst lokalizacji (GUS)": value, unit, year, proxy label, trend, parent values, national and peer ranks only past their gates, and each series as a table. Frontend only on top of the overview and context routes; no operator action (RM-282)
 - `scripts/map_places.py` stores the place-to-gmina mapping (run once per catalogue and reference); gmina names with the source's year qualifier (`Wałbrzych od 2013`) or capital prefix (`M.st.Warszawa od 2002`) now match their Otodom paths: on the real data 786 of 787 places map and one (Słupsk, listed under the rural powiat) stays unmatched (RM-282)
 
 ### Added

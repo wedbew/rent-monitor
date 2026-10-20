@@ -83,12 +83,14 @@ test("navigation, search and the list show what the database holds, not a fixtur
   await signIn(context, user, baseURL);
   await page.goto("/app");
   await page.getByRole("link", { name: "Rynek", exact: true }).click();
-  await expect(page).toHaveURL(/\/app\/market$/);
+  await expect(page).toHaveURL(/\/app\/market$/); // opens on the map
   await expect(page.getByRole("heading", { level: 1, name: "Rynek" })).toBeVisible();
 
+  await page.getByRole("button", { name: "Lista" }).click();
+  await expect(page).toHaveURL(/view=list/);
   await page.getByRole("textbox", { name: "Nazwa miejscowości" }).fill(market.run);
   await page.getByRole("button", { name: "Szukaj" }).click();
-  await expect(page).toHaveURL(new RegExp(`\\?q=${market.run}$`));
+  await expect(page).toHaveURL(new RegExp(`q=${market.run}`));
   await expect(page.getByRole("table").getByRole("rowheader")).toHaveCount(4);
   await expect
     .poll(async () =>
@@ -142,9 +144,9 @@ test("a place shows its latest reading and a history whose days follow the store
   baseURL,
 }) => {
   await signIn(context, user, baseURL);
-  await page.goto(`/app/market?q=${market.run}`);
+  await page.goto(`/app/market?view=list&q=${market.run}`);
   await page.getByRole("link", { name: market.names.alfa }).click();
-  await expect(page).toHaveURL(new RegExp(`/app/market/${market.ids.alfa}\\?q=${market.run}$`));
+  await expect(page).toHaveURL(new RegExp(`/app/market/${market.ids.alfa}\\?.*q=${market.run}`));
   await expect(page.getByRole("heading", { level: 1, name: market.names.alfa })).toBeVisible();
   const latest = page.getByRole("region", { name: "Ostatni odczyt" });
   await expect(latest).toContainText(money("2 375"));
@@ -245,7 +247,7 @@ test("a place with no bootstrap and an unknown place are honest, and the data ne
   const second = await browser.newContext({ baseURL: baseURL ?? "http://localhost:4173" });
   await signIn(second, other, baseURL);
   const secondPage = await second.newPage();
-  await secondPage.goto(`/app/market?q=${market.run}`);
+  await secondPage.goto(`/app/market?view=list&q=${market.run}`);
   await expect(secondPage.getByRole("table").getByRole("rowheader")).toHaveCount(4);
   await expect(secondPage.getByRole("textbox", { name: "Nazwa miejscowości" })).toHaveValue(market.run);
   await second.close();
@@ -268,4 +270,6 @@ test("a free account on the real stack sees the cap and only places with a suffi
   };
   expect(overview.access).toBe("free");
   expect(overview.visible_places).toBeLessThan(overview.total_places); // the cap is enforced by the server
+  await page.goto("/app/market");
+  await expect(page.getByText(/Konto darmowe: widzisz \d+ z \d+ miejsc/)).toBeVisible();
 });

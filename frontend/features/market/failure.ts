@@ -9,3 +9,7 @@ export function failureOf(error: unknown) {
 }
 
 export const isNotFound = (error: unknown): boolean => error instanceof ApiError && error.status === 404;
+
+/** The free tier's closed place: 403 `FEATURE_NOT_IN_PLAN`, shown as an offer to unlock, never as a failure. */
+export const isClosed = (error: unknown): boolean =>
+  error instanceof ApiError && error.status === 403 && error.code === "FEATURE_NOT_IN_PLAN";

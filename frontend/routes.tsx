@@ -31,7 +31,7 @@ const PayPage = lazy(async () => ({
   default: (await import("./features/billing/PayPage")).PayPage,
 }));
 const MarketPage = lazy(async () => ({
-  default: (await import("./features/market/MarketPage")).MarketPage,
+  default: (await import("./features/market/MarketExplorer")).MarketExplorer,
 }));
 const LocationPage = lazy(async () => ({
   default: (await import("./features/market/LocationPage")).LocationPage,

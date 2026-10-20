@@ -13,6 +13,11 @@ export type LocationDetail = components["schemas"]["LocationDetailOut"];
 export type LocationHistory = components["schemas"]["LocationHistoryOut"];
 export type AskingRent = components["schemas"]["AskingRentOut"];
 
+export type Overview = components["schemas"]["OverviewOut"];
+export type OverviewPlace = components["schemas"]["OverviewPlaceOut"];
+export type LocationContext = components["schemas"]["LocationContextOut"];
+export type MetricView = components["schemas"]["MetricViewOut"];
+
 export const PAGE_SIZE = 30;
 
 /**
@@ -93,6 +98,34 @@ export function useLocationHistory(locationId: string, selection: Selection, ena
         }),
       ),
     staleTime: 30_000,
+    enabled,
+  });
+}
+
+/** Every place this account may see, in one answer: what the map, the sort and the comparison read. */
+export function useOverview() {
+  const me = useMe();
+  return useQuery({
+    queryKey: tenantKey(me.id, "market", "overview"),
+    queryFn: async ({ signal }): Promise<Overview> =>
+      unwrap(await api.GET("/api/market/overview", { signal })),
+    staleTime: 60_000,
+  });
+}
+
+/** The GUS BDL context of one place; `enabled` keeps a comparison from asking for places it does not show. */
+export function useLocationContext(locationId: string, enabled = true) {
+  const me = useMe();
+  return useQuery({
+    queryKey: tenantKey(me.id, "market", "context", locationId),
+    queryFn: async ({ signal }): Promise<LocationContext> =>
+      unwrap(
+        await api.GET("/api/market/locations/{location_id}/context", {
+          params: { path: { location_id: locationId } },
+          signal,
+        }),
+      ),
+    staleTime: 5 * 60_000,
     enabled,
   });
 }
