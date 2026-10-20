@@ -4,7 +4,11 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Security
+- Pillow 12.3.0 to 13.0.0 (`rm-worker` constraint `>=13,<14`) clears 8 pip-audit advisories; image tests pass (RM-447)
+
 ### Added
+- Product media store seam: `MEDIA_S3_ENDPOINT`, `MEDIA_BUCKET`, `MEDIA_ACCESS_KEY_ID`, `MEDIA_SECRET_ACCESS_KEY` (private EU R2 bucket, separate from backups; operator must create the bucket and token, B-025), `scripts/probe_media_store.py`, dependency `boto3` (ADR 0014, RM-447)
 - Rynek is two tabs, Otodom (default, `/app/market/otodom`) and GUS (`/app/market/gus`), each labelled with source, period, grain and freshness; `/app/market` redirects, the old `/app/market/:id` redirects to the Otodom place page. Otodom: map with 44 px markers, clustering, city labels, preview (median, zł/m², sample, freshness, open place, compare), zoom/pan/reset inside the frame (wheel with Ctrl, drag, pinch, keyboard, reduced motion respected), apartment-size and rooms filters in the address with a reset, direct "Porównaj miejsca" comparison, place and district pages with charts, table equivalents and plain-Polish explanations; GUS: experimental locality ranking card, leaderboard, comparison and profile (RM-439)
 - Charts use Recharts (lazy chunk, about 98 kB gzip; the `check-dist` total-JS budget rises from 450 to 520 kB, initial and per-chunk limits unchanged); statistical presentation rule `.agent/rules/statistics.md` (RM-439)
 - UX gate lane (`pnpm ux`, `frontend/e2e/ux.spec.ts`) and Rynek visual baselines; criteria and evidence in `frontend/docs/UX-REVIEW-RYNEK.md` (RM-439)

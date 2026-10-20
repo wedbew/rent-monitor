@@ -9,7 +9,7 @@ dependencies = [
     "deal-analyzer",
     "procrastinate>=3.10,<4",
     "curl-cffi>=0.16,<0.17",
-    "pillow>=11,<13",
+    "pillow>=13,<14",
     "httpx>=0.28",
 ]
 # procrastinate, sqlalchemy, psycopg join in the data-plane step (blueprint 4.8 step 2); check context7 first.

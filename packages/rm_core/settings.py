@@ -113,6 +113,19 @@ class Settings(BaseSettings):
         "30 5 * * *"  # UTC; after the default window end, before the day's reads
     )
 
+    # Product media store (ADR 0014): private EU-jurisdiction R2 bucket, separate from the backup bucket and
+    # its credentials. Empty endpoint/bucket means not configured: every image operation refuses.
+    # GDPR[processor]: Cloudflare R2 stores users' room photos and generated images (RM-447)
+    media_s3_endpoint: str = (
+        ""  # https://<account>.eu.r2.cloudflarestorage.com (the EU-jurisdiction endpoint)
+    )
+    media_bucket: str = ""
+    media_access_key_id: str = ""
+    media_secret_access_key: SecretStr = SecretStr("")
+    media_s3_timeout_s: int = Field(default=20, ge=1, le=120)  # per request; the client retries at most twice
+    media_project_retention_days: int = Field(default=30, ge=1)  # GDPR[retention]: owner decision 2026-10-19
+    media_abandoned_upload_days: int = Field(default=7, ge=1)  # GDPR[retention]: owner decision 2026-10-19
+
     location_reference_version: int = Field(default=1, ge=1)  # frozen BDL territorial reference (RM-48)
     bdl_refresh_cron: str = "30 3 * * 1"  # UTC, weekly: a finished run is skipped, a new source year is read
 
@@ -146,6 +159,24 @@ class Settings(BaseSettings):
         if v != 90:  # market_offer/market_daily_summary CHECKs and the contracts fix 90 elapsed days
             raise ValueError("the archive policy is 90 elapsed days; changing it needs a migration")
         return v
+
+    @field_validator("media_s3_endpoint")
+    @classmethod
+    def _media_endpoint_is_eu(cls, v: str) -> str:
+        v = v.strip().rstrip("/")
+        if v and not (v.startswith("https://") and v.endswith(".eu.r2.cloudflarestorage.com")):
+            # A default-jurisdiction endpoint would store product media outside the approved EU bucket.
+            raise ValueError("MEDIA_S3_ENDPOINT must be https://<account>.eu.r2.cloudflarestorage.com")
+        return v
+
+    @property
+    def media_store_configured(self) -> bool:
+        return bool(
+            self.media_s3_endpoint
+            and self.media_bucket
+            and self.media_access_key_id
+            and self.media_secret_access_key.get_secret_value()
+        )
 
     @model_validator(mode="after")
     def _stale_after_fresh(self) -> "Settings":
