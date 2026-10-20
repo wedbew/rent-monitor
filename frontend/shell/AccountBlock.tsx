@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { formatReports } from "../api/format";
 import { Button } from "../ui/Button";
 import styles from "./AccountBlock.module.css";
+import { hasNoLimit, balanceLabel } from "./balance";
 import { signOut, useMe } from "./session";
 import { t } from "../i18n";
 
@@ -30,7 +30,9 @@ export function AccountBlock() {
         </span>
         <span className={styles["details"]}>
           <strong>{me.name ?? me.email}</strong>
-          <span>{t.shell.balance({ reports: formatReports(me.credit_balance) })}</span>
+          <span>
+            {hasNoLimit(me) ? t.shell.balanceUnlimited : t.shell.balance({ reports: balanceLabel(me) })}
+          </span>
         </span>
       </div>
       <Button type="button" small fill busy={leave.isPending} onClick={() => leave.mutate()}>

@@ -2772,6 +2772,12 @@
               }
             ],
             "title": "Subscription Status"
+          },
+          "unlimited_reports": {
+            "default": false,
+            "description": "Explicit staff-granted entitlement: analyses are not charged and the whole Rynek opens.",
+            "title": "Unlimited Reports",
+            "type": "boolean"
           }
         },
         "required": [

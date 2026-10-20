@@ -1042,6 +1042,11 @@ export const SCENARIOS = {
     withMe((m) => ({ ...m, credit_balance: 0 })),
     fromFixture("POST /api/audits", "no_credits"),
   ]),
+  unlimited: scenario(
+    "unlimited",
+    "The account holds the explicit no-limit entitlement and a zero balance.",
+    [withMe((m) => ({ ...m, credit_balance: 0, plan: { ...m.plan, unlimited_reports: true } }))],
+  ),
   mixed: scenario("mixed", "Six analyses in six different states.", auditRoutes(MIXED_AUDITS)),
   auditsFailing: scenario("auditsFailing", "The list of analyses cannot be loaded (503).", [
     {

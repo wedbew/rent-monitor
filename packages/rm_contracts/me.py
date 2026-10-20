@@ -30,6 +30,10 @@ class PlanOut(BaseModel):
     subscription_status: str | None
     grace_until: datetime | None
     period: PeriodOut | None
+    unlimited_reports: bool = Field(
+        default=False,
+        description="Explicit staff-granted entitlement: analyses are not charged and the whole Rynek opens.",
+    )
 
 
 class UpstreamOut(BaseModel):
