@@ -3,6 +3,8 @@
 Verified 2026-10-21 (Europe/Warsaw). Current checkout: `staging`, `422f72f`.
 Research and handoff for #284; no feature implementation, deployment or infrastructure provisioning is claimed.
 
+**Later October 21 update:** the owner approves product media in the existing private default-jurisdiction `rent-monitor` bucket; the EU requirement described in this historical audit is superseded for product media only. New staging has the object-store seam/probe and an EU-only validator requiring correction. Use [the follow-up and Polish source research](INTERIOR-POLAND-SOURCES-AND-FOLLOWUP-2026-10-21.md) and the updated Claude prompt; do not recreate merged work or ask for another EU bucket.
+
 ## Confirmed current state
 
 | Area | Evidence | Result |
