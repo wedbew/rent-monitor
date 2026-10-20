@@ -21,6 +21,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      # Documentation-only changes (scripts/changed_paths.py) keep the secret scan, which reads every file including
+      # Markdown, and skip the dependency audits, semgrep and the workflow lint, which cannot see a doc change. The
+      # scheduled run has no base commit, so it is never docs-only.
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 scripts/changed_paths.py "$BASE" "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
 
       - name: gitleaks (full history, binary pinned by version + checksum)
         env:
@@ -33,30 +40,37 @@ jobs:
           ./gitleaks git --redact --exit-code 1 .
 
       - name: pip-audit (blocking)
+        if: steps.diff.outputs.docs_only != 'true'
         run: |
           uv export --all-packages --no-hashes --no-emit-workspace -o /tmp/req.txt
           uvx pip-audit==2.10.1 -r /tmp/req.txt --strict
 
       - name: uv audit (advisory, preview)
+        if: steps.diff.outputs.docs_only != 'true'
         continue-on-error: true
         run: uv audit --preview-features audit-command
 
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - if: steps.diff.outputs.docs_only != 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: frontend/.node-version
       - name: pnpm audit (SPA production dependencies; high and above fails)
+        if: steps.diff.outputs.docs_only != 'true'
         working-directory: frontend
         run: |
           corepack enable
           pnpm audit --prod --audit-level high
 
       - name: semgrep rule tests
+        if: steps.diff.outputs.docs_only != 'true'
         run: uvx semgrep==1.180.0 --test --metrics=off --config .semgrep/rentmonitor.yml .semgrep/rentmonitor.py
 
       - name: semgrep CE
+        if: steps.diff.outputs.docs_only != 'true'
         run: uvx semgrep==1.180.0 scan --error --config p/python --config p/secrets --config .semgrep/ --metrics=off
 
       - name: actionlint + zizmor
+        if: steps.diff.outputs.docs_only != 'true'
         run: |
           uvx zizmor==1.30.1 --min-severity medium .github/workflows
           bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12

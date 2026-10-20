@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 import pytest_asyncio
 from contract import check, load_spec, operations
-from db_fixtures import engine, migrated_url, pg_url, procrastinate_schema
+from db_fixtures import engine, migrated_url, pg_url, procrastinate_schema, template_url
 from rm_core.ledger import ledger_mismatches, lot_mismatches
 from scenarios import Scenario, all_scenarios
 from world import Exchange, World

@@ -53,7 +53,7 @@ st_lint() { uv run ruff check . && uv run ruff format --check .; } # SPA finance
 st_types() { uv run pyright; }
 st_types_ty() { uvx ty check packages services; }
 st_unit() { uv run pytest -m "not e2e and not integration" -q; }
-st_test() { uv run pytest -m "not e2e" --cov --cov-report=term-missing -q; }
+st_test() { uv run pytest -m "not e2e" --cov --cov-report=term-missing -q -n 4 --dist loadfile; }
 st_invariants() { uv run pytest -m invariant -q -rs --junitxml=/tmp/rm-invariants.xml && python3 scripts/check_invariants.py /tmp/rm-invariants.xml; }
 st_migrations() {
   uv run pytest tests/migrations -q || return 1

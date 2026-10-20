@@ -17,14 +17,23 @@ env:
 
 jobs:
   changes:
-    # Documentation-only changes skip the code stages (types, test, invariants, migrations). A skipped job shows as
-    # "skipped" in the checks list; lint, security and the title check always run. Any doubt means the full pipeline.
+    # A change only runs the stages it can affect (scripts/changed_paths.py, tests/tooling/test_changed_paths.py):
+    #   docs_only  nothing here runs (the title check and the secret scan in other workflows still do)
+    #   python     lint, types, tests, migrations: skipped for documentation and for a frontend-only change
+    #   frontend   `pnpm check`, the mocked browser lane, the visual lane: skipped unless frontend/, the OpenAPI
+    #              document, the report schema or a workflow changed
+    #   journey    the SPA on the real Compose stack: also runs for backend, deploy and lockfile changes
+    # A skipped job shows as "skipped" and satisfies a required check. A flag that is empty (this job failed) or
+    # unknown means "run": every `if` below tests `!= 'false'`, so any doubt runs the full pipeline.
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: read
     outputs:
       docs_only: ${{ steps.diff.outputs.docs_only }}
+      python: ${{ steps.diff.outputs.python }}
+      frontend: ${{ steps.diff.outputs.frontend }}
+      journey: ${{ steps.diff.outputs.journey }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -36,6 +45,8 @@ jobs:
         run: python3 scripts/changed_paths.py "$BASE" "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
 
   lint:
+    if: ${{ !cancelled() && needs.changes.outputs.python != 'false' }}
+    needs: changes
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -50,7 +61,7 @@ jobs:
       - run: uv run ruff format --check .
 
   types:
-    if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' }}
+    if: ${{ !cancelled() && needs.changes.outputs.python != 'false' }}
     needs: changes
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -65,7 +76,7 @@ jobs:
       - run: uv run pyright
 
   types-ty-trial:
-    if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' }}
+    if: ${{ !cancelled() && needs.changes.outputs.python != 'false' }}
     needs: changes
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -81,7 +92,7 @@ jobs:
       - run: uvx ty check packages services
 
   test:
-    if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' }}
+    if: ${{ !cancelled() && needs.changes.outputs.python != 'false' }}
     needs: changes
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -93,7 +104,9 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
       - run: uv sync --all-packages --group dev
-      - run: uv run pytest -m "not e2e" --cov --cov-report=term-missing -q
+      # One Postgres container per worker and one database per test module (tests/db_fixtures.py); `loadfile` keeps a
+      # file's tests in one worker, in order, because some files share module state.
+      - run: uv run pytest -m "not e2e" --cov --cov-report=term-missing -q -n auto --dist loadfile
 
   invariants:
     # Off until the engine and its four invariant tests exist: set repo variable ENABLE_INVARIANTS_JOB=true
@@ -131,7 +144,7 @@ jobs:
     # Off until Alembic and tests/migrations exist: set repo variable ENABLE_MIGRATIONS_JOB=true
     # (and re-add `migrations` to the staging required checks) in the data-plane PR.
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' && vars.ENABLE_MIGRATIONS_JOB == 'true' }}
+    if: ${{ !cancelled() && needs.changes.outputs.python != 'false' && vars.ENABLE_MIGRATIONS_JOB == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -149,10 +162,13 @@ jobs:
           npx --yes squawk-cli@2.68.0 /tmp/migrations.sql
 
   # ---------------------------------------------------------------- the SPA (frontend/, audit F01, #296)
-  # These jobs always run (no path filter), so a required check is never left pending. Invariant 4 in the
-  # browser (no finance in TypeScript) is enforced by the tested ESLint money guard in `pnpm check`
-  # (frontend/eslint.money.mjs), which replaces the old check for two obsolete file paths.
+  # Gated by the `frontend` and `journey` flags of the `changes` job (a skipped job satisfies a required check, so
+  # nothing is left pending). Invariant 4 in the browser (no finance in TypeScript) is enforced by the tested
+  # ESLint money guard in `pnpm check` (frontend/eslint.money.mjs), which replaces the old check for two obsolete
+  # file paths.
   frontend:
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
+    needs: changes
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -181,6 +197,8 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   frontend-e2e:
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
+    needs: changes
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -213,6 +231,8 @@ jobs:
           retention-days: 7
 
   frontend-visual:
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
+    needs: changes
     # Visual baselines (#334): compared inside the same pinned Playwright image `pnpm visual` uses locally (fonts and
     # rendering are what make a picture comparable). Bump the digest together with @playwright/test and the baselines
     # (`pnpm visual:update`, then look at every changed picture). No secrets are used.
@@ -246,6 +266,8 @@ jobs:
           retention-days: 7
 
   frontend-journey:
+    if: ${{ !cancelled() && needs.changes.outputs.journey != 'false' }}
+    needs: changes
     # The SPA against the real Compose stack (API, Postgres, workers, fake providers). The session is seeded
     # inside the api container by scripts/e2e_session.py; no secrets are used.
     runs-on: ubuntu-24.04
