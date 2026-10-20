@@ -104,6 +104,7 @@ async def my_profile(db: SessionDep, principal: PrincipalDep) -> MeDetailOut:
             is_pro=ent.is_pro,
             subscription_status=ent.subscription_status.value if ent.subscription_status else None,
             grace_until=ent.grace_until,
+            unlimited_reports=ent.unlimited_reports,
             period=None
             if period is None
             else PeriodOut(

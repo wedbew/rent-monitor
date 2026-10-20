@@ -2,11 +2,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useRef, useState } from "react";
 import { Link } from "react-router";
 
-import { formatCount, formatReports } from "../../../api/format";
+import { formatCount } from "../../../api/format";
 import { ApiError, TransportError } from "../../../api/errors";
 import { describeProblem } from "../../../api/problems";
 import { invalidateAudits } from "../../../api/query";
 import { PageHeading } from "../../../shell/PageHeading";
+import { balanceLabel, hasNoLimit } from "../../../shell/balance";
 import { useMe } from "../../../shell/session";
 import { isCurrentSession } from "../../../shell/tenant";
 import { Button, LinkButton } from "../../../ui/Button";
@@ -141,7 +142,9 @@ export function NewAnalysisPage() {
               {t.analyses.new.submit}
             </Button>
             <p className={styles["cost"]}>
-              {t.analyses.new.cost({ balance: formatReports(me.credit_balance) })}
+              {hasNoLimit(me)
+                ? t.analyses.new.costUnlimited
+                : t.analyses.new.cost({ balance: balanceLabel(me) })}
             </p>
           </div>
         </form>

@@ -297,6 +297,7 @@ export const pl = {
     retry: "Spróbuj ponownie",
     soon: "Wkrótce",
     buyReports: "Kup raporty",
+    unlimited: "Bez limitu",
     listingTitle: ({ id }: { id: string }) => `Ogłoszenie ${id}`,
     otodomLimited: {
       title: "Otodom ogranicza zapytania",
@@ -860,6 +861,7 @@ export const pl = {
       submit: "Rozpocznij analizę",
       cost: ({ balance }: { balance: string }) =>
         `Analiza zużywa 1 raport, ale tylko gdy się uda. Na koncie: ${balance}.`,
+      costUnlimited: "To konto nie ma limitu raportów: analiza nie zużywa raportów.",
       paywall: {
         title: "Nie masz już raportów",
         description: "Kup pakiet raportów, aby przeanalizować to ogłoszenie. Nic nie zostało pobrane.",
@@ -1364,6 +1366,7 @@ export const pl = {
     signOut: "Wyloguj się",
     creditsPage: "Raporty i zakupy",
     balance: ({ reports }: { reports: string }) => `${reports} na koncie`,
+    balanceUnlimited: "Raporty: bez limitu",
     backToDashboard: "Wróć do pulpitu",
     notFound: {
       title: "Nie znaleziono strony",

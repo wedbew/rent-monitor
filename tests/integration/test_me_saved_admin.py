@@ -145,6 +145,7 @@ async def test_me_reports_profile_plan_credits_flags_and_upstream_state(
             "subscription_status": None,
             "grace_until": None,
             "period": None,
+            "unlimited_reports": False,
         }
         assert body["credit_balance"] == 3
         assert body["flags"][key_on] is True
