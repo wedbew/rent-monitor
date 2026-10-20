@@ -1683,6 +1683,12 @@ export interface components {
             period: components["schemas"]["PeriodOut"] | null;
             /** Subscription Status */
             subscription_status: string | null;
+            /**
+             * Unlimited Reports
+             * @description Explicit staff-granted entitlement: analyses are not charged and the whole Rynek opens.
+             * @default false
+             */
+            unlimited_reports: boolean;
         };
         /** PointOut */
         PointOut: {

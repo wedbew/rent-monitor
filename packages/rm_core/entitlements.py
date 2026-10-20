@@ -9,13 +9,14 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Literal
 
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rm_core.db.models import CreditAccount, Subscription, SubStatus, UsagePeriod
+from rm_core.db.models import AccountEntitlement, CreditAccount, Subscription, SubStatus, UsagePeriod
 
 FAIL_CLOSED_AFTER = timedelta(hours=48)
 PlanCode = Literal["free", "pro"]
+UNLIMITED_REPORTS = "unlimited_reports"
 
 
 def has_pro(sub: Subscription | None, now: datetime) -> bool:
@@ -48,6 +49,7 @@ class Entitlements:
     credit_balance: int
     subscription_status: SubStatus | None
     grace_until: datetime | None
+    unlimited_reports: bool = False  # explicit staff-granted entitlement (RM-438)
 
 
 async def db_now(session: AsyncSession) -> datetime:
@@ -76,6 +78,17 @@ async def load_entitlements(
         .order_by(UsagePeriod.period_end.desc())
         .limit(1)
     )
+    unlimited = bool(
+        await session.scalar(
+            select(
+                exists().where(
+                    AccountEntitlement.user_id == user_id,
+                    AccountEntitlement.kind == UNLIMITED_REPORTS,
+                    AccountEntitlement.revoked_at.is_(None),
+                )
+            )
+        )
+    )
     balance = await session.scalar(select(CreditAccount.balance).where(CreditAccount.user_id == user_id)) or 0
     pass_active = period is not None and period.kind == "pass"
     pro = has_pro(sub, moment) or pass_active
@@ -92,4 +105,5 @@ async def load_entitlements(
         credit_balance=balance,
         subscription_status=sub.status if sub is not None else None,
         grace_until=sub.grace_until if sub is not None else None,
+        unlimited_reports=unlimited,
     )

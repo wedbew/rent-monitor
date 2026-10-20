@@ -3,13 +3,13 @@
 GDPR[personal-data]: reads only the caller's user id and whether they hold a paid entitlement (RM-282).
 
 Policy (delegated, recorded in `docs/LIMITATIONS.md` L-094): an account has **full** access when it is
-an admin, has Pro or an active pass, or has bought a report pack that is not fully revoked. Every other
-verified account is **free** and sees exactly `FREE_PLACE_LIMIT` places: those of the catalogue with the
-largest published sample of priced asking-rent offers (`priced_count` of the newest `all` cohort), ties
-by place id. The list is recomputed from published data, so it can change as samples grow, but at any
-moment it is one deterministic set; every route (list, overview, detail, history, context, map data)
-filters by the same set, so a cursor, a direct id or a search term cannot reach another place. A place
-outside the set answers 403 `FEATURE_NOT_IN_PLAN`."""
+an admin, holds the explicit `unlimited_reports` entitlement (RM-438), has Pro or an active pass, or has
+bought a report pack that is not fully revoked. Every other verified account is **free** and sees exactly
+`FREE_PLACE_LIMIT` places: those of the catalogue with the largest published sample of priced asking-rent
+offers (`priced_count` of the newest `all` cohort), ties by place id. The list is recomputed from published
+data, so it can change as samples grow, but at any moment it is one deterministic set; every route (list,
+overview, detail, history, context, map data) filters by the same set, so a cursor, a direct id or a search
+term cannot reach another place. A place outside the set answers 403 `FEATURE_NOT_IN_PLAN`."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -42,7 +42,8 @@ class MarketAccess:
 async def account_access(session: AsyncSession, principal: Principal) -> Access:
     if principal.is_admin:
         return "full"
-    if (await load_entitlements(session, principal.user_id)).is_pro:
+    ent = await load_entitlements(session, principal.user_id)
+    if ent.is_pro or ent.unlimited_reports:
         return "full"
     paid = await session.scalar(
         select(

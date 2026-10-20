@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { formatDateTime, formatPrice, formatReports } from "../../api/format";
 import { PageHeading } from "../../shell/PageHeading";
+import { balanceLabel } from "../../shell/balance";
 import { useMe } from "../../shell/session";
 import { isCurrentSession, sessionGeneration } from "../../shell/tenant";
 import { Button } from "../../ui/Button";
@@ -28,7 +29,7 @@ function Balance() {
   return (
     <section className={styles["balance"]} aria-label={t.billing.balance.label}>
       <p className={styles["eyebrow"]}>{t.billing.balance.label}</p>
-      <p className={styles["big"]}>{formatReports(me.credit_balance)}</p>
+      <p className={styles["big"]}>{balanceLabel(me)}</p>
       <p className={styles["note"]}>{t.billing.lead}</p>
     </section>
   );

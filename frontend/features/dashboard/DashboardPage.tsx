@@ -1,9 +1,10 @@
 import { Link } from "react-router";
 
-import { formatDate, formatMoney, formatReports } from "../../api/format";
+import { formatDate, formatMoney } from "../../api/format";
 import { describeProblem, describeTransport } from "../../api/problems";
 import { ApiError, TransportError } from "../../api/errors";
 import { PageHeading } from "../../shell/PageHeading";
+import { balanceLabel, hasNoLimit } from "../../shell/balance";
 import { type Me, useMe } from "../../shell/session";
 import { Button, LinkButton } from "../../ui/Button";
 import { Icon, type IconName } from "../../ui/Icon";
@@ -223,9 +224,9 @@ export function DashboardPage() {
         <aside className={styles["side"]} aria-label={t.dashboard.side.label}>
           <div className={styles["credit"]}>
             <p className={styles["eyebrow"]}>{t.dashboard.side.reportsEyebrow}</p>
-            <strong>{formatReports(me.credit_balance)}</strong>
+            <strong>{balanceLabel(me)}</strong>
             <span>{t.dashboard.side.reportsNote}</span>
-            {me.credit_balance === 0 ? (
+            {me.credit_balance === 0 && !hasNoLimit(me) ? (
               <LinkButton to="/app/credits" variant="primary" icon="arrow">
                 {t.common.buyReports}
               </LinkButton>

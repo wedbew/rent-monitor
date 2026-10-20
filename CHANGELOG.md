@@ -4,6 +4,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+- Explicit account entitlement `unlimited_reports` (table `account_entitlement`, migration 0021, expand-only): the account submits analyses without spending credit (the audit is reserved with charge source `admin_free` and settles through the same idempotent claim, so usage stays on the audit row) and sees the whole Rynek catalogue; provider budgets, throttles and the one-active-audit-per-listing rule are unchanged. `GET /api/me` returns `plan.unlimited_reports` and the SPA shows "Bez limitu". Operator action: `docker compose exec -T api python scripts/grant_entitlement.py grant --email <address> --note <why>` (idempotent; never creates an account; `revoke` undoes it) (RM-438)
+
 ### Changed
 - CI runs only the stages a change can affect: documentation-only changes run just the title check and the secret scan; a frontend-only change skips lint, types, tests and migrations; a backend-only change skips `frontend`, `frontend-e2e` and `frontend-visual` (the journey lane still runs the real stack); the Python tests run in parallel (`pytest-xdist`, one Postgres container per worker, one database per test module). Operator: none (RM-440)
 

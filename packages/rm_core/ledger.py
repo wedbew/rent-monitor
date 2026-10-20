@@ -253,6 +253,10 @@ async def reserve(
     """Hold the price of `feature`. None means quota exhausted (the API answers 402). Rows are locked
     FOR UPDATE, user lock first."""
     cost = cost_of(feature)
+    if ent.unlimited_reports:
+        # RM-438: an explicit entitlement. Nothing is held or spent; the audit row (charge_source admin_free)
+        # is the usage record and settles through the same idempotent claim as every other audit.
+        return Reservation(audit_id, feature, ChargeSource.admin_free, None, 0)
     account = await lock_user(session, user_id)
     if ent.is_pro and ent.period is not None:  # 1) the expiring allowance first
         period = await session.scalar(

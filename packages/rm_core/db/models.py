@@ -220,6 +220,27 @@ class Subscription(Base):
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
 
+class AccountEntitlement(Base):
+    """An explicit, staff-granted entitlement of one account (RM-438): never inferred from an email address.
+
+    `unlimited_reports` lets the account submit analyses without spending credit (the audit is reserved with
+    `ChargeSource.admin_free`, so usage stays on the audit row) and opens the whole Rynek catalogue. It does
+    not lift provider budgets, throttles or the one-active-audit-per-listing rule. A revoked row stays.
+
+    GDPR[personal-data]: keyed by the user id; `note` is staff text and must not hold personal data. Erased
+    with the account (FK cascade) (RM-438).
+    """
+
+    __tablename__ = "account_entitlement"
+    __table_args__ = (CheckConstraint("kind IN ('unlimited_reports')", name="kind_known"),)
+
+    user_id: Mapped[str] = mapped_column(Text, user_fk(), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(32), primary_key=True)
+    note: Mapped[str] = mapped_column(Text, default="", server_default="")
+    granted_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    revoked_at: Mapped[datetime | None]
+
+
 class StripeEvent(Base):
     """Idempotency log, inserted in the same transaction as the side effects.
 
