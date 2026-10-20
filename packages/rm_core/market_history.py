@@ -40,7 +40,10 @@ from rm_core.db.models import (
 )
 
 DATASET = "otodom_rental"
-CALC_VERSION = 1  # bump when the cohort rules or the statistics change; old rows stay as published
+# Bump when the cohort rules or the statistics change; old rows stay as published, readers take the newest.
+# 2: offers left on a dead run count once a later published run covers them; no first-seen count on a
+# bootstrap day.
+CALC_VERSION = 2
 MIN_PRICED = 10  # below this a published row says "insufficient evidence" (matches the CHECK)
 MAX_HISTORY_DAYS = 400
 ALL = "all"
@@ -76,6 +79,7 @@ class OfferFacts:
     first_seen_at: datetime
     age_basis: str
     expires_at: datetime
+    initial_load: bool = False  # read by a bootstrap run: the place's backlog, not a day's arrivals
 
     @property
     def priced(self) -> bool:
@@ -198,6 +202,9 @@ def build_rows(
     known = [o for o in offers if o.first_seen_at < as_of]
     additions = [o for o in known if o.source_date == day]
     first_seen_today = [o for o in known if o.first_seen_date == day]
+    # The bootstrap stamps the whole backlog "first seen" on its own day. That day has no honest count of
+    # new arrivals, so it says "not applicable" (None) instead of a backlog figure or a misleading zero.
+    initial_load_day = any(o.initial_load for o in first_seen_today)
     cohort = [o for o in known if o.expires_at > as_of]
     out: list[SummaryRow] = []
     for series, members in (("additions", additions), ("cohort", cohort)):
@@ -219,7 +226,9 @@ def build_rows(
                     series=series,  # type: ignore[arg-type]  # one of the two literals above
                     key=k,
                     members=by_key.get(k, []),
-                    first_observed=first_by_key.get(k, 0) if series == "additions" else None,
+                    first_observed=(
+                        None if initial_load_day or series != "additions" else first_by_key.get(k, 0)
+                    ),
                     as_of=as_of,
                     summarise=summarise,
                     backfilled=backfilled,
@@ -411,6 +420,22 @@ class PgMarketHistory:
         self, s: AsyncSession, location_id: str, *, as_of: datetime, day_start: datetime
     ) -> list[OfferFacts]:
         day_end = day_start + timedelta(days=1)
+        anchor = func.coalesce(MarketOffer.published_at, MarketOffer.first_seen_at)
+        covering = MarketImportRun.__table__.alias("covering")
+        # An offer counts when its own run published, or when a later published run of the same place
+        # covered its creation time: inserts are idempotent, so an offer first stored by a run that never
+        # published (killed, superseded) stays attributed to that run although the covering run re-read it.
+        covered = (
+            select(literal(1))
+            .where(
+                covering.c.location_id == MarketOffer.location_id,
+                covering.c.state == "published",
+                covering.c.created_at > MarketImportRun.created_at,
+                covering.c.window_start <= anchor,
+                covering.c.window_end >= anchor,
+            )
+            .exists()
+        )
         result = await s.execute(
             select(
                 MarketOffer.source_offer_id,
@@ -421,10 +446,11 @@ class PgMarketHistory:
                 MarketOffer.first_seen_at,
                 MarketOffer.age_basis,
                 MarketOffer.expires_at,
+                MarketImportRun.mode,
             )
             .join(MarketImportRun, MarketImportRun.run_id == MarketOffer.run_id)
             .where(
-                MarketImportRun.state == "published",
+                (MarketImportRun.state == "published") | covered,
                 MarketOffer.location_id == location_id,
                 MarketOffer.first_seen_at < as_of,
                 (MarketOffer.expires_at > as_of)
@@ -433,8 +459,8 @@ class PgMarketHistory:
             )
         )
         return [
-            OfferFacts(int(i), rent, area, rooms, pub, seen, basis, exp)
-            for i, rent, area, rooms, pub, seen, basis, exp in result
+            OfferFacts(int(i), rent, area, rooms, pub, seen, basis, exp, mode == "bootstrap")
+            for i, rent, area, rooms, pub, seen, basis, exp, mode in result
         ]
 
     async def backfill(
