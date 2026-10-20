@@ -572,7 +572,7 @@ async def test_a_national_sized_batch_is_stored_in_chunks_and_a_repeat_counts_du
 
 
 async def test_completing_a_national_sized_run_stores_gap_rows_in_chunks(repo: PgLocationRepo) -> None:
-    """The first live pass died here: `complete_run` wrote 2,479 units x 10 years of gap rows in one INSERT."""
+    """The first live pass died here: `complete_run` wrote 2,479 units x 10 years of gaps in one INSERT."""
     years = tuple(range(2016, 2026))
     gminas = [
         TerritoryRef(
