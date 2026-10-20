@@ -181,7 +181,7 @@ describe("Rynek: one place", () => {
     const block = heading.closest("section") as HTMLElement;
     expect(block).toHaveTextContent("Mediana czynszu");
     expect(block).toHaveTextContent("zł/m²");
-    const table = await screen.findByRole("table");
+    const table = await screen.findByRole("table", { name: /Od najnowszego odczytu/ });
     const dates = within(table)
       .getAllByRole("rowheader")
       .map((h) => h.textContent ?? "");
@@ -196,7 +196,7 @@ describe("Rynek: one place", () => {
     const { market, place } = sufficient();
     useScenario(market);
     renderAt(`/app/market/${place.location_id}`);
-    const table = await screen.findByRole("table");
+    const table = await screen.findByRole("table", { name: /Od najnowszego odczytu/ });
     expect(table.textContent).not.toMatch(/0,00\s*zł/);
     const rows = within(table).getAllByRole("rowheader");
     const days = rows.map((r) => r.textContent);
@@ -208,7 +208,7 @@ describe("Rynek: one place", () => {
     const { market, place } = sufficient();
     useScenario(market);
     renderAt(`/app/market/${place.location_id}?q=${encodeURIComponent(place.name.slice(0, 3))}`);
-    await screen.findByRole("table");
+    await screen.findByRole("table", { name: /Od najnowszego odczytu/ });
     await userEvent.click(screen.getByRole("button", { name: "Nowe ogłoszenia dnia" }));
     await waitFor(() => expect(screen.getByTestId("where").textContent).toContain("series=additions"));
     await userEvent.click(screen.getByRole("button", { name: "30 dni" }));
@@ -250,7 +250,7 @@ describe("Rynek: one place", () => {
     expect(
       await screen.findByText(/nie zakończyło się jeszcze pierwsze zbieranie ofert/),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryByRole("table", { name: /Od najnowszego odczytu/ })).toBeNull();
     expect(screen.queryByRole("group", { name: "Okres" })).toBeNull();
     expect(market.state.requests.some((r) => r.includes("/history"))).toBe(false);
   });
@@ -271,7 +271,7 @@ describe("Rynek: one place", () => {
     expect(await screen.findByText("Nie ma takiej miejscowości")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Wszystkie miejscowości" })).toHaveAttribute(
       "href",
-      "/app/market?q=gd",
+      "/app/market?view=list&q=gd",
     );
   });
 
@@ -301,14 +301,14 @@ describe("Rynek: one place", () => {
     useScenario(market);
     renderAt(`/app/market/${place.location_id}`);
     expect(await screen.findByText("Brak odczytów w wybranym okresie")).toBeInTheDocument();
-    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryByRole("table", { name: /Od najnowszego odczytu/ })).toBeNull();
   });
 
   it("ignores an unknown value in the address instead of sending it to the API", async () => {
     const { market, place } = sufficient();
     useScenario(market);
     renderAt(`/app/market/${place.location_id}?series=deed&cohort=zzz&days=7`);
-    await screen.findByRole("table");
+    await screen.findByRole("table", { name: /Od najnowszego odczytu/ });
     const last = market.state.requests.filter((r) => r.includes("/history")).at(-1) ?? "";
     expect(last).toContain("series=cohort");
     expect(last).toContain("cohort=all");

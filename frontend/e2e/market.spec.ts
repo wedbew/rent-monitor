@@ -42,7 +42,7 @@ test.describe("Rynek: the list", () => {
   }) => {
     const market = createMarket();
     await serve(market);
-    await page.goto("/app/market");
+    await page.goto("/app/market?view=list");
     await expect(rows(page)).toHaveCount(30);
     expect((await names(page)).slice(0, 3)).toEqual(market.places.slice(0, 3).map((p) => p.name));
     const kielce = page.getByRole("row", { name: /Kielce/ });
@@ -63,7 +63,7 @@ test.describe("Rynek: the list", () => {
     serve,
   }) => {
     const api = await serve("market");
-    await page.goto("/app/market");
+    await page.goto("/app/market?view=list");
     await expect(rows(page)).toHaveCount(30);
     await expect(page.getByRole("status").filter({ hasText: "Wyświetlono 30 miejscowości" })).toBeVisible();
     await exercise("market.more", async () => {
@@ -82,7 +82,7 @@ test.describe("Rynek: the list", () => {
     serve,
   }) => {
     const api = await serve("market");
-    await page.goto("/app/market");
+    await page.goto("/app/market?view=list");
     await expect(rows(page)).toHaveCount(30);
     await exercise("market.search", async () => {
       await search(page).fill("gd");
@@ -90,7 +90,7 @@ test.describe("Rynek: the list", () => {
     });
     await exercise("market.search.submit", async () => {
       await page.getByRole("button", { name: "Szukaj" }).click();
-      return [await outcome.url(page, /\/app\/market\?q=gd$/)];
+      return [await outcome.url(page, /\/app\/market\?view=list&q=gd$/)];
     });
     await expect(rows(page)).toHaveCount(2);
     await expect.poll(() => names(page)).toEqual(["Gdańsk", "Gdynia"]);
@@ -102,14 +102,14 @@ test.describe("Rynek: the list", () => {
 
   test("Enter in the field searches, Back and Forward restore each search", async ({ page, serve }) => {
     await serve("market");
-    await page.goto("/app/market");
+    await page.goto("/app/market?view=list");
     await expect(rows(page)).toHaveCount(30);
     await search(page).fill("toru");
     await search(page).press("Enter");
-    await expect(page).toHaveURL(/\?q=toru$/);
+    await expect(page).toHaveURL(/&q=toru$/);
     await expect.poll(() => names(page)).toEqual(["Toruń"]);
     await page.goBack();
-    await expect(page).toHaveURL(/\/app\/market$/);
+    await expect(page).toHaveURL(/\/app\/market\?view=list$/);
     await expect(rows(page)).toHaveCount(30);
     await page.goForward();
     await expect.poll(() => names(page)).toEqual(["Toruń"]);
@@ -117,7 +117,7 @@ test.describe("Rynek: the list", () => {
 
   test("a slow answer to an earlier search never replaces the latest one", async ({ page, serve }) => {
     await serve(slowFor("gd", 1500));
-    await page.goto("/app/market");
+    await page.goto("/app/market?view=list");
     await expect(rows(page)).toHaveCount(30);
     await search(page).fill("gd");
     await search(page).press("Enter");
@@ -126,7 +126,7 @@ test.describe("Rynek: the list", () => {
     await expect.poll(() => names(page)).toEqual(["Toruń"]);
     await page.waitForTimeout(2000); // the late answer for "gd" has arrived by now
     await expect.poll(() => names(page)).toEqual(["Toruń"]);
-    await expect(page).toHaveURL(/\?q=toru$/);
+    await expect(page).toHaveURL(/&q=toru$/);
   });
 
   test("no match and an empty catalogue are different messages; clearing brings the list back", async ({
@@ -134,19 +134,19 @@ test.describe("Rynek: the list", () => {
     serve,
   }) => {
     await serve("market");
-    await page.goto("/app/market?q=zzzz");
+    await page.goto("/app/market?view=list&q=zzzz");
     await expect(page.getByText("Żadna miejscowość nie pasuje do wyszukiwania")).toBeVisible();
     await expect(page.getByRole("table")).toHaveCount(0);
     await exercise("market.clear", async () => {
       await page.getByRole("button", { name: "Wyczyść wyszukiwanie" }).click();
-      return [await outcome.url(page, /\/app\/market$/)];
+      return [await outcome.url(page, /\/app\/market\?view=list$/)];
     });
     await expect(rows(page)).toHaveCount(30);
   });
 
   test("with nothing published the page says so and shows no number", async ({ page, serve }) => {
-    await serve("empty");
-    await page.goto("/app/market");
+    await serve("marketEmpty");
+    await page.goto("/app/market?view=list");
     await expect(page.getByText("Nie ma jeszcze danych rynkowych")).toBeVisible();
     await expect(page.getByRole("table")).toHaveCount(0);
     await expect(page.getByText(/\d\s?zł/)).toHaveCount(0);
@@ -154,7 +154,7 @@ test.describe("Rynek: the list", () => {
 
   test("a failed list says so and can be retried", async ({ page, serve }) => {
     const api = await serve("marketListFailing");
-    await page.goto("/app/market");
+    await page.goto("/app/market?view=list");
     await expect(page.getByRole("alert").filter({ hasText: "Nie udało się wczytać rynku" })).toBeVisible({
       timeout: 15_000,
     });
@@ -167,7 +167,7 @@ test.describe("Rynek: the list", () => {
   test("a failed next page keeps the places and the same button works again", async ({ page, serve }) => {
     const market = createMarket({ failPage: 1 });
     await serve(market);
-    await page.goto("/app/market");
+    await page.goto("/app/market?view=list");
     await expect(rows(page)).toHaveCount(30);
     await more(page).click();
     await expect(
@@ -212,10 +212,10 @@ test.describe("Rynek: the list", () => {
       ),
     };
     await serve(expired);
-    await page.goto("/app/market");
+    await page.goto("/app/market?view=list");
     await expect(rows(page)).toHaveCount(30);
     await more(page).click();
-    await expect(page).toHaveURL(/\/login\?next=%2Fapp%2Fmarket$/);
+    await expect(page).toHaveURL(/\/login\?next=%2Fapp%2Fmarket%3Fview%3Dlist$/);
     await expect(page.getByText("Białystok")).toHaveCount(0);
   });
 });
@@ -372,7 +372,7 @@ test.describe("Rynek: one place", () => {
     await expect(page.getByText("Nie ma takiej miejscowości")).toBeVisible();
     await exercise("market.place.back", async () => {
       await page.getByRole("link", { name: "Wszystkie miejscowości" }).click();
-      return [await outcome.url(page, /\/app\/market\?q=gd$/)];
+      return [await outcome.url(page, /\/app\/market\?view=list&q=gd$/)];
     });
     await expect(rows(page)).toHaveCount(2);
     await expect.poll(() => names(page)).toEqual(["Gdańsk", "Gdynia"]);

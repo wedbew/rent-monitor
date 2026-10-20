@@ -60,8 +60,9 @@ export function writeSelection(selection: Selection, q: string): URLSearchParams
   return params;
 }
 
+/** The way back from a place is the list view, with the search that led there. */
 export const listAddress = (q: string): string =>
-  q === "" ? "/app/market" : `/app/market?${new URLSearchParams({ q }).toString()}`;
+  `/app/market?${new URLSearchParams(q === "" ? { view: "list" } : { view: "list", q }).toString()}`;
 
 export const placeAddress = (locationId: string, q: string): string => {
   const params = q === "" ? "" : `?${new URLSearchParams({ q }).toString()}`;

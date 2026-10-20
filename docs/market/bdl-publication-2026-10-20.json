@@ -1,0 +1,980 @@
+{
+ "generated_at": "2026-10-20",
+ "source": "GUS BDL (live, key tier 50,000 requests per 7 days)",
+ "reference": {
+  "version": 1,
+  "gminas": 2479,
+  "powiats": 380,
+  "voivodeships": 16,
+  "country": 1
+ },
+ "published_metric_years": 214,
+ "metrics": [
+  {
+   "metric": "average_monthly_gross_earnings",
+   "years": {
+    "2016": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2017": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2018": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2019": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2020": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2021": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2022": {
+     "expected": 380,
+     "eligible": 379
+    },
+    "2023": {
+     "expected": 380,
+     "eligible": 379
+    },
+    "2024": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2025": {
+     "expected": 380,
+     "eligible": 380
+    }
+   }
+  },
+  {
+   "metric": "building_permits_dwellings",
+   "years": {
+    "2018": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2394
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2397
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2404
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2410
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2427
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2460
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2470
+    }
+   }
+  },
+  {
+   "metric": "dwelling_median_price_m2",
+   "years": {
+    "2019": {
+     "expected": 380,
+     "eligible": 379
+    },
+    "2020": {
+     "expected": 380,
+     "eligible": 378
+    },
+    "2021": {
+     "expected": 380,
+     "eligible": 379
+    },
+    "2022": {
+     "expected": 380,
+     "eligible": 373
+    },
+    "2023": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2024": {
+     "expected": 380,
+     "eligible": 379
+    }
+   }
+  },
+  {
+   "metric": "dwellings_completed",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2365
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2369
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2366
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2377
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2399
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2414
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2422
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2451
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2455
+    }
+   }
+  },
+  {
+   "metric": "dwellings_completed_floor_area",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2365
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2369
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2366
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2377
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2399
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2414
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2422
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2451
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2455
+    }
+   }
+  },
+  {
+   "metric": "dwelling_stock",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2375
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2397
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2401
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2411
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2421
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2436
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2470
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2479
+    }
+   }
+  },
+  {
+   "metric": "dwelling_transactions_count",
+   "years": {
+    "2015": {
+     "expected": 380,
+     "eligible": 376
+    },
+    "2016": {
+     "expected": 380,
+     "eligible": 374
+    },
+    "2017": {
+     "expected": 380,
+     "eligible": 379
+    },
+    "2018": {
+     "expected": 380,
+     "eligible": 378
+    },
+    "2019": {
+     "expected": 380,
+     "eligible": 379
+    },
+    "2020": {
+     "expected": 380,
+     "eligible": 378
+    },
+    "2021": {
+     "expected": 380,
+     "eligible": 379
+    },
+    "2022": {
+     "expected": 380,
+     "eligible": 373
+    },
+    "2023": {
+     "expected": 380,
+     "eligible": 302
+    },
+    "2024": {
+     "expected": 380,
+     "eligible": 300
+    }
+   }
+  },
+  {
+   "metric": "municipal_cit_revenue",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2337
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2331
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2363
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2358
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2369
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2393
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2418
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2434
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2470
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2387
+    }
+   }
+  },
+  {
+   "metric": "municipal_pit_revenue",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2375
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2396
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2401
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2411
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2421
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2436
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2470
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2479
+    }
+   }
+  },
+  {
+   "metric": "natural_increase",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2325
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2344
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2348
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2366
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2383
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2395
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2390
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2409
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2459
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2463
+    }
+   }
+  },
+  {
+   "metric": "net_migration",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2342
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2354
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2364
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2377
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2375
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2382
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2403
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2414
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2446
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2451
+    }
+   }
+  },
+  {
+   "metric": "own_revenue_per_resident",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2375
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2396
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2401
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2411
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2421
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2436
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2470
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2479
+    }
+   }
+  },
+  {
+   "metric": "pit_revenue_per_resident",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2375
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2396
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2401
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2411
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2421
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2436
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2470
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2479
+    }
+   }
+  },
+  {
+   "metric": "population_post_working_age",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2375
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2397
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2401
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2411
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2421
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2436
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2470
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2479
+    }
+   }
+  },
+  {
+   "metric": "population_pre_working_age",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2375
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2397
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2401
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2411
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2421
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2436
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2470
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2479
+    }
+   }
+  },
+  {
+   "metric": "population_total",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2375
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2397
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2401
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2411
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2421
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2436
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2470
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2479
+    }
+   }
+  },
+  {
+   "metric": "population_working_age",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2375
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2397
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2401
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2411
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2421
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2436
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2470
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2479
+    }
+   }
+  },
+  {
+   "metric": "property_tax_revenue",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2374
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2386
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2396
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2401
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2410
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2420
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2435
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2469
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2479
+    }
+   }
+  },
+  {
+   "metric": "regon_entities_per_10k",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2375
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2397
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2401
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2411
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2421
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2436
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2470
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2479
+    }
+   }
+  },
+  {
+   "metric": "regon_entities_total",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2375
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2397
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2401
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2411
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2421
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2436
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2470
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2479
+    }
+   }
+  },
+  {
+   "metric": "unemployment_rate_standard",
+   "years": {
+    "2016": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2017": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2018": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2019": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2020": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2021": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2022": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2023": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2024": {
+     "expected": 380,
+     "eligible": 380
+    },
+    "2025": {
+     "expected": 380,
+     "eligible": 380
+    }
+   }
+  },
+  {
+   "metric": "unemployment_share_working_age",
+   "years": {
+    "2016": {
+     "expected": 2479,
+     "eligible": 2375
+    },
+    "2017": {
+     "expected": 2479,
+     "eligible": 2380
+    },
+    "2018": {
+     "expected": 2479,
+     "eligible": 2387
+    },
+    "2019": {
+     "expected": 2479,
+     "eligible": 2397
+    },
+    "2020": {
+     "expected": 2479,
+     "eligible": 2401
+    },
+    "2021": {
+     "expected": 2479,
+     "eligible": 2411
+    },
+    "2022": {
+     "expected": 2479,
+     "eligible": 2421
+    },
+    "2023": {
+     "expected": 2479,
+     "eligible": 2436
+    },
+    "2024": {
+     "expected": 2479,
+     "eligible": 2470
+    },
+    "2025": {
+     "expected": 2479,
+     "eligible": 2479
+    }
+   }
+  }
+ ]
+}
