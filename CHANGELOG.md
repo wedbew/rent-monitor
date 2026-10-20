@@ -5,6 +5,7 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 ## [Unreleased]
 
 ### Fixed
+- Rynek daily summaries: offers first stored by an import run that never published (killed mid-bootstrap) are counted once a later published run of the place covered them (Poznań showed 182 of 1,212 offers); the "first seen" figure is withheld on a place's bootstrap day instead of showing the whole backlog. Operator: republish the affected days (delete the place's derived `market_daily_summary` rows for the day, then `publish_summaries_now`) (RM-282)
 - Ranking a cohort of 2,479 gminas took seconds (a pairwise count per entry): the place context route took 32 s and the overview 7 s on real data, now 1.4 s and 0.4 s with identical results; a property test compares the ranks and percentiles with the pairwise definition under ties (RM-282)
 
 ### Added

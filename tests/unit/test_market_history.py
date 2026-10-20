@@ -33,6 +33,7 @@ def offer(
     published: datetime | None = None,
     seen: datetime = AS_OF - timedelta(hours=3),
     days_to_expiry: int | None = None,
+    initial_load: bool = False,
 ) -> OfferFacts:
     anchor = published or seen
     expires = (
@@ -47,6 +48,7 @@ def offer(
         seen,
         "publication" if published else "first_seen",
         expires,
+        initial_load,
     )
 
 
@@ -84,6 +86,22 @@ def test_additions_and_cohort_are_separate_series() -> None:
     assert add.first_observed_count == 2  # type: ignore[attr-defined]  # both were first seen today
     assert coh.observed_count == 2  # type: ignore[attr-defined]
     assert coh.first_observed_count is None  # type: ignore[attr-defined]
+
+
+def test_bootstrap_day_has_no_first_seen_count_but_keeps_the_other_figures() -> None:
+    backlog = [offer(i, published=AS_OF - timedelta(days=20), initial_load=True) for i in range(1, 4)]
+    arrival = offer(9)  # a later run saw it today
+    rows = rows_of([*backlog, arrival])
+    assert {r.first_observed_count for (series, _), r in rows.items() if series == "additions"} == {None}  # type: ignore[attr-defined]
+    assert rows[("additions", ALL)].observed_count == 1  # type: ignore[attr-defined]  # published today
+    assert rows[("cohort", ALL)].observed_count == 4  # type: ignore[attr-defined]
+
+
+def test_day_without_a_bootstrap_still_counts_first_seen_per_cohort() -> None:
+    backlog = [offer(1, seen=AS_OF - timedelta(days=2), initial_load=True)]  # bootstrapped on an earlier day
+    rows = rows_of([*backlog, offer(2), offer(3, rooms=3)])
+    assert rows[("additions", ALL)].first_observed_count == 2  # type: ignore[attr-defined]
+    assert rows[("additions", "rooms_3")].first_observed_count == 1  # type: ignore[attr-defined]
 
 
 def test_cohort_excludes_expired_offers_at_the_exact_boundary() -> None:

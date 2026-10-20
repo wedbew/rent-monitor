@@ -132,6 +132,28 @@ async def test_unpublished_run_offers_are_ignored(stores: tuple[PgCorpus, PgMark
     assert next(o for o in view.cohort if o.cohort_key == ALL).observed_count == 3
 
 
+async def test_offers_left_on_a_dead_run_count_once_a_later_run_covers_them(
+    stores: tuple[PgCorpus, PgMarketHistory],
+) -> None:
+    corpus, history = stores
+    await ingest(
+        corpus, "dead", priced(1, 7), seen=BOOT, publish=False
+    )  # killed mid-bootstrap, still running
+    await ingest(corpus, "b", priced(1, 10), seen=BOOT)  # re-reads seven (duplicates), adds three
+    await history.publish_day("loc-0", TODAY, now=NOW, summarise=summarise_asking)
+    view = await history.view("loc-0", now=NOW)
+    assert next(o for o in view.cohort if o.cohort_key == ALL).observed_count == 10
+
+
+async def test_bootstrap_day_reports_no_first_seen_count(stores: tuple[PgCorpus, PgMarketHistory]) -> None:
+    corpus, history = stores
+    boot_day = BOOT.date()
+    await ingest(corpus, "b", priced(1, 4), seen=BOOT)
+    await history.publish_day("loc-0", boot_day, now=BOOT + timedelta(hours=1), summarise=summarise_asking)
+    (row,) = await history.history("loc-0", "additions", boot_day, boot_day)
+    assert row.first_observed_count is None
+
+
 async def test_expiry_applies_without_maintenance(stores: tuple[PgCorpus, PgMarketHistory]) -> None:
     corpus, history = stores
     old = [obs("1", published_at=BOOT - timedelta(days=89), rent="2000", area="40", rooms=2)]
