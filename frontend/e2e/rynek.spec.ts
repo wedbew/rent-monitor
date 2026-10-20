@@ -75,6 +75,7 @@ test.describe("Rynek tabs", () => {
       ["rynek.district", `${OTODOM}/bialystok/centrum`, "Centrum"],
       ["rynek.gus", "/app/market/gus/bialystok", "Białystok"],
     ] as const) {
+      await page.waitForLoadState("networkidle"); // WebKit reports a fetch cut off by a hard navigation as a page error
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
       const target = id === "rynek.gus" ? "otodom" : "gus";
@@ -91,6 +92,7 @@ test.describe("Rynek tabs", () => {
           ),
         ];
       });
+      await page.waitForLoadState("networkidle");
       await page.goto(path);
       const other = id === "rynek.gus" ? "gus" : "otodom";
       await exercise(`${id}.tab.${other}`, async () => {
@@ -872,5 +874,17 @@ test.describe("GUS ranking", () => {
     await serve("marketFree");
     await page.goto("/app/market/gus");
     await expect(page.getByRole("table", { name: /Mianownik pozycji/ }).getByRole("row")).toHaveCount(21); // 20 places and the header
+  });
+});
+
+test.describe("Rynek: the way in", () => {
+  test("the Pulpit offers it and it opens the market page on its default tab", async ({ page, serve }) => {
+    await serve("market");
+    await page.goto("/app");
+    await exercise("dashboard.market", async () => {
+      await page.getByRole("link", { name: "Otwórz Rynek" }).click();
+      return [await outcome.url(page, /\/app\/market\/otodom$/)];
+    });
+    await expect(page.getByRole("heading", { level: 1, name: "Rynek" })).toBeVisible();
   });
 });

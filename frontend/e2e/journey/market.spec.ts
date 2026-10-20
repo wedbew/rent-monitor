@@ -167,7 +167,7 @@ test("the group of flats changes the request and the figures: two-room offers ar
   };
   expect(api.cohort_key).toBe("size_45_60");
   expect(api.items.find((i) => i.location_id === market.ids.alfa)?.priced_count).toBe(16);
-  expect((await page.request.get("/api/market/overview?cohort=hacked")).status()).toBe(422);
+  expect((await page.request.get("/api/market/overview?cohort=HACKED%21")).status()).toBe(422);
   await page.reload();
   await expect(page.getByRole("radio", { name: "45 do 60 m²" })).toBeChecked();
   await page.getByRole("button", { name: "Wyczyść filtr" }).click();

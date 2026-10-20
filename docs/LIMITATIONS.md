@@ -732,6 +732,15 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Workaround:** none; new adverts carry their district from the nightly import on
 - **Target:** repeat the sweep after catalogue changes; SIMC or other administrative mapping of districts would be new work
 
+### L-098 — WebKit reports fetches cut off by a hard navigation as page errors
+- **Status:** active
+- **Discovered:** 2026-10-20
+- **Affects:** browser lane `webkit` (`pnpm test:e2e:browsers`), `frontend/e2e/rynek.spec.ts`, `billing.spec.ts`, `inventory.spec.ts`
+- **Evidence:** confirmed: a WebKit run of the final revision failed 10 tests, 9 of them outside Rynek; the Rynek ones passed when run alone or after waiting for network idle, one still failed with `pageerror: … due to access control checks` while a mocked 4xx/5xx request was in flight. Firefox passed the Rynek tests (52) and the full run. Cause not isolated (`Promise.race` in `api/client.ts` already handles the abandoned fetch)
+- **Description:** WebKit raises an uncaught error for a fetch that is aborted or answered with a failure by the mock; the fixture treats any page error as a failure. Chromium (desktop and mobile) is the lane that gates merges
+- **Workaround:** none; do not claim WebKit green
+- **Target:** #311
+
 ## Deferred
 
 ### L-039 — Audit cancellation is in the blueprint but not built
