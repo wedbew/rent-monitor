@@ -33,7 +33,7 @@ pytestmark = [pytest.mark.integration]
 
 TABLES = (
     "app.market_offer, app.market_import_run, app.market_import_checkpoint,"
-    " app.market_location, app.market_catalogue"
+    " app.market_location_territory, app.market_location, app.market_catalogue"
 )
 D0 = datetime(2026, 9, 1, 1, 10, tzinfo=UTC)  # the bootstrap night; target floors to 01:00
 A = LocationEntry(location_id="loc-a", name="Alfa", otodom_path="testowe/alfa")

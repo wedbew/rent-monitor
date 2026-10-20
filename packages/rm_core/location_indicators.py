@@ -606,7 +606,7 @@ async def snapshot_from_release(
     rank = rank_indicator(
         defn,
         hierarchy,
-        [o for o in obs if o.year == year],
+        [o for o in obs if o.year == year and o.territory_id in set(cohort)],  # aggregates are context
         year=year,
         cohort=cohort,
         cohort_id=defn.native_level.value,

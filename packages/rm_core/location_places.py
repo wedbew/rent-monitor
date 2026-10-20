@@ -84,3 +84,26 @@ class PgPlaceMapping:
             wojewodztwo_id=row.wojewodztwo_id,
             candidates=tuple(row.candidates),
         )
+
+    async def all_for(self, catalogue_version: int) -> dict[str, PlaceMapping]:
+        async with self._sessions() as s:
+            rows = (
+                await s.scalars(
+                    select(MarketLocationTerritory).where(
+                        MarketLocationTerritory.catalogue_version == catalogue_version
+                    )
+                )
+            ).all()
+        return {
+            r.location_id: PlaceMapping(
+                location_id=r.location_id,
+                status=MappingStatus(r.status),
+                method=r.method,
+                relation=Relation(r.relation) if r.relation else None,
+                gmina_id=r.gmina_id,
+                powiat_id=r.powiat_id,
+                wojewodztwo_id=r.wojewodztwo_id,
+                candidates=tuple(r.candidates),
+            )
+            for r in rows
+        }

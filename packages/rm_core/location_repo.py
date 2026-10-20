@@ -452,6 +452,46 @@ class PgLocationRepo:
             ).all()
             return tuple(_observation(r) for r in rows)
 
+    async def published_years(self, metric_key: str, metric_version: int) -> tuple[int, ...]:
+        """Years that have a current release for one metric version, oldest first."""
+        async with self._sessions() as s:
+            rows = (
+                await s.scalars(
+                    select(LocationPublicationPointer.year)
+                    .where(
+                        LocationPublicationPointer.metric_key == metric_key,
+                        LocationPublicationPointer.metric_version == metric_version,
+                    )
+                    .order_by(LocationPublicationPointer.year)
+                )
+            ).all()
+        return tuple(rows)
+
+    async def observations_for(
+        self,
+        metric_key: str,
+        metric_version: int,
+        years: Collection[int],
+        territory_ids: Collection[str],
+    ) -> tuple[Observation, ...]:
+        """Read-only: stored rows of one metric version for some years and some territories."""
+        if not years or not territory_ids:
+            return ()
+        async with self._sessions() as s:
+            rows = (
+                await s.scalars(
+                    select(LocationObservation)
+                    .where(
+                        LocationObservation.metric_key == metric_key,
+                        LocationObservation.metric_version == metric_version,
+                        LocationObservation.year.in_(sorted(set(years))),
+                        LocationObservation.territory_id.in_(sorted(set(territory_ids))),
+                    )
+                    .order_by(LocationObservation.year, LocationObservation.territory_id)
+                )
+            ).all()
+            return tuple(_observation(r) for r in rows)
+
     # --- publication -----------------------------------------------------------------------------
 
     async def publish(

@@ -19,7 +19,7 @@ atomically (one transaction under an advisory lock), immutably, once per calcula
 
 import hashlib
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
@@ -540,6 +540,49 @@ class PgMarketHistory:
 
     # --- catalogue listing (names, search, keyset paging) ----------------------------------------
 
+    async def sample_depths(self, catalogue_version: int) -> list[tuple[str, int]]:
+        """`(location_id, priced_count)` of the newest published `all` cohort of every enabled place that has
+        one with a sufficient sample: the input of the free-tier rule (`rm_core.market_access`)."""
+        async with self._sessions() as s:
+            rows = (
+                await s.execute(
+                    select(MarketDailySummary.location_id, MarketDailySummary.priced_count)
+                    .join(
+                        MarketLocation,
+                        (MarketLocation.location_id == MarketDailySummary.location_id)
+                        & (MarketLocation.catalogue_version == catalogue_version)
+                        & MarketLocation.launch_enabled.is_(True),
+                    )
+                    .where(
+                        MarketDailySummary.dataset == DATASET,
+                        MarketDailySummary.series == "cohort",
+                        MarketDailySummary.cohort_key == ALL,
+                        MarketDailySummary.priced_count >= MIN_PRICED,
+                    )
+                    .distinct(MarketDailySummary.location_id)
+                    .order_by(
+                        MarketDailySummary.location_id,
+                        MarketDailySummary.summary_date.desc(),
+                        MarketDailySummary.calc_version.desc(),
+                    )
+                )
+            ).all()
+        return [(r.location_id, int(r.priced_count)) for r in rows]
+
+    async def count_locations(self, *, catalogue_version: int) -> int:
+        async with self._sessions() as s:
+            return int(
+                await s.scalar(
+                    select(func.count())
+                    .select_from(MarketLocation)
+                    .where(
+                        MarketLocation.catalogue_version == catalogue_version,
+                        MarketLocation.launch_enabled.is_(True),
+                    )
+                )
+                or 0
+            )
+
     async def location_name(self, location_id: str, *, catalogue_version: int) -> str | None:
         """The name of an enabled catalogue place, or None for an unknown or switched-off one."""
         async with self._sessions() as s:
@@ -559,6 +602,7 @@ class PgMarketHistory:
         limit: int,
         query: str | None = None,
         after: tuple[str, str] | None = None,
+        only_ids: Collection[str] | None = None,
     ) -> tuple[list[LocationListing], bool]:
         """Enabled places ordered by `(name, location_id)`, keyset after `after`. `query` is a literal
         case-insensitive substring of the name (LIKE metacharacters are escaped). Returns the page and whether
@@ -566,6 +610,8 @@ class PgMarketHistory:
         stmt = select(MarketLocation.location_id, MarketLocation.name).where(
             MarketLocation.catalogue_version == catalogue_version, MarketLocation.launch_enabled.is_(True)
         )
+        if only_ids is not None:
+            stmt = stmt.where(MarketLocation.location_id.in_(sorted(only_ids)))
         if query:
             escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
             stmt = stmt.where(MarketLocation.name.ilike(f"%{escaped}%", escape="\\"))
