@@ -7,6 +7,12 @@ explicit external actions; they are not questions to repeat and not assumed appr
 
 ## Confirmed instructions
 
+### Follow-up: existing R2 bucket approved — 2026-10-21
+
+The owner explicitly accepts the existing private `rent-monitor` bucket and its default jurisdiction for product media: "i dont care about jurusdicationn in this case this is gouud enough". This supersedes the EU-jurisdiction requirement for product media in item 3 below, ADR 0014 and the interior execution prompt. It does not change the EU backup policy. Reuse the existing bucket/scoped object credentials, retain public access off, separate MEDIA_* application settings from backup settings, retain 30-day project/7-day abandoned-upload cleanup and account erasure. Do not require `rentmonitor-media`, ListBuckets/CreateBucket rights or a new token solely to satisfy the superseded policy. Update the endpoint validator and specifications, map the verified existing connection securely and run the complete media probe before resolving live readiness. B-025's owner decision is supplied; successful application/runtime verification remains implementation work. No further jurisdiction approval question is needed. See `docs/INTERIOR-POLAND-SOURCES-AND-FOLLOWUP-2026-10-21.md` for access research and the remaining #448–#451 handoff.
+
+The numbered October 19 instructions below remain historical authority except where explicitly superseded above.
+
 1. **Delegated implementation:** Claude may choose/document routine implementation, source selection
    and versioned analytical policies, create/split issues, and merge tested changes to `staging`.
    Continue independent work around external blockers. Existing boundaries remain: no destructive

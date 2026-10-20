@@ -134,16 +134,32 @@ def test_from_settings_refuses_when_unconfigured() -> None:
     assert err.value.code == "not_configured"
 
 
-def test_settings_accept_only_the_eu_endpoint() -> None:
-    ok = Settings(_env_file=None, media_s3_endpoint=EU + "/")  # pyright: ignore[reportCallIssue]
-    assert ok.media_s3_endpoint == EU
-    for bad in (
-        "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",  # default jurisdiction
-        "http://x.eu.r2.cloudflarestorage.com",
+DEFAULT = "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com"
+
+
+@pytest.mark.parametrize("endpoint", [EU, DEFAULT])
+def test_settings_accept_both_r2_account_endpoints(endpoint: str) -> None:
+    ok = Settings(_env_file=None, media_s3_endpoint=endpoint + "/")  # pyright: ignore[reportCallIssue]
+    assert ok.media_s3_endpoint == endpoint
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "http://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
         "https://example.com",
-    ):
-        with pytest.raises(ValidationError):
-            Settings(_env_file=None, media_s3_endpoint=bad)  # pyright: ignore[reportCallIssue]
+        "https://evil.example/0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
+        "https://user@0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
+        "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com.evil.example",
+        "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com:8443",
+        "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com/bucket",
+        "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com?x=1",
+        "https://short.r2.cloudflarestorage.com",
+    ],
+)
+def test_settings_reject_untrusted_or_malformed_hosts(bad: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, media_s3_endpoint=bad)  # pyright: ignore[reportCallIssue]
 
 
 def _sha(data: bytes) -> str:

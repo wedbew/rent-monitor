@@ -1,5 +1,6 @@
 """Typed settings. Names mirror `.env.example`; real values come from the environment only."""
 
+import re
 from datetime import time
 from decimal import Decimal
 from functools import lru_cache
@@ -7,6 +8,8 @@ from typing import Literal
 
 from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_R2_ENDPOINT = re.compile(r"https://[0-9a-f]{32}(\.eu)?\.r2\.cloudflarestorage\.com")
 
 DEFAULT_APP_NAME = "Renti"  # the product name users see; override with APP_NAME
 
@@ -113,12 +116,11 @@ class Settings(BaseSettings):
         "30 5 * * *"  # UTC; after the default window end, before the day's reads
     )
 
-    # Product media store (ADR 0014): private EU-jurisdiction R2 bucket, separate from the backup bucket and
-    # its credentials. Empty endpoint/bucket means not configured: every image operation refuses.
+    # Product media store (ADR 0014): private R2 bucket (default or EU endpoint; owner decision 2026-10-21)
+    # with its own MEDIA_* settings apart from the backup settings. Empty endpoint/bucket means not
+    # configured: every image operation refuses.
     # GDPR[processor]: Cloudflare R2 stores users' room photos and generated images (RM-447)
-    media_s3_endpoint: str = (
-        ""  # https://<account>.eu.r2.cloudflarestorage.com (the EU-jurisdiction endpoint)
-    )
+    media_s3_endpoint: str = ""  # https://<account>[.eu].r2.cloudflarestorage.com
     media_bucket: str = ""
     media_access_key_id: str = ""
     media_secret_access_key: SecretStr = SecretStr("")
@@ -162,11 +164,11 @@ class Settings(BaseSettings):
 
     @field_validator("media_s3_endpoint")
     @classmethod
-    def _media_endpoint_is_eu(cls, v: str) -> str:
+    def _media_endpoint_is_r2(cls, v: str) -> str:
         v = v.strip().rstrip("/")
-        if v and not (v.startswith("https://") and v.endswith(".eu.r2.cloudflarestorage.com")):
-            # A default-jurisdiction endpoint would store product media outside the approved EU bucket.
-            raise ValueError("MEDIA_S3_ENDPOINT must be https://<account>.eu.r2.cloudflarestorage.com")
+        if v and not _R2_ENDPOINT.fullmatch(v):
+            # Only an R2 account endpoint (default or EU): no other host, port, userinfo, path or query.
+            raise ValueError("MEDIA_S3_ENDPOINT must be https://<account>[.eu].r2.cloudflarestorage.com")
         return v
 
     @property
