@@ -27,6 +27,9 @@ from rm_worker.importers.otodom_corpus import (
     parse_search_page,
     run_nightly,
 )
+from rm_worker.importers.otodom_corpus import (
+    _short as short,
+)
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
@@ -323,4 +326,19 @@ async def test_nightly_skips_disabled_locations_and_stops_when_blocked(corpus: P
     stopped = await run_nightly(imp, CATALOGUE, now=later)
     assert stopped.stopped == "blocked"
     assert [o.location_id for o in stopped.outcomes] == ["loc-a"]  # loc-b not attempted: no hammering
-    assert await corpus.get_run("incremental-loc-b-20260903T010000Z-a1") is None
+    assert await corpus.get_run(f"incremental-{short('loc-b')}-20260903T010000Z-a1") is None
+
+
+async def test_a_long_place_id_still_gets_a_valid_run_id(corpus: PgCorpus) -> None:
+    """Live finding 2026-10-20: `bootstrap-<64-character id>-<time>-a1` overflowed the 64-character run id
+    and the job died before its first page."""
+    long_id = ("gmina-wiejska--" + "x" * 40 + "-73d11c3a")[:64]
+    entry = LocationEntry(location_id=long_id, name="Długa", otodom_path="testowe/dluga")
+    catalogue = LocationCatalogue.build(2, "long-id", [entry])
+    await corpus.ensure_catalogue(catalogue)
+    source = FakeCorpusSearch(spread(1500, 3, D0 - timedelta(days=1), timedelta(hours=1)), page_size=100)
+    (out,) = await sync_at(importer(corpus, source), source, entry, D0)
+    assert out.state == "published"
+    assert out.run_id is not None
+    assert len(out.run_id) <= 64
+    assert out.run_id.startswith("bootstrap-")

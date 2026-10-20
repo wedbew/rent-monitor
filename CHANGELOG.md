@@ -4,6 +4,9 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Fixed
+- A corpus run whose place id was long (up to 64 characters) failed before its first page because the run id embedded it and overflowed 64 characters; run ids now carry a short hash of the place id. Found by the first live bootstrap (RM-411)
+
 ### Added
 - Otodom place catalogue from the site's own location sitemap: `docs/market/otodom-catalogue-v1.json` (787 gmina-level places, provenance, sitemap SHA-256, checksum, per-place census and a reconciliation that says plainly it is not the owner's 727 identities), `scripts/seed_catalogue.py discover|apply` and `scripts/market_manifest.py` (coverage manifest: per-place state, pages read, offers stored). Operator action: `scripts/seed_catalogue.py apply --file docs/market/otodom-catalogue-v1.json` once per database (RM-411)
 - A dedicated `worker-batch` Compose lane (queue `batch`, concurrency 1) for market collection; `worker-ops` now serves `ops` only. Operator action: `docker compose up -d worker-batch worker-ops` (RM-411)
