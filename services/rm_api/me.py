@@ -13,6 +13,7 @@ from rm_contracts.problems import ProblemCode
 from rm_core.db.models import StripeCustomer, User, UserCredential
 from rm_core.entitlements import load_entitlements
 from rm_core.flags import resolve_flags
+from rm_core.interior import erase_account_media
 from rm_core.privacy import UserDataExport, delete_account, export_user_data, user_hash
 from rm_core.ratelimit import hit
 from rm_core.throttle import OTODOM_HOST, breaker_status
@@ -71,6 +72,8 @@ async def delete_my_account(
     await revoke_all_sessions(
         db, principal.user_id
     )  # NOTIFY first so every process drops the cached principal
+    # GDPR[erasure]: queue the object keys first so the cascade cannot lose them; the worker deletes bytes
+    await erase_account_media(db, principal.user_id)
     report = await delete_account(db, principal.user_id)
     log.info("account_erased", user_hash=user_hash(principal.user_id), deleted=report.deleted)
     out = Response(status_code=204)

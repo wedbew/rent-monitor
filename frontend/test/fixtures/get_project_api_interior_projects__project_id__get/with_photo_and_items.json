@@ -1,0 +1,88 @@
+{
+  "body": {
+    "basket": {
+      "complete": false,
+      "known_subtotal_pln": "0.00",
+      "priced_lines": 0,
+      "unpriced_lines": 1
+    },
+    "brief": {
+      "budget_pln": "5000.00",
+      "keep": ["sofa"],
+      "notes": null,
+      "room_type": "living_room",
+      "style": "skandynawski"
+    },
+    "created_at": "2026-10-01T10:00:00Z",
+    "expires_at": "2026-11-20T08:36:29.947350Z",
+    "items": [
+      {
+        "created_at": "2026-10-01T10:00:00Z",
+        "item_id": "00000000-0000-4000-8000-000000000073",
+        "name": "Stary fotel",
+        "photo": null,
+        "price_pln": null,
+        "quantity": 1,
+        "url": null
+      }
+    ],
+    "name": "Salon",
+    "project_id": "00000000-0000-4000-8000-000000000071",
+    "revisions": [
+      {
+        "basket": {
+          "complete": false,
+          "known_subtotal_pln": "0.00",
+          "priced_lines": 0,
+          "unpriced_lines": 1
+        },
+        "brief": {
+          "budget_pln": "5000.00",
+          "keep": ["sofa"],
+          "notes": null,
+          "room_type": "living_room",
+          "style": "skandynawski"
+        },
+        "created_at": "2026-10-01T10:00:00Z",
+        "items": [
+          {
+            "name": "Stary fotel",
+            "photo_digest": null,
+            "price_pln": null,
+            "quantity": 1,
+            "url": null
+          }
+        ],
+        "number": 1,
+        "revision_id": "00000000-0000-4000-8000-000000000074",
+        "source_digest": "e1c414d4f45346501904530b9674b5b01bae946aa6a1c51de6676511ca5e51e0"
+      }
+    ],
+    "source": {
+      "content_digest": "e1c414d4f45346501904530b9674b5b01bae946aa6a1c51de6676511ca5e51e0",
+      "expires_at": "2026-11-20T08:36:29.947350Z",
+      "height": 480,
+      "media_id": "00000000-0000-4000-8000-000000000072",
+      "purpose": "source",
+      "state": "stored",
+      "width": 640
+    }
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/interior/projects/{project_id}",
+    "method": "GET",
+    "operation_id": "get_project_api_interior_projects__project_id__get",
+    "path": "/api/interior/projects/{project_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000071"
+  },
+  "scenario": "with_photo_and_items",
+  "status": 200
+}

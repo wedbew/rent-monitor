@@ -1,0 +1,36 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "url"],
+        "msg": "Value error, url must be http(s) without credentials",
+        "type": "value_error"
+      }
+    ],
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000006/items",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/items",
+    "method": "POST",
+    "operation_id": "add_item_api_interior_projects__project_id__items_post",
+    "path": "/api/interior/projects/{project_id}/items"
+  },
+  "request": {
+    "body": {
+      "name": "x",
+      "url": "javascript:alert(1)"
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000006/items"
+  },
+  "scenario": "unsafe_link",
+  "status": 422
+}

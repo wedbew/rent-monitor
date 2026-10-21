@@ -56,6 +56,46 @@ EXTRA: dict[str, Errors] = {
     "GET /api/me/export": {429: (C.RATE_LIMITED,)},
     "DELETE /api/me": {422: (C.CONFIRMATION_MISMATCH,)},
     "PUT /api/saved/{otodom_id}": {404: (C.NOT_FOUND,), 409: (C.SAVED_LIMIT_REACHED,)},
+    "GET /api/interior/projects": {403: (C.FEATURE_NOT_IN_PLAN,)},
+    "POST /api/interior/projects": {403: (C.FEATURE_NOT_IN_PLAN,), 409: (C.INTERIOR_LIMIT_REACHED,)},
+    "GET /api/interior/projects/{project_id}": {403: (C.FEATURE_NOT_IN_PLAN,), 404: (C.NOT_FOUND,)},
+    "PUT /api/interior/projects/{project_id}": {403: (C.FEATURE_NOT_IN_PLAN,), 404: (C.NOT_FOUND,)},
+    "DELETE /api/interior/projects/{project_id}": {403: (C.FEATURE_NOT_IN_PLAN,), 404: (C.NOT_FOUND,)},
+    "POST /api/interior/projects/{project_id}/items": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+        409: (C.INTERIOR_LIMIT_REACHED,),
+    },
+    "PUT /api/interior/projects/{project_id}/items/{item_id}": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+    },
+    "DELETE /api/interior/projects/{project_id}/items/{item_id}": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+    },
+    "POST /api/interior/projects/{project_id}/source": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+        409: (C.INTERIOR_LIMIT_REACHED,),
+        422: (C.IMAGE_REJECTED,),
+        503: (C.MEDIA_STORAGE_UNAVAILABLE,),
+    },
+    "PUT /api/interior/projects/{project_id}/items/{item_id}/photo": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+        422: (C.IMAGE_REJECTED,),
+        503: (C.MEDIA_STORAGE_UNAVAILABLE,),
+    },
+    "GET /api/interior/projects/{project_id}/media/{media_id}": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+        503: (C.MEDIA_STORAGE_UNAVAILABLE,),
+    },
+    "POST /api/interior/projects/{project_id}/revisions": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+    },
     "POST /api/audits": {
         402: (C.QUOTA_EXHAUSTED,),
         403: (C.BILLING_HOLD, C.FEATURE_NOT_IN_PLAN),
@@ -155,8 +195,10 @@ def document_problems(routers: Sequence[APIRouter], schema: dict[str, Any]) -> d
         for method, operation in item.items():
             route = routes[(method.upper(), path)]
             responses: dict[str, Any] = operation["responses"]
-            has_body = bool(operation.get("requestBody"))
-            takes_input = bool(operation.get("parameters") or has_body)
+            request_body: dict[str, Any] = operation.get("requestBody") or {}
+            body_types: dict[str, Any] = request_body.get("content", {})
+            has_body = "application/json" in body_types  # a raw upload has no JSON to be undecodable
+            takes_input = bool(operation.get("parameters") or body_types)
             responses.pop("422", None)
             for status, codes in derived_errors(route, method.upper(), takes_input, has_body).items():
                 responses[str(status)] = _response(status, codes)

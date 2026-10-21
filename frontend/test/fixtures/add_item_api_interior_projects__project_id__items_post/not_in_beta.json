@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "FEATURE_NOT_IN_PLAN",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000005/items",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "The interior architect is in a closed beta",
+    "type": "urn:rentmonitor:problem:FEATURE_NOT_IN_PLAN"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/items",
+    "method": "POST",
+    "operation_id": "add_item_api_interior_projects__project_id__items_post",
+    "path": "/api/interior/projects/{project_id}/items"
+  },
+  "request": {
+    "body": {
+      "name": "x"
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000005/items"
+  },
+  "scenario": "not_in_beta",
+  "status": 403
+}

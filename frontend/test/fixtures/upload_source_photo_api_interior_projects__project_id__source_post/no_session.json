@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000004/source",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/source",
+    "method": "POST",
+    "operation_id": "upload_source_photo_api_interior_projects__project_id__source_post",
+    "path": "/api/interior/projects/{project_id}/source"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000004/source"
+  },
+  "scenario": "no_session",
+  "status": 401
+}

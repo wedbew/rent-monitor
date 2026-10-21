@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "MEDIA_STORAGE_UNAVAILABLE",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000367/source",
+    "request_id": "req_fixture",
+    "status": 503,
+    "title": "Image storage is not available",
+    "type": "urn:rentmonitor:problem:MEDIA_STORAGE_UNAVAILABLE"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/source",
+    "method": "POST",
+    "operation_id": "upload_source_photo_api_interior_projects__project_id__source_post",
+    "path": "/api/interior/projects/{project_id}/source"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000367/source"
+  },
+  "scenario": "storage_not_configured",
+  "status": 503
+}

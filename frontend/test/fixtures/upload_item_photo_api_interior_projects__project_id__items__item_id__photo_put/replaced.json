@@ -1,0 +1,28 @@
+{
+  "body": {
+    "content_digest": "f3680477b7d3a5efe3229af698c708b5bb24ae578ed49ce61f485b790c37d376",
+    "expires_at": "2026-11-20T08:36:31.668553Z",
+    "height": 480,
+    "media_id": "00000000-0000-4000-8000-000000000358",
+    "purpose": "custom_item",
+    "state": "stored",
+    "width": 640
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "PUT /api/interior/projects/{project_id}/items/{item_id}/photo",
+    "method": "PUT",
+    "operation_id": "upload_item_photo_api_interior_projects__project_id__items__item_id__photo_put",
+    "path": "/api/interior/projects/{project_id}/items/{item_id}/photo"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000356/items/00000000-0000-4000-8000-000000000357/photo"
+  },
+  "scenario": "replaced",
+  "status": 200
+}

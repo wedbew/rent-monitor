@@ -1,0 +1,38 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "brief", "room_type"],
+        "msg": "Input should be 'living_room', 'bedroom', 'kitchen', 'bathroom', 'hallway', 'office' or 'other'",
+        "type": "enum"
+      }
+    ],
+    "instance": "/api/interior/projects",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects",
+    "method": "POST",
+    "operation_id": "create_project_api_interior_projects_post",
+    "path": "/api/interior/projects"
+  },
+  "request": {
+    "body": {
+      "brief": {
+        "room_type": "garage"
+      },
+      "name": "x"
+    },
+    "path": "/api/interior/projects"
+  },
+  "scenario": "unknown_room_type",
+  "status": 422
+}

@@ -1,0 +1,36 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "price_pln"],
+        "msg": "Input should be greater than or equal to 0",
+        "type": "greater_than_equal"
+      }
+    ],
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000347/items/00000000-0000-4000-8000-000000000348",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "PUT /api/interior/projects/{project_id}/items/{item_id}",
+    "method": "PUT",
+    "operation_id": "update_item_api_interior_projects__project_id__items__item_id__put",
+    "path": "/api/interior/projects/{project_id}/items/{item_id}"
+  },
+  "request": {
+    "body": {
+      "name": "x",
+      "price_pln": "-1"
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000347/items/00000000-0000-4000-8000-000000000348"
+  },
+  "scenario": "negative_price",
+  "status": 422
+}

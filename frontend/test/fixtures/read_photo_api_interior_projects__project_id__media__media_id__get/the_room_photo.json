@@ -1,0 +1,20 @@
+{
+  "body": "[image/jpeg, 2086 bytes]",
+  "content_type": "image/jpeg",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "image/jpeg"
+  },
+  "operation": {
+    "key": "GET /api/interior/projects/{project_id}/media/{media_id}",
+    "method": "GET",
+    "operation_id": "read_photo_api_interior_projects__project_id__media__media_id__get",
+    "path": "/api/interior/projects/{project_id}/media/{media_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000337/media/00000000-0000-4000-8000-000000000338"
+  },
+  "scenario": "the_room_photo",
+  "status": 200
+}

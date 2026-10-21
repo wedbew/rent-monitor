@@ -559,6 +559,36 @@
         "title": "AuditSummary",
         "type": "object"
       },
+      "Basket": {
+        "additionalProperties": false,
+        "description": "Server-computed figures over the person's items. Not a room budget: delivery and missing items are\nnot included, and `complete` only says every listed line has a price.",
+        "properties": {
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "known_subtotal_pln": {
+            "title": "Known Subtotal Pln",
+            "type": "string"
+          },
+          "priced_lines": {
+            "title": "Priced Lines",
+            "type": "integer"
+          },
+          "unpriced_lines": {
+            "title": "Unpriced Lines",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "known_subtotal_pln",
+          "priced_lines",
+          "unpriced_lines",
+          "complete"
+        ],
+        "title": "Basket",
+        "type": "object"
+      },
       "BillingHoldClear": {
         "additionalProperties": false,
         "description": "Staff resolved a billing review; the note is the record of why (logged with the admin's id).",
@@ -588,6 +618,131 @@
           "cleared"
         ],
         "title": "BillingHoldOut",
+        "type": "object"
+      },
+      "Brief-Input": {
+        "additionalProperties": false,
+        "description": "What the person wants. Saved on the project and snapshotted into every revision.",
+        "properties": {
+          "budget_pln": {
+            "anyOf": [
+              {
+                "maximum": 10000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Pln"
+          },
+          "keep": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Keep",
+            "type": "array"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "room_type": {
+            "$ref": "#/components/schemas/RoomType"
+          },
+          "style": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Style"
+          }
+        },
+        "required": [
+          "room_type"
+        ],
+        "title": "Brief",
+        "type": "object"
+      },
+      "Brief-Output": {
+        "additionalProperties": false,
+        "description": "What the person wants. Saved on the project and snapshotted into every revision.",
+        "properties": {
+          "budget_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Pln"
+          },
+          "keep": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Keep",
+            "type": "array"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "room_type": {
+            "$ref": "#/components/schemas/RoomType"
+          },
+          "style": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Style"
+          }
+        },
+        "required": [
+          "room_type"
+        ],
+        "title": "Brief",
         "type": "object"
       },
       "ChangePasswordRequest": {
@@ -697,6 +852,124 @@
           "balance"
         ],
         "title": "CreditAdjustOut",
+        "type": "object"
+      },
+      "CustomItemIn": {
+        "additionalProperties": false,
+        "description": "The person's own item. Only `name` is required.",
+        "properties": {
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "price_pln": {
+            "anyOf": [
+              {
+                "maximum": 10000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Pln"
+          },
+          "quantity": {
+            "default": 1,
+            "maximum": 99.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CustomItemIn",
+        "type": "object"
+      },
+      "CustomItemOut": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "item_id": {
+            "format": "uuid",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "photo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MediaRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "price_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "exact decimal string; null means the price is unknown",
+            "title": "Price Pln"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "item_id",
+          "name",
+          "quantity",
+          "price_pln",
+          "url",
+          "photo",
+          "created_at"
+        ],
+        "title": "CustomItemOut",
         "type": "object"
       },
       "DataStatus": {
@@ -1795,6 +2068,63 @@
         "title": "InvoiceOut",
         "type": "object"
       },
+      "ItemSnapshot": {
+        "additionalProperties": false,
+        "description": "An item as it was when a revision was saved; later edits to the item do not change it.",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "photo_digest": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Digest"
+          },
+          "price_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Pln"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "name",
+          "quantity",
+          "price_pln",
+          "url",
+          "photo_digest"
+        ],
+        "title": "ItemSnapshot",
+        "type": "object"
+      },
       "JobOut": {
         "description": "Metadata only: job arguments are never returned (they can hold addresses and login tokens, L-011).",
         "properties": {
@@ -2534,7 +2864,7 @@
             "$ref": "#/components/schemas/MediaSource"
           },
           "state": {
-            "$ref": "#/components/schemas/MediaState",
+            "$ref": "#/components/schemas/rm_contracts__media__MediaState",
             "default": "pending"
           },
           "width": {
@@ -2618,6 +2948,81 @@
         "title": "MediaMime",
         "type": "string"
       },
+      "MediaPurpose": {
+        "enum": [
+          "source",
+          "custom_item",
+          "render"
+        ],
+        "title": "MediaPurpose",
+        "type": "string"
+      },
+      "MediaRef": {
+        "additionalProperties": false,
+        "properties": {
+          "content_digest": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Digest"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "media_id": {
+            "format": "uuid",
+            "title": "Media Id",
+            "type": "string"
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/MediaPurpose"
+          },
+          "state": {
+            "$ref": "#/components/schemas/rm_contracts__interior__MediaState"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": [
+          "media_id",
+          "purpose",
+          "state",
+          "width",
+          "height",
+          "content_digest",
+          "expires_at"
+        ],
+        "title": "MediaRef",
+        "type": "object"
+      },
       "MediaSource": {
         "enum": [
           "url",
@@ -2625,18 +3030,6 @@
           "upload"
         ],
         "title": "MediaSource",
-        "type": "string"
-      },
-      "MediaState": {
-        "description": "Storage state of the prepared image. `expired` is derived on read from `expires_at`.",
-        "enum": [
-          "pending",
-          "stored",
-          "rejected",
-          "failed",
-          "expired"
-        ],
-        "title": "MediaState",
         "type": "string"
       },
       "MetricViewOut": {
@@ -3525,7 +3918,10 @@
           "ORIGIN_NOT_ALLOWED",
           "CONFIRMATION_MISMATCH",
           "CREDIT_BELOW_ZERO",
-          "SAVED_LIMIT_REACHED"
+          "SAVED_LIMIT_REACHED",
+          "INTERIOR_LIMIT_REACHED",
+          "IMAGE_REJECTED",
+          "MEDIA_STORAGE_UNAVAILABLE"
         ],
         "title": "ProblemCode",
         "type": "string"
@@ -3555,6 +3951,139 @@
           "msg"
         ],
         "title": "ProblemField",
+        "type": "object"
+      },
+      "ProjectCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "brief": {
+            "$ref": "#/components/schemas/Brief-Input"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "brief"
+        ],
+        "title": "ProjectCreate",
+        "type": "object"
+      },
+      "ProjectOut": {
+        "additionalProperties": false,
+        "properties": {
+          "basket": {
+            "$ref": "#/components/schemas/Basket"
+          },
+          "brief": {
+            "$ref": "#/components/schemas/Brief-Output"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CustomItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "revisions": {
+            "items": {
+              "$ref": "#/components/schemas/RevisionOut"
+            },
+            "title": "Revisions",
+            "type": "array"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MediaRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "project_id",
+          "name",
+          "brief",
+          "source",
+          "items",
+          "basket",
+          "revisions",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "ProjectOut",
+        "type": "object"
+      },
+      "ProjectSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "has_source": {
+            "title": "Has Source",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "revisions": {
+            "title": "Revisions",
+            "type": "integer"
+          },
+          "room_type": {
+            "$ref": "#/components/schemas/RoomType"
+          }
+        },
+        "required": [
+          "project_id",
+          "name",
+          "room_type",
+          "has_source",
+          "revisions",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "ProjectSummary",
         "type": "object"
       },
       "PurchaseOut": {
@@ -4077,6 +4606,74 @@
         "title": "ResetRequest",
         "type": "object"
       },
+      "RevisionOut": {
+        "additionalProperties": false,
+        "properties": {
+          "basket": {
+            "$ref": "#/components/schemas/Basket"
+          },
+          "brief": {
+            "$ref": "#/components/schemas/Brief-Output"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemSnapshot"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "source_digest": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Digest"
+          }
+        },
+        "required": [
+          "revision_id",
+          "number",
+          "brief",
+          "source_digest",
+          "items",
+          "basket",
+          "created_at"
+        ],
+        "title": "RevisionOut",
+        "type": "object"
+      },
+      "RoomType": {
+        "enum": [
+          "living_room",
+          "bedroom",
+          "kitchen",
+          "bathroom",
+          "hallway",
+          "office",
+          "other"
+        ],
+        "title": "RoomType",
+        "type": "string"
+      },
       "SavedOut": {
         "description": "GDPR[personal-data]: `note` is free text written by the user.",
         "properties": {
@@ -4582,6 +5179,27 @@
         ],
         "title": "UserDataExport",
         "type": "object"
+      },
+      "rm_contracts__interior__MediaState": {
+        "enum": [
+          "pending",
+          "stored",
+          "failed"
+        ],
+        "title": "MediaState",
+        "type": "string"
+      },
+      "rm_contracts__media__MediaState": {
+        "description": "Storage state of the prepared image. `expired` is derived on read from `expires_at`.",
+        "enum": [
+          "pending",
+          "stored",
+          "rejected",
+          "failed",
+          "expired"
+        ],
+        "title": "MediaState",
+        "type": "string"
       }
     }
   },
@@ -8181,6 +8799,1471 @@
         "summary": "Get Invoice",
         "tags": [
           "billing"
+        ]
+      }
+    },
+    "/api/interior/projects": {
+      "get": {
+        "operationId": "list_projects_api_interior_projects_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectSummary"
+                  },
+                  "title": "Response List Projects Api Interior Projects Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "List Projects",
+        "tags": [
+          "interior"
+        ]
+      },
+      "post": {
+        "operationId": "create_project_api_interior_projects_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERIOR_LIMIT_REACHED",
+            "x-problem-codes": [
+              "INTERIOR_LIMIT_REACHED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Create Project",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}": {
+      "delete": {
+        "operationId": "delete_project_api_interior_projects__project_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Delete Project",
+        "tags": [
+          "interior"
+        ]
+      },
+      "get": {
+        "operationId": "get_project_api_interior_projects__project_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Get Project",
+        "tags": [
+          "interior"
+        ]
+      },
+      "put": {
+        "description": "Rename and re-brief. The 30-day lifetime is not extended by editing.",
+        "operationId": "update_project_api_interior_projects__project_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Update Project",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/items": {
+      "post": {
+        "description": "Only `name` is required; photo, price and link are optional. An absent price stays unknown.",
+        "operationId": "add_item_api_interior_projects__project_id__items_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomItemIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERIOR_LIMIT_REACHED",
+            "x-problem-codes": [
+              "INTERIOR_LIMIT_REACHED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Add Item",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/items/{item_id}": {
+      "delete": {
+        "operationId": "delete_item_api_interior_projects__project_id__items__item_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Delete Item",
+        "tags": [
+          "interior"
+        ]
+      },
+      "put": {
+        "operationId": "update_item_api_interior_projects__project_id__items__item_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomItemIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Update Item",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/items/{item_id}/photo": {
+      "put": {
+        "description": "A photo of the person's own item; replaces the previous one (its bytes are queued for deletion).",
+        "operationId": "upload_item_photo_api_interior_projects__project_id__items__item_id__photo_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaRef"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: IMAGE_REJECTED, VALIDATION_ERROR",
+            "x-problem-codes": [
+              "IMAGE_REJECTED",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: MEDIA_STORAGE_UNAVAILABLE, NOT_READY",
+            "x-problem-codes": [
+              "MEDIA_STORAGE_UNAVAILABLE",
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Upload Item Photo",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/media/{media_id}": {
+      "get": {
+        "description": "An image the caller owns, served only here (no bucket URL exists). Never cached by shared caches.",
+        "operationId": "read_photo_api_interior_projects__project_id__media__media_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "media_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Media Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: MEDIA_STORAGE_UNAVAILABLE, NOT_READY",
+            "x-problem-codes": [
+              "MEDIA_STORAGE_UNAVAILABLE",
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Read Photo",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/revisions": {
+      "post": {
+        "description": "Snapshot the brief, items and current room photo. Immutable; later edits do not change it.",
+        "operationId": "create_revision_api_interior_projects__project_id__revisions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Create Revision",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/source": {
+      "post": {
+        "description": "The room photo, as raw JPEG/PNG/WebP bytes (at most 10 MB). Normalised, stripped of metadata and kept\nbeside any earlier photo (a project keeps up to five; none is overwritten).",
+        "operationId": "upload_source_photo_api_interior_projects__project_id__source_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaRef"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERIOR_LIMIT_REACHED",
+            "x-problem-codes": [
+              "INTERIOR_LIMIT_REACHED"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: IMAGE_REJECTED, VALIDATION_ERROR",
+            "x-problem-codes": [
+              "IMAGE_REJECTED",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: MEDIA_STORAGE_UNAVAILABLE, NOT_READY",
+            "x-problem-codes": [
+              "MEDIA_STORAGE_UNAVAILABLE",
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Upload Source Photo",
+        "tags": [
+          "interior"
         ]
       }
     },

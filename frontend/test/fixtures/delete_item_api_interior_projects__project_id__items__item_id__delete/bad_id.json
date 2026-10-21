@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["path", "item_id"],
+        "msg": "Input should be a valid UUID, invalid character: found `n` at 0",
+        "type": "uuid_parsing"
+      }
+    ],
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000005/items/no",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "DELETE /api/interior/projects/{project_id}/items/{item_id}",
+    "method": "DELETE",
+    "operation_id": "delete_item_api_interior_projects__project_id__items__item_id__delete",
+    "path": "/api/interior/projects/{project_id}/items/{item_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000005/items/no"
+  },
+  "scenario": "bad_id",
+  "status": 422
+}

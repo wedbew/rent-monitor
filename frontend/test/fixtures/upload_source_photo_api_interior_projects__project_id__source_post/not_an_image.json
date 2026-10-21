@@ -1,0 +1,27 @@
+{
+  "body": {
+    "code": "IMAGE_REJECTED",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000366/source",
+    "reason": "malformed",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "The image cannot be used",
+    "type": "urn:rentmonitor:problem:IMAGE_REJECTED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/source",
+    "method": "POST",
+    "operation_id": "upload_source_photo_api_interior_projects__project_id__source_post",
+    "path": "/api/interior/projects/{project_id}/source"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000366/source"
+  },
+  "scenario": "not_an_image",
+  "status": 422
+}

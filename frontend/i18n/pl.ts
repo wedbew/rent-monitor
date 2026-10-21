@@ -169,6 +169,20 @@ export const pl = {
         title: "Osiągnięto limit zapisanych ogłoszeń",
         detail: "Usuń część zapisanych ogłoszeń (limit to 500), aby dodać kolejne.",
       },
+      INTERIOR_LIMIT_REACHED: {
+        title: "Osiągnięto limit w Architekcie wnętrz",
+        detail:
+          "Usuń projekt, rzecz lub zdjęcie, aby dodać kolejne (limity: 20 projektów, 30 rzeczy, 5 zdjęć pokoju).",
+      },
+      IMAGE_REJECTED: {
+        title: "Nie można użyć tego zdjęcia",
+        detail:
+          "Wybierz inne zdjęcie w formacie JPEG, PNG lub WebP, do 10 MB i co najmniej 200 px z każdej strony.",
+      },
+      MEDIA_STORAGE_UNAVAILABLE: {
+        title: "Zdjęcia są chwilowo niedostępne",
+        detail: "Projekt został zachowany. Spróbuj ponownie za chwilę.",
+      },
     },
     transport: {
       network: {

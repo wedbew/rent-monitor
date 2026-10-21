@@ -1,0 +1,65 @@
+{
+  "body": {
+    "basket": {
+      "complete": false,
+      "known_subtotal_pln": "399.98",
+      "priced_lines": 1,
+      "unpriced_lines": 1
+    },
+    "brief": {
+      "budget_pln": "5000.00",
+      "keep": ["sofa"],
+      "notes": null,
+      "room_type": "living_room",
+      "style": "skandynawski"
+    },
+    "created_at": "2026-10-01T10:00:00Z",
+    "expires_at": "2026-11-20T08:36:30.467512Z",
+    "items": [
+      {
+        "created_at": "2026-10-01T10:00:00Z",
+        "item_id": "00000000-0000-4000-8000-000000000008",
+        "name": "Stary fotel",
+        "photo": null,
+        "price_pln": null,
+        "quantity": 1,
+        "url": null
+      },
+      {
+        "created_at": "2026-10-01T10:00:00Z",
+        "item_id": "00000000-0000-4000-8000-000000000009",
+        "name": "Regał",
+        "photo": null,
+        "price_pln": "199.99",
+        "quantity": 2,
+        "url": "https://example.test/fixture/1"
+      }
+    ],
+    "name": "Salon",
+    "project_id": "00000000-0000-4000-8000-000000000007",
+    "revisions": [],
+    "source": null
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/items",
+    "method": "POST",
+    "operation_id": "add_item_api_interior_projects__project_id__items_post",
+    "path": "/api/interior/projects/{project_id}/items"
+  },
+  "request": {
+    "body": {
+      "name": "Regał",
+      "price_pln": "199.99",
+      "quantity": 2,
+      "url": "https://example.test/fixture/1"
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000007/items"
+  },
+  "scenario": "with_price_and_link",
+  "status": 201
+}
