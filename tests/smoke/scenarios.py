@@ -1557,6 +1557,427 @@ async def market_context_malformed(w: World) -> Exchange:
     return await w.send(await market_full(w), "GET", "/api/market/locations/NOT_VALID/context")
 
 
+# ======================================================================================== interior
+# Architekt wnetrz (RM-456): closed beta, so every route has a "not in the beta" 403 beside its own errors.
+def room_photo(color: tuple[int, int, int] = (190, 170, 150)) -> bytes:
+    import io  # noqa: PLC0415
+
+    from PIL import Image  # noqa: PLC0415
+
+    buf = io.BytesIO()
+    Image.new("RGB", (640, 480), color).save(buf, format="JPEG")
+    return buf.getvalue()
+
+
+OCTET = {"Content-Type": "application/octet-stream"}
+BRIEF_JSON = {"room_type": "living_room", "style": "skandynawski", "budget_pln": "5000", "keep": ["sofa"]}
+P = "/api/interior/projects"
+
+
+async def new_interior_project(w: World, who: Actor, name: str = "Salon") -> str:
+    made = await w.send(who, "POST", P, json={"name": name, "brief": BRIEF_JSON})
+    return str(made.body["project_id"])
+
+
+async def new_interior_item(w: World, who: Actor, project: str) -> str:
+    made = await w.send(who, "POST", f"{P}/{project}/items", json={"name": "Stary fotel"})
+    return str(made.body["items"][0]["item_id"])
+
+
+async def interior_with_photo(w: World) -> tuple[Actor, str, str]:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    stored = await w.send(who, "POST", f"{P}/{project}/source", content=room_photo(), headers=OCTET)
+    return who, project, str(stored.body["media_id"])
+
+
+async def not_in_beta(w: World, method: str, path: str, **kw: Any) -> Exchange:
+    return await w.send(await w.user(label="interior"), method, path, **kw)
+
+
+NIL = "00000000-0000-4000-8000-0000000000aa"
+
+
+@scenario("GET /api/interior/projects", "empty", 200)
+async def interior_list_empty(w: World) -> Exchange:
+    return await w.send(await w.tester(), "GET", P)
+
+
+@scenario("GET /api/interior/projects", "two_projects", 200)
+async def interior_list_two(w: World) -> Exchange:
+    who = await w.tester()
+    await new_interior_project(w, who, "Salon")
+    await new_interior_project(w, who, "Sypialnia")
+    return await w.send(who, "GET", P)
+
+
+@scenario("GET /api/interior/projects", "not_in_beta", 403)
+async def interior_list_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "GET", P)
+
+
+@scenario("POST /api/interior/projects", "created", 201)
+async def interior_create(w: World) -> Exchange:
+    return await w.send(await w.tester(), "POST", P, json={"name": "Salon", "brief": BRIEF_JSON})
+
+
+@scenario("POST /api/interior/projects", "room_type_only", 201)
+async def interior_create_minimal(w: World) -> Exchange:
+    return await w.send(
+        await w.tester(), "POST", P, json={"name": "Gabinet", "brief": {"room_type": "office"}}
+    )
+
+
+@scenario("POST /api/interior/projects", "limit_reached", 409, "20 projects per account")
+async def interior_create_limit(w: World) -> Exchange:
+    who = await w.tester()
+    for i in range(20):
+        await new_interior_project(w, who, f"P{i}")
+    return await w.send(who, "POST", P, json={"name": "Za dużo", "brief": BRIEF_JSON})
+
+
+@scenario("POST /api/interior/projects", "unknown_room_type", 422)
+async def interior_create_invalid(w: World) -> Exchange:
+    return await w.send(await w.tester(), "POST", P, json={"name": "x", "brief": {"room_type": "garage"}})
+
+
+@scenario("POST /api/interior/projects", "not_in_beta", 403)
+async def interior_create_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "POST", P, json={"name": "x", "brief": BRIEF_JSON})
+
+
+@scenario("GET /api/interior/projects/{project_id}", "with_photo_and_items", 200)
+async def interior_get_full(w: World) -> Exchange:
+    who, project, _ = await interior_with_photo(w)
+    await new_interior_item(w, who, project)
+    await w.send(who, "POST", f"{P}/{project}/revisions")
+    return await w.send(who, "GET", f"{P}/{project}")
+
+
+@scenario("GET /api/interior/projects/{project_id}", "unknown", 404)
+async def interior_get_unknown(w: World) -> Exchange:
+    return await w.send(await w.tester(), "GET", f"{P}/{NIL}")
+
+
+@scenario("GET /api/interior/projects/{project_id}", "someone_elses", 404, "indistinguishable from unknown")
+async def interior_get_foreign(w: World) -> Exchange:
+    project = await new_interior_project(w, await w.tester())
+    return await w.send(await w.tester(), "GET", f"{P}/{project}")
+
+
+@scenario("GET /api/interior/projects/{project_id}", "bad_id", 422)
+async def interior_get_bad_id(w: World) -> Exchange:
+    return await w.send(await w.tester(), "GET", f"{P}/no")
+
+
+@scenario("GET /api/interior/projects/{project_id}", "not_in_beta", 403)
+async def interior_get_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "GET", f"{P}/{NIL}")
+
+
+@scenario("PUT /api/interior/projects/{project_id}", "renamed_and_rebriefed", 200)
+async def interior_put(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(
+        who, "PUT", f"{P}/{project}", json={"name": "Salon 2", "brief": {**BRIEF_JSON, "style": "loft"}}
+    )
+
+
+@scenario("PUT /api/interior/projects/{project_id}", "unknown", 404)
+async def interior_put_unknown(w: World) -> Exchange:
+    return await w.send(await w.tester(), "PUT", f"{P}/{NIL}", json={"name": "x", "brief": BRIEF_JSON})
+
+
+@scenario("PUT /api/interior/projects/{project_id}", "blank_name", 422)
+async def interior_put_invalid(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "PUT", f"{P}/{project}", json={"name": " ", "brief": BRIEF_JSON})
+
+
+@scenario("PUT /api/interior/projects/{project_id}", "not_in_beta", 403)
+async def interior_put_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "PUT", f"{P}/{NIL}", json={"name": "x", "brief": BRIEF_JSON})
+
+
+@scenario("DELETE /api/interior/projects/{project_id}", "deleted", 204)
+async def interior_delete(w: World) -> Exchange:
+    who, project, _ = await interior_with_photo(w)
+    return await w.send(who, "DELETE", f"{P}/{project}")
+
+
+@scenario("DELETE /api/interior/projects/{project_id}", "unknown", 404)
+async def interior_delete_unknown(w: World) -> Exchange:
+    return await w.send(await w.tester(), "DELETE", f"{P}/{NIL}")
+
+
+@scenario("DELETE /api/interior/projects/{project_id}", "bad_id", 422)
+async def interior_delete_bad_id(w: World) -> Exchange:
+    return await w.send(await w.tester(), "DELETE", f"{P}/no")
+
+
+@scenario("DELETE /api/interior/projects/{project_id}", "not_in_beta", 403)
+async def interior_delete_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "DELETE", f"{P}/{NIL}")
+
+
+@scenario("POST /api/interior/projects/{project_id}/items", "name_only", 201, "only a name is required")
+async def interior_item_name_only(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "POST", f"{P}/{project}/items", json={"name": "Stary fotel"})
+
+
+@scenario("POST /api/interior/projects/{project_id}/items", "with_price_and_link", 201)
+async def interior_item_full(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    await w.send(who, "POST", f"{P}/{project}/items", json={"name": "Stary fotel"})
+    return await w.send(
+        who,
+        "POST",
+        f"{P}/{project}/items",
+        json={"name": "Regał", "quantity": 2, "price_pln": "199.99", "url": "https://sklep.example/regal"},
+    )
+
+
+@scenario("POST /api/interior/projects/{project_id}/items", "limit_reached", 409, "30 items per project")
+async def interior_item_limit(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    for i in range(30):
+        await w.send(who, "POST", f"{P}/{project}/items", json={"name": f"Rzecz {i}"})
+    return await w.send(who, "POST", f"{P}/{project}/items", json={"name": "Jedna za dużo"})
+
+
+@scenario("POST /api/interior/projects/{project_id}/items", "unknown_project", 404)
+async def interior_item_unknown(w: World) -> Exchange:
+    return await w.send(await w.tester(), "POST", f"{P}/{NIL}/items", json={"name": "x"})
+
+
+@scenario("POST /api/interior/projects/{project_id}/items", "unsafe_link", 422)
+async def interior_item_bad_link(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "POST", f"{P}/{project}/items", json={"name": "x", "url": "javascript:alert(1)"})
+
+
+@scenario("POST /api/interior/projects/{project_id}/items", "not_in_beta", 403)
+async def interior_item_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "POST", f"{P}/{NIL}/items", json={"name": "x"})
+
+
+@scenario("PUT /api/interior/projects/{project_id}/items/{item_id}", "updated", 200)
+async def interior_item_put(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    item = await new_interior_item(w, who, project)
+    return await w.send(
+        who, "PUT", f"{P}/{project}/items/{item}", json={"name": "Fotel", "price_pln": "120.00"}
+    )
+
+
+@scenario("PUT /api/interior/projects/{project_id}/items/{item_id}", "unknown", 404)
+async def interior_item_put_unknown(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "PUT", f"{P}/{project}/items/{NIL}", json={"name": "x"})
+
+
+@scenario("PUT /api/interior/projects/{project_id}/items/{item_id}", "negative_price", 422)
+async def interior_item_put_invalid(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    item = await new_interior_item(w, who, project)
+    return await w.send(who, "PUT", f"{P}/{project}/items/{item}", json={"name": "x", "price_pln": "-1"})
+
+
+@scenario("PUT /api/interior/projects/{project_id}/items/{item_id}", "not_in_beta", 403)
+async def interior_item_put_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "PUT", f"{P}/{NIL}/items/{NIL}", json={"name": "x"})
+
+
+@scenario("DELETE /api/interior/projects/{project_id}/items/{item_id}", "deleted", 204)
+async def interior_item_delete(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    item = await new_interior_item(w, who, project)
+    return await w.send(who, "DELETE", f"{P}/{project}/items/{item}")
+
+
+@scenario("DELETE /api/interior/projects/{project_id}/items/{item_id}", "unknown", 404)
+async def interior_item_delete_unknown(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "DELETE", f"{P}/{project}/items/{NIL}")
+
+
+@scenario("DELETE /api/interior/projects/{project_id}/items/{item_id}", "bad_id", 422)
+async def interior_item_delete_bad_id(w: World) -> Exchange:
+    return await w.send(await w.tester(), "DELETE", f"{P}/{NIL}/items/no")
+
+
+@scenario("DELETE /api/interior/projects/{project_id}/items/{item_id}", "not_in_beta", 403)
+async def interior_item_delete_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "DELETE", f"{P}/{NIL}/items/{NIL}")
+
+
+@scenario("POST /api/interior/projects/{project_id}/source", "stored", 201)
+async def interior_source(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "POST", f"{P}/{project}/source", content=room_photo(), headers=OCTET)
+
+
+@scenario("POST /api/interior/projects/{project_id}/source", "not_an_image", 422)
+async def interior_source_rejected(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "POST", f"{P}/{project}/source", content=b"hello", headers=OCTET)
+
+
+@scenario("POST /api/interior/projects/{project_id}/source", "five_photos_already", 409)
+async def interior_source_limit(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    for i in range(5):
+        await w.send(
+            who, "POST", f"{P}/{project}/source", content=room_photo((i * 40, 90, 90)), headers=OCTET
+        )
+    return await w.send(who, "POST", f"{P}/{project}/source", content=room_photo((7, 7, 7)), headers=OCTET)
+
+
+@scenario("POST /api/interior/projects/{project_id}/source", "unknown_project", 404)
+async def interior_source_unknown(w: World) -> Exchange:
+    return await w.send(await w.tester(), "POST", f"{P}/{NIL}/source", content=room_photo(), headers=OCTET)
+
+
+@scenario("POST /api/interior/projects/{project_id}/source", "storage_not_configured", 503)
+async def interior_source_no_store(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    store, w.app.state.object_store = w.app.state.object_store, None
+    try:
+        return await w.send(who, "POST", f"{P}/{project}/source", content=room_photo(), headers=OCTET)
+    finally:
+        w.app.state.object_store = store
+
+
+@scenario("POST /api/interior/projects/{project_id}/source", "not_in_beta", 403)
+async def interior_source_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "POST", f"{P}/{NIL}/source", content=room_photo(), headers=OCTET)
+
+
+@scenario("PUT /api/interior/projects/{project_id}/items/{item_id}/photo", "stored", 200)
+async def interior_item_photo(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    item = await new_interior_item(w, who, project)
+    return await w.send(who, "PUT", f"{P}/{project}/items/{item}/photo", content=room_photo(), headers=OCTET)
+
+
+@scenario("PUT /api/interior/projects/{project_id}/items/{item_id}/photo", "replaced", 200)
+async def interior_item_photo_replaced(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    item = await new_interior_item(w, who, project)
+    await w.send(who, "PUT", f"{P}/{project}/items/{item}/photo", content=room_photo(), headers=OCTET)
+    return await w.send(
+        who, "PUT", f"{P}/{project}/items/{item}/photo", content=room_photo((1, 2, 3)), headers=OCTET
+    )
+
+
+@scenario("PUT /api/interior/projects/{project_id}/items/{item_id}/photo", "unknown_item", 404)
+async def interior_item_photo_unknown(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "PUT", f"{P}/{project}/items/{NIL}/photo", content=room_photo(), headers=OCTET)
+
+
+@scenario("PUT /api/interior/projects/{project_id}/items/{item_id}/photo", "not_an_image", 422)
+async def interior_item_photo_rejected(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    item = await new_interior_item(w, who, project)
+    return await w.send(who, "PUT", f"{P}/{project}/items/{item}/photo", content=b"%PDF-1.7", headers=OCTET)
+
+
+@scenario("PUT /api/interior/projects/{project_id}/items/{item_id}/photo", "storage_not_configured", 503)
+async def interior_item_photo_no_store(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    item = await new_interior_item(w, who, project)
+    store, w.app.state.object_store = w.app.state.object_store, None
+    try:
+        return await w.send(
+            who, "PUT", f"{P}/{project}/items/{item}/photo", content=room_photo(), headers=OCTET
+        )
+    finally:
+        w.app.state.object_store = store
+
+
+@scenario("PUT /api/interior/projects/{project_id}/items/{item_id}/photo", "not_in_beta", 403)
+async def interior_item_photo_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "PUT", f"{P}/{NIL}/items/{NIL}/photo", content=room_photo(), headers=OCTET)
+
+
+@scenario("GET /api/interior/projects/{project_id}/media/{media_id}", "the_room_photo", 200)
+async def interior_media(w: World) -> Exchange:
+    who, project, media = await interior_with_photo(w)
+    return await w.send(who, "GET", f"{P}/{project}/media/{media}")
+
+
+@scenario("GET /api/interior/projects/{project_id}/media/{media_id}", "someone_elses", 404)
+async def interior_media_foreign(w: World) -> Exchange:
+    _, project, media = await interior_with_photo(w)
+    return await w.send(await w.tester(), "GET", f"{P}/{project}/media/{media}")
+
+
+@scenario("GET /api/interior/projects/{project_id}/media/{media_id}", "storage_not_configured", 503)
+async def interior_media_no_store(w: World) -> Exchange:
+    who, project, media = await interior_with_photo(w)
+    store, w.app.state.object_store = w.app.state.object_store, None
+    try:
+        return await w.send(who, "GET", f"{P}/{project}/media/{media}")
+    finally:
+        w.app.state.object_store = store
+
+
+@scenario("GET /api/interior/projects/{project_id}/media/{media_id}", "bad_id", 422)
+async def interior_media_bad_id(w: World) -> Exchange:
+    return await w.send(await w.tester(), "GET", f"{P}/{NIL}/media/no")
+
+
+@scenario("GET /api/interior/projects/{project_id}/media/{media_id}", "not_in_beta", 403)
+async def interior_media_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "GET", f"{P}/{NIL}/media/{NIL}")
+
+
+@scenario("POST /api/interior/projects/{project_id}/revisions", "saved", 201)
+async def interior_revision(w: World) -> Exchange:
+    who, project, _ = await interior_with_photo(w)
+    await w.send(
+        who, "POST", f"{P}/{project}/items", json={"name": "Regał", "quantity": 2, "price_pln": "199.99"}
+    )
+    return await w.send(who, "POST", f"{P}/{project}/revisions")
+
+
+@scenario("POST /api/interior/projects/{project_id}/revisions", "unknown", 404)
+async def interior_revision_unknown(w: World) -> Exchange:
+    return await w.send(await w.tester(), "POST", f"{P}/{NIL}/revisions")
+
+
+@scenario("POST /api/interior/projects/{project_id}/revisions", "bad_id", 422)
+async def interior_revision_bad_id(w: World) -> Exchange:
+    return await w.send(await w.tester(), "POST", f"{P}/no/revisions")
+
+
+@scenario("POST /api/interior/projects/{project_id}/revisions", "not_in_beta", 403)
+async def interior_revision_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "POST", f"{P}/{NIL}/revisions")
+
+
 PUBLIC = frozenset(
     {
         "POST /api/auth/google",
@@ -1578,6 +1999,9 @@ PATH_VALUES = {
     "key": "some_flag",
     "user_id": "nobody",
     "location_id": "smoke-torun",
+    "project_id": "00000000-0000-4000-8000-000000000003",
+    "item_id": "00000000-0000-4000-8000-000000000004",
+    "media_id": "00000000-0000-4000-8000-000000000005",
 }
 
 

@@ -1,0 +1,41 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "name"],
+        "msg": "String should have at least 1 character",
+        "type": "string_too_short"
+      }
+    ],
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000352",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "PUT /api/interior/projects/{project_id}",
+    "method": "PUT",
+    "operation_id": "update_project_api_interior_projects__project_id__put",
+    "path": "/api/interior/projects/{project_id}"
+  },
+  "request": {
+    "body": {
+      "brief": {
+        "budget_pln": "5000",
+        "keep": ["sofa"],
+        "room_type": "living_room",
+        "style": "skandynawski"
+      },
+      "name": " "
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000352"
+  },
+  "scenario": "blank_name",
+  "status": 422
+}

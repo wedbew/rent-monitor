@@ -388,7 +388,7 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Evidence:** confirmed (`tests/integration/test_media_manifest.py`); the retention gap is inferred from scope
 - **Description:** The manifest contract, table and read route exist, but nothing fills the manifest: the worker does not write it, no binary store exists, `expires_at` has no sweep job and retention values are undecided. The route returns an empty manifest for every audit today.
 - **Workaround:** none; no UI should present a gallery yet
-- **Target:** G-01 follow-up slices. **Update 2026-10-21 (RM-447):** owner decided a private EU object store with 30/7-day retention (ADR 0014); the store seam, EU-only settings and probe script exist, the bucket does not yet (B-025), and manifest population and the expiry sweep are still missing
+- **Target:** G-01 follow-up slices. **Update 2026-10-21 (RM-456): the interior API now stores and serves the person's room and item photos through the store seam (offline-tested only), with 30/7-day retention sweeps and an erasure key queue; the gallery manifest of audits (`media_evidence`) is still unpopulated.** **Update 2026-10-21 (RM-447):** owner decided a private EU object store with 30/7-day retention (ADR 0014); the store seam, EU-only settings and probe script exist, the bucket does not yet (B-025), and manifest population and the expiry sweep are still missing
 
 ### L-054 — BDL request quota limits are not encoded and the gate is per process
 - **Status:** active

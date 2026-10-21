@@ -1,0 +1,35 @@
+{
+  "body": {
+    "code": "INTERIOR_LIMIT_REACHED",
+    "instance": "/api/interior/projects",
+    "reason": "projects",
+    "request_id": "req_fixture",
+    "status": 409,
+    "title": "A limit was reached",
+    "type": "urn:rentmonitor:problem:INTERIOR_LIMIT_REACHED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects",
+    "method": "POST",
+    "operation_id": "create_project_api_interior_projects_post",
+    "path": "/api/interior/projects"
+  },
+  "request": {
+    "body": {
+      "brief": {
+        "budget_pln": "5000",
+        "keep": ["sofa"],
+        "room_type": "living_room",
+        "style": "skandynawski"
+      },
+      "name": "Za dużo"
+    },
+    "path": "/api/interior/projects"
+  },
+  "scenario": "limit_reached",
+  "status": 409
+}

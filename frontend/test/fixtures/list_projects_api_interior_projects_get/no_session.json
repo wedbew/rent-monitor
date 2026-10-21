@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/interior/projects",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/interior/projects",
+    "method": "GET",
+    "operation_id": "list_projects_api_interior_projects_get",
+    "path": "/api/interior/projects"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects"
+  },
+  "scenario": "no_session",
+  "status": 401
+}

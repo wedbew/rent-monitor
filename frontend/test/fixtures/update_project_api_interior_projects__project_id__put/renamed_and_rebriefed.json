@@ -1,0 +1,49 @@
+{
+  "body": {
+    "basket": {
+      "complete": false,
+      "known_subtotal_pln": "0.00",
+      "priced_lines": 0,
+      "unpriced_lines": 0
+    },
+    "brief": {
+      "budget_pln": "5000.00",
+      "keep": ["sofa"],
+      "notes": null,
+      "room_type": "living_room",
+      "style": "loft"
+    },
+    "created_at": "2026-10-01T10:00:00Z",
+    "expires_at": "2026-11-20T08:36:30.170805Z",
+    "items": [],
+    "name": "Salon 2",
+    "project_id": "00000000-0000-4000-8000-000000000353",
+    "revisions": [],
+    "source": null
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "PUT /api/interior/projects/{project_id}",
+    "method": "PUT",
+    "operation_id": "update_project_api_interior_projects__project_id__put",
+    "path": "/api/interior/projects/{project_id}"
+  },
+  "request": {
+    "body": {
+      "brief": {
+        "budget_pln": "5000",
+        "keep": ["sofa"],
+        "room_type": "living_room",
+        "style": "loft"
+      },
+      "name": "Salon 2"
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000353"
+  },
+  "scenario": "renamed_and_rebriefed",
+  "status": 200
+}

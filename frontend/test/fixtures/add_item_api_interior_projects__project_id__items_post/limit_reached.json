@@ -1,0 +1,29 @@
+{
+  "body": {
+    "code": "INTERIOR_LIMIT_REACHED",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000001/items",
+    "reason": "items",
+    "request_id": "req_fixture",
+    "status": 409,
+    "title": "A limit was reached",
+    "type": "urn:rentmonitor:problem:INTERIOR_LIMIT_REACHED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/items",
+    "method": "POST",
+    "operation_id": "add_item_api_interior_projects__project_id__items_post",
+    "path": "/api/interior/projects/{project_id}/items"
+  },
+  "request": {
+    "body": {
+      "name": "Jedna za dużo"
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000001/items"
+  },
+  "scenario": "limit_reached",
+  "status": 409
+}

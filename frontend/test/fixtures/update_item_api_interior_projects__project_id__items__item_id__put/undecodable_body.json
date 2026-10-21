@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "HTTP_ERROR",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000004/items/00000000-0000-4000-8000-000000000043",
+    "request_id": "req_fixture",
+    "status": 400,
+    "title": "HTTP error",
+    "type": "urn:rentmonitor:problem:HTTP_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "PUT /api/interior/projects/{project_id}/items/{item_id}",
+    "method": "PUT",
+    "operation_id": "update_item_api_interior_projects__project_id__items__item_id__put",
+    "path": "/api/interior/projects/{project_id}/items/{item_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000004/items/00000000-0000-4000-8000-000000000043"
+  },
+  "scenario": "undecodable_body",
+  "status": 400
+}

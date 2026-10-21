@@ -69,6 +69,9 @@ export const PROBLEM_ACTIONS = {
   CONFIRMATION_MISMATCH: "fixInput",
   CREDIT_BELOW_ZERO: "none",
   SAVED_LIMIT_REACHED: "none",
+  INTERIOR_LIMIT_REACHED: "none",
+  IMAGE_REJECTED: "fixInput",
+  MEDIA_STORAGE_UNAVAILABLE: "waitAndRetry",
 } as const satisfies Record<ProblemCode, ProblemAction>;
 
 /**

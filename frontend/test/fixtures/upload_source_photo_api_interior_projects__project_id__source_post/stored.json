@@ -1,0 +1,28 @@
+{
+  "body": {
+    "content_digest": "e1c414d4f45346501904530b9674b5b01bae946aa6a1c51de6676511ca5e51e0",
+    "expires_at": "2026-11-20T08:36:31.293462Z",
+    "height": 480,
+    "media_id": "00000000-0000-4000-8000-000000000369",
+    "purpose": "source",
+    "state": "stored",
+    "width": 640
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/source",
+    "method": "POST",
+    "operation_id": "upload_source_photo_api_interior_projects__project_id__source_post",
+    "path": "/api/interior/projects/{project_id}/source"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000368/source"
+  },
+  "scenario": "stored",
+  "status": 201
+}

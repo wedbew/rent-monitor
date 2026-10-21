@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/interior/projects",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects",
+    "method": "POST",
+    "operation_id": "create_project_api_interior_projects_post",
+    "path": "/api/interior/projects"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/interior/projects"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

@@ -134,6 +134,8 @@ def test_document_problems_is_idempotent() -> None:
 def test_routes_with_a_body_document_the_plain_400_for_undecodable_json() -> None:
     for method, path, op in operations():
         has = "400" in op["responses"]
-        assert has == bool(op.get("requestBody")), f"{method} {path}"
+        content = (op.get("requestBody") or {}).get("content", {})
+        # only a JSON body can be undecodable; a raw image upload (octet-stream) has none (RM-456)
+        assert has == ("application/json" in content), f"{method} {path}"
         if has:
             assert op["responses"]["400"]["x-problem-codes"] == ["HTTP_ERROR"], f"{method} {path}"

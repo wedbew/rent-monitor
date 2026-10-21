@@ -1,0 +1,53 @@
+{
+  "body": {
+    "basket": {
+      "complete": false,
+      "known_subtotal_pln": "0.00",
+      "priced_lines": 0,
+      "unpriced_lines": 1
+    },
+    "brief": {
+      "budget_pln": "5000.00",
+      "keep": ["sofa"],
+      "notes": null,
+      "room_type": "living_room",
+      "style": "skandynawski"
+    },
+    "created_at": "2026-10-01T10:00:00Z",
+    "expires_at": "2026-11-20T08:36:30.427322Z",
+    "items": [
+      {
+        "created_at": "2026-10-01T10:00:00Z",
+        "item_id": "00000000-0000-4000-8000-000000000003",
+        "name": "Stary fotel",
+        "photo": null,
+        "price_pln": null,
+        "quantity": 1,
+        "url": null
+      }
+    ],
+    "name": "Salon",
+    "project_id": "00000000-0000-4000-8000-000000000002",
+    "revisions": [],
+    "source": null
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/items",
+    "method": "POST",
+    "operation_id": "add_item_api_interior_projects__project_id__items_post",
+    "path": "/api/interior/projects/{project_id}/items"
+  },
+  "request": {
+    "body": {
+      "name": "Stary fotel"
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000002/items"
+  },
+  "scenario": "name_only",
+  "status": 201
+}

@@ -40,6 +40,7 @@ from rm_api.queue import ProcrastinateEmailQueue
 from rm_contracts.jobs import AUDIT_QUEUE
 from rm_core.billing_catalog import Catalog, Pack
 from rm_core.db.models import (
+    AccountEntitlement,
     Audit,
     AuditStatus,
     ChargeSource,
@@ -52,6 +53,7 @@ from rm_core.db.models import (
 from rm_core.db.models import Listing as ListingRow
 from rm_core.deadline import Deadline
 from rm_core.ledger import admin_adjust, ensure_credit_account
+from rm_core.object_store import MemoryObjectStore
 from rm_core.paddle import Adjustment
 from rm_core.paddle_webhook import sign
 from rm_core.risk_free import RiskFreeRate
@@ -263,6 +265,7 @@ class World:
         self.context = SmokeContext()
         self.vision = SmokeVision()
         self.paddle = FakePaddle()
+        self.media_store = MemoryObjectStore()  # the private image bucket, offline (ADR 0014)
         for pack in CATALOG.packs:
             self.paddle.add_price(pack.price_id, amount_minor=pack.amount_minor)
         self.settings = settings or Settings(
@@ -309,6 +312,7 @@ class World:
             google_verifier=GoogleVerifier(GOOGLE_AUDIENCE, SmokeCerts(self.keys.certs)),
             paddle_client=self.paddle,
             catalog=CATALOG,
+            object_store=self.media_store,
         )
         try:
             if self.transport == "asgi":
@@ -578,7 +582,11 @@ class World:
         )
         elapsed = int((time.monotonic() - started) * 1000)
         content_type = response.headers.get("content-type", "")
-        parsed: Any = response.json() if "json" in content_type else response.text or None
+        parsed: Any
+        if content_type.startswith("image/"):  # a picture is never kept in a sample: size and type only
+            parsed = f"[{content_type}, {len(response.content)} bytes]"
+        else:
+            parsed = response.json() if "json" in content_type else response.text or None
         sent = {
             k: v for k, v in response.request.headers.items() if k.lower() not in {"host", "content-length"}
         }
@@ -596,6 +604,13 @@ class World:
         )
         self.exchanges.append(exchange)
         return exchange
+
+    async def tester(self, *, label: str = "tester") -> Actor:
+        """A user in the interior closed beta: holds the explicit `unlimited_reports` entitlement."""
+        who = await self.user(label=label)
+        async with self.sm() as s, s.begin():
+            s.add(AccountEntitlement(user_id=who.user_id, kind="unlimited_reports", note="smoke"))
+        return who
 
     # --------------------------------------------------------------------------------------- audits
     def new_ref(self) -> str:
