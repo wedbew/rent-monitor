@@ -38,7 +38,7 @@ from rm_api.notify import NotifyListener
 from rm_api.origin import OriginCheckMiddleware
 from rm_api.problem_docs import install_problem_docs
 from rm_api.problems import build_route_table, install_problem_handlers
-from rm_api.queue import AuditQueue, EmailQueue, ProcrastinateEmailQueue
+from rm_api.queue import AuditQueue, EmailQueue, GenerationQueue, ProcrastinateEmailQueue
 from rm_api.saved import router as saved_router
 from rm_api.sse import ProgressHub
 
@@ -99,6 +99,7 @@ def create_app(  # noqa: PLR0915  (one statement over: the app.state test seams)
     catalog: Catalog | None = None,
     object_store: ObjectStore | None = None,
     catalogue: ProductProvider | None = None,
+    generation_queue: GenerationQueue | None = None,
 ) -> FastAPI:
     """`email_queue`, `audit_queue` and `google_verifier` are test seams; production builds them in the
     lifespan."""
@@ -127,6 +128,7 @@ def create_app(  # noqa: PLR0915  (one statement over: the app.state test seams)
             )
         app.state.email_queue = email_queue or jobs or _NoQueue()
         app.state.audit_queue = audit_queue or jobs or _NoQueue()
+        app.state.generation_queue = generation_queue or jobs or _NoQueue()
         listener = _start_listener(app, settings.psycopg_dsn) if settings.psycopg_dsn else None
         app.state.notify_listener = listener
         await _init_billing(app, settings, paddle_client, catalog)
@@ -162,6 +164,7 @@ def create_app(  # noqa: PLR0915  (one statement over: the app.state test seams)
     app.state.google_verifier = google_verifier
     app.state.email_queue = email_queue
     app.state.audit_queue = audit_queue
+    app.state.generation_queue = generation_queue
     app.state.object_store = object_store or _media_store(settings)
     app.state.catalogue = catalogue or _catalogue(settings)
     app.state.billing_eraser = billing_eraser  # the real Stripe eraser arrives with billing (#14)
@@ -209,4 +212,7 @@ class _NoQueue:
         raise RuntimeError("no job queue configured")
 
     async def run_audit(self, audit_id: UUID) -> None:
+        raise RuntimeError("no job queue configured")
+
+    async def run_interior_generation(self, generation_id: UUID) -> None:
         raise RuntimeError("no job queue configured")

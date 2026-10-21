@@ -732,6 +732,15 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Workaround:** none; new adverts carry their district from the nightly import on
 - **Target:** repeat the sweep after catalogue changes; SIMC or other administrative mapping of districts would be new work
 
+### L-100 — Interior image generation is offline-verified only; the model's data handling and quality are unverified
+- **Status:** active
+- **Discovered:** 2026-10-21
+- **Affects:** `rm_worker.clients.image_gen`, `rm_worker.interior_generation`, `INTERIOR_IMAGE_PROVIDER=openrouter` (`LEGAL[images]`, `GDPR[processor]`)
+- **Evidence:** confirmed for the flow (`tests/integration/test_interior_generation.py`, 15 tests on real Postgres with the offline fake, the real atomic budget); not verified for the provider
+- **Description:** No paid call has been made. The OpenRouter image API (`POST /api/v1/images`, `input_references`, `usage.cost`; verified from its documentation and the public endpoint metadata on 2026-10-21, model `google/gemini-3.1-flash-lite-image`, 1K output, up to 14 references, about USD 0.00003 per output token) has no documented control for provider data retention, so no retention or training claim is made for the room photo and reference images sent. The per-attempt reservation (USD 0.10) is a placeholder until a real call measures cost. Whether the picture keeps the room's geometry or resembles a picked product is unmeasured; the render is always labelled an illustration and the product board stays the dependable selection. Real merchant photos are never sent: only the demo source's pictures and the person's own item photos can be references (L-099). Jobs run on the two-slot `ops` lane to avoid a deploy-file change; a dedicated lane is a later decision.
+- **Workaround:** `INTERIOR_IMAGE_PROVIDER=none` (default) keeps generation off; the shared monthly cap (`OPENROUTER_MONTHLY_BUDGET_USD`) and the per-attempt cap bound spend
+- **Target:** #450 live canary within the owner's shared USD 5 allowance; #451
+
 ### L-099 — The interior catalogue has no live source and its ranking is unmeasured
 - **Status:** active
 - **Discovered:** 2026-10-21

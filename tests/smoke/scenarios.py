@@ -2268,6 +2268,192 @@ async def interior_demo_image_closed(w: World) -> Exchange:
     return await not_in_beta(w, "GET", "/api/interior/catalogue/demo-image/sofa-nordic/grey")
 
 
+# ------------------------------------------------------------------- interior generation (RM-450)
+GEN = "generations"
+
+
+async def saved_revision(w: World, who: Actor, project: str) -> str:
+    made = await w.send(who, "POST", f"{P}/{project}/revisions")
+    return str(made.body["revisions"][0]["revision_id"])
+
+
+async def queued_generation(w: World) -> tuple[Actor, str, str, str]:
+    who, project, _ = await interior_with_photo(w)
+    revision = await saved_revision(w, who, project)
+    made = await w.send(who, "POST", f"{P}/{project}/{GEN}", json={"revision_id": revision})
+    return who, project, revision, str(made.body["generation_id"])
+
+
+@scenario("POST /api/interior/projects/{project_id}/generations", "queued", 202)
+async def interior_generate(w: World) -> Exchange:
+    who, project, _ = await interior_with_photo(w)
+    revision = await saved_revision(w, who, project)
+    return await w.send(who, "POST", f"{P}/{project}/{GEN}", json={"revision_id": revision})
+
+
+@scenario(
+    "POST /api/interior/projects/{project_id}/generations", "same_revision_again", 200, "a repeated click"
+)
+async def interior_generate_again(w: World) -> Exchange:
+    who, project, revision, _ = await queued_generation(w)
+    return await w.send(who, "POST", f"{P}/{project}/{GEN}", json={"revision_id": revision})
+
+
+@scenario("POST /api/interior/projects/{project_id}/generations", "another_revision_while_busy", 409)
+async def interior_generate_busy(w: World) -> Exchange:
+    who, project, _, _ = await queued_generation(w)
+    other = await saved_revision(w, who, project)
+    return await w.send(who, "POST", f"{P}/{project}/{GEN}", json={"revision_id": other})
+
+
+@scenario("POST /api/interior/projects/{project_id}/generations", "no_room_photo", 409)
+async def interior_generate_no_photo(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    revision = await saved_revision(w, who, project)
+    return await w.send(who, "POST", f"{P}/{project}/{GEN}", json={"revision_id": revision})
+
+
+@scenario("POST /api/interior/projects/{project_id}/generations", "unknown_revision", 404)
+async def interior_generate_unknown(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "POST", f"{P}/{project}/{GEN}", json={"revision_id": NIL})
+
+
+@scenario("POST /api/interior/projects/{project_id}/generations", "missing_revision_id", 422)
+async def interior_generate_invalid(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "POST", f"{P}/{project}/{GEN}", json={})
+
+
+@scenario("POST /api/interior/projects/{project_id}/generations", "switched_off", 503)
+async def interior_generate_off(w: World) -> Exchange:
+    who, project, _ = await interior_with_photo(w)
+    revision = await saved_revision(w, who, project)
+    w.settings.interior_image_provider = "none"
+    try:
+        return await w.send(who, "POST", f"{P}/{project}/{GEN}", json={"revision_id": revision})
+    finally:
+        w.settings.interior_image_provider = "fake"
+
+
+@scenario("POST /api/interior/projects/{project_id}/generations", "not_in_beta", 403)
+async def interior_generate_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "POST", f"{P}/{NIL}/{GEN}", json={"revision_id": NIL})
+
+
+@scenario("GET /api/interior/projects/{project_id}/generations", "empty", 200)
+async def interior_generations_empty(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "GET", f"{P}/{project}/{GEN}")
+
+
+@scenario("GET /api/interior/projects/{project_id}/generations", "one_queued", 200)
+async def interior_generations_one(w: World) -> Exchange:
+    who, project, _, _ = await queued_generation(w)
+    return await w.send(who, "GET", f"{P}/{project}/{GEN}")
+
+
+@scenario("GET /api/interior/projects/{project_id}/generations", "unknown_project", 404)
+async def interior_generations_unknown(w: World) -> Exchange:
+    return await w.send(await w.tester(), "GET", f"{P}/{NIL}/{GEN}")
+
+
+@scenario("GET /api/interior/projects/{project_id}/generations", "bad_id", 422)
+async def interior_generations_bad_id(w: World) -> Exchange:
+    return await w.send(await w.tester(), "GET", f"{P}/no/{GEN}")
+
+
+@scenario("GET /api/interior/projects/{project_id}/generations", "not_in_beta", 403)
+async def interior_generations_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "GET", f"{P}/{NIL}/{GEN}")
+
+
+async def run_worker(w: World, generation: str, *, notes_marker: str | None = None) -> None:
+    """Run the real worker flow for one operation with the offline model, the way a worker process would."""
+    from decimal import Decimal  # noqa: PLC0415
+    from uuid import UUID  # noqa: PLC0415
+
+    from rm_core.ai_budget import PostgresBudgetGate  # noqa: PLC0415
+    from rm_worker import interior_generation as flow  # noqa: PLC0415
+    from rm_worker.clients.image_gen import FakeImageGenerator  # noqa: PLC0415
+
+    del notes_marker
+    gate = PostgresBudgetGate(w.sm, monthly_cap_usd=Decimal("5"))
+    await flow.run_generation(
+        flow.Deps(w.sm, w.media_store, FakeImageGenerator(), gate, w.settings), UUID(generation)
+    )
+
+
+@scenario("GET /api/interior/projects/{project_id}/generations/{generation_id}", "queued", 200)
+async def interior_generation_queued(w: World) -> Exchange:
+    who, project, _, generation = await queued_generation(w)
+    return await w.send(who, "GET", f"{P}/{project}/{GEN}/{generation}")
+
+
+@scenario("GET /api/interior/projects/{project_id}/generations/{generation_id}", "succeeded", 200)
+async def interior_generation_done(w: World) -> Exchange:
+    who, project, _, generation = await queued_generation(w)
+    await run_worker(w, generation)
+    return await w.send(who, "GET", f"{P}/{project}/{GEN}/{generation}")
+
+
+@scenario("GET /api/interior/projects/{project_id}/generations/{generation_id}", "unknown", 404)
+async def interior_generation_unknown(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "GET", f"{P}/{project}/{GEN}/{NIL}")
+
+
+@scenario("GET /api/interior/projects/{project_id}/generations/{generation_id}", "bad_id", 422)
+async def interior_generation_bad_id(w: World) -> Exchange:
+    return await w.send(await w.tester(), "GET", f"{P}/{NIL}/{GEN}/no")
+
+
+@scenario("GET /api/interior/projects/{project_id}/generations/{generation_id}", "not_in_beta", 403)
+async def interior_generation_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "GET", f"{P}/{NIL}/{GEN}/{NIL}")
+
+
+@scenario("POST /api/interior/projects/{project_id}/generations/{generation_id}/cancel", "cancelled", 200)
+async def interior_cancel(w: World) -> Exchange:
+    who, project, _, generation = await queued_generation(w)
+    return await w.send(who, "POST", f"{P}/{project}/{GEN}/{generation}/cancel")
+
+
+@scenario(
+    "POST /api/interior/projects/{project_id}/generations/{generation_id}/cancel", "already_running", 409
+)
+async def interior_cancel_running(w: World) -> Exchange:
+    from uuid import UUID  # noqa: PLC0415
+
+    from rm_core import interior_generation as ops  # noqa: PLC0415
+
+    who, project, _, generation = await queued_generation(w)
+    assert await ops.claim(w.sm, UUID(generation)) is not None
+    return await w.send(who, "POST", f"{P}/{project}/{GEN}/{generation}/cancel")
+
+
+@scenario("POST /api/interior/projects/{project_id}/generations/{generation_id}/cancel", "unknown", 404)
+async def interior_cancel_unknown(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "POST", f"{P}/{project}/{GEN}/{NIL}/cancel")
+
+
+@scenario("POST /api/interior/projects/{project_id}/generations/{generation_id}/cancel", "bad_id", 422)
+async def interior_cancel_bad_id(w: World) -> Exchange:
+    return await w.send(await w.tester(), "POST", f"{P}/{NIL}/{GEN}/no/cancel")
+
+
+@scenario("POST /api/interior/projects/{project_id}/generations/{generation_id}/cancel", "not_in_beta", 403)
+async def interior_cancel_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "POST", f"{P}/{NIL}/{GEN}/{NIL}/cancel")
+
+
 PUBLIC = frozenset(
     {
         "POST /api/auth/google",
@@ -2293,6 +2479,7 @@ PATH_VALUES = {
     "item_id": "00000000-0000-4000-8000-000000000004",
     "media_id": "00000000-0000-4000-8000-000000000005",
     "selection_id": "00000000-0000-4000-8000-000000000006",
+    "generation_id": "00000000-0000-4000-8000-000000000007",
     "product_id": "sofa-nordic",
     "variant_id": "grey",
 }

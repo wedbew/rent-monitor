@@ -275,6 +275,7 @@ class World:
             google_client_id=GOOGLE_AUDIENCE,
             free_signup_credits=SIGNUP_CREDITS,
             otodom_market_catalogue_version=MARKET_CATALOGUE_VERSION,
+            interior_image_provider="fake",  # the offline model (RM-450)
             catalogue_provider="demo",  # the named deterministic fake source (RM-449)
             log_level="WARNING",  # a capture of 170 scenarios should not print 170 access lines
             paddle_webhook_secret=SecretStr(WEBHOOK_SECRET),
@@ -310,6 +311,7 @@ class World:
             self.settings,
             email_queue=self.mail,
             audit_queue=self._queue,
+            generation_queue=self._queue,
             google_verifier=GoogleVerifier(GOOGLE_AUDIENCE, SmokeCerts(self.keys.certs)),
             paddle_client=self.paddle,
             catalog=CATALOG,

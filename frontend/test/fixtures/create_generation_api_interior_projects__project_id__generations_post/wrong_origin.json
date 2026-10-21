@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000004/generations",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/generations",
+    "method": "POST",
+    "operation_id": "create_generation_api_interior_projects__project_id__generations_post",
+    "path": "/api/interior/projects/{project_id}/generations"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000004/generations"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

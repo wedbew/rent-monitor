@@ -1,7 +1,7 @@
 {
   "body": {
     "code": "UNAUTHENTICATED",
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000004/selections/00000000-0000-4000-8000-000000000047/refresh",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000004/selections/00000000-0000-4000-8000-000000000069/refresh",
     "request_id": "req_fixture",
     "status": 401,
     "title": "Sign in required",
@@ -19,7 +19,7 @@
   },
   "request": {
     "body": {},
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000004/selections/00000000-0000-4000-8000-000000000047/refresh"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000004/selections/00000000-0000-4000-8000-000000000069/refresh"
   },
   "scenario": "no_session",
   "status": 401

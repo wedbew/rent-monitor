@@ -1,7 +1,7 @@
 {
   "body": {
     "code": "CATALOGUE_UNAVAILABLE",
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000366/selections",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000400/selections",
     "request_id": "req_fixture",
     "status": 503,
     "title": "No product source is connected",
@@ -24,7 +24,7 @@
       "quantity": 1,
       "variant_id": "grey"
     },
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000366/selections"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000400/selections"
   },
   "scenario": "no_source_connected",
   "status": 503

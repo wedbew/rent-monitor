@@ -183,6 +183,14 @@ export const pl = {
         title: "Katalog produktów jest niedostępny",
         detail: "Projekt i wybrane produkty zostały zachowane. Spróbuj ponownie za chwilę.",
       },
+      GENERATION_UNAVAILABLE: {
+        title: "Generowanie obrazów jest wyłączone",
+        detail: "Koncepcja, produkty i wersje działają bez zmian. Spróbuj później.",
+      },
+      GENERATION_CONFLICT: {
+        title: "Nie można teraz uruchomić generowania",
+        detail: "Poczekaj na zakończenie trwającego generowania albo zapisz wersję ze zdjęciem pokoju.",
+      },
       OFFER_UNAVAILABLE: {
         title: "Tego wariantu nie można teraz kupić",
         detail: "Oferta wygasła albo produktu nie ma na stanie. Wybierz inny wariant.",

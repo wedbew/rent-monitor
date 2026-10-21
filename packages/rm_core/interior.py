@@ -769,6 +769,71 @@ async def upload_photo(
     return ref
 
 
+async def store_render(
+    sessionmaker: async_sessionmaker[AsyncSession],
+    store: ObjectStore,
+    user_id: str,
+    project_id: UUID,
+    data: bytes,
+) -> UUID:
+    """Store a generated picture beside the room photo (never over it). Same write order as `upload_photo`:
+    a pending row, then the object, then `stored`. Used by the generation worker, which has no `Principal`;
+    the project must exist and belong to `user_id`. Raises `ImageRejectedError` for an unusable answer."""
+    image = await asyncio.to_thread(normalize_image, data)
+    media_id = uuid4()
+    key = media_key(user_id, StorePurpose.render, media_id)
+    async with sessionmaker() as db, db.begin():
+        project = await db.scalar(
+            select(InteriorProject).where(
+                InteriorProject.id == project_id,
+                InteriorProject.user_id == user_id,
+                InteriorProject.expires_at > func.clock_timestamp(),
+            )
+        )
+        if project is None:
+            raise InteriorNotFoundError
+        expires = project.expires_at
+        now = await db_now(db)
+        db.add(
+            InteriorMedia(
+                id=media_id,
+                user_id=user_id,
+                project_id=project_id,
+                purpose="render",
+                state="pending",
+                object_key=key,
+                expires_at=min(expires, now + timedelta(days=7)),
+            )
+        )
+    try:
+        await store.put(key, image.data, image.mime)
+    except ObjectStoreError:
+        async with sessionmaker() as db, db.begin():
+            await db.execute(update(InteriorMedia).where(InteriorMedia.id == media_id).values(state="failed"))
+            await db.execute(insert(InteriorMediaTombstone).values(object_key=key).on_conflict_do_nothing())
+        raise
+    async with sessionmaker() as db, db.begin():
+        done = await db.scalar(
+            update(InteriorMedia)
+            .where(InteriorMedia.id == media_id, InteriorMedia.state == "pending")
+            .values(
+                state="stored",
+                content_digest=image.sha256,
+                mime=image.mime,
+                width=image.width,
+                height=image.height,
+                size_bytes=len(image.data),
+                expires_at=expires,
+            )
+            .returning(InteriorMedia.id)
+        )
+        if done is None:  # swept while the object was written
+            await db.execute(insert(InteriorMediaTombstone).values(object_key=key).on_conflict_do_nothing())
+    if done is None:
+        raise InteriorNotFoundError
+    return media_id
+
+
 @dataclass(frozen=True)
 class MediaContent:
     data: bytes

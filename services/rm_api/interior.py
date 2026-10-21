@@ -18,7 +18,7 @@ from uuid import UUID
 
 import structlog
 from deal_analyzer.shopping_budget import BasketLine, basket_total, line_total
-from fastapi import APIRouter, Depends, Path, Query, Request, Response
+from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
 from rm_contracts.catalogue import (
     CandidateOut,
     CatalogueStatus,
@@ -26,6 +26,7 @@ from rm_contracts.catalogue import (
     SelectionIn,
     SelectionQuantity,
 )
+from rm_contracts.generation import GenerationCreate, GenerationOut
 from rm_contracts.interior import (
     Basket,
     CustomItemIn,
@@ -37,6 +38,7 @@ from rm_contracts.interior import (
 )
 from rm_contracts.problems import ProblemCode
 from rm_core import interior as repo
+from rm_core import interior_generation as gen
 from rm_core.catalogue import (
     CatalogueQuery,
     CatalogueUnavailableError,
@@ -539,3 +541,112 @@ async def demo_product_image(
         media_type="image/png",
         headers={"Cache-Control": "private, max-age=3600", "X-Content-Type-Options": "nosniff"},
     )
+
+
+# ---------- image generation (RM-450) ----------
+def _generation_on(request: Request) -> None:
+    settings = request.app.state.settings
+    if settings.interior_image_provider == "none" or not settings.legal_images_enabled:
+        raise Problem(503, ProblemCode.GENERATION_UNAVAILABLE, "Image generation is not switched on")
+
+
+def _generation_conflict(exc: gen.GenerationConflictError) -> Problem:
+    other = None if exc.generation_id is None else str(exc.generation_id)
+    return Problem(
+        409,
+        ProblemCode.GENERATION_CONFLICT,
+        "The operation conflicts with another",
+        reason=exc.reason,
+        generation_id=other,
+    )
+
+
+@router.post(
+    "/projects/{project_id}/generations",
+    response_model=GenerationOut,
+    status_code=202,
+    responses={
+        200: {"model": GenerationOut, "description": "The same revision is already queued or running"}
+    },
+)
+async def create_generation(
+    project_id: UUID,
+    body: GenerationCreate,
+    *,
+    request: Request,
+    db: SessionDep,
+    principal: InteriorDep,
+    response: Response,
+    idempotency_key: Annotated[
+        UUID | None,
+        Header(
+            alias="Idempotency-Key",
+            description="A UUID per click. Repeating it returns the operation it created and never starts or "
+            "pays for a second one; used for another revision it is 409 GENERATION_CONFLICT.",
+        ),
+    ] = None,
+) -> GenerationOut:
+    """Turn a saved revision into an illustrative picture. 202 when queued; 200 when the same revision is
+    already queued or running (or the key was seen): a repeated click never submits or pays twice."""
+    response.headers.update(NO_STORE)
+    _generation_on(request)
+    try:
+        generation_id, created = await gen.create_generation(
+            db,
+            principal,
+            project_id,
+            body.revision_id,
+            request.app.state.settings,
+            idempotency_key=idempotency_key,
+        )
+    except repo.InteriorNotFoundError:
+        raise _not_found() from None
+    except gen.GenerationConflictError as exc:
+        raise _generation_conflict(exc) from None
+    if created:
+        await db.commit()  # the operation is durable before the job exists
+        try:
+            await request.app.state.generation_queue.run_interior_generation(generation_id)
+        except Exception:
+            # The row stays queued; the reconciler closes it at its deadline. Do not fail the request.
+            log.exception("interior_generation_defer_failed", generation_id=str(generation_id))
+    else:
+        response.status_code = 200
+    return await gen.get_generation(db, principal, project_id, generation_id)
+
+
+@router.get("/projects/{project_id}/generations", response_model=list[GenerationOut])
+async def list_generations(
+    project_id: UUID, db: SessionDep, principal: InteriorDep, response: Response
+) -> list[GenerationOut]:
+    response.headers.update(NO_STORE)
+    try:
+        return await gen.list_generations(db, principal, project_id)
+    except repo.InteriorNotFoundError:
+        raise _not_found() from None
+
+
+@router.get("/projects/{project_id}/generations/{generation_id}", response_model=GenerationOut)
+async def get_generation(
+    project_id: UUID, generation_id: UUID, db: SessionDep, principal: InteriorDep, response: Response
+) -> GenerationOut:
+    response.headers.update(NO_STORE)
+    try:
+        return await gen.get_generation(db, principal, project_id, generation_id)
+    except repo.InteriorNotFoundError:
+        raise _not_found() from None
+
+
+@router.post("/projects/{project_id}/generations/{generation_id}/cancel", response_model=GenerationOut)
+async def cancel_generation(
+    project_id: UUID, generation_id: UUID, db: SessionDep, principal: InteriorDep, response: Response
+) -> GenerationOut:
+    """Queued-only: a running operation may already be at the provider and answers 409 `running`."""
+    response.headers.update(NO_STORE)
+    try:
+        await gen.cancel_generation(db, principal, project_id, generation_id)
+        return await gen.get_generation(db, principal, project_id, generation_id)
+    except repo.InteriorNotFoundError:
+        raise _not_found() from None
+    except gen.GenerationConflictError as exc:
+        raise _generation_conflict(exc) from None

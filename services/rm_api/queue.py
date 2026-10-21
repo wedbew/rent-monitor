@@ -11,6 +11,7 @@ from rm_contracts.jobs import (
     OPS_QUEUE,
     PROCESS_BILLING_EVENTS_TASK,
     RUN_AUDIT_TASK,
+    RUN_INTERIOR_GENERATION_TASK,
     SEND_AUTH_MAIL_TASK,
     SEND_MAGIC_LINK_TASK,
 )
@@ -32,6 +33,10 @@ class EmailQueue(Protocol):
 
 class AuditQueue(Protocol):
     async def run_audit(self, audit_id: UUID) -> None: ...
+
+
+class GenerationQueue(Protocol):
+    async def run_interior_generation(self, generation_id: UUID) -> None: ...
 
 
 class ProcrastinateEmailQueue:
@@ -85,6 +90,20 @@ class ProcrastinateEmailQueue:
         )
         try:
             await deferrer.defer_async(audit_id=str(audit_id))
+        except procrastinate_exceptions.AlreadyEnqueued:
+            return
+
+    async def run_interior_generation(self, generation_id: UUID) -> None:
+        """Defer one generation. The lock makes a repeated defer of one operation a no-op; if this fails
+        after the row committed, the reconciler closes the operation at its deadline."""
+        await self._ensure_open()
+        deferrer = self._app.configure_task(
+            name=RUN_INTERIOR_GENERATION_TASK,
+            queue=OPS_QUEUE,
+            queueing_lock=f"interior-generation:{generation_id}",
+        )
+        try:
+            await deferrer.defer_async(generation_id=str(generation_id))
         except procrastinate_exceptions.AlreadyEnqueued:
             return
 

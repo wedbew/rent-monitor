@@ -17,10 +17,10 @@
       "style": "loft"
     },
     "created_at": "2026-10-01T10:00:00Z",
-    "expires_at": "2026-11-20T09:08:12.653102Z",
+    "expires_at": "2026-11-20T09:40:22.518203Z",
     "items": [],
     "name": "Salon 2",
-    "project_id": "00000000-0000-4000-8000-000000000385",
+    "project_id": "00000000-0000-4000-8000-000000000419",
     "revisions": [],
     "selections": [],
     "source": null
@@ -46,7 +46,7 @@
       },
       "name": "Salon 2"
     },
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000385"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000419"
   },
   "scenario": "renamed_and_rebriefed",
   "status": 200

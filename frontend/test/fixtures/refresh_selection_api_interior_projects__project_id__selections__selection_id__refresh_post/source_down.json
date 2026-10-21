@@ -1,7 +1,7 @@
 {
   "body": {
     "code": "CATALOGUE_UNAVAILABLE",
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000349/selections/00000000-0000-4000-8000-000000000350/refresh",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000383/selections/00000000-0000-4000-8000-000000000384/refresh",
     "request_id": "req_fixture",
     "status": 503,
     "title": "The product source did not answer",
@@ -19,7 +19,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000349/selections/00000000-0000-4000-8000-000000000350/refresh"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000383/selections/00000000-0000-4000-8000-000000000384/refresh"
   },
   "scenario": "source_down",
   "status": 503

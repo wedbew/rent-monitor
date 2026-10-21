@@ -85,6 +85,10 @@ class PgBudgetTicket:
         self._gate = gate
         self._id = reservation_id
 
+    @property
+    def reservation_id(self) -> UUID:
+        return self._id
+
     async def settle(self, actual_usd: Decimal, usage: CallUsage | None = None) -> None:
         await self._gate.settle(self._id, actual_usd, usage)
 

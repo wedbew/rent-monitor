@@ -74,6 +74,8 @@ export const PROBLEM_ACTIONS = {
   MEDIA_STORAGE_UNAVAILABLE: "waitAndRetry",
   CATALOGUE_UNAVAILABLE: "waitAndRetry",
   OFFER_UNAVAILABLE: "none",
+  GENERATION_UNAVAILABLE: "none",
+  GENERATION_CONFLICT: "none",
 } as const satisfies Record<ProblemCode, ProblemAction>;
 
 /**

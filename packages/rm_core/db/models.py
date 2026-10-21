@@ -1706,3 +1706,54 @@ class InteriorSelection(Base):
     checked_at: Mapped[datetime] = mapped_column(server_default=func.now())
     gone_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class InteriorGeneration(Base):
+    """One image-generation operation for one saved revision (RM-450). Durable: the API creates the row, the
+    worker claims it, and every state change is a conditional UPDATE so duplicate delivery and a racing cancel
+    settle exactly once. `request_sent_at` is set before the provider is called: a crash after it means the
+    spend is unknown, so recovery keeps the estimate charged instead of releasing it.
+
+    LEGAL[images]: the person's room photo and permitted reference images are sent to an image model (RM-450)
+    GDPR[processor]: OpenRouter and its model provider receive those images (RM-450)
+    GDPR[erasure]: cascade on project and user; the output image follows via `interior_media` (RM-450)
+    """
+
+    __tablename__ = "interior_generation"
+    __table_args__ = (
+        UniqueConstraint("project_id", "idempotency_key", name="uq_interior_generation_idempotency"),
+        Index(
+            "uq_interior_generation_one_active",
+            "project_id",
+            unique=True,
+            postgresql_where=text("state IN ('queued','running')"),
+        ),
+        Index("ix_interior_generation_project", "project_id", "created_at"),
+        CheckConstraint("state IN ('queued','running','succeeded','failed','cancelled')", name="state_vocab"),
+        CheckConstraint("estimate_usd > 0", name="estimate_positive"),
+        CheckConstraint("cost_usd IS NULL OR cost_usd >= 0", name="cost_non_negative"),
+    )
+
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
+    )
+    user_id: Mapped[str] = mapped_column(Text, user_fk())
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("interior_project.id", ondelete="CASCADE"))
+    revision_id: Mapped[UUID] = mapped_column(ForeignKey("interior_revision.id", ondelete="CASCADE"))
+    state: Mapped[str] = mapped_column(String(10), default="queued", server_default="queued")
+    idempotency_key: Mapped[str | None] = mapped_column(String(64))
+    model: Mapped[str] = mapped_column(String(120))
+    prompt_version: Mapped[str] = mapped_column(String(40))
+    estimate_usd: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    reservation_id: Mapped[UUID | None]
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    cost_estimated: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    references_used: Mapped[int] = mapped_column(server_default="0")
+    references_skipped: Mapped[int] = mapped_column(server_default="0")
+    output_media_id: Mapped[UUID | None] = mapped_column(ForeignKey("interior_media.id", ondelete="SET NULL"))
+    error_code: Mapped[str | None] = mapped_column(String(32))
+    request_sent_at: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    started_at: Mapped[datetime | None]
+    finished_at: Mapped[datetime | None]
+    deadline_at: Mapped[datetime]

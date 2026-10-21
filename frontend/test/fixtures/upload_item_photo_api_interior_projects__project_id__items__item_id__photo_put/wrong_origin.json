@@ -1,7 +1,7 @@
 {
   "body": {
     "code": "ORIGIN_NOT_ALLOWED",
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000004/items/00000000-0000-4000-8000-000000000043/photo",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000004/items/00000000-0000-4000-8000-000000000065/photo",
     "request_id": "req_fixture",
     "status": 403,
     "title": "Origin not allowed",
@@ -19,7 +19,7 @@
   },
   "request": {
     "body": {},
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000004/items/00000000-0000-4000-8000-000000000043/photo"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000004/items/00000000-0000-4000-8000-000000000065/photo"
   },
   "scenario": "wrong_origin",
   "status": 403

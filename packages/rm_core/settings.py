@@ -120,6 +120,19 @@ class Settings(BaseSettings):
     # answer 503. `demo` is a deterministic fake for tests and the real-stack E2E; production refuses it.
     catalogue_provider: Literal["none", "demo"] = "none"
 
+    # Interior image generation (RM-450). `none` (default) turns generation off (the routes answer 503);
+    # `fake` is a deterministic offline fake for tests and the real-stack E2E (refused in production);
+    # `openrouter` calls the OpenRouter image API. Spend goes through the shared atomic AI budget: the monthly
+    # cap is OPENROUTER_MONTHLY_BUDGET_USD (set it to the owner's shared test allowance on a beta host) and no
+    # single attempt may reserve more than the per-attempt cap. Public paid generation stays disabled.
+    interior_image_provider: Literal["none", "fake", "openrouter"] = "none"
+    interior_image_model: str = Field(
+        default="google/gemini-3.1-flash-lite-image", min_length=1, max_length=120
+    )
+    interior_attempt_cap_usd: Decimal = Field(default=Decimal("0.50"), gt=0, le=Decimal("5"))
+    interior_attempt_estimate_usd: Decimal = Field(default=Decimal("0.10"), gt=0)  # reserved before the call
+    interior_generation_deadline_s: int = Field(default=120, ge=10, le=600)
+
     # Product media store (ADR 0014): private R2 bucket (default or EU endpoint; owner decision 2026-10-21)
     # with its own MEDIA_* settings apart from the backup settings. Empty endpoint/bucket means not
     # configured: every image operation refuses.
@@ -183,6 +196,14 @@ class Settings(BaseSettings):
             and self.media_access_key_id
             and self.media_secret_access_key.get_secret_value()
         )
+
+    @model_validator(mode="after")
+    def _generation_bounds(self) -> "Settings":
+        if self.interior_attempt_estimate_usd > self.interior_attempt_cap_usd:
+            raise ValueError("INTERIOR_ATTEMPT_ESTIMATE_USD must not exceed INTERIOR_ATTEMPT_CAP_USD")
+        if self.interior_image_provider == "fake" and self.app_env == "production":
+            raise ValueError("INTERIOR_IMAGE_PROVIDER=fake is a test fake and is refused in production")
+        return self
 
     @model_validator(mode="after")
     def _no_demo_catalogue_in_production(self) -> "Settings":

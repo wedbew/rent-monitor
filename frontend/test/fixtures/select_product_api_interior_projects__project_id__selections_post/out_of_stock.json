@@ -1,7 +1,7 @@
 {
   "body": {
     "code": "OFFER_UNAVAILABLE",
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000368/selections",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000402/selections",
     "request_id": "req_fixture",
     "status": 409,
     "title": "This variant cannot be bought now",
@@ -24,7 +24,7 @@
       "quantity": 1,
       "variant_id": "green"
     },
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000368/selections"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000402/selections"
   },
   "scenario": "out_of_stock",
   "status": 409

@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "GENERATION_UNAVAILABLE",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000054/generations",
+    "request_id": "req_fixture",
+    "status": 503,
+    "title": "Image generation is not switched on",
+    "type": "urn:rentmonitor:problem:GENERATION_UNAVAILABLE"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/generations",
+    "method": "POST",
+    "operation_id": "create_generation_api_interior_projects__project_id__generations_post",
+    "path": "/api/interior/projects/{project_id}/generations"
+  },
+  "request": {
+    "body": {
+      "revision_id": "00000000-0000-4000-8000-000000000055"
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000054/generations"
+  },
+  "scenario": "switched_off",
+  "status": 503
+}

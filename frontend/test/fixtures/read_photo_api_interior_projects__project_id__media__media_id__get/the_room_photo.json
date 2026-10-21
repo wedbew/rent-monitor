@@ -13,7 +13,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000341/media/00000000-0000-4000-8000-000000000342"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000375/media/00000000-0000-4000-8000-000000000376"
   },
   "scenario": "the_room_photo",
   "status": 200

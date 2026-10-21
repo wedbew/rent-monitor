@@ -8,7 +8,7 @@
         "type": "greater_than_equal"
       }
     ],
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000379/items/00000000-0000-4000-8000-000000000380",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000413/items/00000000-0000-4000-8000-000000000414",
     "request_id": "req_fixture",
     "status": 422,
     "title": "Request validation failed",
@@ -29,7 +29,7 @@
       "name": "x",
       "price_pln": "-1"
     },
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000379/items/00000000-0000-4000-8000-000000000380"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000413/items/00000000-0000-4000-8000-000000000414"
   },
   "scenario": "negative_price",
   "status": 422

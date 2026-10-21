@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["path", "project_id"],
+        "msg": "Input should be a valid UUID, invalid character: found `n` at 0",
+        "type": "uuid_parsing"
+      }
+    ],
+    "instance": "/api/interior/projects/no/generations",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/interior/projects/{project_id}/generations",
+    "method": "GET",
+    "operation_id": "list_generations_api_interior_projects__project_id__generations_get",
+    "path": "/api/interior/projects/{project_id}/generations"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/no/generations"
+  },
+  "scenario": "bad_id",
+  "status": 422
+}

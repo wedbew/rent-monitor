@@ -17,10 +17,10 @@
       "style": "skandynawski"
     },
     "created_at": "2026-10-01T10:00:00Z",
-    "expires_at": "2026-11-20T09:08:15.814132Z",
+    "expires_at": "2026-11-20T09:40:26.318078Z",
     "items": [],
     "name": "Salon",
-    "project_id": "00000000-0000-4000-8000-000000000343",
+    "project_id": "00000000-0000-4000-8000-000000000377",
     "revisions": [],
     "selections": [
       {
@@ -36,7 +36,7 @@
           "delivery_known": true,
           "delivery_pln": "19.00",
           "dimensions": null,
-          "expires_at": "2026-10-22T09:08:15.823586Z",
+          "expires_at": "2026-10-22T09:40:26.332440Z",
           "image_rights": {
             "cache": true,
             "display": true,
@@ -58,7 +58,7 @@
           "variant_id": "brass"
         },
         "quantity": 1,
-        "selection_id": "00000000-0000-4000-8000-000000000344"
+        "selection_id": "00000000-0000-4000-8000-000000000378"
       }
     ],
     "source": null
@@ -76,7 +76,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000343/selections/00000000-0000-4000-8000-000000000344/refresh"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000377/selections/00000000-0000-4000-8000-000000000378/refresh"
   },
   "scenario": "delisted",
   "status": 200

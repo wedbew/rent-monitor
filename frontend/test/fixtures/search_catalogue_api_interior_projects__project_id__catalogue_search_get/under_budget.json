@@ -11,7 +11,7 @@
         "delivery_known": true,
         "delivery_pln": "0.00",
         "dimensions": null,
-        "expires_at": "2026-10-22T09:08:14.918752Z",
+        "expires_at": "2026-10-22T09:40:25.071007Z",
         "image_rights": {
           "cache": true,
           "display": true,
@@ -45,7 +45,7 @@
         "delivery_known": true,
         "delivery_pln": "15.00",
         "dimensions": null,
-        "expires_at": "2026-10-22T09:08:14.918752Z",
+        "expires_at": "2026-10-22T09:40:25.071007Z",
         "image_rights": {
           "cache": true,
           "display": true,
@@ -79,7 +79,7 @@
         "delivery_known": true,
         "delivery_pln": "19.00",
         "dimensions": null,
-        "expires_at": "2026-10-22T09:08:14.918752Z",
+        "expires_at": "2026-10-22T09:40:25.071007Z",
         "image_rights": {
           "cache": true,
           "display": true,
@@ -112,7 +112,7 @@
         "delivery_known": true,
         "delivery_pln": "0.00",
         "dimensions": null,
-        "expires_at": "2026-10-22T09:08:14.918752Z",
+        "expires_at": "2026-10-22T09:40:25.071007Z",
         "image_rights": {
           "cache": true,
           "display": true,
@@ -148,7 +148,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000363/catalogue/search?max_price_pln=300"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000397/catalogue/search?max_price_pln=300"
   },
   "scenario": "under_budget",
   "status": 200
