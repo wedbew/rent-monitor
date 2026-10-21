@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["path", "product_id"],
+        "msg": "String should match pattern '^[A-Za-z0-9._:-]{1,64}$'",
+        "type": "string_pattern_mismatch"
+      }
+    ],
+    "instance": "/api/interior/catalogue/demo-image/has space/grey",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/interior/catalogue/demo-image/{product_id}/{variant_id}",
+    "method": "GET",
+    "operation_id": "demo_product_image_api_interior_catalogue_demo_image__product_id___variant_id__get",
+    "path": "/api/interior/catalogue/demo-image/{product_id}/{variant_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/catalogue/demo-image/has space/grey"
+  },
+  "scenario": "bad_id",
+  "status": 422
+}

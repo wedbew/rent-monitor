@@ -549,6 +549,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/interior/catalogue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Catalogue Status
+         * @description Whether a product source is connected, and whether it is only a demo. Cheap: no provider call.
+         */
+        get: operations["catalogue_status_api_interior_catalogue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interior/catalogue/demo-image/{product_id}/{variant_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Demo Product Image
+         * @description A generated placeholder picture for the demo source only: not a product photo and labelled as such.
+         */
+        get: operations["demo_product_image_api_interior_catalogue_demo_image__product_id___variant_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/interior/projects": {
         parameters: {
             query?: never;
@@ -584,6 +624,27 @@ export interface paths {
         post?: never;
         /** Delete Project */
         delete: operations["delete_project_api_interior_projects__project_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interior/projects/{project_id}/catalogue/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Catalogue
+         * @description Real offers from the connected source, hard-filtered (stock, freshness, budget, text) and ordered
+         *     deterministically. Nothing is estimated; an unknown price or delivery is flagged, not guessed.
+         */
+        get: operations["search_catalogue_api_interior_projects__project_id__catalogue_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -681,6 +742,65 @@ export interface paths {
          * @description Snapshot the brief, items and current room photo. Immutable; later edits do not change it.
          */
         post: operations["create_revision_api_interior_projects__project_id__revisions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interior/projects/{project_id}/selections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Select Product
+         * @description Pick an exact variant. The server fetches the offer from the source itself and stores that observation;
+         *     the client's idea of the price is never accepted.
+         */
+        post: operations["select_product_api_interior_projects__project_id__selections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interior/projects/{project_id}/selections/{selection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Selection Quantity */
+        put: operations["set_selection_quantity_api_interior_projects__project_id__selections__selection_id__put"];
+        post?: never;
+        /** Delete Selection */
+        delete: operations["delete_selection_api_interior_projects__project_id__selections__selection_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interior/projects/{project_id}/selections/{selection_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Selection
+         * @description Check the exact variant again at the source and keep the new observation (or mark it unavailable).
+         */
+        post: operations["refresh_selection_api_interior_projects__project_id__selections__selection_id__refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1187,6 +1307,11 @@ export interface components {
             status: components["schemas"]["AuditState"];
         };
         /**
+         * Availability
+         * @enum {string}
+         */
+        Availability: "in_stock" | "out_of_stock" | "unknown";
+        /**
          * Basket
          * @description Server-computed figures over the person's items. Not a room budget: delivery and missing items are
          *     not included, and `complete` only says every listed line has a price.
@@ -1194,10 +1319,22 @@ export interface components {
         Basket: {
             /** Complete */
             complete: boolean;
+            /**
+             * Delivery Known Pln
+             * @description delivery charges that are known; unknown ones are not zero
+             */
+            delivery_known_pln: string;
+            /** Delivery Unknown Lines */
+            delivery_unknown_lines: number;
             /** Known Subtotal Pln */
             known_subtotal_pln: string;
             /** Priced Lines */
             priced_lines: number;
+            /**
+             * Stale Lines
+             * @description catalogue lines whose observed offer expired or cannot be bought
+             */
+            stale_lines: number;
             /** Unpriced Lines */
             unpriced_lines: number;
         };
@@ -1243,6 +1380,26 @@ export interface components {
             room_type: components["schemas"]["RoomType"];
             /** Style */
             style?: string | null;
+        };
+        /** CandidateOut */
+        CandidateOut: {
+            /** Flags */
+            flags?: string[];
+            offer: components["schemas"]["OfferOut"];
+        };
+        /** CatalogueStatus */
+        CatalogueStatus: {
+            /** Available */
+            available: boolean;
+            /**
+             * Is Demo
+             * @description true when the data is a deterministic demo, not a live merchant feed
+             */
+            is_demo: boolean;
+            /** Provider */
+            provider: string | null;
+            /** Source Label */
+            source_label: string | null;
         };
         /** ChangePasswordRequest */
         ChangePasswordRequest: {
@@ -1336,6 +1493,17 @@ export interface components {
          * @enum {string}
          */
         DataStatus: "unavailable" | "fresh" | "delayed" | "stale";
+        /** Dimensions */
+        Dimensions: {
+            /** Depth Cm */
+            depth_cm?: string | null;
+            /** Height Cm */
+            height_cm?: string | null;
+            /** Source */
+            source: string;
+            /** Width Cm */
+            width_cm?: string | null;
+        };
         /**
          * DistrictOut
          * @description One district the source named under a place, over the same rolling cohort as the place's own series.
@@ -1577,6 +1745,27 @@ export interface components {
         GoogleCredential: {
             /** Credential */
             credential: string;
+        };
+        /**
+         * ImageRights
+         * @description What the source permits for a product photo; display, storage and generation are separate rights.
+         */
+        ImageRights: {
+            /**
+             * Cache
+             * @default false
+             */
+            cache: boolean;
+            /**
+             * Display
+             * @default true
+             */
+            display: boolean;
+            /**
+             * Generation Reference
+             * @default false
+             */
+            generation_reference: boolean;
         };
         /** IndexCohortOut */
         IndexCohortOut: {
@@ -2056,6 +2245,66 @@ export interface components {
             /** Year */
             year: number | null;
         };
+        /**
+         * OfferOut
+         * @description An `Offer` as the API returns it: money as exact strings, plus the server-derived state.
+         */
+        OfferOut: {
+            /** Attributes */
+            attributes: {
+                [key: string]: string;
+            };
+            availability: components["schemas"]["Availability"];
+            /** Category */
+            category: string;
+            /** Delivery Known */
+            delivery_known: boolean;
+            /** Delivery Pln */
+            delivery_pln: string | null;
+            dimensions: components["schemas"]["Dimensions"] | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            image_rights: components["schemas"]["ImageRights"];
+            /** Image Url */
+            image_url: string | null;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Offer Id */
+            offer_id: string | null;
+            /** Price Conditions */
+            price_conditions: string | null;
+            /** Price Is Gross */
+            price_is_gross: boolean | null;
+            /** Price Pln */
+            price_pln: string | null;
+            /** Product Id */
+            product_id: string;
+            /** Product Url */
+            product_url: string;
+            /** Provider */
+            provider: string;
+            /** Seller */
+            seller: string;
+            /** Source Label */
+            source_label: string;
+            state: components["schemas"]["OfferState"];
+            /** Title */
+            title: string;
+            /** Variant Id */
+            variant_id: string;
+        };
+        /**
+         * OfferState
+         * @description Derived on read from the clock and the stored observation; never stored.
+         * @enum {string}
+         */
+        OfferState: "fresh" | "expired" | "unavailable";
         /** OverrideOut */
         OverrideOut: {
             /** Created By */
@@ -2278,7 +2527,7 @@ export interface components {
          * ProblemCode
          * @enum {string}
          */
-        ProblemCode: "INVALID_LISTING_REF" | "QUOTA_EXHAUSTED" | "AUDIT_IN_PROGRESS" | "RENT_NOT_DEAL" | "FRACTIONAL_OWNERSHIP" | "LISTING_GONE" | "UPSTREAM_BLOCKED" | "UPSTREAM_SCHEMA_DRIFT" | "VISION_UNAVAILABLE" | "CONTEXT_UNAVAILABLE" | "INTERNAL" | "VALIDATION_ERROR" | "NOT_FOUND" | "HTTP_ERROR" | "NOT_READY" | "INVALID_GOOGLE_TOKEN" | "GOOGLE_EMAIL_UNVERIFIED" | "EMAIL_CONFIRMATION_REQUIRED" | "MAGIC_LINK_INVALID" | "INVALID_CREDENTIALS" | "WEAK_PASSWORD" | "AUTH_TOKEN_INVALID" | "ACCOUNT_EXISTS" | "BILLING_UNAVAILABLE" | "IDEMPOTENCY_CONFLICT" | "BILLING_PROVIDER_ERROR" | "INVALID_WEBHOOK_SIGNATURE" | "BILLING_HOLD" | "PURCHASE_NOT_REFUNDABLE" | "REFUND_NEEDS_REVIEW" | "EMAIL_NOT_VERIFIED" | "FEATURE_NOT_IN_PLAN" | "ADMIN_ONLY" | "ALREADY_SUBSCRIBED" | "INVALID_STRIPE_SIGNATURE" | "UNAUTHENTICATED" | "RATE_LIMITED" | "ORIGIN_NOT_ALLOWED" | "CONFIRMATION_MISMATCH" | "CREDIT_BELOW_ZERO" | "SAVED_LIMIT_REACHED" | "INTERIOR_LIMIT_REACHED" | "IMAGE_REJECTED" | "MEDIA_STORAGE_UNAVAILABLE";
+        ProblemCode: "INVALID_LISTING_REF" | "QUOTA_EXHAUSTED" | "AUDIT_IN_PROGRESS" | "RENT_NOT_DEAL" | "FRACTIONAL_OWNERSHIP" | "LISTING_GONE" | "UPSTREAM_BLOCKED" | "UPSTREAM_SCHEMA_DRIFT" | "VISION_UNAVAILABLE" | "CONTEXT_UNAVAILABLE" | "INTERNAL" | "VALIDATION_ERROR" | "NOT_FOUND" | "HTTP_ERROR" | "NOT_READY" | "INVALID_GOOGLE_TOKEN" | "GOOGLE_EMAIL_UNVERIFIED" | "EMAIL_CONFIRMATION_REQUIRED" | "MAGIC_LINK_INVALID" | "INVALID_CREDENTIALS" | "WEAK_PASSWORD" | "AUTH_TOKEN_INVALID" | "ACCOUNT_EXISTS" | "BILLING_UNAVAILABLE" | "IDEMPOTENCY_CONFLICT" | "BILLING_PROVIDER_ERROR" | "INVALID_WEBHOOK_SIGNATURE" | "BILLING_HOLD" | "PURCHASE_NOT_REFUNDABLE" | "REFUND_NEEDS_REVIEW" | "EMAIL_NOT_VERIFIED" | "FEATURE_NOT_IN_PLAN" | "ADMIN_ONLY" | "ALREADY_SUBSCRIBED" | "INVALID_STRIPE_SIGNATURE" | "UNAUTHENTICATED" | "RATE_LIMITED" | "ORIGIN_NOT_ALLOWED" | "CONFIRMATION_MISMATCH" | "CREDIT_BELOW_ZERO" | "SAVED_LIMIT_REACHED" | "INTERIOR_LIMIT_REACHED" | "IMAGE_REJECTED" | "MEDIA_STORAGE_UNAVAILABLE" | "CATALOGUE_UNAVAILABLE" | "OFFER_UNAVAILABLE";
         /**
          * ProblemField
          * @description One rejected input in a 422: where (`loc`), the rule (`type`) and a message. Never the value itself.
@@ -2322,6 +2571,8 @@ export interface components {
             project_id: string;
             /** Revisions */
             revisions: components["schemas"]["RevisionOut"][];
+            /** Selections */
+            selections?: components["schemas"]["SelectionOut"][];
             source: components["schemas"]["MediaRef"] | null;
         };
         /** ProjectSummary */
@@ -2535,6 +2786,8 @@ export interface components {
              * Format: uuid
              */
             revision_id: string;
+            /** Selections */
+            selections?: components["schemas"]["SelectionSnapshot"][];
             /** Source Digest */
             source_digest: string | null;
         };
@@ -2564,6 +2817,58 @@ export interface components {
         SavedPut: {
             /** Note */
             note?: string | null;
+        };
+        /**
+         * SelectionIn
+         * @description Pick an exact variant. The server re-fetches the offer from the provider; the client sends no price.
+         */
+        SelectionIn: {
+            /** Product Id */
+            product_id: string;
+            /** Provider */
+            provider: string;
+            /**
+             * Quantity
+             * @default 1
+             */
+            quantity: number;
+            /** Variant Id */
+            variant_id: string;
+        };
+        /** SelectionOut */
+        SelectionOut: {
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+            /**
+             * Line Total Pln
+             * @description quantity x price when the offer is fresh and priced, else null
+             */
+            line_total_pln: string | null;
+            offer: components["schemas"]["OfferOut"];
+            /** Quantity */
+            quantity: number;
+            /**
+             * Selection Id
+             * Format: uuid
+             */
+            selection_id: string;
+        };
+        /** SelectionQuantity */
+        SelectionQuantity: {
+            /** Quantity */
+            quantity: number;
+        };
+        /**
+         * SelectionSnapshot
+         * @description A selection as a revision saw it.
+         */
+        SelectionSnapshot: {
+            offer: components["schemas"]["OfferOut"];
+            /** Quantity */
+            quantity: number;
         };
         /**
          * SellerQuestion
@@ -5124,6 +5429,139 @@ export interface operations {
             };
         };
     };
+    catalogue_status_api_interior_catalogue_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogueStatus"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    demo_product_image_api_interior_catalogue_demo_image__product_id___variant_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                variant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_projects_api_interior_projects_get: {
         parameters: {
             query?: never;
@@ -5496,6 +5934,87 @@ export interface operations {
                 };
             };
             /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    search_catalogue_api_interior_projects__project_id__catalogue_search_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                category?: string | null;
+                max_price_pln?: number | string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"][];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: CATALOGUE_UNAVAILABLE, NOT_READY */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -5993,6 +6512,355 @@ export interface operations {
                 };
             };
             /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    select_product_api_interior_projects__project_id__selections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERIOR_LIMIT_REACHED, OFFER_UNAVAILABLE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: CATALOGUE_UNAVAILABLE, NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    set_selection_quantity_api_interior_projects__project_id__selections__selection_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                selection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectionQuantity"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    delete_selection_api_interior_projects__project_id__selections__selection_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                selection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    refresh_selection_api_interior_projects__project_id__selections__selection_id__refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                selection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: OFFER_UNAVAILABLE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: CATALOGUE_UNAVAILABLE, NOT_READY */
             503: {
                 headers: {
                     [name: string]: unknown;

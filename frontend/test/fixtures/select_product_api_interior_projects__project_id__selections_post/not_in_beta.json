@@ -1,0 +1,31 @@
+{
+  "body": {
+    "code": "FEATURE_NOT_IN_PLAN",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000005/selections",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "The interior architect is in a closed beta",
+    "type": "urn:rentmonitor:problem:FEATURE_NOT_IN_PLAN"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/selections",
+    "method": "POST",
+    "operation_id": "select_product_api_interior_projects__project_id__selections_post",
+    "path": "/api/interior/projects/{project_id}/selections"
+  },
+  "request": {
+    "body": {
+      "product_id": "sofa-nordic",
+      "provider": "demo",
+      "quantity": 1,
+      "variant_id": "grey"
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000005/selections"
+  },
+  "scenario": "not_in_beta",
+  "status": 403
+}

@@ -1,0 +1,20 @@
+{
+  "body": "[image/png, 2029 bytes]",
+  "content_type": "image/png",
+  "headers": {
+    "cache-control": "private, max-age=3600",
+    "content-type": "image/png"
+  },
+  "operation": {
+    "key": "GET /api/interior/catalogue/demo-image/{product_id}/{variant_id}",
+    "method": "GET",
+    "operation_id": "demo_product_image_api_interior_catalogue_demo_image__product_id___variant_id__get",
+    "path": "/api/interior/catalogue/demo-image/{product_id}/{variant_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/catalogue/demo-image/sofa-nordic/grey"
+  },
+  "scenario": "picture",
+  "status": 200
+}

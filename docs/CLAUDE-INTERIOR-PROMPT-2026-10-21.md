@@ -1,5 +1,7 @@
 # Claude execution prompt: Architekt wnętrz (#284)
 
+**Latest continuation:** read [CLAUDE-INTERIOR-FINISH-2026-10-21.md](CLAUDE-INTERIOR-FINISH-2026-10-21.md) first for the verified post-#448/#456 checkpoint, the owner's instruction to commit interior documentation, and mandatory passing frontend E2E completion criteria. Reuse merged work; recheck current heads before acting.
+
 Implement the real Architekt wnętrz workflow in `/Users/marcin/Projects/rent-monitor`, from backend contracts and private R2 image storage through `/app/interior`. Deliver production-quality new code; the old POC is read-only requirements material. Continue autonomously wherever authorized access allows. Do not stop at a design, a mock screen or changing the unavailable flag.
 
 ## Read, reconcile and establish ownership

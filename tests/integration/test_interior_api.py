@@ -191,6 +191,9 @@ async def test_basket_figures_are_exact_strings_and_unknown_prices_are_excluded(
     got = (await c.post(f"{P}/{project}/revisions")).json()
     assert got["basket"] == {
         "known_subtotal_pln": "399.98",
+        "stale_lines": 0,
+        "delivery_known_pln": "0.00",
+        "delivery_unknown_lines": 0,
         "priced_lines": 1,
         "unpriced_lines": 1,
         "complete": False,

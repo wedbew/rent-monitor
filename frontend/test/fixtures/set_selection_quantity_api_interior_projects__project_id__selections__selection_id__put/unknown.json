@@ -1,0 +1,28 @@
+{
+  "body": {
+    "code": "NOT_FOUND",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000376/selections/00000000-0000-4000-8000-000000000005",
+    "request_id": "req_fixture",
+    "status": 404,
+    "title": "Project not found",
+    "type": "urn:rentmonitor:problem:NOT_FOUND"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "PUT /api/interior/projects/{project_id}/selections/{selection_id}",
+    "method": "PUT",
+    "operation_id": "set_selection_quantity_api_interior_projects__project_id__selections__selection_id__put",
+    "path": "/api/interior/projects/{project_id}/selections/{selection_id}"
+  },
+  "request": {
+    "body": {
+      "quantity": 3
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000376/selections/00000000-0000-4000-8000-000000000005"
+  },
+  "scenario": "unknown",
+  "status": 404
+}

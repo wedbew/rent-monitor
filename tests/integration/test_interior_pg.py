@@ -7,14 +7,13 @@ cannot extend, 7-day abandoned uploads, and account erasure that cannot lose obj
 
 import asyncio
 import io
-from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from uuid import UUID, uuid4
 
 import pytest
-from deal_analyzer.shopping_budget import BasketLine, basket_total
 from PIL import Image
+from rm_api.interior import MONEY
 from rm_contracts.interior import (
     Basket,
     Brief,
@@ -53,16 +52,6 @@ async def clean_tombstones(engine: AsyncEngine) -> None:
 BRIEF = Brief(room_type=RoomType.living_room, style="scandi", budget_pln=Decimal("5000"), keep=["sofa"])
 
 
-def basket(lines: Sequence[tuple[int, Decimal | None]]) -> Basket:
-    total = basket_total([BasketLine(q, p) for q, p in lines])
-    return Basket(
-        known_subtotal_pln=f"{total.known_subtotal_pln:.2f}",
-        priced_lines=total.priced_lines,
-        unpriced_lines=total.unpriced_lines,
-        complete=total.complete,
-    )
-
-
 def jpeg(color: tuple[int, int, int] = (200, 30, 30), size: tuple[int, int] = (640, 480)) -> bytes:
     buf = io.BytesIO()
     Image.new("RGB", size, color).save(buf, format="JPEG")
@@ -97,7 +86,7 @@ async def upload(engine: AsyncEngine, store: MemoryObjectStore, who: Principal, 
 
 async def view(engine: AsyncEngine, who: Principal, project: UUID):
     async with async_sessionmaker(engine)() as s:
-        return await repo.project_view(s, who, project, basket)
+        return await repo.project_view(s, who, project, MONEY)
 
 
 async def test_project_round_trip_and_30_day_lifetime(engine: AsyncEngine) -> None:
@@ -162,7 +151,7 @@ async def test_foreign_and_unknown_ids_are_not_found_everywhere(engine: AsyncEng
     for target in (pid, uuid4()):
         async with sm() as s:
             with pytest.raises(repo.InteriorNotFoundError):
-                await repo.project_view(s, other, target, basket)
+                await repo.project_view(s, other, target, MONEY)
         for call in (
             lambda s, t=target: repo.update_project(s, other, t, name="x", brief=BRIEF),
             lambda s, t=target: repo.delete_project(s, other, t),
@@ -202,7 +191,15 @@ async def test_an_item_needs_only_a_name_and_unknown_price_is_never_zero(engine:
     plain, priced = got.items
     assert (plain.price_pln, plain.url, plain.photo, plain.quantity) == (None, None, None, 1)
     assert (priced.price_pln, priced.url) == ("199.99", "https://sklep.example/regal")
-    assert got.basket == Basket(known_subtotal_pln="399.98", priced_lines=1, unpriced_lines=1, complete=False)
+    assert got.basket == Basket(
+        known_subtotal_pln="399.98",
+        priced_lines=1,
+        unpriced_lines=1,
+        stale_lines=0,
+        delivery_known_pln="0.00",
+        delivery_unknown_lines=0,
+        complete=False,
+    )
 
 
 async def test_items_are_bounded_per_project_even_when_added_concurrently(engine: AsyncEngine) -> None:

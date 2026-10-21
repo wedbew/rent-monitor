@@ -10,6 +10,7 @@ import structlog
 from fastapi import FastAPI
 from rm_core.billing import sync_catalog
 from rm_core.billing_catalog import Catalog, CatalogError, load_catalog
+from rm_core.catalogue import DemoCatalogue, ProductProvider
 from rm_core.db.session import make_engine, make_sessionmaker
 from rm_core.logging import configure_logging
 from rm_core.object_store import ObjectStore, S3ObjectStore
@@ -71,6 +72,11 @@ def _media_store(settings: Settings) -> ObjectStore | None:
     return S3ObjectStore.from_settings(settings) if settings.media_store_configured else None
 
 
+def _catalogue(settings: Settings) -> ProductProvider | None:
+    """The connected product source. None until a licensed feed or API is wired (B-026)."""
+    return DemoCatalogue() if settings.catalogue_provider == "demo" else None
+
+
 def _start_listener(app: FastAPI, dsn: str) -> NotifyListener:
     """The one LISTEN connection of this process: session revocation and audit progress wake-ups."""
     listener = NotifyListener(dsn, [REVOKED_CHANNEL, PROGRESS_CHANNEL])
@@ -92,6 +98,7 @@ def create_app(  # noqa: PLR0915  (one statement over: the app.state test seams)
     paddle_client: PaddleClient | None = None,
     catalog: Catalog | None = None,
     object_store: ObjectStore | None = None,
+    catalogue: ProductProvider | None = None,
 ) -> FastAPI:
     """`email_queue`, `audit_queue` and `google_verifier` are test seams; production builds them in the
     lifespan."""
@@ -156,6 +163,7 @@ def create_app(  # noqa: PLR0915  (one statement over: the app.state test seams)
     app.state.email_queue = email_queue
     app.state.audit_queue = audit_queue
     app.state.object_store = object_store or _media_store(settings)
+    app.state.catalogue = catalogue or _catalogue(settings)
     app.state.billing_eraser = billing_eraser  # the real Stripe eraser arrives with billing (#14)
     app.add_middleware(OriginCheckMiddleware, allowed_origin=settings.public_origin)
     app.add_middleware(RequestContextMiddleware)

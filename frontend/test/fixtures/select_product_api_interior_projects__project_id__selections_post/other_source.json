@@ -1,0 +1,31 @@
+{
+  "body": {
+    "code": "OFFER_UNAVAILABLE",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000367/selections",
+    "request_id": "req_fixture",
+    "status": 409,
+    "title": "That product source is not connected",
+    "type": "urn:rentmonitor:problem:OFFER_UNAVAILABLE"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/selections",
+    "method": "POST",
+    "operation_id": "select_product_api_interior_projects__project_id__selections_post",
+    "path": "/api/interior/projects/{project_id}/selections"
+  },
+  "request": {
+    "body": {
+      "product_id": "sofa-nordic",
+      "provider": "amazon",
+      "quantity": 1,
+      "variant_id": "grey"
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000367/selections"
+  },
+  "scenario": "other_source",
+  "status": 409
+}

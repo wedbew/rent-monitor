@@ -1,0 +1,32 @@
+{
+  "body": {
+    "code": "INTERIOR_LIMIT_REACHED",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000365/selections",
+    "reason": "selections",
+    "request_id": "req_fixture",
+    "status": 409,
+    "title": "A limit was reached",
+    "type": "urn:rentmonitor:problem:INTERIOR_LIMIT_REACHED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/selections",
+    "method": "POST",
+    "operation_id": "select_product_api_interior_projects__project_id__selections_post",
+    "path": "/api/interior/projects/{project_id}/selections"
+  },
+  "request": {
+    "body": {
+      "product_id": "shelf-ladder",
+      "provider": "demo",
+      "quantity": 1,
+      "variant_id": "white"
+    },
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000365/selections"
+  },
+  "scenario": "limit_reached",
+  "status": 409
+}

@@ -732,6 +732,15 @@ scenario, preserving the base result. External legal/accountant/merchant sign-of
 - **Workaround:** none; new adverts carry their district from the nightly import on
 - **Target:** repeat the sweep after catalogue changes; SIMC or other administrative mapping of districts would be new work
 
+### L-099 — The interior catalogue has no live source and its ranking is unmeasured
+- **Status:** active
+- **Discovered:** 2026-10-21
+- **Affects:** `rm_core.catalogue`, `/api/interior/projects/{id}/catalogue/search`, selections and the shopping basket (`LEGAL[third-party-data]`, `LEGAL[images]`)
+- **Evidence:** confirmed (name-only environment check; `tests/unit/test_catalogue.py`, `tests/integration/test_interior_catalogue_api.py`)
+- **Description:** Only the deterministic `demo` source exists; no merchant feed or API is connected (B-026), so prices, stock, delivery and photo rights have never been checked against a real merchant. Ranking is deterministic text and budget filtering; the model reranker is a tested seam with no real model behind it, and relevance is unmeasured. An observation is trusted for 24 hours (`FRESH_FOR`), a placeholder for the real feed's update period. Photos of a real source will need an `img-src` entry in the Caddy CSP, which needs the owner's CSP decision once hosts are known.
+- **Workaround:** the catalogue answers 503 `CATALOGUE_UNAVAILABLE`; the person's own items and revisions work without it
+- **Target:** B-026, #449 live part, #450
+
 ### L-098 — WebKit reports fetches cut off by a hard navigation as page errors
 - **Status:** active
 - **Discovered:** 2026-10-20

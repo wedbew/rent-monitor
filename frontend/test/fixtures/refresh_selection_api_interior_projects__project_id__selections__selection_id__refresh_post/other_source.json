@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "OFFER_UNAVAILABLE",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000345/selections/00000000-0000-4000-8000-000000000346/refresh",
+    "request_id": "req_fixture",
+    "status": 409,
+    "title": "That product source is not connected",
+    "type": "urn:rentmonitor:problem:OFFER_UNAVAILABLE"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/selections/{selection_id}/refresh",
+    "method": "POST",
+    "operation_id": "refresh_selection_api_interior_projects__project_id__selections__selection_id__refresh_post",
+    "path": "/api/interior/projects/{project_id}/selections/{selection_id}/refresh"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000345/selections/00000000-0000-4000-8000-000000000346/refresh"
+  },
+  "scenario": "other_source",
+  "status": 409
+}

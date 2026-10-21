@@ -72,6 +72,8 @@ export const PROBLEM_ACTIONS = {
   INTERIOR_LIMIT_REACHED: "none",
   IMAGE_REJECTED: "fixInput",
   MEDIA_STORAGE_UNAVAILABLE: "waitAndRetry",
+  CATALOGUE_UNAVAILABLE: "waitAndRetry",
+  OFFER_UNAVAILABLE: "none",
 } as const satisfies Record<ProblemCode, ProblemAction>;
 
 /**

@@ -1978,6 +1978,296 @@ async def interior_revision_closed(w: World) -> Exchange:
     return await not_in_beta(w, "POST", f"{P}/{NIL}/revisions")
 
 
+# ------------------------------------------------------------------- interior catalogue (RM-449)
+SOFA = {"provider": "demo", "product_id": "sofa-nordic", "variant_id": "grey", "quantity": 1}
+
+
+async def with_selection(w: World) -> tuple[Actor, str, str]:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    made = await w.send(who, "POST", f"{P}/{project}/selections", json=SOFA)
+    return who, project, str(made.body["selections"][0]["selection_id"])
+
+
+@scenario("GET /api/interior/catalogue", "demo_source", 200)
+async def interior_catalogue_status(w: World) -> Exchange:
+    return await w.send(await w.tester(), "GET", "/api/interior/catalogue")
+
+
+@scenario("GET /api/interior/catalogue", "not_in_beta", 403)
+async def interior_catalogue_status_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "GET", "/api/interior/catalogue")
+
+
+@scenario("GET /api/interior/projects/{project_id}/catalogue/search", "sofas", 200)
+async def interior_search(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "GET", f"{P}/{project}/catalogue/search", params={"q": "sofa"})
+
+
+@scenario("GET /api/interior/projects/{project_id}/catalogue/search", "under_budget", 200)
+async def interior_search_budget(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "GET", f"{P}/{project}/catalogue/search", params={"max_price_pln": "300"})
+
+
+@scenario("GET /api/interior/projects/{project_id}/catalogue/search", "unknown_project", 404)
+async def interior_search_unknown(w: World) -> Exchange:
+    return await w.send(await w.tester(), "GET", f"{P}/{NIL}/catalogue/search")
+
+
+@scenario("GET /api/interior/projects/{project_id}/catalogue/search", "limit_too_big", 422)
+async def interior_search_invalid(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "GET", f"{P}/{project}/catalogue/search", params={"limit": 99})
+
+
+@scenario("GET /api/interior/projects/{project_id}/catalogue/search", "no_source_connected", 503)
+async def interior_search_no_source(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    source, w.app.state.catalogue = w.app.state.catalogue, None
+    try:
+        return await w.send(who, "GET", f"{P}/{project}/catalogue/search")
+    finally:
+        w.app.state.catalogue = source
+
+
+@scenario("GET /api/interior/projects/{project_id}/catalogue/search", "not_in_beta", 403)
+async def interior_search_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "GET", f"{P}/{NIL}/catalogue/search")
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections", "picked", 201)
+async def interior_pick(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "POST", f"{P}/{project}/selections", json={**SOFA, "quantity": 2})
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections", "unknown_price_and_delivery", 201)
+async def interior_pick_unknowns(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    await w.send(
+        who,
+        "POST",
+        f"{P}/{project}/selections",
+        json={**SOFA, "product_id": "lamp-arc", "variant_id": "white"},
+    )
+    return await w.send(
+        who,
+        "POST",
+        f"{P}/{project}/selections",
+        json={**SOFA, "product_id": "table-oak", "variant_id": "oak-140"},
+    )
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections", "out_of_stock", 409)
+async def interior_pick_out_of_stock(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "POST", f"{P}/{project}/selections", json={**SOFA, "variant_id": "green"})
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections", "other_source", 409)
+async def interior_pick_other_source(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "POST", f"{P}/{project}/selections", json={**SOFA, "provider": "amazon"})
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections", "limit_reached", 409, "30 per project")
+async def interior_pick_limit(w: World) -> Exchange:
+    from rm_core.db.models import InteriorSelection  # noqa: PLC0415
+
+    who, project, selection = await with_selection(w)
+    async with w.sm() as s, s.begin():
+        base = await s.get(InteriorSelection, selection)
+        assert base is not None
+        for i in range(29):
+            s.add(
+                InteriorSelection(
+                    user_id=who.user_id,
+                    project_id=base.project_id,
+                    provider="demo",
+                    product_id=f"filler-{i}",
+                    variant_id="v",
+                    offer=base.offer,
+                )
+            )
+    return await w.send(
+        who,
+        "POST",
+        f"{P}/{project}/selections",
+        json={**SOFA, "product_id": "shelf-ladder", "variant_id": "white"},
+    )
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections", "unknown_project", 404)
+async def interior_pick_unknown_project(w: World) -> Exchange:
+    return await w.send(await w.tester(), "POST", f"{P}/{NIL}/selections", json=SOFA)
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections", "client_price_refused", 422)
+async def interior_pick_forged(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "POST", f"{P}/{project}/selections", json={**SOFA, "price_pln": "1.00"})
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections", "no_source_connected", 503)
+async def interior_pick_no_source(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    source, w.app.state.catalogue = w.app.state.catalogue, None
+    try:
+        return await w.send(who, "POST", f"{P}/{project}/selections", json=SOFA)
+    finally:
+        w.app.state.catalogue = source
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections", "not_in_beta", 403)
+async def interior_pick_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "POST", f"{P}/{NIL}/selections", json=SOFA)
+
+
+@scenario("PUT /api/interior/projects/{project_id}/selections/{selection_id}", "quantity_changed", 200)
+async def interior_selection_put(w: World) -> Exchange:
+    who, project, selection = await with_selection(w)
+    return await w.send(who, "PUT", f"{P}/{project}/selections/{selection}", json={"quantity": 3})
+
+
+@scenario("PUT /api/interior/projects/{project_id}/selections/{selection_id}", "unknown", 404)
+async def interior_selection_put_unknown(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "PUT", f"{P}/{project}/selections/{NIL}", json={"quantity": 3})
+
+
+@scenario("PUT /api/interior/projects/{project_id}/selections/{selection_id}", "zero_quantity", 422)
+async def interior_selection_put_invalid(w: World) -> Exchange:
+    who, project, selection = await with_selection(w)
+    return await w.send(who, "PUT", f"{P}/{project}/selections/{selection}", json={"quantity": 0})
+
+
+@scenario("PUT /api/interior/projects/{project_id}/selections/{selection_id}", "not_in_beta", 403)
+async def interior_selection_put_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "PUT", f"{P}/{NIL}/selections/{NIL}", json={"quantity": 3})
+
+
+@scenario("DELETE /api/interior/projects/{project_id}/selections/{selection_id}", "removed", 204)
+async def interior_selection_delete(w: World) -> Exchange:
+    who, project, selection = await with_selection(w)
+    return await w.send(who, "DELETE", f"{P}/{project}/selections/{selection}")
+
+
+@scenario("DELETE /api/interior/projects/{project_id}/selections/{selection_id}", "unknown", 404)
+async def interior_selection_delete_unknown(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "DELETE", f"{P}/{project}/selections/{NIL}")
+
+
+@scenario("DELETE /api/interior/projects/{project_id}/selections/{selection_id}", "bad_id", 422)
+async def interior_selection_delete_bad_id(w: World) -> Exchange:
+    return await w.send(await w.tester(), "DELETE", f"{P}/{NIL}/selections/no")
+
+
+@scenario("DELETE /api/interior/projects/{project_id}/selections/{selection_id}", "not_in_beta", 403)
+async def interior_selection_delete_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "DELETE", f"{P}/{NIL}/selections/{NIL}")
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections/{selection_id}/refresh", "rechecked", 200)
+async def interior_refresh(w: World) -> Exchange:
+    who, project, selection = await with_selection(w)
+    return await w.send(who, "POST", f"{P}/{project}/selections/{selection}/refresh")
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections/{selection_id}/refresh", "delisted", 200)
+async def interior_refresh_delisted(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    made = await w.send(
+        who,
+        "POST",
+        f"{P}/{project}/selections",
+        json={**SOFA, "product_id": "mirror-round", "variant_id": "brass"},
+    )
+    selection = str(made.body["selections"][0]["selection_id"])
+    w.app.state.catalogue.remove("mirror-round", "brass")
+    try:
+        return await w.send(who, "POST", f"{P}/{project}/selections/{selection}/refresh")
+    finally:
+        w.app.state.catalogue._removed.discard(("mirror-round", "brass"))
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections/{selection_id}/refresh", "unknown", 404)
+async def interior_refresh_unknown(w: World) -> Exchange:
+    who = await w.tester()
+    project = await new_interior_project(w, who)
+    return await w.send(who, "POST", f"{P}/{project}/selections/{NIL}/refresh")
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections/{selection_id}/refresh", "other_source", 409)
+async def interior_refresh_other_source(w: World) -> Exchange:
+    from rm_core.db.models import InteriorSelection  # noqa: PLC0415
+    from sqlalchemy import update  # noqa: PLC0415
+
+    who, project, selection = await with_selection(w)
+    async with w.sm() as s, s.begin():
+        await s.execute(
+            update(InteriorSelection).where(InteriorSelection.id == selection).values(provider="amazon")
+        )
+    return await w.send(who, "POST", f"{P}/{project}/selections/{selection}/refresh")
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections/{selection_id}/refresh", "source_down", 503)
+async def interior_refresh_down(w: World) -> Exchange:
+    who, project, selection = await with_selection(w)
+    w.app.state.catalogue.fail_next = True
+    return await w.send(who, "POST", f"{P}/{project}/selections/{selection}/refresh")
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections/{selection_id}/refresh", "bad_id", 422)
+async def interior_refresh_bad_id(w: World) -> Exchange:
+    return await w.send(await w.tester(), "POST", f"{P}/{NIL}/selections/no/refresh")
+
+
+@scenario("POST /api/interior/projects/{project_id}/selections/{selection_id}/refresh", "not_in_beta", 403)
+async def interior_refresh_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "POST", f"{P}/{NIL}/selections/{NIL}/refresh")
+
+
+@scenario("GET /api/interior/catalogue/demo-image/{product_id}/{variant_id}", "picture", 200)
+async def interior_demo_image(w: World) -> Exchange:
+    return await w.send(await w.tester(), "GET", "/api/interior/catalogue/demo-image/sofa-nordic/grey")
+
+
+@scenario("GET /api/interior/catalogue/demo-image/{product_id}/{variant_id}", "no_demo_source", 404)
+async def interior_demo_image_none(w: World) -> Exchange:
+    who = await w.tester()
+    source, w.app.state.catalogue = w.app.state.catalogue, None
+    try:
+        return await w.send(who, "GET", "/api/interior/catalogue/demo-image/sofa-nordic/grey")
+    finally:
+        w.app.state.catalogue = source
+
+
+@scenario("GET /api/interior/catalogue/demo-image/{product_id}/{variant_id}", "bad_id", 422)
+async def interior_demo_image_bad_id(w: World) -> Exchange:
+    return await w.send(await w.tester(), "GET", "/api/interior/catalogue/demo-image/has space/grey")
+
+
+@scenario("GET /api/interior/catalogue/demo-image/{product_id}/{variant_id}", "not_in_beta", 403)
+async def interior_demo_image_closed(w: World) -> Exchange:
+    return await not_in_beta(w, "GET", "/api/interior/catalogue/demo-image/sofa-nordic/grey")
+
+
 PUBLIC = frozenset(
     {
         "POST /api/auth/google",
@@ -2002,6 +2292,9 @@ PATH_VALUES = {
     "project_id": "00000000-0000-4000-8000-000000000003",
     "item_id": "00000000-0000-4000-8000-000000000004",
     "media_id": "00000000-0000-4000-8000-000000000005",
+    "selection_id": "00000000-0000-4000-8000-000000000006",
+    "product_id": "sofa-nordic",
+    "variant_id": "grey",
 }
 
 

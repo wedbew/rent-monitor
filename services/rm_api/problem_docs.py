@@ -92,6 +92,36 @@ EXTRA: dict[str, Errors] = {
         404: (C.NOT_FOUND,),
         503: (C.MEDIA_STORAGE_UNAVAILABLE,),
     },
+    "GET /api/interior/catalogue": {403: (C.FEATURE_NOT_IN_PLAN,)},
+    "GET /api/interior/projects/{project_id}/catalogue/search": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+        503: (C.CATALOGUE_UNAVAILABLE,),
+    },
+    "POST /api/interior/projects/{project_id}/selections": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+        409: (C.INTERIOR_LIMIT_REACHED, C.OFFER_UNAVAILABLE),
+        503: (C.CATALOGUE_UNAVAILABLE,),
+    },
+    "PUT /api/interior/projects/{project_id}/selections/{selection_id}": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+    },
+    "DELETE /api/interior/projects/{project_id}/selections/{selection_id}": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+    },
+    "POST /api/interior/projects/{project_id}/selections/{selection_id}/refresh": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+        409: (C.OFFER_UNAVAILABLE,),
+        503: (C.CATALOGUE_UNAVAILABLE,),
+    },
+    "GET /api/interior/catalogue/demo-image/{product_id}/{variant_id}": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+    },
     "POST /api/interior/projects/{project_id}/revisions": {
         403: (C.FEATURE_NOT_IN_PLAN,),
         404: (C.NOT_FOUND,),

@@ -1670,3 +1670,39 @@ class InteriorMediaTombstone(Base):
     object_key: Mapped[str] = mapped_column(Text, primary_key=True)
     attempts: Mapped[int] = mapped_column(server_default="0")
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class InteriorSelection(Base):
+    """An exact product variant the person picked, with the offer exactly as last observed (RM-449).
+
+    The offer is a snapshot (`offer` jsonb, validated as `rm_contracts.catalogue.Offer` on read), so a later
+    price change in the source never rewrites what the person saw; `refresh` stores a newer observation.
+    `gone_at` is set when the source no longer lists the variant.
+
+    LEGAL[third-party-data]: merchant data for the person's own project, kept 30 days with it (RM-449)
+    LEGAL[republication]: shown only to the project's owner (RM-449)
+    GDPR[erasure]: cascade on project and user (RM-449)
+    """
+
+    __tablename__ = "interior_selection"
+    __table_args__ = (
+        UniqueConstraint(
+            "project_id", "provider", "product_id", "variant_id", name="uq_interior_selection_variant"
+        ),
+        Index("ix_interior_selection_project", "project_id", "created_at"),
+        CheckConstraint("quantity BETWEEN 1 AND 99", name="quantity_range"),
+    )
+
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
+    )
+    user_id: Mapped[str] = mapped_column(Text, user_fk())
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("interior_project.id", ondelete="CASCADE"))
+    provider: Mapped[str] = mapped_column(String(64))
+    product_id: Mapped[str] = mapped_column(String(64))
+    variant_id: Mapped[str] = mapped_column(String(64))
+    quantity: Mapped[int] = mapped_column(server_default="1")
+    offer: Mapped[dict[str, Any]]
+    checked_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    gone_at: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())

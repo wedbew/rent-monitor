@@ -1,0 +1,17 @@
+{
+  "body": null,
+  "content_type": "",
+  "headers": {},
+  "operation": {
+    "key": "DELETE /api/interior/projects/{project_id}/selections/{selection_id}",
+    "method": "DELETE",
+    "operation_id": "delete_selection_api_interior_projects__project_id__selections__selection_id__delete",
+    "path": "/api/interior/projects/{project_id}/selections/{selection_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000048/selections/00000000-0000-4000-8000-000000000049"
+  },
+  "scenario": "removed",
+  "status": 204
+}

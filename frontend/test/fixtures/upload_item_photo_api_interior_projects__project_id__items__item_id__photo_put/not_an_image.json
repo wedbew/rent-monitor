@@ -1,7 +1,7 @@
 {
   "body": {
     "code": "IMAGE_REJECTED",
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000354/items/00000000-0000-4000-8000-000000000355/photo",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000386/items/00000000-0000-4000-8000-000000000387/photo",
     "reason": "malformed",
     "request_id": "req_fixture",
     "status": 422,
@@ -20,7 +20,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000354/items/00000000-0000-4000-8000-000000000355/photo"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000386/items/00000000-0000-4000-8000-000000000387/photo"
   },
   "scenario": "not_an_image",
   "status": 422
