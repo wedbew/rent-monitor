@@ -213,6 +213,46 @@ for (const theme of THEMES) {
       await shoot(page, "not-found");
     });
 
+    // Architekt wnętrz (RM-451): the same fictional project in every state worth a picture.
+    test("interior: empty list", async ({ page, serve }) => {
+      await serve("interiorEmpty");
+      await page.goto("/app/interior");
+      await expect(page.getByText("Nie masz jeszcze projektu")).toBeVisible();
+      await shoot(page, "interior-empty");
+    });
+
+    test("interior: closed beta", async ({ page, serve }) => {
+      await serve("interiorClosed");
+      await page.goto("/app/interior");
+      await expect(page.getByText("Architekt wnętrz jest w zamkniętej wersji beta")).toBeVisible();
+      await shoot(page, "interior-closed");
+    });
+
+    test("interior: a project with photo, brief, items, products and totals", async ({ page, serve }) => {
+      await serve("interior");
+      await page.goto("/app/interior/00000000-0000-4000-8000-000000000901");
+      await expect(page.getByRole("region", { name: "Tablica produktów" })).toBeVisible();
+      await shoot(page, "interior-project", { fullPage: true });
+    });
+
+    test("interior: no catalogue source configured", async ({ page, serve }) => {
+      await serve("interiorNoCatalogue");
+      await page.goto("/app/interior/00000000-0000-4000-8000-000000000901");
+      await expect(page.getByRole("region", { name: "Katalog produktów" })).toBeVisible();
+      await shoot(page, "interior-no-catalogue", { fullPage: true });
+    });
+
+    test("interior: delete confirmation", async ({ page, serve }) => {
+      await serve("interior");
+      await page.goto("/app/interior");
+      await page
+        .getByRole("button", { name: /^Usuń projekt/ })
+        .first()
+        .click();
+      await expect(page.getByRole("dialog", { name: "Usunąć projekt?" })).toBeVisible();
+      await shoot(page, "interior-delete");
+    });
+
     test("the mobile navigation sheet", async ({ page, serve, isMobile }) => {
       test.skip(!isMobile, "the sheet exists on a phone only");
       await serve("empty");

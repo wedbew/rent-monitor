@@ -6,10 +6,12 @@ from decimal import Decimal
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
+from pydantic import AliasChoices, Field, SecretStr, ValidationInfo, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _R2_ENDPOINT = re.compile(r"https://[0-9a-f]{32}(\.eu)?\.r2\.cloudflarestorage\.com")
+# The offline S3 stand-in of the browser journey lane (deploy/compose.e2e.yml): never accepted in production.
+_LOCAL_S3_ENDPOINT = re.compile(r"http://(s3mock|localhost|127\.0\.0\.1)(:\d{2,5})?")
 
 DEFAULT_APP_NAME = "Renti"  # the product name users see; override with APP_NAME
 
@@ -181,12 +183,15 @@ class Settings(BaseSettings):
 
     @field_validator("media_s3_endpoint")
     @classmethod
-    def _media_endpoint_is_r2(cls, v: str) -> str:
+    def _media_endpoint_is_r2(cls, v: str, info: ValidationInfo) -> str:
         v = v.strip().rstrip("/")
-        if v and not _R2_ENDPOINT.fullmatch(v):
-            # Only an R2 account endpoint (default or EU): no other host, port, userinfo, path or query.
-            raise ValueError("MEDIA_S3_ENDPOINT must be https://<account>[.eu].r2.cloudflarestorage.com")
-        return v
+        if not v or _R2_ENDPOINT.fullmatch(v):
+            return v
+        # Only an R2 account endpoint (default or EU): no other host, port, userinfo, path or query. The one
+        # exception is the local S3 stand-in of the test stack, and never when the app runs in production.
+        if info.data.get("app_env") != "production" and _LOCAL_S3_ENDPOINT.fullmatch(v):
+            return v
+        raise ValueError("MEDIA_S3_ENDPOINT must be https://<account>[.eu].r2.cloudflarestorage.com")
 
     @property
     def media_store_configured(self) -> bool:

@@ -1283,6 +1283,569 @@ export function createSettings(
   ]);
 }
 
+// ------------------------------------------------------------------------------------------ interior (RM-451)
+type ProjectOut = components["schemas"]["ProjectOut"];
+type OfferOut = components["schemas"]["OfferOut"];
+type GenerationOut = components["schemas"]["GenerationOut"];
+type SelectionOut = components["schemas"]["SelectionOut"];
+type RevisionOut = components["schemas"]["RevisionOut"];
+type CandidateOut = components["schemas"]["CandidateOut"];
+type MediaRefOut = components["schemas"]["MediaRef"];
+
+export interface InteriorOptions {
+  /** The person is outside the closed beta: every interior route answers 403. */
+  readonly closed?: boolean;
+  /** No product source is connected: the catalogue answers 503 and the status says so. */
+  readonly noCatalogue?: boolean;
+  /** The image store is down: a photo upload answers 503 and the project is kept. */
+  readonly storageDown?: boolean;
+  /** Generation is switched off: the create route answers 503. */
+  readonly generationOff?: boolean;
+  /** A generation ends `failed` with this stable code instead of succeeding. */
+  readonly failWith?: GenerationOut["error_code"];
+  /** Start with one saved project that has a room photo (default true). */
+  readonly seeded?: boolean;
+  /** The seeded project also has an own item without a price, a picked product and one saved version. */
+  readonly rich?: boolean;
+  /** A generation stays queued (it is never picked up), so the cancel path can be looked at. */
+  readonly hold?: boolean;
+}
+
+export interface InteriorFlow extends Scenario {
+  readonly calls: string[];
+  /** What the server holds, so a test can prove what was stored or that nothing was sent twice. */
+  readonly projects: Map<string, ProjectOut>;
+  readonly generations: Map<string, GenerationOut[]>;
+  /** Make a picked variant stale or unavailable, as the source would after a day or a stock-out. */
+  setOfferState(variantId: string, state: OfferOut["state"]): void;
+}
+
+const IID = (n: number) => `00000000-0000-4000-8000-${String(900 + n).padStart(12, "0")}`;
+const SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240"><rect width="320" height="240" fill="#c8b9a6"/></svg>';
+
+/** Whole grosze from a decimal string. Test-side bookkeeping for the fake server only; the app never does this. */
+const grosze = (text: string): number => Number.parseInt(text.replace(".", ""), 10);
+const decimal = (n: number): string => `${String(Math.floor(n / 100))}.${String(n % 100).padStart(2, "0")}`;
+
+function interiorOffers(): OfferOut[] {
+  const base = bodyOf<CandidateOut[]>(
+    fx("GET /api/interior/projects/{project_id}/catalogue/search", "sofas"),
+  )[0]?.offer;
+  if (base === undefined) throw new Error("no sofa offer fixture");
+  const make = (product: string, variant: string, title: string, over: Partial<OfferOut>): OfferOut => ({
+    ...base,
+    product_id: product,
+    variant_id: variant,
+    title,
+    offer_id: `${product}-${variant}`,
+    product_url: `https://demo.invalid/${product}?wariant=${variant}`,
+    image_url: `/api/interior/catalogue/demo-image/${product}/${variant}`,
+    ...over,
+  });
+  return [
+    make("sofa-nordic", "grey", "Sofa Nordic 3-osobowa", {}),
+    make("sofa-nordic", "beige", "Sofa Nordic 3-osobowa", {
+      attributes: { kolor: "beżowy" },
+      price_pln: "2599.00",
+      delivery_pln: null,
+      delivery_known: false,
+    }),
+    make("lamp-arc", "black", "Lampa podłogowa Arc", {
+      attributes: { kolor: "czarny" },
+      price_pln: "189.00",
+      delivery_pln: "0.00",
+      delivery_known: true,
+      dimensions: null,
+    }),
+    make("lamp-arc", "white", "Lampa podłogowa Arc", {
+      attributes: { kolor: "biały" },
+      price_pln: null,
+      price_is_gross: null,
+      delivery_pln: "0.00",
+      delivery_known: true,
+      dimensions: null,
+    }),
+  ];
+}
+
+/**
+ * The interior architect as one stateful scenario, built fresh per test. It behaves like the real API where the
+ * screens depend on it: the server fetches the offer itself (the client never names a price), expired or
+ * unavailable offers stay out of the sum and are counted, an unknown price is never zero, one generation is active
+ * per project, cancelling works only while queued, and a generation advances queued, running, then succeeded or
+ * failed each time it is read. A file whose text does not start with `FAKEIMG` is refused as not an image.
+ */
+export function createInterior(options: InteriorOptions = {}): InteriorFlow {
+  const projects = new Map<string, ProjectOut>();
+  const generations = new Map<string, GenerationOut[]>();
+  const offerState = new Map<string, OfferOut["state"]>();
+  const calls: string[] = [];
+  const offers = interiorOffers();
+  let counter = 0;
+  const next = () => IID(++counter);
+  const now = "2026-10-21T10:00:00Z";
+  const expiry = "2026-11-20T10:00:00Z";
+  const reply = (operation: string, name: string): Reply => replyFrom(fx(operation, name));
+  const closed = (operation: string): Reply | null =>
+    options.closed === true ? reply(operation, "not_in_beta") : null;
+  const missing = (operation: string, name = "unknown"): Reply => reply(operation, name);
+
+  const media = (purpose: MediaRefOut["purpose"]): MediaRefOut => ({
+    media_id: next(),
+    purpose,
+    state: "stored",
+    width: 640,
+    height: 480,
+    content_digest: `${String(counter).padStart(2, "0")}`.repeat(32),
+    expires_at: expiry,
+  });
+
+  const withState = (o: OfferOut): OfferOut => ({ ...o, state: offerState.get(o.variant_id) ?? o.state });
+  const rebuild = (p: ProjectOut): ProjectOut => {
+    const selections = (p.selections ?? []).map((sel): SelectionOut => {
+      const base = offers.find(
+        (o) => o.product_id === sel.offer.product_id && o.variant_id === sel.offer.variant_id,
+      );
+      const offer = withState({ ...sel.offer, state: base?.state ?? "fresh" });
+      const total =
+        offer.state === "fresh" && offer.price_pln !== null
+          ? decimal(grosze(offer.price_pln) * sel.quantity)
+          : null;
+      return { ...sel, offer, line_total_pln: total };
+    });
+    let subtotal = 0;
+    let priced = 0;
+    let unpriced = 0;
+    let stale = 0;
+    let deliveryKnown = 0;
+    let deliveryUnknown = 0;
+    for (const item of p.items) {
+      if (item.price_pln === null) unpriced += 1;
+      else {
+        priced += 1;
+        subtotal += grosze(item.price_pln) * item.quantity;
+      }
+    }
+    for (const sel of selections) {
+      if (sel.offer.state !== "fresh") stale += 1;
+      else if (sel.offer.price_pln === null) unpriced += 1;
+      else {
+        priced += 1;
+        subtotal += grosze(sel.offer.price_pln) * sel.quantity;
+        if (sel.offer.delivery_known && sel.offer.delivery_pln !== null)
+          deliveryKnown += grosze(sel.offer.delivery_pln);
+        else deliveryUnknown += 1;
+      }
+    }
+    const complete = unpriced === 0 && stale === 0 && deliveryUnknown === 0 && priced > 0;
+    return {
+      ...p,
+      selections,
+      basket: {
+        known_subtotal_pln: decimal(subtotal),
+        priced_lines: priced,
+        unpriced_lines: unpriced,
+        stale_lines: stale,
+        delivery_known_pln: decimal(deliveryKnown),
+        delivery_unknown_lines: deliveryUnknown,
+        complete,
+      },
+    };
+  };
+  const save = (p: ProjectOut): ProjectOut => {
+    const built = rebuild(p);
+    projects.set(built.project_id, built);
+    return built;
+  };
+  const blank = (name: string, room: ProjectOut["brief"]["room_type"]): ProjectOut => ({
+    project_id: next(),
+    name,
+    brief: { room_type: room, style: null, budget_pln: null, notes: null, keep: [] },
+    source: null,
+    items: [],
+    selections: [],
+    revisions: [],
+    basket: {
+      known_subtotal_pln: "0.00",
+      priced_lines: 0,
+      unpriced_lines: 0,
+      stale_lines: 0,
+      delivery_known_pln: "0.00",
+      delivery_unknown_lines: 0,
+      complete: false,
+    },
+    created_at: now,
+    expires_at: expiry,
+  });
+  const snapshot = (found: ProjectOut): ProjectOut => {
+    const built = rebuild(found);
+    const revision: RevisionOut = {
+      revision_id: next(),
+      number: found.revisions.length + 1,
+      brief: built.brief,
+      source_digest: found.source?.content_digest ?? null,
+      items: found.items.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        price_pln: i.price_pln,
+        url: i.url,
+        photo_digest: i.photo?.content_digest ?? null,
+      })),
+      selections: (built.selections ?? []).map((x) => ({ quantity: x.quantity, offer: x.offer })),
+      basket: built.basket,
+      created_at: now,
+    };
+    return save({ ...found, revisions: [revision, ...found.revisions] });
+  };
+  if (options.seeded !== false) {
+    const seed = blank("Salon", "living_room");
+    const first = save({
+      ...seed,
+      source: media("source"),
+      brief: { ...seed.brief, style: "skandynawski", budget_pln: "5000.00" },
+    });
+    if (options.rich === true) {
+      const offer = offers[0];
+      if (offer === undefined) throw new Error("no offer");
+      const item = {
+        item_id: next(),
+        name: "Stary fotel",
+        quantity: 1,
+        price_pln: null,
+        url: null,
+        photo: null,
+        created_at: now,
+      };
+      const line: SelectionOut = {
+        selection_id: next(),
+        quantity: 1,
+        offer,
+        line_total_pln: null,
+        checked_at: now,
+      };
+      snapshot(save({ ...first, items: [item], selections: [line] }));
+    }
+  }
+  const project = (id: string | undefined): ProjectOut | undefined => projects.get(id ?? "");
+  const advance = (g: GenerationOut): GenerationOut => {
+    if (options.hold === true) return g;
+    if (g.state === "queued") return { ...g, state: "running", started_at: now };
+    if (g.state !== "running") return g;
+    if (options.failWith !== undefined && options.failWith !== null)
+      return {
+        ...g,
+        state: "failed",
+        error_code: options.failWith,
+        finished_at: now,
+        cost_usd: options.failWith === "AMBIGUOUS" ? "0.100000" : null,
+        cost_estimated: options.failWith === "AMBIGUOUS",
+      };
+    return {
+      ...g,
+      state: "succeeded",
+      finished_at: now,
+      output: media("render"),
+      cost_usd: "0.034000",
+      references_used: 2,
+      references_skipped: 1,
+    };
+  };
+  const read = (projectId: string): GenerationOut[] => {
+    const all = generations.get(projectId) ?? [];
+    const advanced = all.map((g) => advance(g));
+    generations.set(projectId, advanced);
+    return advanced;
+  };
+
+  const op = (operation: string, handler: (request: MockRequest) => Reply): Route => ({
+    operation,
+    reply: (request) => {
+      calls.push(`${request.method} ${request.url.pathname}`);
+      return closed(operation) ?? handler(request);
+    },
+  });
+  const P = "/api/interior/projects";
+  const routes: Route[] = [
+    op(`GET ${P}`, () => ({
+      status: 200,
+      body: [...projects.values()].map((p) => ({
+        project_id: p.project_id,
+        name: p.name,
+        room_type: p.brief.room_type,
+        has_source: p.source !== null,
+        revisions: p.revisions.length,
+        created_at: p.created_at,
+        expires_at: p.expires_at,
+      })),
+    })),
+    op(`POST ${P}`, (r) => {
+      const body = r.body as { name: string; brief: ProjectOut["brief"] };
+      const created = save({
+        ...blank(body.name, body.brief.room_type),
+        brief: { ...body.brief, keep: body.brief.keep ?? [] },
+      });
+      return { status: 201, body: created };
+    }),
+    op(`GET ${P}/{project_id}`, (r) => {
+      const found = project(r.params["project_id"]);
+      return found === undefined ? missing(`GET ${P}/{project_id}`) : { status: 200, body: rebuild(found) };
+    }),
+    op(`PUT ${P}/{project_id}`, (r) => {
+      const found = project(r.params["project_id"]);
+      if (found === undefined) return missing(`PUT ${P}/{project_id}`);
+      const body = r.body as { name: string; brief: ProjectOut["brief"] };
+      return {
+        status: 200,
+        body: save({ ...found, name: body.name, brief: { ...body.brief, keep: body.brief.keep ?? [] } }),
+      };
+    }),
+    op(`DELETE ${P}/{project_id}`, (r) => {
+      const id = r.params["project_id"] ?? "";
+      if (!projects.delete(id)) return missing(`DELETE ${P}/{project_id}`);
+      generations.delete(id);
+      return { status: 204 };
+    }),
+    op(`POST ${P}/{project_id}/items`, (r) => {
+      const found = project(r.params["project_id"]);
+      if (found === undefined) return missing(`POST ${P}/{project_id}/items`, "unknown_project");
+      const body = r.body as {
+        name: string;
+        quantity?: number;
+        price_pln?: string | null;
+        url?: string | null;
+      };
+      const item = {
+        item_id: next(),
+        name: body.name,
+        quantity: body.quantity ?? 1,
+        price_pln: body.price_pln ?? null,
+        url: body.url ?? null,
+        photo: null,
+        created_at: now,
+      };
+      return { status: 201, body: save({ ...found, items: [...found.items, item] }) };
+    }),
+    op(`PUT ${P}/{project_id}/items/{item_id}`, (r) => {
+      const found = project(r.params["project_id"]);
+      const body = r.body as {
+        name: string;
+        quantity?: number;
+        price_pln?: string | null;
+        url?: string | null;
+      };
+      const old = found?.items.find((i) => i.item_id === r.params["item_id"]);
+      if (found === undefined || old === undefined) return missing(`PUT ${P}/{project_id}/items/{item_id}`);
+      const updated = {
+        ...old,
+        name: body.name,
+        quantity: body.quantity ?? 1,
+        price_pln: body.price_pln ?? null,
+        url: body.url ?? null,
+      };
+      return {
+        status: 200,
+        body: save({ ...found, items: found.items.map((i) => (i.item_id === old.item_id ? updated : i)) }),
+      };
+    }),
+    op(`DELETE ${P}/{project_id}/items/{item_id}`, (r) => {
+      const found = project(r.params["project_id"]);
+      if (found === undefined || !found.items.some((i) => i.item_id === r.params["item_id"]))
+        return missing(`DELETE ${P}/{project_id}/items/{item_id}`);
+      save({ ...found, items: found.items.filter((i) => i.item_id !== r.params["item_id"]) });
+      return { status: 204 };
+    }),
+    op(`POST ${P}/{project_id}/source`, (r) => {
+      const found = project(r.params["project_id"]);
+      if (found === undefined) return missing(`POST ${P}/{project_id}/source`);
+      if (options.storageDown === true)
+        return reply(`POST ${P}/{project_id}/source`, "storage_not_configured");
+      if (typeof r.body !== "string" || !r.body.startsWith("FAKEIMG"))
+        return reply(`POST ${P}/{project_id}/source`, "not_an_image");
+      const source = media("source");
+      save({ ...found, source });
+      return { status: 201, body: source };
+    }),
+    op(`PUT ${P}/{project_id}/items/{item_id}/photo`, (r) => {
+      const found = project(r.params["project_id"]);
+      const old = found?.items.find((i) => i.item_id === r.params["item_id"]);
+      if (found === undefined || old === undefined)
+        return missing(`PUT ${P}/{project_id}/items/{item_id}/photo`, "unknown_item");
+      if (typeof r.body !== "string" || !r.body.startsWith("FAKEIMG"))
+        return reply(`PUT ${P}/{project_id}/items/{item_id}/photo`, "not_an_image");
+      const photo = media("custom_item");
+      save({ ...found, items: found.items.map((i) => (i.item_id === old.item_id ? { ...i, photo } : i)) });
+      return { status: 200, body: photo };
+    }),
+    {
+      operation: `GET ${P}/{project_id}/media/{media_id}`,
+      reply: () => ({
+        status: 200,
+        text: SVG,
+        contentType: "image/svg+xml",
+        headers: { "cache-control": "private, no-store" },
+      }),
+    },
+    op("GET /api/interior/catalogue", () =>
+      options.noCatalogue === true
+        ? { status: 200, body: { available: false, provider: null, source_label: null, is_demo: false } }
+        : reply("GET /api/interior/catalogue", "demo_source"),
+    ),
+    {
+      operation: "GET /api/interior/catalogue/demo-image/{product_id}/{variant_id}",
+      reply: { status: 200, text: SVG, contentType: "image/svg+xml" },
+    },
+    op(`GET ${P}/{project_id}/catalogue/search`, (r) => {
+      if (options.noCatalogue === true)
+        return reply(`GET ${P}/{project_id}/catalogue/search`, "no_source_connected");
+      const needle = (r.url.searchParams.get("q") ?? "").toLowerCase();
+      const hits = offers.filter(
+        (o) => needle === "" || `${o.title} ${o.product_id}`.toLowerCase().includes(needle),
+      );
+      return {
+        status: 200,
+        body: hits.map((offer) => ({
+          offer: withState(offer),
+          flags:
+            offer.price_pln === null ? ["price_unknown"] : offer.delivery_known ? [] : ["delivery_unknown"],
+        })),
+      };
+    }),
+    op(`POST ${P}/{project_id}/selections`, (r) => {
+      const found = project(r.params["project_id"]);
+      if (found === undefined) return missing(`POST ${P}/{project_id}/selections`, "unknown_project");
+      const body = r.body as { provider: string; product_id: string; variant_id: string; quantity?: number };
+      const offer = offers.find((o) => o.product_id === body.product_id && o.variant_id === body.variant_id);
+      if (offer === undefined || offerState.get(offer.variant_id) === "unavailable")
+        return reply(`POST ${P}/{project_id}/selections`, "out_of_stock");
+      const line: SelectionOut = {
+        selection_id: next(),
+        quantity: body.quantity ?? 1,
+        offer,
+        line_total_pln: null,
+        checked_at: now,
+      };
+      return { status: 201, body: save({ ...found, selections: [...(found.selections ?? []), line] }) };
+    }),
+    op(`PUT ${P}/{project_id}/selections/{selection_id}`, (r) => {
+      const found = project(r.params["project_id"]);
+      const sel = found?.selections?.find((x) => x.selection_id === r.params["selection_id"]);
+      if (found === undefined || sel === undefined)
+        return missing(`PUT ${P}/{project_id}/selections/{selection_id}`);
+      const quantity = (r.body as { quantity: number }).quantity;
+      return {
+        status: 200,
+        body: save({
+          ...found,
+          selections: (found.selections ?? []).map((x) => (x === sel ? { ...x, quantity } : x)),
+        }),
+      };
+    }),
+    op(`DELETE ${P}/{project_id}/selections/{selection_id}`, (r) => {
+      const found = project(r.params["project_id"]);
+      if (found === undefined || !found.selections?.some((x) => x.selection_id === r.params["selection_id"]))
+        return missing(`DELETE ${P}/{project_id}/selections/{selection_id}`);
+      save({
+        ...found,
+        selections: (found.selections ?? []).filter((x) => x.selection_id !== r.params["selection_id"]),
+      });
+      return { status: 204 };
+    }),
+    op(`POST ${P}/{project_id}/selections/{selection_id}/refresh`, (r) => {
+      const found = project(r.params["project_id"]);
+      if (found === undefined || !found.selections?.some((x) => x.selection_id === r.params["selection_id"]))
+        return missing(`POST ${P}/{project_id}/selections/{selection_id}/refresh`);
+      offerState.delete(
+        (found.selections ?? []).find((x) => x.selection_id === r.params["selection_id"])?.offer.variant_id ??
+          "",
+      );
+      return { status: 200, body: save(found) };
+    }),
+    op(`POST ${P}/{project_id}/revisions`, (r) => {
+      const found = project(r.params["project_id"]);
+      if (found === undefined) return missing(`POST ${P}/{project_id}/revisions`);
+      return { status: 201, body: snapshot(found) };
+    }),
+    op(`POST ${P}/{project_id}/generations`, (r) => {
+      const id = r.params["project_id"] ?? "";
+      const found = project(id);
+      const body = r.body as { revision_id: string };
+      const revision = found?.revisions.find((x) => x.revision_id === body.revision_id);
+      if (found === undefined || revision === undefined)
+        return reply(`POST ${P}/{project_id}/generations`, "unknown_revision");
+      if (options.generationOff === true) return reply(`POST ${P}/{project_id}/generations`, "switched_off");
+      if (revision.source_digest === null)
+        return reply(`POST ${P}/{project_id}/generations`, "no_room_photo");
+      const all = generations.get(id) ?? [];
+      const active = all.find((g) => g.state === "queued" || g.state === "running");
+      if (active !== undefined) {
+        return active.revision_id === body.revision_id
+          ? { status: 200, body: active }
+          : reply(`POST ${P}/{project_id}/generations`, "another_revision_while_busy");
+      }
+      const created: GenerationOut = {
+        ...bodyOf<GenerationOut>(fx(`POST ${P}/{project_id}/generations`, "queued")),
+        generation_id: next(),
+        revision_id: body.revision_id,
+        state: "queued",
+        error_code: null,
+        output: null,
+        cost_usd: null,
+        cost_estimated: false,
+        references_used: 0,
+        references_skipped: 0,
+        created_at: now,
+        started_at: null,
+        finished_at: null,
+      };
+      generations.set(id, [created, ...all]);
+      return { status: 202, body: created };
+    }),
+    op(`GET ${P}/{project_id}/generations`, (r) => ({
+      status: 200,
+      body: read(r.params["project_id"] ?? ""),
+    })),
+    op(`GET ${P}/{project_id}/generations/{generation_id}`, (r) => {
+      const found = read(r.params["project_id"] ?? "").find(
+        (g) => g.generation_id === r.params["generation_id"],
+      );
+      return found === undefined
+        ? missing(`GET ${P}/{project_id}/generations/{generation_id}`)
+        : { status: 200, body: found };
+    }),
+    op(`POST ${P}/{project_id}/generations/{generation_id}/cancel`, (r) => {
+      const id = r.params["project_id"] ?? "";
+      const all = generations.get(id) ?? [];
+      const found = all.find((g) => g.generation_id === r.params["generation_id"]);
+      if (found === undefined) return missing(`POST ${P}/{project_id}/generations/{generation_id}/cancel`);
+      if (found.state === "running")
+        return reply(`POST ${P}/{project_id}/generations/{generation_id}/cancel`, "already_running");
+      const cancelled =
+        found.state === "queued" ? { ...found, state: "cancelled" as const, finished_at: now } : found;
+      generations.set(
+        id,
+        all.map((g) => (g === found ? cancelled : g)),
+      );
+      return { status: 200, body: cancelled };
+    }),
+  ];
+  const base = scenario(
+    "interior",
+    "Architekt wnętrz with a working fake server: projects, items, catalogue, board, versions and visualisations.",
+    routes,
+  );
+  return {
+    ...base,
+    calls,
+    projects,
+    generations,
+    setOfferState: (variantId, state) => {
+      offerState.set(variantId, state);
+      for (const p of projects.values()) save(p);
+    },
+  };
+}
+
 export const SCENARIOS = {
   firstVisit: scenario(
     "firstVisit",
@@ -1377,6 +1940,10 @@ export const SCENARIOS = {
     ],
   ),
   savedLoaded: createSaved(),
+  interior: createInterior({ rich: true }),
+  interiorClosed: createInterior({ closed: true }),
+  interiorEmpty: createInterior({ seeded: false }),
+  interiorNoCatalogue: createInterior({ noCatalogue: true, rich: true }),
   market: createMarket(),
   marketEmpty: createMarket({ empty: true }),
   marketFree: createMarket({ free: true }),

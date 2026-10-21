@@ -197,7 +197,7 @@ as in production. Override the compose command with `E2E_COMPOSE`. `scripts/e2e_
 made-up city) so the worker makes no Otodom request; `deploy/compose.e2e.yml` gives the audit worker
 `AUDIT_PROVIDERS=real` and a test `RISK_FREE_RATE`. Evidence class: fake provider data; there is no OpenRouter key,
 so a success is `succeeded_degraded`. The interaction gate counts the mocked lane; the journey lane runs the whole sign-up (register, mailed link via `register-token`, sign out, sign in);
-journeys are the few paths worth running against the real thing. On GitHub (`.github/workflows/ci.yml`, RM-296) every PR
+journeys are the few paths worth running against the real thing. `e2e/journey/interior.spec.ts` (RM-451) adds `s3mock` (a real S3 API server, pinned) for the media bucket, the demo catalogue and the offline image model to the stack; `scripts/e2e_session.py` gains `expire-selections`, `ai-budget --fill|--clear` and `ai-usage` for it. On GitHub (`.github/workflows/ci.yml`, RM-296) every PR
 runs `frontend` (`pnpm check`), `frontend-e2e` (this mocked lane) and `frontend-journey` (the Compose stack); traces
 of a failed run are kept 7 days. Firefox and WebKit lanes are #311.
 

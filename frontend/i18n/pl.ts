@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { interior } from "./interior";
 import { rynek } from "./rynek";
 
 /**
@@ -8,6 +9,7 @@ import { rynek } from "./rynek";
  */
 export const pl = {
   rynek,
+  interior,
   format: {
     notComputed: "nie obliczono",
     noDate: "—",

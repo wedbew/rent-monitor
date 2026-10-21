@@ -18,8 +18,14 @@ test.describe("desktop rail", () => {
       page,
       serve,
     }) => {
-      // Settings reads the sessions list; the others need nothing beyond the signed-in basics.
-      await serve(destination.id === "settings" ? "settings" : "empty");
+      // Settings reads the sessions list, the architect its projects; the others need nothing beyond the basics.
+      await serve(
+        destination.id === "settings"
+          ? "settings"
+          : destination.id === "interior"
+            ? "interiorEmpty"
+            : "empty",
+      );
       await page.goto(startFor(destination.to));
       const link = page.getByRole("link", { name: destination.label, exact: true });
       await exercise(`shell.nav.${destination.id}`, async () => {
@@ -151,8 +157,14 @@ test.describe("mobile sheet", () => {
       page,
       serve,
     }) => {
-      // Settings reads the sessions list; the others need nothing beyond the signed-in basics.
-      await serve(destination.id === "settings" ? "settings" : "empty");
+      // Settings reads the sessions list, the architect its projects; the others need nothing beyond the basics.
+      await serve(
+        destination.id === "settings"
+          ? "settings"
+          : destination.id === "interior"
+            ? "interiorEmpty"
+            : "empty",
+      );
       await page.goto(startFor(destination.to));
       await page.getByRole("button", { name: "Otwórz menu nawigacji" }).click();
       const dialog = page.getByRole("dialog", { name: "Nawigacja" });

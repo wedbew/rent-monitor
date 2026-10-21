@@ -45,8 +45,7 @@ const TOOLS: readonly Tool[] = [
     icon: "interior",
     ...t.dashboard.tools["interior"],
     to: "/app/interior",
-    built: false,
-    flag: "interior",
+    built: true,
   },
   {
     id: "listing",
