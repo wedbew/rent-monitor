@@ -1521,3 +1521,152 @@ class RateLimit(Base):
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
     window_start: Mapped[datetime] = mapped_column(primary_key=True, index=True)
     n: Mapped[int] = mapped_column(Integer, server_default="0")
+
+
+# ---------- Interior architect (RM-448, #284) ----------
+class InteriorProject(Base):
+    """One room the person is designing. Lives 30 days from creation (`expires_at` is never extended).
+
+    LEGAL[images]: owns the person's room photo and item photos (RM-448)
+    GDPR[personal-data]: `name`, `notes` and `keep` are free text written by the person (RM-448)
+    GDPR[retention]: removed by the retention sweep at `expires_at`; media bytes follow by tombstone (RM-448)
+    GDPR[erasure]: cascade on `app_user`; `erase_account_media` queues the bytes first (RM-448)
+    """
+
+    __tablename__ = "interior_project"
+    __table_args__ = (
+        Index("ix_interior_project_user", "user_id", "created_at"),
+        Index("ix_interior_project_expires", "expires_at"),
+        CheckConstraint("length(name) BETWEEN 1 AND 120", name="name_length"),
+        CheckConstraint(
+            "room_type IN ('living_room','bedroom','kitchen','bathroom','hallway','office','other')",
+            name="room_type_vocab",
+        ),
+        CheckConstraint("budget_pln IS NULL OR budget_pln >= 0", name="budget_non_negative"),
+    )
+
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
+    )
+    user_id: Mapped[str] = mapped_column(Text, user_fk())
+    name: Mapped[str] = mapped_column(String(120))
+    room_type: Mapped[str] = mapped_column(String(16))
+    style: Mapped[str | None] = mapped_column(String(80))
+    budget_pln: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    notes: Mapped[str | None] = mapped_column(Text)
+    keep: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{\"items\": []}'::jsonb"))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    expires_at: Mapped[datetime]
+
+
+class InteriorMedia(Base):
+    """A normalised image in the media store. The row is written `pending` before the object, so a crash
+    leaves a row to reconcile, never an unowned object.
+
+    LEGAL[images]: bytes live in the private media bucket under `object_key` (RM-448)
+    GDPR[retention]: pending and failed rows are swept after `media_abandoned_upload_days`; stored ones expire
+    with their project (RM-448)
+    GDPR[erasure]: cascade on project and user; the key is queued in `interior_media_tombstone` (RM-448)
+    """
+
+    __tablename__ = "interior_media"
+    __table_args__ = (
+        Index("ix_interior_media_project", "project_id"),
+        Index("ix_interior_media_expires", "expires_at"),
+        CheckConstraint("purpose IN ('source','custom_item','render')", name="purpose_vocab"),
+        CheckConstraint("state IN ('pending','stored','failed')", name="state_vocab"),
+        CheckConstraint("content_digest IS NULL OR content_digest ~ '^[0-9a-f]{64}$'", name="digest_hex"),
+        CheckConstraint(
+            "state <> 'stored' OR (content_digest IS NOT NULL AND width IS NOT NULL AND height IS NOT NULL)",
+            name="stored_complete",
+        ),
+        CheckConstraint("(width IS NULL) = (height IS NULL)", name="dimensions_together"),
+    )
+
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
+    )
+    user_id: Mapped[str] = mapped_column(Text, user_fk())
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("interior_project.id", ondelete="CASCADE"))
+    purpose: Mapped[str] = mapped_column(String(12))
+    state: Mapped[str] = mapped_column(String(8), default="pending", server_default="pending")
+    object_key: Mapped[str] = mapped_column(Text, unique=True)
+    content_digest: Mapped[str | None] = mapped_column(String(64))
+    mime: Mapped[str | None] = mapped_column(String(32))
+    width: Mapped[int | None]
+    height: Mapped[int | None]
+    size_bytes: Mapped[int | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    expires_at: Mapped[datetime]
+
+
+class InteriorCustomItem(Base):
+    """An item the person adds themselves. Only `name` is required; an absent price is unknown, not zero.
+
+    GDPR[personal-data]: `name` and `url` are free text written by the person (RM-448)
+    GDPR[erasure]: cascade on project and user (RM-448)
+    """
+
+    __tablename__ = "interior_custom_item"
+    __table_args__ = (
+        Index("ix_interior_custom_item_project", "project_id", "created_at"),
+        CheckConstraint("length(name) BETWEEN 1 AND 120", name="name_length"),
+        CheckConstraint("quantity BETWEEN 1 AND 99", name="quantity_range"),
+        CheckConstraint("price_pln IS NULL OR price_pln >= 0", name="price_non_negative"),
+        CheckConstraint("url IS NULL OR (length(url) <= 2048 AND url ~* '^https?://')", name="url_shape"),
+    )
+
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
+    )
+    user_id: Mapped[str] = mapped_column(Text, user_fk())
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("interior_project.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(120))
+    quantity: Mapped[int] = mapped_column(server_default="1")
+    price_pln: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    url: Mapped[str | None] = mapped_column(Text)
+    photo_media_id: Mapped[UUID | None] = mapped_column(ForeignKey("interior_media.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class InteriorRevision(Base):
+    """An immutable snapshot of the brief and items, numbered per project, bound to the source digest.
+
+    GDPR[personal-data]: the snapshot copies the person's free text (RM-448)
+    GDPR[erasure]: cascade on project and user (RM-448)
+    """
+
+    __tablename__ = "interior_revision"
+    __table_args__ = (
+        UniqueConstraint("project_id", "number", name="uq_interior_revision_project_number"),
+        CheckConstraint("number >= 1", name="number_positive"),
+        CheckConstraint("source_digest IS NULL OR source_digest ~ '^[0-9a-f]{64}$'", name="digest_hex"),
+    )
+
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
+    )
+    user_id: Mapped[str] = mapped_column(Text, user_fk())
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("interior_project.id", ondelete="CASCADE"))
+    number: Mapped[int]
+    source_digest: Mapped[str | None] = mapped_column(String(64))
+    snapshot: Mapped[dict[str, Any]]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class InteriorMediaTombstone(Base):
+    """An object that must be deleted from the media store. Written in the same transaction that removes the
+    owning row, drained until the delete succeeds (a transactional outbox: the DB and the bucket cannot share
+    a transaction).
+
+    GDPR[erasure]: holds only the object key (contains the pseudonymous user id), no content (RM-448)
+    GDPR[retention]: deleted once the object is gone (RM-448)
+    """
+
+    __tablename__ = "interior_media_tombstone"
+    __table_args__ = (Index("ix_interior_media_tombstone_created", "created_at"),)
+
+    object_key: Mapped[str] = mapped_column(Text, primary_key=True)
+    attempts: Mapped[int] = mapped_column(server_default="0")
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())

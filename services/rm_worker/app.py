@@ -24,5 +24,6 @@ app = procrastinate.App(
         "rm_worker.tasks.location_context",
         "rm_worker.tasks.bdl_refresh",
         "rm_worker.tasks.macro",
+        "rm_worker.tasks.interior",
     ],
 )

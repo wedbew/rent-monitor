@@ -36,6 +36,7 @@ _USER_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 class MediaPurpose(StrEnum):
     source = "source"  # normalised room photo, never overwritten
     reference = "reference"  # a permitted product reference image
+    item = "item"  # a photo of the person's own item
     render = "render"  # generated output
 
 
