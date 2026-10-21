@@ -18,6 +18,7 @@ import { LEGAL, PRIMARY } from "../shell/navigation";
 import {
   createAuthFlow,
   createCollection,
+  createInterior,
   createMarket,
   createRun,
   createSaved,
@@ -127,6 +128,8 @@ export interface Popup {
 }
 
 const EVERY_SCENARIO = ["empty"] as const;
+/** The id of the seeded project of the `interior` scenarios (test/scenarios.ts `createInterior`). */
+const INTERIOR_PROJECT = "00000000-0000-4000-8000-000000000901";
 const LISTING = "https://www.otodom.pl/pl/oferta/mieszkanie-2-pokoje-ID4abcd";
 
 /** A fixture's answer as a scenario reply (for the failing variants of a run). */
@@ -200,6 +203,57 @@ export const PAGES: readonly AppPage[] = [
         scenario: "shopHistory",
         prepare: async (page) => {
           await page.getByText("Nie płać ponownie").waitFor();
+        },
+      },
+    ],
+  },
+  {
+    id: "interior.list",
+    path: "/app/interior",
+    heading: "Architekt wnętrz",
+    scenarios: ["interior", "interiorEmpty", "interiorClosed"],
+  },
+  {
+    id: "interior.project",
+    path: `/app/interior/${INTERIOR_PROJECT}`,
+    heading: "Salon",
+    scenarios: ["interior", "interiorNoCatalogue"],
+    states: [
+      {
+        // The catalogue answered: real-looking offers with the way to pick one exact variant.
+        name: "search-results",
+        scenario: () => createInterior({ rich: true }),
+        prepare: async (page) => {
+          await page.getByRole("textbox", { name: "Czego szukasz" }).fill("sofa");
+          await page.getByRole("button", { name: "Szukaj produktów" }).click();
+          await page.getByRole("list", { name: "Znalezione produkty" }).waitFor();
+        },
+      },
+      {
+        // An own item opened for editing.
+        name: "editing-item",
+        scenario: () => createInterior({ rich: true }),
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Edytuj: Stary fotel" }).click();
+          await page.getByRole("button", { name: "Zapisz rzecz" }).waitFor();
+        },
+      },
+      {
+        // A visualisation is queued and can still be cancelled.
+        name: "generation-queued",
+        scenario: () => createInterior({ rich: true, hold: true }),
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Generuj wizualizację z wersji 1" }).click();
+          await page.getByRole("button", { name: "Anuluj wizualizację" }).waitFor();
+        },
+      },
+      {
+        // A visualisation ended without a usable answer: the way to a new attempt.
+        name: "generation-failed",
+        scenario: () => createInterior({ rich: true, failWith: "AMBIGUOUS" }),
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Generuj wizualizację z wersji 1" }).click();
+          await page.getByRole("button", { name: "Spróbuj ponownie" }).waitFor({ timeout: 15_000 });
         },
       },
     ],
@@ -614,7 +668,6 @@ export const PAGES: readonly AppPage[] = [
       },
     ],
   },
-  { id: "interior", path: "/app/interior", heading: "Architekt wnętrz", scenarios: EVERY_SCENARIO },
   { id: "listing", path: "/app/listings/new", heading: "Stwórz ogłoszenie", scenarios: EVERY_SCENARIO },
   { id: "terms", path: "/terms", heading: "Regulamin", scenarios: EVERY_SCENARIO },
   { id: "privacy", path: "/privacy", heading: "Polityka prywatności", scenarios: EVERY_SCENARIO },
@@ -1025,6 +1078,7 @@ export const INTERACTIONS: readonly Interaction[] = [
     name: "Rozpocznij analizę",
     outcome: "url",
   },
+  { id: "dashboard.interior", page: "dashboard", role: "link", name: "Otwórz architekta", outcome: "url" },
   { id: "dashboard.all", page: "dashboard", role: "link", name: "Moje analizy", outcome: "url" },
   {
     id: "dashboard.first",
@@ -2010,6 +2064,288 @@ export const INTERACTIONS: readonly Interaction[] = [
     name: "Zaloguj się",
     outcome: "url",
   },
+  // ----------------------------------------------------------------------------------- Architekt wnętrz (RM-451)
+  {
+    id: "interior.list.name",
+    page: "interior.list",
+    scenarios: ["interior", "interiorEmpty"],
+    role: "textbox",
+    name: "Nazwa projektu",
+    outcome: "state",
+  },
+  {
+    id: "interior.list.room",
+    page: "interior.list",
+    scenarios: ["interior", "interiorEmpty"],
+    role: "combobox",
+    name: "Rodzaj pokoju",
+    outcome: "text",
+  },
+  {
+    id: "interior.list.create",
+    page: "interior.list",
+    scenarios: ["interior", "interiorEmpty"],
+    role: "button",
+    name: "Utwórz projekt",
+    outcome: "url",
+  },
+  {
+    id: "interior.list.open",
+    page: "interior.list",
+    scenarios: ["interior"],
+    role: "link",
+    name: /^Otwórz projekt /,
+    outcome: "url",
+  },
+  {
+    id: "interior.list.delete",
+    page: "interior.list",
+    scenarios: ["interior"],
+    role: "button",
+    name: /^Usuń projekt /,
+    outcome: "dialog",
+  },
+  ...[
+    ["close", "Zamknij", "dialog"],
+    ["cancel", "Anuluj", "dialog"],
+    ["confirm", "Usuń projekt", "request"],
+  ].map(([id = "", label = "", outcome = ""]): Interaction => ({
+    id: `interior.delete.${id}`,
+    page: "interior.list",
+    scenarios: ["interior"],
+    within: "interior.delete",
+    role: "button",
+    name: label,
+    outcome: outcome as Interaction["outcome"],
+  })),
+  {
+    id: "interior.project.back",
+    page: "interior.project",
+    role: "link",
+    name: "Wszystkie projekty",
+    outcome: "url",
+  },
+  {
+    id: "interior.project.photo",
+    page: "interior.project",
+    role: "button",
+    name: "Wybierz zdjęcie pokoju",
+    outcome: "request",
+  },
+  {
+    id: "interior.brief.name",
+    page: "interior.project",
+    role: "textbox",
+    name: "Nazwa projektu",
+    outcome: "state",
+  },
+  {
+    id: "interior.brief.room",
+    page: "interior.project",
+    role: "combobox",
+    name: "Rodzaj pokoju",
+    outcome: "text",
+  },
+  { id: "interior.brief.style", page: "interior.project", role: "textbox", name: "Styl", outcome: "state" },
+  {
+    id: "interior.brief.budget",
+    page: "interior.project",
+    role: "textbox",
+    name: "Budżet na wyposażenie (zł)",
+    outcome: "state",
+  },
+  {
+    id: "interior.brief.keep",
+    page: "interior.project",
+    role: "textbox",
+    name: "Rzeczy, które zostają",
+    outcome: "state",
+  },
+  {
+    id: "interior.brief.notes",
+    page: "interior.project",
+    role: "textbox",
+    name: "Dodatkowe życzenia",
+    outcome: "state",
+  },
+  {
+    id: "interior.brief.save",
+    page: "interior.project",
+    role: "button",
+    name: "Zapisz założenia",
+    outcome: "request",
+  },
+  {
+    id: "interior.item.name",
+    page: "interior.project",
+    role: "textbox",
+    name: "Nazwa rzeczy",
+    outcome: "state",
+  },
+  {
+    id: "interior.item.quantity",
+    page: "interior.project",
+    role: "textbox",
+    name: "Liczba sztuk",
+    outcome: "state",
+  },
+  {
+    id: "interior.item.price",
+    page: "interior.project",
+    role: "textbox",
+    name: "Cena za sztukę (zł, opcjonalnie)",
+    outcome: "state",
+  },
+  {
+    id: "interior.item.url",
+    page: "interior.project",
+    role: "textbox",
+    name: "Link (opcjonalnie)",
+    outcome: "state",
+  },
+  {
+    id: "interior.item.add",
+    page: "interior.project",
+    role: "button",
+    name: "Dodaj rzecz",
+    outcome: "request",
+  },
+  {
+    id: "interior.item.photo",
+    page: "interior.project",
+    role: "button",
+    name: /^Dodaj zdjęcie: /,
+    outcome: "request",
+  },
+  { id: "interior.item.edit", page: "interior.project", role: "button", name: /^Edytuj: /, outcome: "text" },
+  {
+    id: "interior.item.remove",
+    page: "interior.project",
+    role: "button",
+    name: /^Usuń: /,
+    outcome: "request",
+  },
+  {
+    id: "interior.item.save",
+    page: "interior.project",
+    state: "editing-item",
+    role: "button",
+    name: "Zapisz rzecz",
+    outcome: "request",
+  },
+  {
+    id: "interior.item.cancel",
+    page: "interior.project",
+    state: "editing-item",
+    role: "button",
+    name: "Anuluj edycję",
+    outcome: "text",
+  },
+  {
+    id: "interior.catalogue.query",
+    page: "interior.project",
+    scenarios: ["interior"],
+    role: "textbox",
+    name: "Czego szukasz",
+    outcome: "state",
+  },
+  {
+    id: "interior.catalogue.category",
+    page: "interior.project",
+    scenarios: ["interior"],
+    role: "combobox",
+    name: "Kategoria",
+    outcome: "text",
+  },
+  {
+    id: "interior.catalogue.maxprice",
+    page: "interior.project",
+    scenarios: ["interior"],
+    role: "textbox",
+    name: "Cena najwyżej (zł)",
+    outcome: "state",
+  },
+  {
+    id: "interior.catalogue.search",
+    page: "interior.project",
+    scenarios: ["interior"],
+    role: "button",
+    name: "Szukaj produktów",
+    outcome: "request",
+  },
+  {
+    id: "interior.catalogue.pick",
+    page: "interior.project",
+    state: "search-results",
+    role: "button",
+    name: /^Wybierz: /,
+    outcome: "request",
+  },
+  {
+    id: "interior.offer.link",
+    page: "interior.project",
+    role: "link",
+    name: /^Otwórz stronę produktu: /,
+    outcome: "state",
+  },
+  {
+    id: "interior.board.decrease",
+    page: "interior.project",
+    role: "button",
+    name: /^Zmniejsz liczbę sztuk: /,
+    outcome: "request",
+  },
+  {
+    id: "interior.board.increase",
+    page: "interior.project",
+    role: "button",
+    name: /^Zwiększ liczbę sztuk: /,
+    outcome: "request",
+  },
+  {
+    id: "interior.board.refresh",
+    page: "interior.project",
+    role: "button",
+    name: /^Sprawdź ponownie: /,
+    outcome: "request",
+  },
+  {
+    id: "interior.board.remove",
+    page: "interior.project",
+    role: "button",
+    name: /^Usuń z tablicy: /,
+    outcome: "request",
+  },
+  {
+    id: "interior.revision.save",
+    page: "interior.project",
+    role: "button",
+    name: "Zapisz wersję",
+    outcome: "request",
+  },
+  {
+    id: "interior.generation.start",
+    page: "interior.project",
+    role: "button",
+    name: /^Generuj wizualizację z wersji /,
+    outcome: "request",
+  },
+  {
+    id: "interior.generation.cancel",
+    page: "interior.project",
+    state: "generation-queued",
+    role: "button",
+    name: "Anuluj wizualizację",
+    outcome: "request",
+  },
+  {
+    id: "interior.generation.retry",
+    page: "interior.project",
+    state: "generation-failed",
+    role: "button",
+    name: "Spróbuj ponownie",
+    outcome: "request",
+  },
 ];
 
 export const POPUPS: readonly Popup[] = [
@@ -2099,6 +2435,15 @@ export const POPUPS: readonly Popup[] = [
     trigger: "shell.menu",
     role: "dialog",
     name: "Nawigacja",
+    backdrop: "closes",
+  },
+  {
+    id: "interior.delete",
+    page: "interior.list",
+    scenarios: ["interior"],
+    trigger: "interior.list.delete",
+    role: "dialog",
+    name: "Usunąć projekt?",
     backdrop: "closes",
   },
 ];

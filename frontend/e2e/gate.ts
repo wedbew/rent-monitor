@@ -41,9 +41,11 @@ const LINE = /^([a-z]+)(?: "((?:[^"\\]|\\.)*)")?((?: \[[^\]]+\])*)(?::(?: .*)?)?
 
 /** The text content of a quoted YAML scalar line (Playwright quotes lines holding `:` or other specials). */
 function unquote(text: string): string {
-  if (text.startsWith("'") && text.endsWith("'")) return text.slice(1, -1).replace(/''/g, "'");
-  // A node with children and a quoted name ends `':` (RM-439: names such as "Wróć do: Białystok" hold a colon).
-  if (text.startsWith("'") && text.endsWith("':")) return `${text.slice(1, -2).replace(/''/g, "'")}:`;
+  // A quoted YAML key: `'button "Edytuj: X"'`, then optionally `:` and inline text (`: Edytuj`) or a bare `:` for
+  // a node with children. Quotes inside the key are doubled. Names such as "Wróć do: Białystok" (RM-439) and
+  // "Dodaj zdjęcie: Stary fotel" (RM-451) hold a colon, which is why Playwright quotes the whole key.
+  const quoted = /^'((?:[^']|'')*)'(:(?: .*)?)?$/.exec(text);
+  if (quoted !== null) return `${(quoted[1] ?? "").replace(/''/g, "'")}${quoted[2] ?? ""}`;
   return text;
 }
 

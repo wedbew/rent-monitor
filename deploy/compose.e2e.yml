@@ -1,13 +1,41 @@
 # Overlay for the browser journey lane (frontend/e2e/journey): the stack must believe the SPA is served from the
 # origin Playwright uses, so the API's Origin check and Secure cookies behave as they do in production.
-#   docker compose -f deploy/compose.yml -f deploy/compose.e2e.yml up -d --build --wait api worker-audit worker-ops
+#   docker compose -f deploy/compose.yml -f deploy/compose.e2e.yml up -d --build --wait api worker-audit worker-ops s3mock
 # `vite preview` (port 4173) serves the built SPA and proxies /api to the API on :8000 (frontend/vite.config.ts).
 name: rentmonitor
 
+# The interior architect (RM-451) runs here against the real API, Postgres and `worker-ops`, with three clearly named
+# stand-ins and no provider key: the demo product catalogue, the offline image model, and `s3mock`, a real S3 API
+# server (pinned) that takes the place of the private R2 bucket. The images still travel through the production
+# object-store code (boto3, SigV4, the digest checks); only the endpoint differs, and settings refuse that endpoint
+# in production. Nothing here reaches Cloudflare, OpenRouter or a shop.
+x-interior: &interior
+  CATALOGUE_PROVIDER: demo
+  INTERIOR_IMAGE_PROVIDER: fake
+  MEDIA_S3_ENDPOINT: http://s3mock:9090
+  MEDIA_BUCKET: rm-e2e-media
+  MEDIA_ACCESS_KEY_ID: e2e-access-key
+  MEDIA_SECRET_ACCESS_KEY: e2e-secret-key
+  OPEN_ROUTER_API_KEY: ""
+  OPENROUTER_MONTHLY_BUDGET_USD: "5"
+
 services:
+  s3mock:
+    image: adobe/s3mock:4.7.0
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: rm-e2e-media
+      COM_ADOBE_TESTING_S3MOCK_STORE_REGION: auto
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:9090/ || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
   api:
     environment:
       PUBLIC_APP_URL: http://localhost:4173
+      <<: *interior
+    depends_on:
+      s3mock: { condition: service_healthy }
   worker-audit:
     environment:
       PUBLIC_APP_URL: http://localhost:4173
@@ -18,6 +46,9 @@ services:
   worker-ops:
     environment:
       PUBLIC_APP_URL: http://localhost:4173
+      <<: *interior
+    depends_on:
+      s3mock: { condition: service_healthy }
   worker-batch:
     environment:
       PUBLIC_APP_URL: http://localhost:4173

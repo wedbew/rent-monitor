@@ -13,6 +13,9 @@
     $C age-market --run <tag> --hours N  # production code; the checkpoint is backdated to move the freshness
     $C market-db --run <tag>             # clock; medians recomputed by SQL as an independent cross-check
     $C unplant-market --run <tag>
+    $C expire-selections --project <id>  # interior: make every picked offer of a project 30 h old (stale)
+    $C ai-budget --fill | --clear        # interior: use the month's whole AI allowance / give it back
+    $C ai-usage                          # interior: spent, held, billed calls and generation rows this month
 
 It runs *inside* the api container, with the deployed settings and database, and writes the user, a credit
 account and a session row exactly as the sign-in routes would; the raw session token is printed once (JSON
@@ -448,7 +451,78 @@ async def unplant_market(run: str) -> dict[str, int]:
         await engine.dispose()
 
 
-def main() -> int:  # noqa: PLR0911, PLR0915  (one early return per sub-command)
+async def expire_selections(project_id: str) -> int:
+    """Move the observation of every picked offer of one project into the past: the stored price becomes
+    history, exactly what a day of waiting does to a real feed."""
+    from rm_core.db.models import InteriorSelection  # noqa: PLC0415
+
+    engine = make_engine(get_settings(), pool_size=1, max_overflow=0)
+    sm = make_sessionmaker(engine)
+    try:
+        async with sm() as session, session.begin():
+            rows = (
+                await session.scalars(
+                    select(InteriorSelection).where(InteriorSelection.project_id == project_id)
+                )
+            ).all()
+            old = (datetime.now(UTC) - timedelta(hours=30)).isoformat()
+            for row in rows:
+                row.offer = {
+                    **row.offer,
+                    "observed_at": old,
+                    "expires_at": (datetime.now(UTC) - timedelta(hours=6)).isoformat(),
+                }
+            return len(rows)
+    finally:
+        await engine.dispose()
+
+
+async def ai_budget(*, fill: bool) -> dict[str, str]:
+    """Spend the month's whole allowance (so the next reservation is refused) or give it back."""
+    from rm_core.ai_budget import _current_month  # noqa: PLC0415
+    from rm_core.db.models import AiBudget  # noqa: PLC0415
+    from sqlalchemy.dialects.postgresql import insert  # noqa: PLC0415
+
+    settings = get_settings()
+    engine = make_engine(settings, pool_size=1, max_overflow=0)
+    sm = make_sessionmaker(engine)
+    try:
+        async with sm() as session, session.begin():
+            await session.execute(
+                insert(AiBudget)
+                .values(month=_current_month(), cap_usd=settings.openrouter_monthly_budget_usd)
+                .on_conflict_do_nothing()
+            )
+            row = (await session.scalars(select(AiBudget).order_by(AiBudget.month.desc()).limit(1))).one()
+            row.spent_usd = row.cap_usd if fill else Decimal(0)
+            row.reserved_usd = Decimal(0)
+            return {"cap": str(row.cap_usd), "spent": str(row.spent_usd)}
+    finally:
+        await engine.dispose()
+
+
+async def ai_usage() -> dict[str, object]:
+    from rm_core.db.models import AiBudget, AiUsage, InteriorGeneration  # noqa: PLC0415
+
+    engine = make_engine(get_settings(), pool_size=1, max_overflow=0)
+    sm = make_sessionmaker(engine)
+    try:
+        async with sm() as session:
+            budget = (
+                await session.scalars(select(AiBudget).order_by(AiBudget.month.desc()).limit(1))
+            ).one_or_none()
+            return {
+                "spent": str(budget.spent_usd) if budget else "0",
+                "reserved": str(budget.reserved_usd) if budget else "0",
+                "billed_calls": await session.scalar(select(func.count()).select_from(AiUsage)) or 0,
+                "generations": await session.scalar(select(func.count()).select_from(InteriorGeneration))
+                or 0,
+            }
+    finally:
+        await engine.dispose()
+
+
+def main() -> int:  # noqa: PLR0911, PLR0912, PLR0915  (one early return per sub-command)
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -483,7 +557,23 @@ def main() -> int:  # noqa: PLR0911, PLR0915  (one early return per sub-command)
     md.add_argument("--run", required=True)
     um = sub.add_parser("unplant-market")
     um.add_argument("--run", required=True)
+    es = sub.add_parser("expire-selections")
+    es.add_argument("--project", required=True)
+    ab = sub.add_parser("ai-budget")
+    group = ab.add_mutually_exclusive_group(required=True)
+    group.add_argument("--fill", action="store_true")
+    group.add_argument("--clear", action="store_true")
+    sub.add_parser("ai-usage")
     args = parser.parse_args()
+    if args.command == "expire-selections":
+        print(json.dumps({"expired": asyncio.run(expire_selections(args.project))}))
+        return 0
+    if args.command == "ai-budget":
+        print(json.dumps(asyncio.run(ai_budget(fill=args.fill))))
+        return 0
+    if args.command == "ai-usage":
+        print(json.dumps(asyncio.run(ai_usage())))
+        return 0
     if args.command == "session-for":
         print(json.dumps(asyncio.run(session_for(args.email, entitlement=args.entitlement))))
         return 0

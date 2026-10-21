@@ -58,7 +58,7 @@ export const PRIMARY: readonly Destination[] = [
     label: t.shell.destinations["interior"],
     to: "/app/interior",
     icon: "interior",
-    availability: "unavailable",
+    availability: "ready",
     isActive: under("/app/interior"),
   },
   {

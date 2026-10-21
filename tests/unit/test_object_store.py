@@ -168,3 +168,25 @@ def _sha(data: bytes) -> str:
 
 def _body(data: bytes) -> object:
     return StreamingBody(io.BytesIO(data), len(data))
+
+
+@pytest.mark.parametrize("endpoint", ["http://s3mock:9090", "http://localhost:9000", "http://127.0.0.1:9090"])
+def test_the_local_s3_stand_in_is_accepted_outside_production_only(endpoint: str) -> None:
+    ok = Settings(_env_file=None, app_env="test", media_s3_endpoint=endpoint)  # pyright: ignore[reportCallIssue]
+    assert ok.media_s3_endpoint == endpoint
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, app_env="production", media_s3_endpoint=endpoint)  # pyright: ignore[reportCallIssue]
+
+
+@pytest.mark.parametrize(
+    "endpoint",
+    [
+        "http://evil.example",
+        "http://s3mock.evil.example:9090",
+        "http://user@s3mock:9090",
+        "http://s3mock:9090/bucket",
+    ],
+)
+def test_other_http_hosts_stay_refused_everywhere(endpoint: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, app_env="test", media_s3_endpoint=endpoint)  # pyright: ignore[reportCallIssue]

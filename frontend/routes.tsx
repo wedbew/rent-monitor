@@ -45,6 +45,12 @@ const DistrictPage = lazy(async () => ({
 const GusPage = lazy(async () => ({
   default: (await import("./features/market/GusPage")).GusPage,
 }));
+const InteriorPage = lazy(async () => ({
+  default: (await import("./features/interior/InteriorPage")).InteriorPage,
+}));
+const InteriorProjectPage = lazy(async () => ({
+  default: (await import("./features/interior/ProjectPage")).ProjectPage,
+}));
 const SettingsPage = lazy(async () => ({
   default: (await import("./features/settings/SettingsPage")).SettingsPage,
 }));
@@ -167,7 +173,8 @@ export const routes: RouteObject[] = [
                       { path: ":locationId", element: <LegacyPlace /> },
                     ],
                   },
-                  pending("interior", "/app/interior"),
+                  { path: "/app/interior", element: lazyPage(InteriorPage) },
+                  { path: "/app/interior/:projectId", element: lazyPage(InteriorProjectPage) },
                   pending("listing", "/app/listings/new"),
                   { path: "/app/settings", element: lazyPage(SettingsPage) },
                 ],

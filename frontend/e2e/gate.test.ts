@@ -53,6 +53,21 @@ describe("parseAriaSnapshot: a quoted name that has children", () => {
   });
 });
 
+describe("parseAriaSnapshot: a quoted name followed by inline text", () => {
+  it("reads a button whose name holds a colon and whose text content is inline (RM-451)", () => {
+    const nodes = parseAriaSnapshot(
+      [
+        `- 'button "Dodaj zdjęcie: Stary fotel"': Zdjęcie`,
+        `- 'button "Zmniejsz liczbę sztuk: Sofa Nordic 3-osobowa" [disabled]': −`,
+      ].join("\n"),
+    );
+    expect(nodes.map((n) => [n.role, n.name, n.attributes])).toEqual([
+      ["button", "Dodaj zdjęcie: Stary fotel", []],
+      ["button", "Zmniejsz liczbę sztuk: Sofa Nordic 3-osobowa", ["[disabled]"]],
+    ]);
+  });
+});
+
 describe("parseAriaSnapshot", () => {
   it("reads roles, names and attributes, and skips properties and plain text", () => {
     const nodes = parseAriaSnapshot(SNAPSHOT);

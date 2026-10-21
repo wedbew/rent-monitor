@@ -23,14 +23,14 @@ test.describe("dashboard", () => {
     });
   });
 
-  test("the tool card opens a new analysis; the unbuilt tools say Wkrótce and are not links", async ({
+  test("the tool card opens a new analysis; the unbuilt tool says Wkrótce and is not a link", async ({
     page,
     serve,
   }) => {
     await serve("empty");
     await page.goto("/app");
-    await expect(page.getByText("Wkrótce")).toHaveCount(2); // interior, listing assistant
-    await expect(page.getByRole("link", { name: "Otwórz architekta" })).toHaveCount(0);
+    await expect(page.getByText("Wkrótce")).toHaveCount(1); // the listing assistant
+    await expect(page.getByRole("link", { name: "Otwórz architekta" })).toBeVisible(); // the interior architect is built
     await expect(
       page.getByRole("main").getByRole("link", { name: "Stwórz ogłoszenie", exact: true }),
     ).toHaveCount(0);
@@ -38,6 +38,16 @@ test.describe("dashboard", () => {
       await page.getByRole("link", { name: "Rozpocznij analizę" }).click();
       return [await outcome.url(page, /\/app\/analyses\/new$/)];
     });
+  });
+
+  test("the architect card opens the interior projects", async ({ page, serve }) => {
+    await serve("interior");
+    await page.goto("/app");
+    await exercise("dashboard.interior", async () => {
+      await page.getByRole("link", { name: "Otwórz architekta" }).click();
+      return [await outcome.url(page, /\/app\/interior$/)];
+    });
+    await expect(page.getByRole("heading", { name: "Architekt wnętrz", level: 1 })).toBeVisible();
   });
 
   test("five distinct analyses are listed newest first, each linking to its own report", async ({
