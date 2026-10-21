@@ -18,14 +18,22 @@ GDPR[erasure]: `erase_account_media` queues every object key before the account 
 
 import asyncio
 import hashlib
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, Protocol
 from uuid import UUID, uuid4
 
 import structlog
+from rm_contracts.catalogue import (
+    MAX_SELECTIONS_PER_PROJECT,
+    Offer,
+    OfferOut,
+    OfferState,
+    SelectionOut,
+    SelectionSnapshot,
+)
 from rm_contracts.interior import (
     MAX_ITEMS_PER_PROJECT,
     MAX_PROJECTS,
@@ -47,12 +55,14 @@ from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from rm_core.catalogue import offer_state
 from rm_core.db.models import (
     InteriorCustomItem,
     InteriorMedia,
     InteriorMediaTombstone,
     InteriorProject,
     InteriorRevision,
+    InteriorSelection,
 )
 from rm_core.entitlements import db_now
 from rm_core.interior_images import normalize_image
@@ -69,9 +79,24 @@ TOMBSTONE_BATCH = 200
 MAX_TOMBSTONE_ATTEMPTS_LOGGED = 5
 
 
-# Money is added up in `deal_analyzer.shopping_budget` only (invariant 4). The caller injects that function,
-# so `rm_core` never imports an engine; each line is (quantity, unit price or None for unknown).
-BasketFn = Callable[[Sequence[tuple[int, Decimal | None]]], Basket]
+@dataclass(frozen=True)
+class InteriorLine:
+    """One basket line as the repository sees it; the engine decides what it adds up to."""
+
+    quantity: int
+    unit_price_pln: Decimal | None
+    stale: bool = False
+    needs_delivery: bool = False
+    delivery_pln: Decimal | None = None
+
+
+class InteriorMoney(Protocol):
+    """Money is added up in `deal_analyzer.shopping_budget` only (invariant 4). The API injects this, so
+    `rm_core` never imports an engine."""
+
+    def basket(self, lines: Sequence[InteriorLine]) -> Basket: ...
+
+    def line_total(self, quantity: int, unit_price_pln: Decimal | None) -> str | None: ...
 
 
 class InteriorNotFoundError(Exception):
@@ -87,6 +112,11 @@ class InteriorLimitError(Exception):
 
 
 # ---------- projects ----------
+async def require_project(db: AsyncSession, principal: Principal, project_id: UUID) -> None:
+    """Raise `InteriorNotFoundError` unless the caller owns this live project."""
+    await _project(db, principal, project_id)
+
+
 async def create_project(db: AsyncSession, principal: Principal, data: ProjectCreate) -> UUID:
     await db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": principal.user_id})
     count = await db.scalar(
@@ -284,25 +314,221 @@ async def delete_item(db: AsyncSession, principal: Principal, project_id: UUID, 
     await db.execute(delete(InteriorCustomItem).where(InteriorCustomItem.id == item_id))
 
 
+# ---------- products the person picked (RM-449) ----------
+def offer_out(offer: Offer, state: OfferState) -> OfferOut:
+    """The API form of an observation: money as exact strings and the server-derived state."""
+
+    def money(value: Decimal | None) -> str | None:
+        return None if value is None else f"{value:.2f}"
+
+    return OfferOut(
+        provider=offer.provider,
+        product_id=offer.product_id,
+        variant_id=offer.variant_id,
+        offer_id=offer.offer_id,
+        seller=offer.seller,
+        title=offer.title,
+        product_url=offer.product_url,
+        category=offer.category,
+        attributes=dict(offer.attributes),
+        dimensions=offer.dimensions,
+        price_pln=money(offer.price_pln),
+        price_is_gross=offer.price_is_gross,
+        price_conditions=offer.price_conditions,
+        delivery_pln=money(offer.delivery_pln),
+        delivery_known=offer.delivery_known,
+        availability=offer.availability,
+        observed_at=offer.observed_at,
+        expires_at=offer.expires_at,
+        state=state,
+        image_url=offer.image_url,
+        image_rights=offer.image_rights,
+        source_label=offer.source_label,
+    )
+
+
+def _state_of(row: InteriorSelection, offer: Offer, now: datetime) -> OfferState:
+    return OfferState.unavailable if row.gone_at is not None else offer_state(offer, now)
+
+
+async def _selection_outs(
+    db: AsyncSession, project_id: UUID, money: InteriorMoney, now: datetime
+) -> list[SelectionOut]:
+    rows = (
+        await db.scalars(
+            select(InteriorSelection)
+            .where(InteriorSelection.project_id == project_id)
+            .order_by(InteriorSelection.created_at, InteriorSelection.id)
+        )
+    ).all()
+    out: list[SelectionOut] = []
+    for row in rows:
+        offer = Offer.model_validate(row.offer)
+        state = _state_of(row, offer, now)
+        out.append(
+            SelectionOut(
+                selection_id=row.id,
+                quantity=row.quantity,
+                offer=offer_out(offer, state),
+                line_total_pln=money.line_total(row.quantity, offer.price_pln)
+                if state is OfferState.fresh
+                else None,
+                checked_at=row.checked_at,
+            )
+        )
+    return out
+
+
+async def add_selection(
+    db: AsyncSession, principal: Principal, project_id: UUID, offer: Offer, quantity: int
+) -> UUID:
+    """Store the observation the provider just returned. The same variant again replaces its observation and
+    quantity (idempotent). The client never sends a price: callers pass an `Offer` fetched server-side."""
+    await _project(db, principal, project_id, lock=True)
+    now = await db_now(db)
+    existing = await db.scalar(
+        select(InteriorSelection).where(
+            InteriorSelection.project_id == project_id,
+            InteriorSelection.provider == offer.provider,
+            InteriorSelection.product_id == offer.product_id,
+            InteriorSelection.variant_id == offer.variant_id,
+        )
+    )
+    if existing is not None:
+        existing.quantity, existing.offer, existing.checked_at, existing.gone_at = (
+            quantity,
+            offer.model_dump(mode="json"),
+            now,
+            None,
+        )
+        return existing.id
+    count = await db.scalar(
+        select(func.count()).select_from(InteriorSelection).where(InteriorSelection.project_id == project_id)
+    )
+    if (count or 0) >= MAX_SELECTIONS_PER_PROJECT:
+        raise InteriorLimitError("selections")
+    row = InteriorSelection(
+        user_id=principal.user_id,
+        project_id=project_id,
+        provider=offer.provider,
+        product_id=offer.product_id,
+        variant_id=offer.variant_id,
+        quantity=quantity,
+        offer=offer.model_dump(mode="json"),
+        checked_at=now,
+    )
+    db.add(row)
+    await db.flush()
+    return row.id
+
+
+async def _selection(
+    db: AsyncSession, principal: Principal, project_id: UUID, selection_id: UUID
+) -> InteriorSelection:
+    row = await db.scalar(
+        select(InteriorSelection).where(
+            InteriorSelection.id == selection_id,
+            InteriorSelection.project_id == project_id,
+            InteriorSelection.user_id == principal.user_id,
+        )
+    )
+    if row is None:
+        raise InteriorNotFoundError
+    return row
+
+
+async def set_selection_quantity(
+    db: AsyncSession, principal: Principal, project_id: UUID, selection_id: UUID, quantity: int
+) -> None:
+    await _project(db, principal, project_id, lock=True)
+    (await _selection(db, principal, project_id, selection_id)).quantity = quantity
+
+
+async def delete_selection(
+    db: AsyncSession, principal: Principal, project_id: UUID, selection_id: UUID
+) -> None:
+    await _project(db, principal, project_id, lock=True)
+    await _selection(db, principal, project_id, selection_id)
+    await db.execute(delete(InteriorSelection).where(InteriorSelection.id == selection_id))
+
+
+async def selection_keys(
+    db: AsyncSession, principal: Principal, project_id: UUID
+) -> list[tuple[UUID, str, str, str]]:
+    """(selection id, provider, product id, variant id) of every selection, for a refresh round."""
+    await _project(db, principal, project_id)
+    rows = (
+        await db.execute(
+            select(
+                InteriorSelection.id,
+                InteriorSelection.provider,
+                InteriorSelection.product_id,
+                InteriorSelection.variant_id,
+            )
+            .where(InteriorSelection.project_id == project_id, InteriorSelection.user_id == principal.user_id)
+            .order_by(InteriorSelection.created_at, InteriorSelection.id)
+        )
+    ).all()
+    return [(r[0], r[1], r[2], r[3]) for r in rows]
+
+
+async def store_observation(
+    db: AsyncSession, principal: Principal, project_id: UUID, selection_id: UUID, offer: Offer | None
+) -> None:
+    """Record a new observation of a selection, or `None` when the source no longer lists the variant (the old
+    observation stays as history and the selection becomes unavailable)."""
+    await _project(db, principal, project_id, lock=True)
+    row = await _selection(db, principal, project_id, selection_id)
+    now = await db_now(db)
+    row.checked_at = now
+    if offer is None:
+        row.gone_at = now
+    else:
+        row.offer, row.gone_at = offer.model_dump(mode="json"), None
+
+
 # ---------- reading a project ----------
-def _revision_out(row: InteriorRevision, basket: BasketFn) -> RevisionOut:
+def _lines_of_snapshots(
+    items: Sequence[ItemSnapshot], selections: Sequence[SelectionSnapshot]
+) -> list[InteriorLine]:
+    own = [InteriorLine(i.quantity, None if i.price_pln is None else Decimal(i.price_pln)) for i in items]
+    bought = [
+        InteriorLine(
+            s.quantity,
+            None if s.offer.price_pln is None else Decimal(s.offer.price_pln),
+            stale=s.offer.state is not OfferState.fresh,
+            needs_delivery=True,
+            delivery_pln=Decimal(s.offer.delivery_pln)
+            if s.offer.delivery_known and s.offer.delivery_pln
+            else None,
+        )
+        for s in selections
+    ]
+    return [*own, *bought]
+
+
+def _revision_out(row: InteriorRevision, money: InteriorMoney) -> RevisionOut:
     snap: dict[str, Any] = row.snapshot
     items = [ItemSnapshot.model_validate(i) for i in snap["items"]]
+    selections = [SelectionSnapshot.model_validate(s) for s in snap.get("selections", [])]
     return RevisionOut(
         revision_id=row.id,
         number=row.number,
         brief=Brief.model_validate(snap["brief"]),
         source_digest=row.source_digest,
         items=items,
-        basket=basket([(i.quantity, None if i.price_pln is None else Decimal(i.price_pln)) for i in items]),
+        selections=selections,
+        basket=money.basket(_lines_of_snapshots(items, selections)),
         created_at=row.created_at,
     )
 
 
 async def project_view(
-    db: AsyncSession, principal: Principal, project_id: UUID, basket: BasketFn
+    db: AsyncSession, principal: Principal, project_id: UUID, money: InteriorMoney
 ) -> ProjectOut:
     p = await _project(db, principal, project_id)
+    now = await db_now(db)
+    selections = await _selection_outs(db, project_id, money, now)
     media = {
         m.id: m
         for m in (await db.scalars(select(InteriorMedia).where(InteriorMedia.project_id == project_id))).all()
@@ -335,8 +561,16 @@ async def project_view(
         ),
         source=_media_ref(source) if source is not None else None,
         items=[_item_out(i, media.get(i.photo_media_id) if i.photo_media_id else None) for i in items],
-        basket=basket([(i.quantity, i.price_pln) for i in items]),
-        revisions=[_revision_out(r, basket) for r in revisions],
+        selections=selections,
+        basket=money.basket(
+            [
+                *(InteriorLine(i.quantity, i.price_pln) for i in items),
+                *_lines_of_snapshots(
+                    [], [SelectionSnapshot(quantity=x.quantity, offer=x.offer) for x in selections]
+                ),
+            ]
+        ),
+        revisions=[_revision_out(r, money) for r in revisions],
         created_at=p.created_at,
         expires_at=p.expires_at,
     )
@@ -381,7 +615,23 @@ async def create_revision(db: AsyncSession, principal: Principal, project_id: UU
         notes=p.notes,
         keep=list(p.keep.get("items", [])),
     )
+    now = await db_now(db)
+    chosen = (
+        await db.scalars(
+            select(InteriorSelection)
+            .where(InteriorSelection.project_id == project_id)
+            .order_by(InteriorSelection.created_at, InteriorSelection.id)
+        )
+    ).all()
+    selections = [
+        SelectionSnapshot(
+            quantity=c.quantity,
+            offer=offer_out(Offer.model_validate(c.offer), _state_of(c, Offer.model_validate(c.offer), now)),
+        ).model_dump(mode="json")
+        for c in chosen
+    ]
     snapshot: dict[str, Any] = {
+        "selections": selections,
         "brief": brief.model_dump(mode="json"),
         "items": [
             ItemSnapshot(

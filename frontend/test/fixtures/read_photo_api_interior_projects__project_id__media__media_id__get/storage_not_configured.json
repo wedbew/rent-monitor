@@ -1,7 +1,7 @@
 {
   "body": {
     "code": "MEDIA_STORAGE_UNAVAILABLE",
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000335/media/00000000-0000-4000-8000-000000000336",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000339/media/00000000-0000-4000-8000-000000000340",
     "request_id": "req_fixture",
     "status": 503,
     "title": "Image storage is not available",
@@ -19,7 +19,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000335/media/00000000-0000-4000-8000-000000000336"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000339/media/00000000-0000-4000-8000-000000000340"
   },
   "scenario": "storage_not_configured",
   "status": 503

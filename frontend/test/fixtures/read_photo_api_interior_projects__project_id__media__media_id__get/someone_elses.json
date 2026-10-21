@@ -1,7 +1,7 @@
 {
   "body": {
     "code": "NOT_FOUND",
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000333/media/00000000-0000-4000-8000-000000000334",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000337/media/00000000-0000-4000-8000-000000000338",
     "request_id": "req_fixture",
     "status": 404,
     "title": "Image not found",
@@ -19,7 +19,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000333/media/00000000-0000-4000-8000-000000000334"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000337/media/00000000-0000-4000-8000-000000000338"
   },
   "scenario": "someone_elses",
   "status": 404

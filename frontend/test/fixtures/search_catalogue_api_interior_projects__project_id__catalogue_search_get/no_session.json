@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000004/catalogue/search",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/interior/projects/{project_id}/catalogue/search",
+    "method": "GET",
+    "operation_id": "search_catalogue_api_interior_projects__project_id__catalogue_search_get",
+    "path": "/api/interior/projects/{project_id}/catalogue/search"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000004/catalogue/search"
+  },
+  "scenario": "no_session",
+  "status": 401
+}

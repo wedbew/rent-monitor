@@ -275,6 +275,7 @@ class World:
             google_client_id=GOOGLE_AUDIENCE,
             free_signup_credits=SIGNUP_CREDITS,
             otodom_market_catalogue_version=MARKET_CATALOGUE_VERSION,
+            catalogue_provider="demo",  # the named deterministic fake source (RM-449)
             log_level="WARNING",  # a capture of 170 scenarios should not print 170 access lines
             paddle_webhook_secret=SecretStr(WEBHOOK_SECRET),
         )

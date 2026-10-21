@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["query", "limit"],
+        "msg": "Input should be less than or equal to 24",
+        "type": "less_than_equal"
+      }
+    ],
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000360/catalogue/search",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/interior/projects/{project_id}/catalogue/search",
+    "method": "GET",
+    "operation_id": "search_catalogue_api_interior_projects__project_id__catalogue_search_get",
+    "path": "/api/interior/projects/{project_id}/catalogue/search"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000360/catalogue/search?limit=99"
+  },
+  "scenario": "limit_too_big",
+  "status": 422
+}

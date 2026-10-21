@@ -1,0 +1,25 @@
+{
+  "body": {
+    "available": true,
+    "is_demo": true,
+    "provider": "demo",
+    "source_label": "Demo (dane przykładowe, nie sklep)"
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/interior/catalogue",
+    "method": "GET",
+    "operation_id": "catalogue_status_api_interior_catalogue_get",
+    "path": "/api/interior/catalogue"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/catalogue"
+  },
+  "scenario": "demo_source",
+  "status": 200
+}

@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000004/selections",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/selections",
+    "method": "POST",
+    "operation_id": "select_product_api_interior_projects__project_id__selections_post",
+    "path": "/api/interior/projects/{project_id}/selections"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000004/selections"
+  },
+  "scenario": "no_session",
+  "status": 401
+}

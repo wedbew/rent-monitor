@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "ORIGIN_NOT_ALLOWED",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000004/selections/00000000-0000-4000-8000-000000000047",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "Origin not allowed",
+    "type": "urn:rentmonitor:problem:ORIGIN_NOT_ALLOWED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "DELETE /api/interior/projects/{project_id}/selections/{selection_id}",
+    "method": "DELETE",
+    "operation_id": "delete_selection_api_interior_projects__project_id__selections__selection_id__delete",
+    "path": "/api/interior/projects/{project_id}/selections/{selection_id}"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000004/selections/00000000-0000-4000-8000-000000000047"
+  },
+  "scenario": "wrong_origin",
+  "status": 403
+}

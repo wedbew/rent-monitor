@@ -1,0 +1,88 @@
+{
+  "body": {
+    "basket": {
+      "complete": true,
+      "delivery_known_pln": "149.00",
+      "delivery_unknown_lines": 0,
+      "known_subtotal_pln": "2499.00",
+      "priced_lines": 1,
+      "stale_lines": 0,
+      "unpriced_lines": 0
+    },
+    "brief": {
+      "budget_pln": "5000.00",
+      "keep": ["sofa"],
+      "notes": null,
+      "room_type": "living_room",
+      "style": "skandynawski"
+    },
+    "created_at": "2026-10-01T10:00:00Z",
+    "expires_at": "2026-11-20T09:08:15.759287Z",
+    "items": [],
+    "name": "Salon",
+    "project_id": "00000000-0000-4000-8000-000000000347",
+    "revisions": [],
+    "selections": [
+      {
+        "checked_at": "2026-10-01T10:00:00Z",
+        "line_total_pln": "2499.00",
+        "offer": {
+          "attributes": {
+            "kolor": "szary",
+            "materiał": "tkanina"
+          },
+          "availability": "in_stock",
+          "category": "sofa",
+          "delivery_known": true,
+          "delivery_pln": "149.00",
+          "dimensions": {
+            "depth_cm": "90",
+            "height_cm": "85",
+            "source": "dane przykładowe",
+            "width_cm": "200"
+          },
+          "expires_at": "2026-10-22T09:08:15.781599Z",
+          "image_rights": {
+            "cache": true,
+            "display": true,
+            "generation_reference": true
+          },
+          "image_url": "/api/interior/catalogue/demo-image/sofa-nordic/grey",
+          "observed_at": "2026-10-01T10:00:00Z",
+          "offer_id": "sofa-nordic-grey",
+          "price_conditions": null,
+          "price_is_gross": true,
+          "price_pln": "2499.00",
+          "product_id": "sofa-nordic",
+          "product_url": "https://example.test/fixture/82",
+          "provider": "demo",
+          "seller": "Demo Meble",
+          "source_label": "Demo (dane przykładowe, nie sklep)",
+          "state": "fresh",
+          "title": "Sofa Nordic 3-osobowa",
+          "variant_id": "grey"
+        },
+        "quantity": 1,
+        "selection_id": "00000000-0000-4000-8000-000000000348"
+      }
+    ],
+    "source": null
+  },
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/selections/{selection_id}/refresh",
+    "method": "POST",
+    "operation_id": "refresh_selection_api_interior_projects__project_id__selections__selection_id__refresh_post",
+    "path": "/api/interior/projects/{project_id}/selections/{selection_id}/refresh"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000347/selections/00000000-0000-4000-8000-000000000348/refresh"
+  },
+  "scenario": "rechecked",
+  "status": 200
+}

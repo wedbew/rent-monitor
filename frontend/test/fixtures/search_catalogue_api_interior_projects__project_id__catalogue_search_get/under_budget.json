@@ -1,0 +1,155 @@
+{
+  "body": [
+    {
+      "flags": ["within_budget"],
+      "offer": {
+        "attributes": {
+          "kolor": "czarny"
+        },
+        "availability": "in_stock",
+        "category": "lamp",
+        "delivery_known": true,
+        "delivery_pln": "0.00",
+        "dimensions": null,
+        "expires_at": "2026-10-22T09:08:14.918752Z",
+        "image_rights": {
+          "cache": true,
+          "display": true,
+          "generation_reference": true
+        },
+        "image_url": "/api/interior/catalogue/demo-image/lamp-arc/black",
+        "observed_at": "2026-10-01T10:00:00Z",
+        "offer_id": "lamp-arc-black",
+        "price_conditions": null,
+        "price_is_gross": true,
+        "price_pln": "189.00",
+        "product_id": "lamp-arc",
+        "product_url": "https://example.test/fixture/84",
+        "provider": "demo",
+        "seller": "Demo Oświetlenie",
+        "source_label": "Demo (dane przykładowe, nie sklep)",
+        "state": "fresh",
+        "title": "Lampa podłogowa Arc",
+        "variant_id": "black"
+      }
+    },
+    {
+      "flags": ["within_budget"],
+      "offer": {
+        "attributes": {
+          "kolor": "naturalny",
+          "materiał": "len"
+        },
+        "availability": "in_stock",
+        "category": "curtains",
+        "delivery_known": true,
+        "delivery_pln": "15.00",
+        "dimensions": null,
+        "expires_at": "2026-10-22T09:08:14.918752Z",
+        "image_rights": {
+          "cache": true,
+          "display": true,
+          "generation_reference": true
+        },
+        "image_url": "/api/interior/catalogue/demo-image/curtains-linen/natural",
+        "observed_at": "2026-10-01T10:00:00Z",
+        "offer_id": "curtains-linen-natural",
+        "price_conditions": null,
+        "price_is_gross": true,
+        "price_pln": "219.00",
+        "product_id": "curtains-linen",
+        "product_url": "https://example.test/fixture/85",
+        "provider": "demo",
+        "seller": "Demo Dom",
+        "source_label": "Demo (dane przykładowe, nie sklep)",
+        "state": "fresh",
+        "title": "Zasłony lniane 2 szt.",
+        "variant_id": "natural"
+      }
+    },
+    {
+      "flags": ["within_budget"],
+      "offer": {
+        "attributes": {
+          "kolor": "mosiądz",
+          "rozmiar": "80"
+        },
+        "availability": "in_stock",
+        "category": "mirror",
+        "delivery_known": true,
+        "delivery_pln": "19.00",
+        "dimensions": null,
+        "expires_at": "2026-10-22T09:08:14.918752Z",
+        "image_rights": {
+          "cache": true,
+          "display": true,
+          "generation_reference": true
+        },
+        "image_url": "/api/interior/catalogue/demo-image/mirror-round/brass",
+        "observed_at": "2026-10-01T10:00:00Z",
+        "offer_id": "mirror-round-brass",
+        "price_conditions": null,
+        "price_is_gross": true,
+        "price_pln": "259.00",
+        "product_id": "mirror-round",
+        "product_url": "https://example.test/fixture/81",
+        "provider": "demo",
+        "seller": "Demo Dom",
+        "source_label": "Demo (dane przykładowe, nie sklep)",
+        "state": "fresh",
+        "title": "Lustro okrągłe 80 cm",
+        "variant_id": "brass"
+      }
+    },
+    {
+      "flags": ["price_unknown"],
+      "offer": {
+        "attributes": {
+          "kolor": "biały"
+        },
+        "availability": "in_stock",
+        "category": "lamp",
+        "delivery_known": true,
+        "delivery_pln": "0.00",
+        "dimensions": null,
+        "expires_at": "2026-10-22T09:08:14.918752Z",
+        "image_rights": {
+          "cache": true,
+          "display": true,
+          "generation_reference": true
+        },
+        "image_url": "/api/interior/catalogue/demo-image/lamp-arc/white",
+        "observed_at": "2026-10-01T10:00:00Z",
+        "offer_id": "lamp-arc-white",
+        "price_conditions": null,
+        "price_is_gross": null,
+        "price_pln": null,
+        "product_id": "lamp-arc",
+        "product_url": "https://example.test/fixture/86",
+        "provider": "demo",
+        "seller": "Demo Oświetlenie",
+        "source_label": "Demo (dane przykładowe, nie sklep)",
+        "state": "fresh",
+        "title": "Lampa podłogowa Arc",
+        "variant_id": "white"
+      }
+    }
+  ],
+  "content_type": "application/json",
+  "headers": {
+    "cache-control": "private, no-store",
+    "content-type": "application/json"
+  },
+  "operation": {
+    "key": "GET /api/interior/projects/{project_id}/catalogue/search",
+    "method": "GET",
+    "operation_id": "search_catalogue_api_interior_projects__project_id__catalogue_search_get",
+    "path": "/api/interior/projects/{project_id}/catalogue/search"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000363/catalogue/search?max_price_pln=300"
+  },
+  "scenario": "under_budget",
+  "status": 200
+}

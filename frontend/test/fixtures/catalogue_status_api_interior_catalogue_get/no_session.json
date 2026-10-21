@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "UNAUTHENTICATED",
+    "instance": "/api/interior/catalogue",
+    "request_id": "req_fixture",
+    "status": 401,
+    "title": "Sign in required",
+    "type": "urn:rentmonitor:problem:UNAUTHENTICATED"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/interior/catalogue",
+    "method": "GET",
+    "operation_id": "catalogue_status_api_interior_catalogue_get",
+    "path": "/api/interior/catalogue"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/catalogue"
+  },
+  "scenario": "no_session",
+  "status": 401
+}

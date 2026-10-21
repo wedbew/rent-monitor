@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "FEATURE_NOT_IN_PLAN",
+    "instance": "/api/interior/catalogue/demo-image/sofa-nordic/grey",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "The interior architect is in a closed beta",
+    "type": "urn:rentmonitor:problem:FEATURE_NOT_IN_PLAN"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/interior/catalogue/demo-image/{product_id}/{variant_id}",
+    "method": "GET",
+    "operation_id": "demo_product_image_api_interior_catalogue_demo_image__product_id___variant_id__get",
+    "path": "/api/interior/catalogue/demo-image/{product_id}/{variant_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/catalogue/demo-image/sofa-nordic/grey"
+  },
+  "scenario": "not_in_beta",
+  "status": 403
+}

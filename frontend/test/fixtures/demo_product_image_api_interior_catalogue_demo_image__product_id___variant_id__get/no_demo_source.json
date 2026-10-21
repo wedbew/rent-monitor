@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "NOT_FOUND",
+    "instance": "/api/interior/catalogue/demo-image/sofa-nordic/grey",
+    "request_id": "req_fixture",
+    "status": 404,
+    "title": "Image not found",
+    "type": "urn:rentmonitor:problem:NOT_FOUND"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/interior/catalogue/demo-image/{product_id}/{variant_id}",
+    "method": "GET",
+    "operation_id": "demo_product_image_api_interior_catalogue_demo_image__product_id___variant_id__get",
+    "path": "/api/interior/catalogue/demo-image/{product_id}/{variant_id}"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/catalogue/demo-image/sofa-nordic/grey"
+  },
+  "scenario": "no_demo_source",
+  "status": 404
+}

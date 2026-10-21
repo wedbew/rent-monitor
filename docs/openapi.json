@@ -559,6 +559,15 @@
         "title": "AuditSummary",
         "type": "object"
       },
+      "Availability": {
+        "enum": [
+          "in_stock",
+          "out_of_stock",
+          "unknown"
+        ],
+        "title": "Availability",
+        "type": "string"
+      },
       "Basket": {
         "additionalProperties": false,
         "description": "Server-computed figures over the person's items. Not a room budget: delivery and missing items are\nnot included, and `complete` only says every listed line has a price.",
@@ -567,12 +576,26 @@
             "title": "Complete",
             "type": "boolean"
           },
+          "delivery_known_pln": {
+            "description": "delivery charges that are known; unknown ones are not zero",
+            "title": "Delivery Known Pln",
+            "type": "string"
+          },
+          "delivery_unknown_lines": {
+            "title": "Delivery Unknown Lines",
+            "type": "integer"
+          },
           "known_subtotal_pln": {
             "title": "Known Subtotal Pln",
             "type": "string"
           },
           "priced_lines": {
             "title": "Priced Lines",
+            "type": "integer"
+          },
+          "stale_lines": {
+            "description": "catalogue lines whose observed offer expired or cannot be bought",
+            "title": "Stale Lines",
             "type": "integer"
           },
           "unpriced_lines": {
@@ -584,6 +607,9 @@
           "known_subtotal_pln",
           "priced_lines",
           "unpriced_lines",
+          "stale_lines",
+          "delivery_known_pln",
+          "delivery_unknown_lines",
           "complete"
         ],
         "title": "Basket",
@@ -743,6 +769,74 @@
           "room_type"
         ],
         "title": "Brief",
+        "type": "object"
+      },
+      "CandidateOut": {
+        "additionalProperties": false,
+        "properties": {
+          "flags": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Flags",
+            "type": "array"
+          },
+          "offer": {
+            "$ref": "#/components/schemas/OfferOut"
+          }
+        },
+        "required": [
+          "offer"
+        ],
+        "title": "CandidateOut",
+        "type": "object"
+      },
+      "CatalogueStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "is_demo": {
+            "description": "true when the data is a deterministic demo, not a live merchant feed",
+            "title": "Is Demo",
+            "type": "boolean"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "source_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Label"
+          }
+        },
+        "required": [
+          "available",
+          "provider",
+          "source_label",
+          "is_demo"
+        ],
+        "title": "CatalogueStatus",
         "type": "object"
       },
       "ChangePasswordRequest": {
@@ -981,6 +1075,55 @@
         ],
         "title": "DataStatus",
         "type": "string"
+      },
+      "Dimensions": {
+        "additionalProperties": false,
+        "properties": {
+          "depth_cm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depth Cm"
+          },
+          "height_cm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height Cm"
+          },
+          "source": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          },
+          "width_cm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width Cm"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "Dimensions",
+        "type": "object"
       },
       "DistrictOut": {
         "additionalProperties": false,
@@ -1683,6 +1826,29 @@
           "credential"
         ],
         "title": "GoogleCredential",
+        "type": "object"
+      },
+      "ImageRights": {
+        "additionalProperties": false,
+        "description": "What the source permits for a product photo; display, storage and generation are separate rights.",
+        "properties": {
+          "cache": {
+            "default": false,
+            "title": "Cache",
+            "type": "boolean"
+          },
+          "display": {
+            "default": true,
+            "title": "Display",
+            "type": "boolean"
+          },
+          "generation_reference": {
+            "default": false,
+            "title": "Generation Reference",
+            "type": "boolean"
+          }
+        },
+        "title": "ImageRights",
         "type": "object"
       },
       "IndexCohortOut": {
@@ -3211,6 +3377,186 @@
         "title": "MetricViewOut",
         "type": "object"
       },
+      "OfferOut": {
+        "additionalProperties": false,
+        "description": "An `Offer` as the API returns it: money as exact strings, plus the server-derived state.",
+        "properties": {
+          "attributes": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Attributes",
+            "type": "object"
+          },
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "delivery_known": {
+            "title": "Delivery Known",
+            "type": "boolean"
+          },
+          "delivery_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Pln"
+          },
+          "dimensions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Dimensions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "image_rights": {
+            "$ref": "#/components/schemas/ImageRights"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "offer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offer Id"
+          },
+          "price_conditions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Conditions"
+          },
+          "price_is_gross": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Is Gross"
+          },
+          "price_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Pln"
+          },
+          "product_id": {
+            "title": "Product Id",
+            "type": "string"
+          },
+          "product_url": {
+            "title": "Product Url",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "seller": {
+            "title": "Seller",
+            "type": "string"
+          },
+          "source_label": {
+            "title": "Source Label",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/OfferState"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "variant_id": {
+            "title": "Variant Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "product_id",
+          "variant_id",
+          "offer_id",
+          "seller",
+          "title",
+          "product_url",
+          "category",
+          "attributes",
+          "dimensions",
+          "price_pln",
+          "price_is_gross",
+          "price_conditions",
+          "delivery_pln",
+          "delivery_known",
+          "availability",
+          "observed_at",
+          "expires_at",
+          "state",
+          "image_url",
+          "image_rights",
+          "source_label"
+        ],
+        "title": "OfferOut",
+        "type": "object"
+      },
+      "OfferState": {
+        "description": "Derived on read from the clock and the stored observation; never stored.",
+        "enum": [
+          "fresh",
+          "expired",
+          "unavailable"
+        ],
+        "title": "OfferState",
+        "type": "string"
+      },
       "OverrideOut": {
         "properties": {
           "created_by": {
@@ -3921,7 +4267,9 @@
           "SAVED_LIMIT_REACHED",
           "INTERIOR_LIMIT_REACHED",
           "IMAGE_REJECTED",
-          "MEDIA_STORAGE_UNAVAILABLE"
+          "MEDIA_STORAGE_UNAVAILABLE",
+          "CATALOGUE_UNAVAILABLE",
+          "OFFER_UNAVAILABLE"
         ],
         "title": "ProblemCode",
         "type": "string"
@@ -4013,6 +4361,13 @@
               "$ref": "#/components/schemas/RevisionOut"
             },
             "title": "Revisions",
+            "type": "array"
+          },
+          "selections": {
+            "items": {
+              "$ref": "#/components/schemas/SelectionOut"
+            },
+            "title": "Selections",
             "type": "array"
           },
           "source": {
@@ -4636,6 +4991,13 @@
             "title": "Revision Id",
             "type": "string"
           },
+          "selections": {
+            "items": {
+              "$ref": "#/components/schemas/SelectionSnapshot"
+            },
+            "title": "Selections",
+            "type": "array"
+          },
           "source_digest": {
             "anyOf": [
               {
@@ -4737,6 +5099,125 @@
           }
         },
         "title": "SavedPut",
+        "type": "object"
+      },
+      "SelectionIn": {
+        "additionalProperties": false,
+        "description": "Pick an exact variant. The server re-fetches the offer from the provider; the client sends no price.",
+        "properties": {
+          "product_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "provider": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "title": "Provider",
+            "type": "string"
+          },
+          "quantity": {
+            "default": 1,
+            "maximum": 99.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "variant_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "title": "Variant Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "product_id",
+          "variant_id"
+        ],
+        "title": "SelectionIn",
+        "type": "object"
+      },
+      "SelectionOut": {
+        "additionalProperties": false,
+        "properties": {
+          "checked_at": {
+            "format": "date-time",
+            "title": "Checked At",
+            "type": "string"
+          },
+          "line_total_pln": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "quantity x price when the offer is fresh and priced, else null",
+            "title": "Line Total Pln"
+          },
+          "offer": {
+            "$ref": "#/components/schemas/OfferOut"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "selection_id": {
+            "format": "uuid",
+            "title": "Selection Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "selection_id",
+          "quantity",
+          "offer",
+          "line_total_pln",
+          "checked_at"
+        ],
+        "title": "SelectionOut",
+        "type": "object"
+      },
+      "SelectionQuantity": {
+        "additionalProperties": false,
+        "properties": {
+          "quantity": {
+            "maximum": 99.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quantity"
+        ],
+        "title": "SelectionQuantity",
+        "type": "object"
+      },
+      "SelectionSnapshot": {
+        "additionalProperties": false,
+        "description": "A selection as a revision saw it.",
+        "properties": {
+          "offer": {
+            "$ref": "#/components/schemas/OfferOut"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quantity",
+          "offer"
+        ],
+        "title": "SelectionSnapshot",
         "type": "object"
       },
       "SellerQuestion": {
@@ -8802,6 +9283,203 @@
         ]
       }
     },
+    "/api/interior/catalogue": {
+      "get": {
+        "description": "Whether a product source is connected, and whether it is only a demo. Cheap: no provider call.",
+        "operationId": "catalogue_status_api_interior_catalogue_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogueStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Catalogue Status",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/catalogue/demo-image/{product_id}/{variant_id}": {
+      "get": {
+        "description": "A generated placeholder picture for the demo source only: not a product photo and labelled as such.",
+        "operationId": "demo_product_image_api_interior_catalogue_demo_image__product_id___variant_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9._:-]{1,64}$",
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "variant_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9._:-]{1,64}$",
+              "title": "Variant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/png": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Demo Product Image",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
     "/api/interior/projects": {
       "get": {
         "operationId": "list_projects_api_interior_projects_get",
@@ -9343,6 +10021,185 @@
           }
         },
         "summary": "Update Project",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/catalogue/search": {
+      "get": {
+        "description": "Real offers from the connected source, hard-filtered (stock, freshness, budget, text) and ordered\ndeterministically. Nothing is estimated; an unknown price or delivery is flagged, not guessed.",
+        "operationId": "search_catalogue_api_interior_projects__project_id__catalogue_search_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 120,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "pattern": "^[A-Za-z0-9._:-]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "max_price_pln",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 10000000.0,
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Price Pln"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 12,
+              "maximum": 24,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CandidateOut"
+                  },
+                  "title": "Response Search Catalogue Api Interior Projects  Project Id  Catalogue Search Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: CATALOGUE_UNAVAILABLE, NOT_READY",
+            "x-problem-codes": [
+              "CATALOGUE_UNAVAILABLE",
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Search Catalogue",
         "tags": [
           "interior"
         ]
@@ -10123,6 +10980,552 @@
           }
         },
         "summary": "Create Revision",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/selections": {
+      "post": {
+        "description": "Pick an exact variant. The server fetches the offer from the source itself and stores that observation;\nthe client's idea of the price is never accepted.",
+        "operationId": "select_product_api_interior_projects__project_id__selections_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERIOR_LIMIT_REACHED, OFFER_UNAVAILABLE",
+            "x-problem-codes": [
+              "INTERIOR_LIMIT_REACHED",
+              "OFFER_UNAVAILABLE"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: CATALOGUE_UNAVAILABLE, NOT_READY",
+            "x-problem-codes": [
+              "CATALOGUE_UNAVAILABLE",
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Select Product",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/selections/{selection_id}": {
+      "delete": {
+        "operationId": "delete_selection_api_interior_projects__project_id__selections__selection_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "selection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Selection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Delete Selection",
+        "tags": [
+          "interior"
+        ]
+      },
+      "put": {
+        "operationId": "set_selection_quantity_api_interior_projects__project_id__selections__selection_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "selection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Selection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectionQuantity"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Set Selection Quantity",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/selections/{selection_id}/refresh": {
+      "post": {
+        "description": "Check the exact variant again at the source and keep the new observation (or mark it unavailable).",
+        "operationId": "refresh_selection_api_interior_projects__project_id__selections__selection_id__refresh_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "selection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Selection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: OFFER_UNAVAILABLE",
+            "x-problem-codes": [
+              "OFFER_UNAVAILABLE"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: CATALOGUE_UNAVAILABLE, NOT_READY",
+            "x-problem-codes": [
+              "CATALOGUE_UNAVAILABLE",
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Refresh Selection",
         "tags": [
           "interior"
         ]

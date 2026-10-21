@@ -179,6 +179,14 @@ export const pl = {
         detail:
           "Wybierz inne zdjęcie w formacie JPEG, PNG lub WebP, do 10 MB i co najmniej 200 px z każdej strony.",
       },
+      CATALOGUE_UNAVAILABLE: {
+        title: "Katalog produktów jest niedostępny",
+        detail: "Projekt i wybrane produkty zostały zachowane. Spróbuj ponownie za chwilę.",
+      },
+      OFFER_UNAVAILABLE: {
+        title: "Tego wariantu nie można teraz kupić",
+        detail: "Oferta wygasła albo produktu nie ma na stanie. Wybierz inny wariant.",
+      },
       MEDIA_STORAGE_UNAVAILABLE: {
         title: "Zdjęcia są chwilowo niedostępne",
         detail: "Projekt został zachowany. Spróbuj ponownie za chwilę.",

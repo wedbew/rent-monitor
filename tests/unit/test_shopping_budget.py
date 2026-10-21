@@ -52,3 +52,32 @@ def test_order_does_not_matter_and_unpriced_never_contribute(rows: list[tuple[in
     assert forward.known_subtotal_pln == sum(
         (Decimal(q) * p for q, p in rows if p is not None), Decimal(0)
     ).quantize(Decimal("0.01"))
+
+
+def test_stale_lines_are_excluded_and_counted_never_priced() -> None:
+    total = basket_total([BasketLine(1, Decimal("100"), stale=True), BasketLine(2, Decimal("10"))])
+    assert (total.known_subtotal_pln, total.priced_lines, total.stale_lines) == (Decimal("20.00"), 1, 1)
+    assert not total.complete
+
+
+def test_unknown_delivery_is_counted_not_zero_and_blocks_completeness() -> None:
+    total = basket_total(
+        [
+            BasketLine(1, Decimal("100"), needs_delivery=True, delivery_pln=Decimal("19.90")),
+            BasketLine(1, Decimal("50"), needs_delivery=True, delivery_pln=None),
+            BasketLine(1, Decimal("5")),  # the person's own item: no delivery
+        ]
+    )
+    assert total.delivery_known_pln == Decimal("19.90")
+    assert total.delivery_unknown_lines == 1
+    assert not total.complete
+    done = basket_total([BasketLine(1, Decimal("100"), needs_delivery=True, delivery_pln=Decimal("0"))])
+    assert done.complete  # a known free delivery is a fact, unlike a missing one
+    assert done.delivery_known_pln == Decimal("0.00")
+
+
+def test_a_stale_line_does_not_add_its_delivery() -> None:
+    total = basket_total(
+        [BasketLine(1, Decimal("100"), stale=True, needs_delivery=True, delivery_pln=Decimal("30"))]
+    )
+    assert total.delivery_known_pln == Decimal("0.00")

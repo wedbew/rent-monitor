@@ -1,9 +1,9 @@
 {
   "body": {
     "content_digest": "e1c414d4f45346501904530b9674b5b01bae946aa6a1c51de6676511ca5e51e0",
-    "expires_at": "2026-11-20T08:36:31.293462Z",
+    "expires_at": "2026-11-20T09:08:13.765075Z",
     "height": 480,
-    "media_id": "00000000-0000-4000-8000-000000000369",
+    "media_id": "00000000-0000-4000-8000-000000000401",
     "purpose": "source",
     "state": "stored",
     "width": 640
@@ -21,7 +21,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000368/source"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000400/source"
   },
   "scenario": "stored",
   "status": 201

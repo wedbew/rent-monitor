@@ -18,6 +18,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_serializer, field_validator
 
+from rm_contracts.catalogue import SelectionOut, SelectionSnapshot
+
 MAX_PROJECTS = 20
 MAX_ITEMS_PER_PROJECT = 30
 MAX_PRICE_PLN = Decimal("10000000")
@@ -131,6 +133,9 @@ class Basket(_Out):
     known_subtotal_pln: str
     priced_lines: int
     unpriced_lines: int
+    stale_lines: int = Field(description="catalogue lines whose observed offer expired or cannot be bought")
+    delivery_known_pln: str = Field(description="delivery charges that are known; unknown ones are not zero")
+    delivery_unknown_lines: int
     complete: bool
 
 
@@ -150,6 +155,7 @@ class RevisionOut(_Out):
     brief: Brief
     source_digest: Sha256Hex | None
     items: list[ItemSnapshot]
+    selections: list[SelectionSnapshot] = Field(default_factory=lambda: [])
     basket: Basket
     created_at: datetime
 
@@ -170,6 +176,7 @@ class ProjectOut(_Out):
     brief: Brief
     source: MediaRef | None
     items: list[CustomItemOut]
+    selections: list[SelectionOut] = Field(default_factory=lambda: [])
     basket: Basket
     revisions: list[RevisionOut]
     created_at: datetime
