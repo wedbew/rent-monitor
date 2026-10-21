@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "NOT_FOUND",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000031/generations/00000000-0000-4000-8000-000000000005/cancel",
+    "request_id": "req_fixture",
+    "status": 404,
+    "title": "Project not found",
+    "type": "urn:rentmonitor:problem:NOT_FOUND"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/generations/{generation_id}/cancel",
+    "method": "POST",
+    "operation_id": "cancel_generation_api_interior_projects__project_id__generations__generation_id__cancel_post",
+    "path": "/api/interior/projects/{project_id}/generations/{generation_id}/cancel"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000031/generations/00000000-0000-4000-8000-000000000005/cancel"
+  },
+  "scenario": "unknown",
+  "status": 404
+}

@@ -10,7 +10,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000046"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000068"
   },
   "scenario": "deleted",
   "status": 204

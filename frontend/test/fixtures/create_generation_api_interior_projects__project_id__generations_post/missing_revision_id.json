@@ -1,0 +1,33 @@
+{
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "errors": [
+      {
+        "loc": ["body", "revision_id"],
+        "msg": "Field required",
+        "type": "missing"
+      }
+    ],
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000045/generations",
+    "request_id": "req_fixture",
+    "status": 422,
+    "title": "Request validation failed",
+    "type": "urn:rentmonitor:problem:VALIDATION_ERROR"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "POST /api/interior/projects/{project_id}/generations",
+    "method": "POST",
+    "operation_id": "create_generation_api_interior_projects__project_id__generations_post",
+    "path": "/api/interior/projects/{project_id}/generations"
+  },
+  "request": {
+    "body": {},
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000045/generations"
+  },
+  "scenario": "missing_revision_id",
+  "status": 422
+}

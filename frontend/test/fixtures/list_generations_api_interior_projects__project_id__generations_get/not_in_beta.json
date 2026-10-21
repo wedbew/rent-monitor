@@ -1,0 +1,26 @@
+{
+  "body": {
+    "code": "FEATURE_NOT_IN_PLAN",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000005/generations",
+    "request_id": "req_fixture",
+    "status": 403,
+    "title": "The interior architect is in a closed beta",
+    "type": "urn:rentmonitor:problem:FEATURE_NOT_IN_PLAN"
+  },
+  "content_type": "application/problem+json",
+  "headers": {
+    "content-type": "application/problem+json"
+  },
+  "operation": {
+    "key": "GET /api/interior/projects/{project_id}/generations",
+    "method": "GET",
+    "operation_id": "list_generations_api_interior_projects__project_id__generations_get",
+    "path": "/api/interior/projects/{project_id}/generations"
+  },
+  "request": {
+    "body": null,
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000005/generations"
+  },
+  "scenario": "not_in_beta",
+  "status": 403
+}

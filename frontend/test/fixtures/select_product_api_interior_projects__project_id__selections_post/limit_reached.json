@@ -1,7 +1,7 @@
 {
   "body": {
     "code": "INTERIOR_LIMIT_REACHED",
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000365/selections",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000399/selections",
     "reason": "selections",
     "request_id": "req_fixture",
     "status": 409,
@@ -25,7 +25,7 @@
       "quantity": 1,
       "variant_id": "white"
     },
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000365/selections"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000399/selections"
   },
   "scenario": "limit_reached",
   "status": 409

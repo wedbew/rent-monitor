@@ -58,6 +58,9 @@ class ProblemCode(StrEnum):
     # Interior catalogue (RM-449)
     CATALOGUE_UNAVAILABLE = "CATALOGUE_UNAVAILABLE"
     OFFER_UNAVAILABLE = "OFFER_UNAVAILABLE"
+    # Interior generation (RM-450)
+    GENERATION_UNAVAILABLE = "GENERATION_UNAVAILABLE"
+    GENERATION_CONFLICT = "GENERATION_CONFLICT"
 
 
 class ProblemField(BaseModel):

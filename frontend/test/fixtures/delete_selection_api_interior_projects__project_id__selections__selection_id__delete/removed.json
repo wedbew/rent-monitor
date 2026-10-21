@@ -10,7 +10,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000048/selections/00000000-0000-4000-8000-000000000049"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000070/selections/00000000-0000-4000-8000-000000000071"
   },
   "scenario": "removed",
   "status": 204

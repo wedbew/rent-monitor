@@ -1,9 +1,9 @@
 {
   "body": {
     "content_digest": "e1c414d4f45346501904530b9674b5b01bae946aa6a1c51de6676511ca5e51e0",
-    "expires_at": "2026-11-20T09:08:14.081515Z",
+    "expires_at": "2026-11-20T09:40:24.144448Z",
     "height": 480,
-    "media_id": "00000000-0000-4000-8000-000000000395",
+    "media_id": "00000000-0000-4000-8000-000000000429",
     "purpose": "custom_item",
     "state": "stored",
     "width": 640
@@ -21,7 +21,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000393/items/00000000-0000-4000-8000-000000000394/photo"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000427/items/00000000-0000-4000-8000-000000000428/photo"
   },
   "scenario": "stored",
   "status": 200

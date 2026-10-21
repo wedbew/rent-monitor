@@ -8,7 +8,7 @@
         "type": "extra_forbidden"
       }
     ],
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000364/selections",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000398/selections",
     "request_id": "req_fixture",
     "status": 422,
     "title": "Request validation failed",
@@ -32,7 +32,7 @@
       "quantity": 1,
       "variant_id": "grey"
     },
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000364/selections"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000398/selections"
   },
   "scenario": "client_price_refused",
   "status": 422

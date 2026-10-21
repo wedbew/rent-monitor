@@ -1,7 +1,7 @@
 {
   "body": {
     "code": "IMAGE_REJECTED",
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000398/source",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000432/source",
     "reason": "malformed",
     "request_id": "req_fixture",
     "status": 422,
@@ -20,7 +20,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000398/source"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000432/source"
   },
   "scenario": "not_an_image",
   "status": 422

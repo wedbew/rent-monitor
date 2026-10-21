@@ -650,6 +650,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/interior/projects/{project_id}/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Generations */
+        get: operations["list_generations_api_interior_projects__project_id__generations_get"];
+        put?: never;
+        /**
+         * Create Generation
+         * @description Turn a saved revision into an illustrative picture. 202 when queued; 200 when the same revision is
+         *     already queued or running (or the key was seen): a repeated click never submits or pays twice.
+         */
+        post: operations["create_generation_api_interior_projects__project_id__generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interior/projects/{project_id}/generations/{generation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Generation */
+        get: operations["get_generation_api_interior_projects__project_id__generations__generation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interior/projects/{project_id}/generations/{generation_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Generation
+         * @description Queued-only: a running operation may already be at the provider and answers 409 `running`.
+         */
+        post: operations["cancel_generation_api_interior_projects__project_id__generations__generation_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/interior/projects/{project_id}/items": {
         parameters: {
             query?: never;
@@ -1741,6 +1800,71 @@ export interface components {
             /** Email */
             email: string;
         };
+        /** GenerationCreate */
+        GenerationCreate: {
+            /**
+             * Revision Id
+             * Format: uuid
+             */
+            revision_id: string;
+        };
+        /**
+         * GenerationError
+         * @description Stable reasons a generation ended `failed`; the SPA words them.
+         * @enum {string}
+         */
+        GenerationError: "BUDGET_EXHAUSTED" | "NO_SOURCE_PHOTO" | "PROVIDER_REJECTED" | "PROVIDER_UNAVAILABLE" | "AMBIGUOUS" | "TIMEOUT" | "OUTPUT_REJECTED" | "STORAGE_FAILED" | "INTERNAL";
+        /** GenerationOut */
+        GenerationOut: {
+            /** Cost Estimated */
+            cost_estimated: boolean;
+            /**
+             * Cost Usd
+             * @description provider-reported or, when estimated, the reserved amount
+             */
+            cost_usd: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            error_code: components["schemas"]["GenerationError"] | null;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Generation Id
+             * Format: uuid
+             */
+            generation_id: string;
+            /** Model */
+            model: string;
+            output: components["schemas"]["MediaRef"] | null;
+            /** Prompt Version */
+            prompt_version: string;
+            /**
+             * References Skipped
+             * @description picked or own items whose photo was not sent (no photo or no right)
+             */
+            references_skipped: number;
+            /**
+             * References Used
+             * @description photos sent to the model besides the room photo
+             */
+            references_used: number;
+            /**
+             * Revision Id
+             * Format: uuid
+             */
+            revision_id: string;
+            /** Started At */
+            started_at: string | null;
+            state: components["schemas"]["GenerationState"];
+        };
+        /**
+         * GenerationState
+         * @enum {string}
+         */
+        GenerationState: "queued" | "running" | "succeeded" | "failed" | "cancelled";
         /** GoogleCredential */
         GoogleCredential: {
             /** Credential */
@@ -2527,7 +2651,7 @@ export interface components {
          * ProblemCode
          * @enum {string}
          */
-        ProblemCode: "INVALID_LISTING_REF" | "QUOTA_EXHAUSTED" | "AUDIT_IN_PROGRESS" | "RENT_NOT_DEAL" | "FRACTIONAL_OWNERSHIP" | "LISTING_GONE" | "UPSTREAM_BLOCKED" | "UPSTREAM_SCHEMA_DRIFT" | "VISION_UNAVAILABLE" | "CONTEXT_UNAVAILABLE" | "INTERNAL" | "VALIDATION_ERROR" | "NOT_FOUND" | "HTTP_ERROR" | "NOT_READY" | "INVALID_GOOGLE_TOKEN" | "GOOGLE_EMAIL_UNVERIFIED" | "EMAIL_CONFIRMATION_REQUIRED" | "MAGIC_LINK_INVALID" | "INVALID_CREDENTIALS" | "WEAK_PASSWORD" | "AUTH_TOKEN_INVALID" | "ACCOUNT_EXISTS" | "BILLING_UNAVAILABLE" | "IDEMPOTENCY_CONFLICT" | "BILLING_PROVIDER_ERROR" | "INVALID_WEBHOOK_SIGNATURE" | "BILLING_HOLD" | "PURCHASE_NOT_REFUNDABLE" | "REFUND_NEEDS_REVIEW" | "EMAIL_NOT_VERIFIED" | "FEATURE_NOT_IN_PLAN" | "ADMIN_ONLY" | "ALREADY_SUBSCRIBED" | "INVALID_STRIPE_SIGNATURE" | "UNAUTHENTICATED" | "RATE_LIMITED" | "ORIGIN_NOT_ALLOWED" | "CONFIRMATION_MISMATCH" | "CREDIT_BELOW_ZERO" | "SAVED_LIMIT_REACHED" | "INTERIOR_LIMIT_REACHED" | "IMAGE_REJECTED" | "MEDIA_STORAGE_UNAVAILABLE" | "CATALOGUE_UNAVAILABLE" | "OFFER_UNAVAILABLE";
+        ProblemCode: "INVALID_LISTING_REF" | "QUOTA_EXHAUSTED" | "AUDIT_IN_PROGRESS" | "RENT_NOT_DEAL" | "FRACTIONAL_OWNERSHIP" | "LISTING_GONE" | "UPSTREAM_BLOCKED" | "UPSTREAM_SCHEMA_DRIFT" | "VISION_UNAVAILABLE" | "CONTEXT_UNAVAILABLE" | "INTERNAL" | "VALIDATION_ERROR" | "NOT_FOUND" | "HTTP_ERROR" | "NOT_READY" | "INVALID_GOOGLE_TOKEN" | "GOOGLE_EMAIL_UNVERIFIED" | "EMAIL_CONFIRMATION_REQUIRED" | "MAGIC_LINK_INVALID" | "INVALID_CREDENTIALS" | "WEAK_PASSWORD" | "AUTH_TOKEN_INVALID" | "ACCOUNT_EXISTS" | "BILLING_UNAVAILABLE" | "IDEMPOTENCY_CONFLICT" | "BILLING_PROVIDER_ERROR" | "INVALID_WEBHOOK_SIGNATURE" | "BILLING_HOLD" | "PURCHASE_NOT_REFUNDABLE" | "REFUND_NEEDS_REVIEW" | "EMAIL_NOT_VERIFIED" | "FEATURE_NOT_IN_PLAN" | "ADMIN_ONLY" | "ALREADY_SUBSCRIBED" | "INVALID_STRIPE_SIGNATURE" | "UNAUTHENTICATED" | "RATE_LIMITED" | "ORIGIN_NOT_ALLOWED" | "CONFIRMATION_MISMATCH" | "CREDIT_BELOW_ZERO" | "SAVED_LIMIT_REACHED" | "INTERIOR_LIMIT_REACHED" | "IMAGE_REJECTED" | "MEDIA_STORAGE_UNAVAILABLE" | "CATALOGUE_UNAVAILABLE" | "OFFER_UNAVAILABLE" | "GENERATION_UNAVAILABLE" | "GENERATION_CONFLICT";
         /**
          * ProblemField
          * @description One rejected input in a 422: where (`loc`), the rule (`type`) and a message. Never the value itself.
@@ -6015,6 +6139,355 @@ export interface operations {
                 };
             };
             /** @description Problem: CATALOGUE_UNAVAILABLE, NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_generations_api_interior_projects__project_id__generations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationOut"][];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_generation_api_interior_projects__project_id__generations_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description A UUID per click. Repeating it returns the operation it created and never starts or pays for a second one; used for another revision it is 409 GENERATION_CONFLICT. */
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationCreate"];
+            };
+        };
+        responses: {
+            /** @description The same revision is already queued or running */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationOut"];
+                };
+            };
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationOut"];
+                };
+            };
+            /** @description Problem: HTTP_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: GENERATION_CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: GENERATION_UNAVAILABLE, NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_generation_api_interior_projects__project_id__generations__generation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                generation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationOut"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    cancel_generation_api_interior_projects__project_id__generations__generation_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                generation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationOut"];
+                };
+            };
+            /** @description Problem: UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: GENERATION_CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: INTERNAL */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem: NOT_READY */
             503: {
                 headers: {
                     [name: string]: unknown;

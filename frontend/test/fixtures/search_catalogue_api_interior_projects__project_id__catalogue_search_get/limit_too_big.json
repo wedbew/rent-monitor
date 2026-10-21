@@ -8,7 +8,7 @@
         "type": "less_than_equal"
       }
     ],
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000360/catalogue/search",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000394/catalogue/search",
     "request_id": "req_fixture",
     "status": 422,
     "title": "Request validation failed",
@@ -26,7 +26,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000360/catalogue/search?limit=99"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000394/catalogue/search?limit=99"
   },
   "scenario": "limit_too_big",
   "status": 422

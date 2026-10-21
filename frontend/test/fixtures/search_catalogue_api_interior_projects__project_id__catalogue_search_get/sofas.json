@@ -17,7 +17,7 @@
           "source": "dane przykładowe",
           "width_cm": "200"
         },
-        "expires_at": "2026-10-22T09:08:14.880720Z",
+        "expires_at": "2026-10-22T09:40:25.013695Z",
         "image_rights": {
           "cache": true,
           "display": true,
@@ -56,7 +56,7 @@
           "source": "dane przykładowe",
           "width_cm": "200"
         },
-        "expires_at": "2026-10-22T09:08:14.880720Z",
+        "expires_at": "2026-10-22T09:40:25.013695Z",
         "image_rights": {
           "cache": true,
           "display": true,
@@ -92,7 +92,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000362/catalogue/search?q=sofa"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000396/catalogue/search?q=sofa"
   },
   "scenario": "sofas",
   "status": 200

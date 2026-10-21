@@ -1812,6 +1812,167 @@
         "title": "ForgotRequest",
         "type": "object"
       },
+      "GenerationCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision_id"
+        ],
+        "title": "GenerationCreate",
+        "type": "object"
+      },
+      "GenerationError": {
+        "description": "Stable reasons a generation ended `failed`; the SPA words them.",
+        "enum": [
+          "BUDGET_EXHAUSTED",
+          "NO_SOURCE_PHOTO",
+          "PROVIDER_REJECTED",
+          "PROVIDER_UNAVAILABLE",
+          "AMBIGUOUS",
+          "TIMEOUT",
+          "OUTPUT_REJECTED",
+          "STORAGE_FAILED",
+          "INTERNAL"
+        ],
+        "title": "GenerationError",
+        "type": "string"
+      },
+      "GenerationOut": {
+        "additionalProperties": false,
+        "properties": {
+          "cost_estimated": {
+            "title": "Cost Estimated",
+            "type": "boolean"
+          },
+          "cost_usd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "provider-reported or, when estimated, the reserved amount",
+            "title": "Cost Usd"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GenerationError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MediaRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "prompt_version": {
+            "title": "Prompt Version",
+            "type": "string"
+          },
+          "references_skipped": {
+            "description": "picked or own items whose photo was not sent (no photo or no right)",
+            "title": "References Skipped",
+            "type": "integer"
+          },
+          "references_used": {
+            "description": "photos sent to the model besides the room photo",
+            "title": "References Used",
+            "type": "integer"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "state": {
+            "$ref": "#/components/schemas/GenerationState"
+          }
+        },
+        "required": [
+          "generation_id",
+          "revision_id",
+          "state",
+          "error_code",
+          "model",
+          "prompt_version",
+          "references_used",
+          "references_skipped",
+          "output",
+          "cost_usd",
+          "cost_estimated",
+          "created_at",
+          "started_at",
+          "finished_at"
+        ],
+        "title": "GenerationOut",
+        "type": "object"
+      },
+      "GenerationState": {
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled"
+        ],
+        "title": "GenerationState",
+        "type": "string"
+      },
       "GoogleCredential": {
         "additionalProperties": false,
         "properties": {
@@ -4269,7 +4430,9 @@
           "IMAGE_REJECTED",
           "MEDIA_STORAGE_UNAVAILABLE",
           "CATALOGUE_UNAVAILABLE",
-          "OFFER_UNAVAILABLE"
+          "OFFER_UNAVAILABLE",
+          "GENERATION_UNAVAILABLE",
+          "GENERATION_CONFLICT"
         ],
         "title": "ProblemCode",
         "type": "string"
@@ -10200,6 +10363,555 @@
           }
         },
         "summary": "Search Catalogue",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/generations": {
+      "get": {
+        "operationId": "list_generations_api_interior_projects__project_id__generations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GenerationOut"
+                  },
+                  "title": "Response List Generations Api Interior Projects  Project Id  Generations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "List Generations",
+        "tags": [
+          "interior"
+        ]
+      },
+      "post": {
+        "description": "Turn a saved revision into an illustrative picture. 202 when queued; 200 when the same revision is\nalready queued or running (or the key was seen): a repeated click never submits or pays twice.",
+        "operationId": "create_generation_api_interior_projects__project_id__generations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "A UUID per click. Repeating it returns the operation it created and never starts or pays for a second one; used for another revision it is 409 GENERATION_CONFLICT.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A UUID per click. Repeating it returns the operation it created and never starts or pays for a second one; used for another revision it is 409 GENERATION_CONFLICT.",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationOut"
+                }
+              }
+            },
+            "description": "The same revision is already queued or running"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: HTTP_ERROR",
+            "x-problem-codes": [
+              "HTTP_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: GENERATION_CONFLICT",
+            "x-problem-codes": [
+              "GENERATION_CONFLICT"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: GENERATION_UNAVAILABLE, NOT_READY",
+            "x-problem-codes": [
+              "GENERATION_UNAVAILABLE",
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Create Generation",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/generations/{generation_id}": {
+      "get": {
+        "operationId": "get_generation_api_interior_projects__project_id__generations__generation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "generation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Generation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Get Generation",
+        "tags": [
+          "interior"
+        ]
+      }
+    },
+    "/api/interior/projects/{project_id}/generations/{generation_id}/cancel": {
+      "post": {
+        "description": "Queued-only: a running operation may already be at the provider and answers 409 `running`.",
+        "operationId": "cancel_generation_api_interior_projects__project_id__generations__generation_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "generation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Generation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: UNAUTHENTICATED",
+            "x-problem-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: FEATURE_NOT_IN_PLAN, ORIGIN_NOT_ALLOWED",
+            "x-problem-codes": [
+              "FEATURE_NOT_IN_PLAN",
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_FOUND",
+            "x-problem-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: GENERATION_CONFLICT",
+            "x-problem-codes": [
+              "GENERATION_CONFLICT"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: VALIDATION_ERROR",
+            "x-problem-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: INTERNAL",
+            "x-problem-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem: NOT_READY",
+            "x-problem-codes": [
+              "NOT_READY"
+            ]
+          }
+        },
+        "summary": "Cancel Generation",
         "tags": [
           "interior"
         ]

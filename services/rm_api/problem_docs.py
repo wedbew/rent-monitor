@@ -122,6 +122,25 @@ EXTRA: dict[str, Errors] = {
         403: (C.FEATURE_NOT_IN_PLAN,),
         404: (C.NOT_FOUND,),
     },
+    "POST /api/interior/projects/{project_id}/generations": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+        409: (C.GENERATION_CONFLICT,),
+        503: (C.GENERATION_UNAVAILABLE,),
+    },
+    "GET /api/interior/projects/{project_id}/generations": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+    },
+    "GET /api/interior/projects/{project_id}/generations/{generation_id}": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+    },
+    "POST /api/interior/projects/{project_id}/generations/{generation_id}/cancel": {
+        403: (C.FEATURE_NOT_IN_PLAN,),
+        404: (C.NOT_FOUND,),
+        409: (C.GENERATION_CONFLICT,),
+    },
     "POST /api/interior/projects/{project_id}/revisions": {
         403: (C.FEATURE_NOT_IN_PLAN,),
         404: (C.NOT_FOUND,),

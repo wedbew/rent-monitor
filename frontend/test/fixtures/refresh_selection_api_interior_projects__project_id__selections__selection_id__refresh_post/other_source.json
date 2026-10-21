@@ -1,7 +1,7 @@
 {
   "body": {
     "code": "OFFER_UNAVAILABLE",
-    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000345/selections/00000000-0000-4000-8000-000000000346/refresh",
+    "instance": "/api/interior/projects/00000000-0000-4000-8000-000000000379/selections/00000000-0000-4000-8000-000000000380/refresh",
     "request_id": "req_fixture",
     "status": 409,
     "title": "That product source is not connected",
@@ -19,7 +19,7 @@
   },
   "request": {
     "body": null,
-    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000345/selections/00000000-0000-4000-8000-000000000346/refresh"
+    "path": "/api/interior/projects/00000000-0000-4000-8000-000000000379/selections/00000000-0000-4000-8000-000000000380/refresh"
   },
   "scenario": "other_source",
   "status": 409
