@@ -29,7 +29,7 @@ dev = [
   "pytest-alembic>=0.13",
   "time-machine>=3.5",
   "polyfactory>=3.3",
-  "ruff==0.17.0",
+  "ruff==0.17.1",
   "pyright==1.1.414",
   "commitizen>=4.19,<5",
   "defusedxml>=0.7.1",
