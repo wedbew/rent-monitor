@@ -116,6 +116,34 @@ that touches `frontend/`, and to backend PRs that change a contract the SPA cons
 - Before starting frontend work, read the open findings in the audit file. A PR that touches an area with an open
   finding must not make it worse and says in its body which findings it touches.
 
+## 11. Fix visible layout defects during visual review
+
+- Treat clipped or overlapping labels, crowded header controls, squeezed branding and oversized mobile toolbar
+  text as defects even when axe and page-overflow checks pass. Inspect the actual rendered result at 320 px and
+  the target widths, in both themes; DOM assertions alone do not establish visual quality.
+- Fix these defects automatically within the authorized UI work, without waiting for the owner to point them out
+  or asking again. For familiar mobile toolbar actions such as theme switching, prefer an icon-only control with
+  a localized accessible name, a hover hint and a minimum 44 × 44 px touch target. Keep essential status and
+  unfamiliar actions understandable.
+- Adjacent mobile toolbar actions (such as theme and navigation menu) use matching 44 × 44 px icon buttons,
+  aligned on the same baseline with consistent borders and corners. Do not mix a small text button with a
+  full-height icon control.
+- Add a regression assertion for the specific failure (for example label bounds, control overlap or icon-only
+  toolbar sizing), render again, and inspect the corrected screenshots before presenting the result as finished.
+
+## 12. Mobile wizard width belongs to the content
+
+- On mobile (up to 760 px), the wizard spans the full available viewport width. Override or cancel the shell's
+  default horizontal container padding for this surface. Keep one 8 px content gutter per side (or the device's
+  larger safe-area inset); do not add the shell, wizard, section, card and form paddings together.
+- Flatten nested decorative cards on narrow, single-column wizard layouts. Remove redundant side borders,
+  radii, horizontal card padding and desktop form-width caps. Use headings, vertical spacing and separators for
+  hierarchy. Preserve usable input padding, focus rings and 44 px touch targets.
+- Verify at 320, 390 and wider mobile widths in both themes: the wizard reaches the viewport edges, primary
+  fields have at most 12 px total inset per side (excluding a larger safe area), and there is no horizontal page
+  overflow. Assert the actual rendered bounds and inspect screenshots; a padded layout that merely fits is not
+  sufficient. Apply these fixes automatically within authorized mobile UI work.
+
 ## PR checklist (frontend line in the template)
 
 Tick the `Frontend` line only when all of these hold. Otherwise list the exceptions:

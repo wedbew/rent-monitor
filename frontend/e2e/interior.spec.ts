@@ -2,7 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 
 import { createInterior } from "../test/scenarios";
 import { exercise, outcome } from "./coverage";
-import { expect, test } from "./fixtures";
+import { expect, expectNoA11yViolations, test } from "./fixtures";
 import { expectDialogContract } from "./popups";
 
 /** The seeded project of every `createInterior` flow (the first id the fake server hands out). */
@@ -23,9 +23,161 @@ async function choose(select: Locator, label: string): Promise<void> {
 async function openWorkspace(page: Page) {
   await page.goto(WORKSPACE);
   await expect(page.getByRole("heading", { level: 1, name: "Salon" })).toBeVisible();
+  await page.getByRole("button", { name: "Pokaż wszystkie narzędzia" }).click();
 }
 
 const section = (page: Page, name: string) => page.getByRole("region", { name });
+
+test.describe("guided interior workspace", () => {
+  test("numbered stepper is compact on phones and aligned vertically on desktop", async ({
+    page,
+    serve,
+  }, testInfo) => {
+    await serve(createInterior({ rich: true }));
+    for (const width of [320, 390, 1280]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto(`${WORKSPACE}?step=brief`);
+      const nav = page.getByRole("navigation", { name: "Etapy projektu" });
+      await expect(page.getByRole("heading", { name: "Jak chcesz się tu czuć?" })).toBeVisible();
+      const buttons = nav.getByRole("button");
+      await expect(buttons).toHaveCount(4);
+      const dots = [];
+      for (let i = 0; i < 4; i += 1) {
+        const dot = buttons.nth(i).locator("span").first();
+        await expect(dot).toHaveText(String(i + 1));
+        const bounds = await dot.boundingBox();
+        expect(bounds).not.toBeNull();
+        dots.push(bounds);
+      }
+      await expect(buttons.nth(1)).toHaveAttribute("aria-current", "step");
+      if (width < 761) {
+        expect((await nav.locator("..").boundingBox())?.height).toBeLessThanOrEqual(160);
+        expect(new Set(dots.map((dot) => dot?.y)).size).toBe(1);
+      } else {
+        expect(new Set(dots.map((dot) => dot?.x)).size).toBe(1);
+        expect(dots[3]?.y).toBeGreaterThan(dots[0]?.y ?? 0);
+      }
+      await page.screenshot({
+        path: testInfo.outputPath(`stepper-light-${String(width)}.png`),
+        fullPage: true,
+      });
+      await page.getByRole("button", { name: "Tryb ciemny" }).click();
+      await page.screenshot({
+        path: testInfo.outputPath(`stepper-dark-${String(width)}.png`),
+        fullPage: true,
+      });
+      await page.getByRole("button", { name: "Tryb jasny" }).click();
+    }
+  });
+
+  test("mobile wizard fills the viewport with one small content gutter", async ({ page, serve }) => {
+    await serve(createInterior({ rich: true }));
+    for (const width of [320, 390, 640, 760]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto(`${WORKSPACE}?step=brief`);
+      await expect(page.getByRole("heading", { name: "Jak chcesz się tu czuć?" })).toBeVisible();
+      const wizard = await page.getByRole("navigation", { name: "Etapy projektu" }).evaluate((nav) => {
+        const rect = nav.parentElement?.parentElement?.getBoundingClientRect();
+        return rect ? { left: rect.left, right: rect.right } : null;
+      });
+      expect(wizard?.left).toBe(0);
+      expect(wizard?.right).toBe(width);
+      const field = page.getByRole("textbox", { name: "Nazwa projektu", exact: true });
+      const assertGutter = async () => {
+        const rect = await field.boundingBox();
+        expect(rect?.x).toBeLessThanOrEqual(12);
+        expect((rect?.x ?? 0) + (rect?.width ?? 0)).toBeGreaterThanOrEqual(width - 12);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+      };
+      await assertGutter();
+      await page.getByRole("button", { name: "Pokaż wszystkie narzędzia" }).click();
+      await assertGutter();
+    }
+  });
+
+  test("keyboard steps, style choices, saved drafts and optional full view", async ({ page, serve }) => {
+    const api = await serve(createInterior({ rich: true }));
+    await page.goto(WORKSPACE);
+    await expect(section(page, "Zdjęcie pokoju")).toBeVisible();
+    await expect(section(page, "Założenia")).toBeHidden();
+    await exercise("interior.wizard.previous-photo", async () => {
+      await expect(page.getByRole("button", { name: "Wstecz" })).toBeDisabled();
+      return outcome.state(page.getByRole("button", { name: "Wstecz" }), "disabled", "");
+    });
+    await exercise("interior.wizard.next", async () => {
+      await page.getByRole("button", { name: "Dalej" }).focus();
+      await page.keyboard.press("Enter");
+      await expect(page.getByRole("heading", { name: "Jak chcesz się tu czuć?" })).toBeFocused();
+      return outcome.text(
+        page.getByRole("heading", { name: "Jak chcesz się tu czuć?" }),
+        "Jak chcesz się tu czuć?",
+      );
+    });
+    await choose(page.getByRole("combobox", { name: "Styl", exact: true }), "Własny styl");
+    await page.getByRole("textbox", { name: "Nazwa własnego stylu" }).fill("loft z zielenią");
+    await expect(page.getByRole("button", { name: "Dalej" })).toBeDisabled();
+    await page.getByRole("button", { name: /Krok 4/ }).click();
+    await expect(page.getByRole("button", { name: "Zapisz wersję", exact: true })).toBeDisabled();
+    await page.getByRole("button", { name: /Krok 2/ }).click();
+    await expect(page.getByRole("textbox", { name: "Nazwa własnego stylu" })).toHaveValue("loft z zielenią");
+    await page.getByRole("button", { name: "Zapisz założenia" }).click();
+    await expect(page.getByText("Założenia zapisane.")).toBeVisible();
+    await exercise("interior.wizard.next-brief", async () => {
+      await page.getByRole("button", { name: "Dalej" }).click();
+      return outcome.text(
+        page.getByRole("heading", { name: "Zrób miejsce na swoje pomysły." }),
+        "Zrób miejsce na swoje pomysły.",
+      );
+    });
+    await exercise("interior.wizard.previous-furniture", async () => {
+      await page.getByRole("button", { name: "Wstecz" }).click();
+      return outcome.text(
+        page.getByRole("heading", { name: "Jak chcesz się tu czuć?" }),
+        "Jak chcesz się tu czuć?",
+      );
+    });
+    for (const [step, heading] of [
+      [1, "Zacznij od tego, co masz."],
+      [2, "Jak chcesz się tu czuć?"],
+      [3, "Zrób miejsce na swoje pomysły."],
+      [4, "Zobacz nową perspektywę."],
+    ] as const) {
+      await exercise(`interior.wizard.step${step}`, async () => {
+        await page.getByRole("button", { name: new RegExp(`^Krok ${String(step)}`) }).click();
+        return outcome.text(page.getByRole("heading", { name: heading }), heading);
+      });
+    }
+    await expect(page.getByRole("button", { name: "Zapisz wersję", exact: true })).toBeEnabled();
+    await page.getByRole("button", { name: /Krok 2/ }).click();
+    await exercise("interior.wizard.previous", async () => {
+      await page.getByRole("button", { name: "Wstecz" }).click();
+      return outcome.text(
+        page.getByRole("heading", { name: "Zacznij od tego, co masz." }),
+        "Zacznij od tego, co masz.",
+      );
+    });
+    await page.getByRole("button", { name: /Krok 3/ }).click();
+    await exercise("interior.wizard.review", async () => {
+      await page.getByRole("button", { name: "Przejdź do podsumowania" }).click();
+      return outcome.text(
+        page.getByRole("heading", { name: "Zobacz nową perspektywę." }),
+        "Zobacz nową perspektywę.",
+      );
+    });
+    await exercise("interior.wizard.all", async () => {
+      const toggle = page.getByRole("button", { name: "Pokaż wszystkie narzędzia" });
+      await toggle.click();
+      await expect(section(page, "Założenia")).toBeVisible();
+      return outcome.state(toggle, "aria-pressed", "true");
+    });
+    await page.reload();
+    await expect(page.getByRole("textbox", { name: "Nazwa własnego stylu" })).toHaveValue("loft z zielenią");
+    await page.getByRole("button", { name: "Pokaż wszystkie narzędzia" }).click();
+    await expect(section(page, "Założenia")).toBeHidden();
+    await expect(section(page, "Wersje")).toBeVisible();
+    expect(api.requests.filter((r) => r.method === "POST")).toHaveLength(0);
+  });
+});
 
 test.describe("the project list", () => {
   test("creates a project from a name and a room and opens it", async ({ page, serve }) => {
@@ -175,6 +327,91 @@ test.describe("the room photo", () => {
 });
 
 test.describe("the brief", () => {
+  test("all suggested styles save their value and a legacy custom style stays editable", async ({
+    page,
+    serve,
+  }) => {
+    const flow = createInterior({ rich: true });
+    const project = flow.projects.get(PROJECT);
+    if (project === undefined) throw new Error("missing seeded project");
+    flow.projects.set(PROJECT, { ...project, brief: { ...project.brief, style: "Moja autorska mieszanka" } });
+    const api = await serve(flow);
+    await page.goto(`${WORKSPACE}?step=brief`);
+    const style = page.getByRole("combobox", { name: "Styl", exact: true });
+    const custom = page.getByRole("textbox", { name: "Nazwa własnego stylu" });
+    await expect(style).toHaveText("Własny styl");
+    await expect(custom).toHaveValue("Moja autorska mieszanka");
+    for (const [label, value] of [
+      ["Naturalnie", "jasny i naturalny"],
+      ["Minimalizm", "spokojny minimalizm"],
+      ["Przytulnie", "ciepły i przytulny"],
+      ["Loft", "loftowy"],
+      ["Skandynawski", "skandynawski"],
+      ["Japandi", "japandi"],
+      ["Nowoczesny", "nowoczesny"],
+      ["Klasyczny", "klasyczny"],
+      ["Boho", "boho"],
+      ["Art déco", "art déco"],
+    ] as const) {
+      await choose(style, label);
+      await expect(custom).toBeHidden();
+      await page.getByRole("button", { name: "Zapisz założenia" }).click();
+      await expect(page.getByText("Założenia zapisane.")).toBeVisible();
+      expect(api.requests.findLast((request) => request.method === "PUT")?.body).toMatchObject({
+        brief: { style: value },
+      });
+    }
+    await page.reload();
+    await expect(style).toHaveText("Art déco");
+    await expect(custom).toBeHidden();
+  });
+
+  test("custom style is explicit, required, retained across choices and saved after reload", async ({
+    page,
+    serve,
+  }, testInfo) => {
+    const api = await serve(createInterior({ rich: true }));
+    await page.goto(`${WORKSPACE}?step=brief`);
+    const style = page.getByRole("combobox", { name: "Styl", exact: true });
+    await expect(style).toHaveText("Skandynawski");
+    await expect(page.getByRole("textbox", { name: "Nazwa własnego stylu" })).toBeHidden();
+    await style.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("listbox", { name: "Styl", exact: true })).toBeVisible();
+    await expectNoA11yViolations(page);
+    await page.keyboard.press("Home");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await expect(style).toHaveText("Własny styl");
+    const custom = page.getByRole("textbox", { name: "Nazwa własnego stylu" });
+    await custom.fill("   ");
+    await page.getByRole("button", { name: "Zapisz założenia" }).click();
+    await expect(page.getByText("Wpisz nazwę własnego stylu.").first()).toBeVisible();
+    expect(api.requests.filter((request) => request.method === "PUT")).toHaveLength(0);
+    await custom.fill("  Japandi z kolorem  ");
+    await choose(style, "Loft");
+    await expect(custom).toBeHidden();
+    await choose(style, "Własny styl");
+    await expect(custom).toHaveValue("  Japandi z kolorem  ");
+    await page.getByRole("button", { name: "Zapisz założenia" }).click();
+    await expect(page.getByText("Założenia zapisane.")).toBeVisible();
+    expect(api.requests.findLast((request) => request.method === "PUT")?.body).toMatchObject({
+      brief: { style: "Japandi z kolorem" },
+    });
+    await page.reload();
+    await expect(style).toHaveText("Własny styl");
+    await expect(custom).toHaveValue("Japandi z kolorem");
+    await page.screenshot({ path: testInfo.outputPath("custom-style-light.png"), fullPage: true });
+    await page.getByRole("button", { name: "Tryb ciemny" }).click();
+    await page.screenshot({ path: testInfo.outputPath("custom-style-dark.png"), fullPage: true });
+    await choose(style, "Bez określonego stylu");
+    await page.getByRole("button", { name: "Zapisz założenia" }).click();
+    await expect(page.getByText("Założenia zapisane.")).toBeVisible();
+    await page.reload();
+    await expect(style).toHaveText("Bez określonego stylu");
+    await expect(custom).toBeHidden();
+  });
+
   test("every field keeps what is typed and saving sends it, the budget as exact text", async ({
     page,
     serve,
@@ -185,11 +422,16 @@ test.describe("the brief", () => {
     const brief = section(page, "Założenia");
     const fields: [string, string, string][] = [
       ["interior.brief.name", "Nazwa projektu", "Salon po remoncie"],
-      ["interior.brief.style", "Styl", "loftowy"],
+      ["interior.brief.customStyle", "Nazwa własnego stylu", "loft z zielenią"],
       ["interior.brief.budget", "Budżet na wyposażenie (zł)", "6500,50"],
       ["interior.brief.keep", "Rzeczy, które zostają", "kominek\nstary dywan"],
       ["interior.brief.notes", "Dodatkowe życzenia", "więcej światła"],
     ];
+    const style = brief.getByRole("combobox", { name: "Styl", exact: true });
+    await exercise("interior.brief.style", async () => {
+      await choose(style, "Własny styl");
+      return outcome.text(style, "Własny styl");
+    });
     for (const [id, label, value] of fields) {
       const field = brief.getByRole("textbox", { name: label });
       await exercise(id, async () => {
@@ -213,7 +455,7 @@ test.describe("the brief", () => {
             name: "Salon po remoncie",
             brief: {
               room_type: "office",
-              style: "loftowy",
+              style: "loft z zielenią",
               budget_pln: "6500.50",
               keep: ["kominek", "stary dywan"],
               notes: "więcej światła",
@@ -224,7 +466,8 @@ test.describe("the brief", () => {
     });
     await page.reload();
     await expect(page.getByRole("heading", { level: 1, name: "Salon po remoncie" })).toBeVisible();
-    await expect(page.getByRole("textbox", { name: "Styl" })).toHaveValue("loftowy");
+    await expect(page.getByRole("combobox", { name: "Styl", exact: true })).toHaveText("Własny styl");
+    await expect(page.getByRole("textbox", { name: "Nazwa własnego stylu" })).toHaveValue("loft z zielenią");
   });
 
   test("a blank name and a budget that is not an amount are refused before anything is sent", async ({

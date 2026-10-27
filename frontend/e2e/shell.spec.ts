@@ -294,6 +294,62 @@ test("/ redirects to the dashboard", async ({ page, serve }) => {
 });
 
 test.describe("layout", () => {
+  test("mobile toolbar uses matching icon buttons without crowding the header", async ({
+    page,
+    serve,
+  }, testInfo) => {
+    await serve("empty");
+    for (const width of [320, 390, 640]) {
+      await page.setViewportSize({ width, height: 844 });
+      for (const path of ["/app", "/terms"]) {
+        await page.goto(path);
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        const theme = page.getByRole("button", { name: /^Tryb (ciemny|jasny)$/ });
+        await expect(theme).toHaveJSProperty("innerText", "");
+        await expect(theme.locator("svg")).toBeVisible();
+        const bounds = await theme.boundingBox();
+        expect(bounds?.width).toBe(44);
+        expect(bounds?.height).toBeGreaterThanOrEqual(44);
+        if (path === "/app") {
+          const menu = page.getByRole("button", { name: "Otwórz menu nawigacji" });
+          await expect(menu).toHaveJSProperty("innerText", "");
+          await expect(menu.locator("svg")).toHaveClass(/lucide-menu/);
+          const menuBounds = await menu.boundingBox();
+          expect(menuBounds?.width).toBe(44);
+          expect(menuBounds?.height).toBe(bounds?.height);
+          expect(menuBounds?.y).toBe(bounds?.y);
+        }
+        if (path === "/app")
+          await page.getByRole("banner").screenshot({
+            path: testInfo.outputPath(`mobile-header-light-${String(width)}.png`),
+          });
+        const before = await page.locator("html").getAttribute("data-theme");
+        await theme.focus();
+        await page.keyboard.press("Enter");
+        await expect(page.locator("html")).toHaveAttribute(
+          "data-theme",
+          before === "dark" ? "light" : "dark",
+        );
+        const fits = await page.getByRole("banner").evaluate((header) => {
+          const controls = [...header.querySelectorAll("a, button")]
+            .map((control) => control.getBoundingClientRect())
+            .filter((rect) => rect.width > 0);
+          return controls.every(
+            (rect, i) =>
+              rect.left >= 0 &&
+              rect.right <= window.innerWidth &&
+              controls.every((other, j) => i === j || rect.right <= other.left || other.right <= rect.left),
+          );
+        });
+        expect(fits, "header controls fit without overlap").toBe(true);
+        if (path === "/app")
+          await page
+            .getByRole("banner")
+            .screenshot({ path: testInfo.outputPath(`mobile-header-${String(width)}.png`) });
+      }
+    }
+  });
+
   for (const width of [320, 390, 640, 1280]) {
     test(`no page scrolls horizontally at ${width} px (320 px reflow, 200 % zoom)`, async ({
       page,

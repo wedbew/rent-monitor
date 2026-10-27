@@ -61,8 +61,10 @@
 }
 
 .main {
+  --content-inline-padding: var(--space-8);
+
   min-width: 0;
-  padding: var(--space-12) var(--space-8) var(--space-16);
+  padding: var(--space-12) var(--content-inline-padding) var(--space-16);
 }
 
 .content {
@@ -121,7 +123,9 @@
   }
 
   .main {
-    padding: var(--space-8) var(--space-6) var(--space-12);
+    --content-inline-padding: var(--space-6);
+
+    padding: var(--space-8) var(--content-inline-padding) var(--space-12);
   }
 }
 
@@ -131,7 +135,7 @@
   }
 
   .main {
-    padding-inline: var(--space-4);
+    --content-inline-padding: var(--space-4);
   }
 }
 

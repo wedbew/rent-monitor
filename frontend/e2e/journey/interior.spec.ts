@@ -12,6 +12,8 @@ import { crc32, deflateSync } from "node:zlib";
 
 import { expect, request, test, type BrowserContext, type Page } from "@playwright/test";
 
+import { registerMobileInteriorJourneys } from "./interior-mobile";
+
 const COMPOSE = (
   process.env["E2E_COMPOSE"] ?? "docker compose -f ../deploy/compose.yml -f ../deploy/compose.e2e.yml"
 ).split(" ");
@@ -119,6 +121,7 @@ async function createProject(page: Page, name: string): Promise<string> {
   await page.getByRole("button", { name: "Utwórz projekt" }).click();
   await expect(page).toHaveURL(/\/app\/interior\/[0-9a-f-]{36}$/);
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+  await page.getByRole("button", { name: "Pokaż wszystkie narzędzia" }).click();
   return new URL(page.url()).pathname.split("/").at(-1) ?? "";
 }
 
@@ -184,7 +187,8 @@ test("sign in, create a project, upload the room, brief it, add own items, pick 
 
   // 3. the brief
   const brief = section(page, "Założenia");
-  await brief.getByRole("textbox", { name: "Styl" }).fill("skandynawski");
+  await brief.getByRole("combobox", { name: "Styl", exact: true }).click();
+  await page.getByRole("option", { name: "Skandynawski", exact: true }).click();
   await brief.getByRole("textbox", { name: "Budżet na wyposażenie (zł)" }).fill("6000");
   await brief.getByRole("button", { name: "Zapisz założenia" }).click();
   await expect(page.getByText("Założenia zapisane.")).toBeVisible();
@@ -472,3 +476,6 @@ test("failures are actionable and never cost twice: a refused file, storage down
   expect(final["reserved"]).toBe("0.000000");
   expect(Number(final["billed_calls"]) - Number(before["billed_calls"])).toBe(3); // the lost answer (estimate) and two successes; the refusal, the empty budget and the repeats cost nothing
 });
+
+// Keep portrait uploads after the storage-failure journey in this same serial suite.
+registerMobileInteriorJourneys();

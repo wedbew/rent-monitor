@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 
 import { ApiError } from "../../api/errors";
@@ -17,6 +17,7 @@ import styles from "./interior.module.css";
 import { ItemsPanel } from "./ItemsPanel";
 import { PhotoPanel } from "./PhotoPanel";
 import { RevisionsPanel } from "./RevisionsPanel";
+import { ProjectWizard } from "./ProjectWizard";
 import { Button } from "../../ui/Button";
 import { t } from "../../i18n";
 
@@ -32,6 +33,7 @@ function Workspace({ projectId }: { readonly projectId: string }) {
   const key = useRef<{ revision: string; key: string } | null>(null);
   const client = useQueryClient();
   const me = useMe();
+  const [briefDirty, setBriefDirty] = useState(false);
 
   if (project.isPending) {
     return (
@@ -82,40 +84,47 @@ function Workspace({ projectId }: { readonly projectId: string }) {
 
   return (
     <>
-      <PageHeading
-        title={data.name}
-        eyebrow={t.interior.eyebrow}
-        lead={t.interior.rooms[data.brief.room_type]}
-      />
-      <p>
+      <div className={styles["workspaceHeading"]}>
+        <PageHeading title={data.name} eyebrow={t.interior.eyebrow} compact />
         <Link className={styles["link"]} to="/app/interior">
           {t.interior.workspace.back}
         </Link>
-      </p>
-      <div className={styles["stack"]}>
-        <PhotoPanel project={data} />
-        <BriefPanel key={data.project_id} project={data} />
-        <ItemsPanel project={data} />
-        <CataloguePanel project={data} />
-        <BoardPanel project={data} />
-        <RevisionsPanel
-          project={data}
-          generate={generate}
-          generating={
-            start.isPending ||
-            (generations.data ?? []).some((g) => g.state === "queued" || g.state === "running")
-          }
-          generationOff={off}
-        />
-        <GenerationsPanel
-          project={data}
-          generations={generations.data ?? []}
-          start={generate}
-          starting={start.isPending}
-          startError={start.isError && !off ? start.error : null}
-          off={off}
-        />
       </div>
+      <ProjectWizard project={data} dirty={briefDirty}>
+        {{
+          photo: <PhotoPanel project={data} />,
+          brief: <BriefPanel key={data.project_id} project={data} onDirtyChange={setBriefDirty} />,
+          furniture: (
+            <>
+              <ItemsPanel project={data} />
+              <CataloguePanel project={data} />
+              <BoardPanel project={data} />
+            </>
+          ),
+          review: (
+            <>
+              <RevisionsPanel
+                project={data}
+                draftDirty={briefDirty}
+                generate={generate}
+                generating={
+                  start.isPending ||
+                  (generations.data ?? []).some((g) => g.state === "queued" || g.state === "running")
+                }
+                generationOff={off}
+              />
+              <GenerationsPanel
+                project={data}
+                generations={generations.data ?? []}
+                start={generate}
+                starting={start.isPending}
+                startError={start.isError && !off ? start.error : null}
+                off={off}
+              />
+            </>
+          ),
+        }}
+      </ProjectWizard>
     </>
   );
 }
@@ -128,7 +137,7 @@ export function ProjectPage() {
   }
   return (
     <div className={styles["page"]}>
-      <Workspace projectId={projectId} />
+      <Workspace key={projectId} projectId={projectId} />
     </div>
   );
 }

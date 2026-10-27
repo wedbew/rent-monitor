@@ -70,6 +70,7 @@ async function openWorkspace(options: InteriorOptions = {}) {
     </QueryClientProvider>,
   );
   await screen.findByRole("heading", { name: "Salon", level: 1 });
+  await userEvent.click(screen.getByRole("button", { name: "Pokaż wszystkie narzędzia" }));
   return { flow, id };
 }
 

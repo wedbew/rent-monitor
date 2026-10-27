@@ -231,13 +231,21 @@ for (const theme of THEMES) {
     test("interior: a project with photo, brief, items, products and totals", async ({ page, serve }) => {
       await serve("interior");
       await page.goto("/app/interior/00000000-0000-4000-8000-000000000901");
-      await expect(page.getByRole("region", { name: "Tablica produktów" })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Zdjęcie pokoju" })).toBeVisible();
       await shoot(page, "interior-project", { fullPage: true });
+      await page.getByRole("button", { name: /Krok 2/ }).click();
+      await shoot(page, "interior-direction", { fullPage: true });
+      await page.getByRole("combobox", { name: "Styl", exact: true }).click();
+      await shoot(page, "interior-style-options");
+      await page.getByRole("option", { name: "Własny styl", exact: true }).click();
+      await page.getByRole("textbox", { name: "Nazwa własnego stylu" }).fill("Japandi z kolorem");
+      await shoot(page, "interior-custom-style", { fullPage: true });
     });
 
     test("interior: no catalogue source configured", async ({ page, serve }) => {
       await serve("interiorNoCatalogue");
       await page.goto("/app/interior/00000000-0000-4000-8000-000000000901");
+      await page.getByRole("button", { name: /Krok 3/ }).click();
       await expect(page.getByRole("region", { name: "Katalog produktów" })).toBeVisible();
       await shoot(page, "interior-no-catalogue", { fullPage: true });
     });

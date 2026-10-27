@@ -26,9 +26,15 @@ All notable user- and operator-visible changes. Format: [Keep a Changelog](https
 - Explicit account entitlement `unlimited_reports` (table `account_entitlement`, migration 0021, expand-only): the account submits analyses without spending credit (the audit is reserved with charge source `admin_free` and settles through the same idempotent claim, so usage stays on the audit row) and sees the whole Rynek catalogue; provider budgets, throttles and the one-active-audit-per-listing rule are unchanged. `GET /api/me` returns `plan.unlimited_reports` and the SPA shows "Bez limitu". Operator action: `docker compose exec -T api python scripts/grant_entitlement.py grant --email <address> --note <why>` (idempotent; never creates an account; `revoke` undoes it) (RM-438)
 
 ### Changed
+- Interior wizard uses connected numbered steps, a compact horizontal mobile track and aligned desktop navigation; mobile menu and theme controls are matching 44 px icon buttons (RM-465)
+- Architekt wnętrz now guides photo, direction, optional furniture and visualization through four steps, with a style selector, a full workspace view, reloadable step links and unsaved-preference protection. No operator action (RM-465)
+- Interior style selection offers ten suggestions and “Własny styl” with a custom name; saved custom names reopen correctly and drafts survive switching choices (RM-466)
 - CI runs only the stages a change can affect: documentation-only changes run just the title check and the secret scan; a frontend-only change skips lint, types, tests and migrations; a backend-only change skips `frontend`, `frontend-e2e` and `frontend-visual` (the journey lane still runs the real stack); the Python tests run in parallel (`pytest-xdist`, one Postgres container per worker, one database per test module). Operator: none (RM-440)
 
 ### Fixed
+- Mobile interior wizard spans the viewport with a single 8 px content gutter, flat sections and full-width forms; a specific frontend rule prevents stacked container padding (RM-465)
+- Mobile theme switching uses a 44 px icon-only control with an accessible name and tooltip, keeping app and public headers clear; visual-review rules require automatic fixes for crowding and clipping (RM-465)
+- Interior wizard step labels no longer overlap on narrow phones; real-stack portrait-upload checks cover 320, 390 and 768 px in both themes (RM-465)
 - Rynek daily summaries: offers first stored by an import run that never published (killed mid-bootstrap) are counted once a later published run of the place covered them (Poznań showed 182 of 1,212 offers); the "first seen" figure is withheld on a place's bootstrap day instead of showing the whole backlog. Operator: republish the affected days (delete the place's derived `market_daily_summary` rows for the day, then `publish_summaries_now`) (RM-282)
 - Ranking a cohort of 2,479 gminas took seconds (a pairwise count per entry): the place context route took 32 s and the overview 7 s on real data, now 1.4 s and 0.4 s with identical results; a property test compares the ranks and percentiles with the pairwise definition under ties (RM-282)
 

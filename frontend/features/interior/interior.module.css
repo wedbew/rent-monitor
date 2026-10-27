@@ -3,6 +3,302 @@
   gap: var(--space-6);
 }
 
+.studio {
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr);
+  align-items: start;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: clip;
+}
+
+.workspaceHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.wizardFooter :where(button > span:first-child) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.studioRail {
+  padding: var(--space-8) var(--space-6);
+  background: var(--canvas);
+  border-right: 1px solid var(--border);
+  align-self: stretch;
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-3);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.railTitle {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.3;
+}
+
+.steps {
+  display: grid;
+  gap: 0;
+  margin: var(--space-6) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps li {
+  position: relative;
+  min-width: 0;
+}
+
+.steps li:not(:last-child)::after {
+  position: absolute;
+  top: 48px;
+  bottom: -12px;
+  left: 16px;
+  width: 1px;
+  background: var(--border);
+  content: "";
+  pointer-events: none;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 76px;
+  padding: var(--space-3) 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.step:hover,
+.step[aria-current="step"] {
+  color: var(--ink);
+}
+
+.stepCopy {
+  display: grid;
+  gap: var(--space-1);
+  flex: 1;
+  padding-top: var(--space-1);
+  min-width: 0;
+}
+
+.stepCopy strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.step[aria-current="step"] strong {
+  font-weight: 700;
+}
+
+.stepLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.stepShortTitle {
+  display: none;
+}
+
+.step span span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.stepIcon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--control-border);
+  border-radius: 50%;
+  background: var(--canvas);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.step[aria-current="step"] .stepIcon {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 0 0 4px var(--selected-bg);
+}
+
+.projectFacts {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border);
+}
+
+.projectFacts dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.projectFacts dd {
+  margin: var(--space-1) 0 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.viewToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  margin-bottom: var(--space-2);
+  padding: 0;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.studioContent {
+  display: grid;
+  gap: var(--space-6);
+  padding: var(--space-8);
+  min-width: 0;
+}
+
+.stepHeading h2 {
+  margin: 0 0 var(--space-3);
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+.wizardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border);
+}
+
+.draftNotice {
+  margin: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--warning-fill);
+  color: var(--warning);
+  font-size: 0.875rem;
+}
+
+@media (width <= 64rem) {
+  .studio {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .studioRail {
+    padding: var(--space-2);
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .railTitle,
+  .studioRail > .eyebrow,
+  .studioRail > .muted,
+  .projectFacts {
+    display: none;
+  }
+
+  .steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0;
+  }
+
+  .steps li:not(:last-child)::after {
+    inset: 24px calc(-50% + 20px) auto calc(50% + 20px);
+    width: auto;
+    height: 1px;
+  }
+
+  .step {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 72px;
+    padding: var(--space-2) var(--space-1);
+    text-align: center;
+  }
+
+  .step span span,
+  .step > svg {
+    display: none;
+  }
+
+  .step strong {
+    font-size: 0.75rem;
+  }
+
+  .stepCopy {
+    padding-top: 0;
+  }
+
+  .viewToggle {
+    justify-content: flex-end;
+    width: 100%;
+    margin: var(--space-2) 0 0;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+  }
+
+  .stepTitle {
+    display: none;
+  }
+
+  .stepShortTitle {
+    display: block;
+  }
+
+  .studioContent {
+    padding: var(--space-6);
+  }
+}
+
+@media (width <= 30rem) {
+  .studioContent {
+    padding: var(--space-4);
+  }
+
+  .wizardFooter {
+    flex-wrap: wrap;
+  }
+}
+
 .stack {
   display: grid;
   gap: var(--space-6);
@@ -228,6 +524,53 @@
   border: 1px solid var(--control-border);
   border-radius: var(--radius);
   text-decoration: none;
+}
+
+.studioContent .panel {
+  padding: var(--space-6);
+  background: var(--canvas);
+}
+
+.studioContent .figure .image {
+  max-height: 18rem;
+  object-fit: contain;
+}
+
+@media (width <= 64rem) {
+  .studioRail,
+  .studioContent {
+    padding-inline: var(--space-2);
+  }
+
+  .studioContent .panel,
+  .studioContent .card {
+    padding: var(--space-3) 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .studioContent .form {
+    max-width: none;
+  }
+
+  .studioContent .basket {
+    padding-inline: var(--space-2);
+  }
+}
+
+@media (width <= 760px) {
+  .studio {
+    margin-inline: calc(-1 * var(--content-inline-padding, 0px));
+    border-inline: 0;
+    border-radius: 0;
+  }
+
+  .studioRail,
+  .studioContent {
+    padding-left: max(var(--space-2), env(safe-area-inset-left));
+    padding-right: max(var(--space-2), env(safe-area-inset-right));
+  }
 }
 
 @media (width <= 30rem) {
