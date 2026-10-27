@@ -6,6 +6,14 @@ implementation and browser evidence are local working-tree evidence until merged
 Delivery tracking: #466 consolidates this implementation and the owner's mobile/stepper/custom-style
 refinements into one PR targeting `staging`; #465 remains the original implementation issue.
 
+The portrait journeys are registered inside `interior.spec.ts`'s serial suite. Its deliberate storage-outage
+case stops the shared S3 test store, so it must finish before the mobile uploads start. Keeping the
+registration in `interior-mobile.ts` (not a separately discovered spec) prevents cross-file interference;
+all upload and outage assertions remain in place.
+The corrected suite passed all nine interior journeys locally on 2026-10-27 against a disposable
+API/Postgres/S3-test-store stack with fake model/catalogue providers, including the outage case followed
+by all six generated-portrait uploads (1.9 minutes). The disposable stack was removed after validation.
+
 ## Design and flow
 
 The reference is `design/v2/interior.html` and its design principles: quiet forest/neutral surfaces,
@@ -89,7 +97,7 @@ The owner supplied an OLX/Otodom image for a real upload check. The downloaded f
 portrait JPEG. It remains a local review input; neither the photograph nor real-photo screenshots are
 added to the repository's fixtures or visual baselines.
 
-`frontend/e2e/journey/interior-mobile.spec.ts` creates and erases a throwaway beta account, uploads
+`frontend/e2e/journey/interior-mobile.ts`, registered by `interior.spec.ts`, creates and erases a throwaway beta account, uploads
 through the file chooser, requires HTTP 201, checks authenticated image delivery against the returned
 SHA-256 digest and confirms the photo survives reload. It saves the brief and a revision and captures
 every wizard step in light/dark at 320, 390 and 768 px. Each capture checks axe and page overflow.

@@ -81,6 +81,10 @@ reveals a validated name field, retains its draft across choices and preserves a
 306/306 interaction coverage. Pinned interior visual comparisons passed 20 cases, followed by four
 updated project comparisons after promoting the custom option near the top. Both themes were inspected
 at 390/1280 px. No API/schema change or live image-model call.
+PR verification follow-up (RM-466): portrait uploads now register in the existing serial interior journey
+suite, preventing overlap with its intentional shutdown of the shared S3 test store. All nine interior
+journeys passed locally with the real API/Postgres/test store and fake providers; assertions and outage
+coverage are retained. The disposable test stack was removed after the run.
 
 ## Frontend: screens a user can reach that are not built (release checklist, audit F18)
 

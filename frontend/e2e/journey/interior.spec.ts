@@ -12,6 +12,8 @@ import { crc32, deflateSync } from "node:zlib";
 
 import { expect, request, test, type BrowserContext, type Page } from "@playwright/test";
 
+import { registerMobileInteriorJourneys } from "./interior-mobile";
+
 const COMPOSE = (
   process.env["E2E_COMPOSE"] ?? "docker compose -f ../deploy/compose.yml -f ../deploy/compose.e2e.yml"
 ).split(" ");
@@ -474,3 +476,6 @@ test("failures are actionable and never cost twice: a refused file, storage down
   expect(final["reserved"]).toBe("0.000000");
   expect(Number(final["billed_calls"]) - Number(before["billed_calls"])).toBe(3); // the lost answer (estimate) and two successes; the refusal, the empty budget and the repeats cost nothing
 });
+
+// Keep portrait uploads after the storage-failure journey in this same serial suite.
+registerMobileInteriorJourneys();
