@@ -27,3 +27,19 @@
   display: inline-flex;
   flex: none;
 }
+
+@media (width <= 760px) {
+  .control {
+    justify-content: center;
+    width: var(--control-height);
+    min-width: var(--control-height);
+    min-height: var(--control-height);
+    padding: 0;
+    flex: none;
+    border-radius: var(--radius);
+  }
+
+  .label {
+    display: none;
+  }
+}

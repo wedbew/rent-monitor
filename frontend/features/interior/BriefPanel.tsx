@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 import { Button } from "../../ui/Button";
 import { TextField } from "../../ui/Field";
@@ -11,10 +11,28 @@ import { type Brief, type ProjectOut, useUpdateProject } from "./hooks";
 import { roomOptions, type Room } from "./InteriorPage";
 import styles from "./interior.module.css";
 import { t } from "../../i18n";
+import { interiorConfiguration } from "./configuration";
 
 const MAX_KEEP = 10;
 const MAX_NOTES = 2000;
-const IDS = { name: "brief-name", budget: "brief-budget", keep: "brief-keep", notes: "brief-notes" } as const;
+const IDS = {
+  name: "brief-name",
+  style: "brief-custom-style",
+  budget: "brief-budget",
+  keep: "brief-keep",
+  notes: "brief-notes",
+} as const;
+const styleOptions = [
+  { value: "", label: t.interior.brief.styleUnspecified },
+  { value: "custom", label: t.interior.brief.styleCustom },
+  ...interiorConfiguration.stylePresets.map((preset) => t.interior.wizard.presets[preset]),
+];
+
+function styleChoice(style: string): string {
+  return styleOptions.some((option) => option.value !== "custom" && option.value === style)
+    ? style
+    : "custom";
+}
 
 /** The unit the budget field is typed in: a decimal in złoty; the server stores it exactly. */
 function budgetText(value: string | null | undefined): string {
@@ -27,9 +45,15 @@ export function briefErrors(input: {
   budget: string;
   keep: string[];
   notes: string;
+  customStyle: string | null;
 }): Record<string, string> {
   const errors: Record<string, string> = {};
   if (input.name.trim() === "") errors[IDS.name] = t.interior.brief.nameMissing;
+  if (input.customStyle !== null) {
+    if (input.customStyle.trim() === "") errors[IDS.style] = t.interior.brief.customStyleMissing;
+    else if ([...input.customStyle.trim()].length > 80)
+      errors[IDS.style] = t.interior.brief.customStyleTooLong;
+  }
   if (input.budget.trim() !== "" && parseMoneyInput(input.budget) === null)
     errors[IDS.budget] = t.interior.brief.budgetInvalid;
   if (input.keep.length > MAX_KEEP) errors[IDS.keep] = t.interior.brief.keepTooMany;
@@ -41,17 +65,33 @@ export function briefErrors(input: {
  * The brief and the project's name. Saving keeps the 30-day lifetime (the server never extends it). The budget is a
  * comparison limit the person chose, not a cost of the room, and is sent as an exact decimal string.
  */
-export function BriefPanel({ project }: { readonly project: ProjectOut }) {
+export function BriefPanel({
+  project,
+  onDirtyChange,
+}: {
+  readonly project: ProjectOut;
+  readonly onDirtyChange?: (dirty: boolean) => void;
+}) {
   const update = useUpdateProject();
   const [name, setName] = useState(project.name);
   const [room, setRoom] = useState<Room>(project.brief.room_type);
-  const [style, setStyle] = useState(project.brief.style ?? "");
+  const [selectedStyle, setSelectedStyle] = useState(() => styleChoice(project.brief.style ?? ""));
+  const [customStyle, setCustomStyle] = useState(() =>
+    styleChoice(project.brief.style ?? "") === "custom" ? (project.brief.style ?? "") : "",
+  );
+  const style = selectedStyle === "custom" ? customStyle : selectedStyle;
   const [budget, setBudget] = useState(budgetText(project.brief.budget_pln));
   const [keep, setKeep] = useState((project.brief.keep ?? []).join("\n"));
   const [notes, setNotes] = useState(project.brief.notes ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
   const [attempt, markInvalid] = useFormAttempt();
+  const draft = JSON.stringify({ name, room, selectedStyle, style, budget, keep, notes });
+  const [savedDraft, setSavedDraft] = useState(draft);
+  const dirty = draft !== savedDraft;
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -60,7 +100,13 @@ export function BriefPanel({ project }: { readonly project: ProjectOut }) {
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => line !== "");
-    const found = briefErrors({ name, budget, keep: keepLines, notes });
+    const found = briefErrors({
+      name,
+      budget,
+      keep: keepLines,
+      notes,
+      customStyle: selectedStyle === "custom" ? customStyle : null,
+    });
     setErrors(found);
     setSaved(false);
     if (Object.keys(found).length > 0) {
@@ -76,7 +122,13 @@ export function BriefPanel({ project }: { readonly project: ProjectOut }) {
     };
     update.mutate(
       { projectId: project.project_id, name: name.trim(), brief },
-      { onSuccess: () => setSaved(true), onError: () => markInvalid() },
+      {
+        onSuccess: () => {
+          setSaved(true);
+          setSavedDraft(draft);
+        },
+        onError: () => markInvalid(),
+      },
     );
   }
 
@@ -104,14 +156,32 @@ export function BriefPanel({ project }: { readonly project: ProjectOut }) {
           options={roomOptions}
           onValueChange={(next) => setRoom(next as Room)}
         />
-        <TextField
+        <Select
           label={t.interior.brief.style}
           hint={t.interior.brief.styleHint}
-          value={style}
-          onValueChange={setStyle}
-          maxLength={80}
-          autoComplete="off"
+          value={selectedStyle}
+          options={styleOptions}
+          onValueChange={(next) => {
+            setSelectedStyle(next);
+            setErrors((current) => {
+              const remaining = { ...current };
+              delete remaining[IDS.style];
+              return remaining;
+            });
+          }}
         />
+        {selectedStyle === "custom" ? (
+          <TextField
+            fieldId={IDS.style}
+            label={t.interior.brief.customStyleName}
+            hint={t.interior.brief.customStyleHint}
+            value={customStyle}
+            onValueChange={setCustomStyle}
+            error={errors[IDS.style]}
+            maxLength={80}
+            autoComplete="off"
+          />
+        ) : null}
         <TextField
           fieldId={IDS.budget}
           label={t.interior.brief.budget}
@@ -141,7 +211,7 @@ export function BriefPanel({ project }: { readonly project: ProjectOut }) {
           rows={4}
         />
         {update.isError ? <FailureNotice error={update.error} /> : null}
-        {saved && !update.isPending ? (
+        {saved && !dirty && !update.isPending ? (
           <InlineNotice tone="success" title={t.interior.brief.saved} live="status" />
         ) : null}
         <div className={styles["actions"]}>

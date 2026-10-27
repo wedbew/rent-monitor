@@ -15,13 +15,14 @@ interface Props {
   readonly generate: (revisionId: string) => void;
   readonly generating: boolean;
   readonly generationOff: boolean;
+  readonly draftDirty?: boolean;
 }
 
 /**
  * Immutable versions. Saving one first checks every picked offer again at the source and records what it saw, so the
  * version keeps the prices and states of that moment whatever the shops do later.
  */
-export function RevisionsPanel({ project, generate, generating, generationOff }: Props) {
+export function RevisionsPanel({ project, generate, generating, generationOff, draftDirty = false }: Props) {
   const save = useSaveRevision();
   const done = useRef(false);
   return (
@@ -35,6 +36,7 @@ export function RevisionsPanel({ project, generate, generating, generationOff }:
           type="button"
           variant="primary"
           busy={save.isPending}
+          disabled={draftDirty}
           onClick={() => {
             if (save.isPending) return;
             done.current = false;

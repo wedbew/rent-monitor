@@ -1,7 +1,7 @@
 import { type MouseEvent, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
-import { Button } from "../ui/Button";
+import { IconButton } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { AccountBlock } from "./AccountBlock";
 import { LEGAL, PRIMARY } from "./navigation";
@@ -44,16 +44,15 @@ export function MobileMenu() {
 
   return (
     <>
-      <Button
+      <IconButton
         type="button"
-        small
-        variant="secondary"
+        icon="menu"
         aria-haspopup="dialog"
-        aria-label={t.shell.openMenu}
+        aria-expanded={open}
+        label={t.shell.openMenu}
+        title={t.shell.openMenu}
         onClick={() => setOpen(true)}
-      >
-        {t.shell.menu}
-      </Button>
+      />
       <Dialog
         open={open}
         onOpenChange={setOpen}

@@ -31,10 +31,14 @@ describe("ThemeControl", () => {
   it("names the mode it switches to, with the matching icon, and switches it", async () => {
     render(<ThemeControl />);
     const toDark = screen.getByRole("button", { name: "Tryb ciemny" });
+    expect(toDark).toHaveAttribute("aria-label", "Tryb ciemny");
+    expect(toDark).toHaveAttribute("title", "Tryb ciemny");
     expect(toDark.querySelector("svg")).toHaveClass("lucide-moon");
     await userEvent.click(toDark);
     expect(html.dataset["theme"]).toBe("dark");
     const toLight = screen.getByRole("button", { name: "Tryb jasny" });
+    expect(toLight).toHaveAttribute("aria-label", "Tryb jasny");
+    expect(toLight).toHaveAttribute("title", "Tryb jasny");
     expect(toLight.querySelector("svg")).toHaveClass("lucide-sun");
     expect(localStorage.getItem(THEME_KEY)).toBe("dark");
   });

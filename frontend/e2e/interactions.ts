@@ -215,10 +215,46 @@ export const PAGES: readonly AppPage[] = [
   },
   {
     id: "interior.project",
-    path: `/app/interior/${INTERIOR_PROJECT}`,
+    path: `/app/interior/${INTERIOR_PROJECT}?tools=all`,
     heading: "Salon",
     scenarios: ["interior", "interiorNoCatalogue"],
     states: [
+      {
+        name: "custom-style",
+        scenario: "interior",
+        prepare: async (page) => {
+          await page.getByRole("combobox", { name: "Styl", exact: true }).click();
+          await page.getByRole("option", { name: "Własny styl", exact: true }).click();
+          await page.getByRole("listbox", { name: "Styl", exact: true }).waitFor({ state: "hidden" });
+          await page.getByRole("textbox", { name: "Nazwa własnego stylu" }).waitFor();
+        },
+      },
+      {
+        name: "guided-photo",
+        path: `/app/interior/${INTERIOR_PROJECT}`,
+        scenario: "interior",
+        prepare: async (page) => {
+          await page.getByRole("button", { name: "Dalej" }).waitFor();
+        },
+      },
+      {
+        name: "guided-brief",
+        path: `/app/interior/${INTERIOR_PROJECT}`,
+        scenario: "interior",
+        prepare: async (page) => {
+          await page.getByRole("button", { name: /Krok 2/ }).click();
+          await page.getByRole("heading", { name: "Jak chcesz się tu czuć?" }).waitFor();
+        },
+      },
+      {
+        name: "guided-furniture",
+        path: `/app/interior/${INTERIOR_PROJECT}`,
+        scenario: "interior",
+        prepare: async (page) => {
+          await page.getByRole("button", { name: /Krok 3/ }).click();
+          await page.getByRole("heading", { name: "Zrób miejsce na swoje pomysły." }).waitFor();
+        },
+      },
       {
         // The catalogue answered: real-looking offers with the way to pick one exact variant.
         name: "search-results",
@@ -832,6 +868,68 @@ export const PAGES: readonly AppPage[] = [
 const THEME_NAME = /^Tryb (ciemny|jasny)$/;
 
 export const INTERACTIONS: readonly Interaction[] = [
+  ...[1, 2, 3, 4].map((step) => ({
+    id: `interior.wizard.step${step}`,
+    page: "interior.project",
+    role: "button" as const,
+    name: new RegExp(`^Krok ${String(step)}`),
+    outcome: "text" as const,
+  })),
+  {
+    id: "interior.wizard.all",
+    page: "interior.project",
+    role: "button",
+    name: "Pokaż wszystkie narzędzia",
+    outcome: "state",
+  },
+  {
+    id: "interior.wizard.next",
+    page: "interior.project",
+    state: "guided-photo",
+    role: "button",
+    name: "Dalej",
+    outcome: "text",
+  },
+  {
+    id: "interior.wizard.previous-photo",
+    page: "interior.project",
+    state: "guided-photo",
+    role: "button",
+    name: "Wstecz",
+    outcome: "state",
+  },
+  {
+    id: "interior.wizard.next-brief",
+    page: "interior.project",
+    state: "guided-brief",
+    role: "button",
+    name: "Dalej",
+    outcome: "text",
+  },
+  {
+    id: "interior.wizard.previous-furniture",
+    page: "interior.project",
+    state: "guided-furniture",
+    role: "button",
+    name: "Wstecz",
+    outcome: "text",
+  },
+  {
+    id: "interior.wizard.previous",
+    page: "interior.project",
+    state: "guided-brief",
+    role: "button",
+    name: "Wstecz",
+    outcome: "text",
+  },
+  {
+    id: "interior.wizard.review",
+    page: "interior.project",
+    state: "guided-furniture",
+    role: "button",
+    name: "Przejdź do podsumowania",
+    outcome: "text",
+  },
   { id: "shell.skip", page: EVERY_PAGE, role: "link", name: "Przejdź do treści", outcome: "focus" },
   {
     id: "shell.brand",
@@ -2146,7 +2244,15 @@ export const INTERACTIONS: readonly Interaction[] = [
     name: "Rodzaj pokoju",
     outcome: "text",
   },
-  { id: "interior.brief.style", page: "interior.project", role: "textbox", name: "Styl", outcome: "state" },
+  { id: "interior.brief.style", page: "interior.project", role: "combobox", name: "Styl", outcome: "text" },
+  {
+    id: "interior.brief.customStyle",
+    page: "interior.project",
+    state: "custom-style",
+    role: "textbox",
+    name: "Nazwa własnego stylu",
+    outcome: "state",
+  },
   {
     id: "interior.brief.budget",
     page: "interior.project",

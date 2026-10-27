@@ -63,6 +63,11 @@
 }
 
 @media (width <= 760px) {
+  .theme {
+    width: auto;
+    flex: none;
+  }
+
   .bar {
     padding: var(--space-3) var(--space-4);
   }

@@ -119,6 +119,7 @@ async function createProject(page: Page, name: string): Promise<string> {
   await page.getByRole("button", { name: "Utwórz projekt" }).click();
   await expect(page).toHaveURL(/\/app\/interior\/[0-9a-f-]{36}$/);
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+  await page.getByRole("button", { name: "Pokaż wszystkie narzędzia" }).click();
   return new URL(page.url()).pathname.split("/").at(-1) ?? "";
 }
 
@@ -184,7 +185,8 @@ test("sign in, create a project, upload the room, brief it, add own items, pick 
 
   // 3. the brief
   const brief = section(page, "Założenia");
-  await brief.getByRole("textbox", { name: "Styl" }).fill("skandynawski");
+  await brief.getByRole("combobox", { name: "Styl", exact: true }).click();
+  await page.getByRole("option", { name: "Skandynawski", exact: true }).click();
   await brief.getByRole("textbox", { name: "Budżet na wyposażenie (zł)" }).fill("6000");
   await brief.getByRole("button", { name: "Zapisz założenia" }).click();
   await expect(page.getByText("Założenia zapisane.")).toBeVisible();
