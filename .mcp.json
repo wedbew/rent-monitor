@@ -15,6 +15,20 @@
       "args": ["postgres-mcp", "--access-mode=restricted"],
       "env": { "DATABASE_URI": "${LOCAL_DEV_DATABASE_URI}" }
     },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.83",
+        "--headless",
+        "--isolated",
+        "--output-dir",
+        "frontend/test-results/mcp",
+        "--allowed-origins",
+        "http://localhost:4173;http://localhost:8000"
+      ]
+    },
     "stripe": {
       "type": "http",
       "url": "https://mcp.stripe.com",

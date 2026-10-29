@@ -9,7 +9,9 @@
  */
 import { execFileSync } from "node:child_process";
 
-import { expect, test, type Page } from "@playwright/test";
+import { type Page } from "@playwright/test";
+
+import { expect, test } from "./fixtures";
 
 interface Seeded {
   user_id: string;
@@ -83,17 +85,25 @@ async function submit(page: Page, ref: string): Promise<void> {
   await expect(page).toHaveURL(/\/app\/analyses\/[0-9a-f-]{36}$/);
 }
 
-test("a sale listing: submitted, watched live, finished, the report kept", async ({ page, baseURL }) => {
+test("a sale listing: submitted, watched live, finished, the report kept", async ({
+  page,
+  baseURL,
+  shot,
+  a11y,
+}) => {
   test.setTimeout(180_000);
   await signIn(page, baseURL);
   const before = await balance(page);
   const item = plant("sale");
   await submit(page, item.ref);
+  await shot("submitted");
   // A finished run is the report: the listing id as heading, the section navigation, no result card.
   await expect(page.getByRole("heading", { level: 1, name: `Ogłoszenie ${item.ref}` })).toBeVisible({
     timeout: 150_000,
   });
   await expect(page.getByRole("navigation", { name: "Sekcje raportu" })).toBeVisible();
+  await shot("report");
+  await a11y();
   expect(await balance(page)).toBe(before - 1);
   // The stored result, rendered: the engine's own numbers, formatted by the SPA.
   await expect(page.getByRole("heading", { level: 2, name: "Podsumowanie" })).toBeVisible();
@@ -106,7 +116,7 @@ test("a sale listing: submitted, watched live, finished, the report kept", async
   await expect(row.first()).toContainText(`Ogłoszenie ${item.ref}`);
 });
 
-test("a rental listing is rejected and the report is given back", async ({ page, baseURL }) => {
+test("a rental listing is rejected and the report is given back", async ({ page, baseURL, shot }) => {
   test.setTimeout(180_000);
   await signIn(page, baseURL);
   const before = await balance(page);
@@ -115,6 +125,7 @@ test("a rental listing is rejected and the report is given back", async ({ page,
   const result = page.getByRole("region", { name: "Wynik analizy" });
   await expect(result).toContainText("To ogłoszenie wynajmu", { timeout: 150_000 });
   await expect(result).toContainText("Raport nie został pobrany z konta.");
+  await shot("rejected-rent");
   expect(await balance(page)).toBe(before);
 });
 

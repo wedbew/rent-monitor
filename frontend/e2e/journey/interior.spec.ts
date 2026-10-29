@@ -10,7 +10,9 @@
 import { execFileSync } from "node:child_process";
 import { crc32, deflateSync } from "node:zlib";
 
-import { expect, request, test, type BrowserContext, type Page } from "@playwright/test";
+import { request, type BrowserContext, type Page } from "@playwright/test";
+
+import { expect, test } from "./fixtures";
 
 import { registerMobileInteriorJourneys } from "./interior-mobile";
 

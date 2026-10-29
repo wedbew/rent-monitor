@@ -81,7 +81,15 @@ export default defineConfig({
                 {
                   name: "journey",
                   testMatch: "journey/**/*.spec.ts",
-                  use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+                  // QA evidence (docs/QA.md): a trace, a video and a picture of every failed journey, plus the named
+                  // `shot()` pictures a journey takes on purpose. All land in test-results/, which CI uploads.
+                  use: {
+                    ...devices["Desktop Chrome"],
+                    viewport: { width: 1280, height: 800 },
+                    trace: "retain-on-failure",
+                    video: "retain-on-failure",
+                    screenshot: "only-on-failure",
+                  },
                 },
               ]
             : [

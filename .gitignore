@@ -49,6 +49,7 @@ frontend/.vite/
 frontend/coverage/
 frontend/test-results/
 frontend/playwright-report/
+frontend/e2e/screenshots/
 frontend/playwright-coverage/
 frontend/ux-out/
 *.tsbuildinfo

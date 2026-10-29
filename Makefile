@@ -1,4 +1,4 @@
-.PHONY: fe-fixtures fe-install fe-check fe-dev api-samples api-samples-clean ci ci-fast ci-full hooks sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
+.PHONY: qa-up qa-down qa-journey qa-visual qa-evidence fe-fixtures fe-install fe-check fe-dev api-samples api-samples-clean ci ci-fast ci-full hooks sync test test-all invariants lint fmt types check migrate db-up db-down dev seed bootstrap backup-drill up down logs smoke
 
 sync:
 	uv sync --all-packages --group dev
@@ -42,6 +42,27 @@ migrate:
 	uv run alembic upgrade head
 
 COMPOSE = docker compose -f deploy/compose.yml
+
+# QA environment (frontend/docs/QA.md): the real stack for the browser journeys, with fake providers only.
+# Needs Docker and Node from frontend/.node-version. Evidence lands in frontend/test-results/.
+COMPOSE_E2E = docker compose -f deploy/compose.yml -f deploy/compose.e2e.yml
+
+qa-up:
+	$(COMPOSE_E2E) up -d --build --wait api worker-audit worker-ops s3mock
+
+qa-down:
+	$(COMPOSE_E2E) down
+
+qa-journey:
+	cd frontend && rm -rf test-results && pnpm test:e2e:journey
+
+# Pixel baselines inside the pinned Playwright image (the same run CI does); `visual:update` refreshes them.
+qa-visual:
+	cd frontend && pnpm visual
+
+# What the last QA run left to look at: pictures, videos, traces.
+qa-evidence:
+	@find frontend/test-results frontend/ux-out -type f \( -name '*.png' -o -name '*.webm' -o -name 'trace.zip' \) 2>/dev/null | sort
 
 db-up:
 	$(COMPOSE) up -d --wait postgres

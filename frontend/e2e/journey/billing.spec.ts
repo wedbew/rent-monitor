@@ -5,7 +5,7 @@
  */
 import { execFileSync } from "node:child_process";
 
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 const COMPOSE = (
   process.env["E2E_COMPOSE"] ?? "docker compose -f ../deploy/compose.yml -f ../deploy/compose.e2e.yml"
