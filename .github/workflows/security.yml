@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       # Documentation-only changes (scripts/changed_paths.py) keep the secret scan, which reads every file including
       # Markdown, and skip the dependency audits, semgrep and the workflow lint, which cannot see a doc change. The
       # scheduled run has no base commit, so it is never docs-only.
