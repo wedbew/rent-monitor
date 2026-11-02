@@ -8,7 +8,7 @@ dependencies = [
     "rm-contracts",
     "deal-analyzer",
     "procrastinate>=3.10,<4",
-    "curl-cffi>=0.16,<0.17",
+    "curl-cffi>=0.16,<0.18",
     "pillow>=13,<14",
     "httpx>=0.28",
 ]
